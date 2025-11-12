@@ -1,11 +1,18 @@
-import { eq } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { 
+  InsertUser, users, 
+  recruiters, InsertRecruiter,
+  candidates, InsertCandidate,
+  customers, InsertCustomer,
+  customerContacts, InsertCustomerContact,
+  jobs, InsertJob,
+  applications, InsertApplication
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -18,6 +25,7 @@ export async function getDb() {
   return _db;
 }
 
+// User operations
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
@@ -85,8 +93,232 @@ export async function getUserByOpenId(openId: string) {
   }
 
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// Recruiter operations
+export async function createRecruiter(recruiter: InsertRecruiter) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(recruiters).values(recruiter);
+  return result;
+}
+
+export async function getRecruiterByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(recruiters).where(eq(recruiters.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateRecruiter(id: number, data: Partial<InsertRecruiter>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(recruiters).set(data).where(eq(recruiters.id, id));
+}
+
+// Candidate operations
+export async function createCandidate(candidate: InsertCandidate) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(candidates).values(candidate);
+  return result;
+}
+
+export async function getCandidateByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(candidates).where(eq(candidates.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateCandidate(id: number, data: Partial<InsertCandidate>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(candidates).set(data).where(eq(candidates.id, id));
+}
+
+export async function getAllCandidates() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(candidates).orderBy(desc(candidates.createdAt));
+}
+
+// Customer operations
+export async function createCustomer(customer: InsertCustomer) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(customers).values(customer);
+  return result;
+}
+
+export async function getCustomersByCreator(createdBy: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(customers).where(eq(customers.createdBy, createdBy)).orderBy(desc(customers.createdAt));
+}
+
+export async function getAllCustomers() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(customers).orderBy(desc(customers.createdAt));
+}
+
+export async function updateCustomer(id: number, data: Partial<InsertCustomer>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(customers).set(data).where(eq(customers.id, id));
+}
+
+export async function deleteCustomer(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(customers).where(eq(customers.id, id));
+}
+
+// Customer Contact operations
+export async function createCustomerContact(contact: InsertCustomerContact) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(customerContacts).values(contact);
+  return result;
+}
+
+export async function getContactsByCustomer(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(customerContacts).where(eq(customerContacts.customerId, customerId));
+}
+
+export async function updateCustomerContact(id: number, data: Partial<InsertCustomerContact>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(customerContacts).set(data).where(eq(customerContacts.id, id));
+}
+
+export async function deleteCustomerContact(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(customerContacts).where(eq(customerContacts.id, id));
+}
+
+// Job operations
+export async function createJob(job: InsertJob) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(jobs).values(job);
+  return result;
+}
+
+export async function getJobById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getJobsByRecruiter(postedBy: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(jobs).where(eq(jobs.postedBy, postedBy)).orderBy(desc(jobs.createdAt));
+}
+
+export async function getPublicJobs() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(jobs).where(and(eq(jobs.isPublic, true), eq(jobs.status, "active"))).orderBy(desc(jobs.createdAt));
+}
+
+export async function updateJob(id: number, data: Partial<InsertJob>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(jobs).set(data).where(eq(jobs.id, id));
+}
+
+export async function deleteJob(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(jobs).where(eq(jobs.id, id));
+}
+
+// Application operations
+export async function createApplication(application: InsertApplication) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(applications).values(application);
+  return result;
+}
+
+export async function getApplicationsByJob(jobId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(applications).where(eq(applications.jobId, jobId)).orderBy(desc(applications.submittedAt));
+}
+
+export async function getApplicationsByCandidate(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(applications).where(eq(applications.candidateId, candidateId)).orderBy(desc(applications.submittedAt));
+}
+
+export async function updateApplication(id: number, data: Partial<InsertApplication>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(applications).set(data).where(eq(applications.id, id));
+}
+
+// Dashboard statistics
+export async function getDashboardStats(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const activeJobsCount = await db.select({ count: sql<number>`count(*)` })
+    .from(jobs)
+    .where(and(eq(jobs.postedBy, userId), eq(jobs.status, "active")));
+  
+  const totalApplicationsCount = await db.select({ count: sql<number>`count(*)` })
+    .from(applications)
+    .innerJoin(jobs, eq(applications.jobId, jobs.id))
+    .where(eq(jobs.postedBy, userId));
+  
+  return {
+    activeJobs: Number(activeJobsCount[0]?.count || 0),
+    totalApplications: Number(totalApplicationsCount[0]?.count || 0),
+    aiMatches: 0, // Placeholder for AI matching feature
+    submittedToClients: 0, // Placeholder for submission tracking
+  };
+}

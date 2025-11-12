@@ -1,22 +1,15 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "recruiter", "candidate"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -25,4 +18,126 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Recruiter profiles extending user accounts
+ */
+export const recruiters = mysqlTable("recruiters", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  companyName: varchar("companyName", { length: 255 }),
+  phoneNumber: varchar("phoneNumber", { length: 50 }),
+  bio: text("bio"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Recruiter = typeof recruiters.$inferSelect;
+export type InsertRecruiter = typeof recruiters.$inferInsert;
+
+/**
+ * Candidate profiles with resume support
+ */
+export const candidates = mysqlTable("candidates", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  title: varchar("title", { length: 255 }),
+  phoneNumber: varchar("phoneNumber", { length: 50 }),
+  location: varchar("location", { length: 255 }),
+  bio: text("bio"),
+  skills: text("skills"), // JSON array of skills
+  experience: text("experience"),
+  education: text("education"),
+  resumeUrl: varchar("resumeUrl", { length: 500 }),
+  resumeFilename: varchar("resumeFilename", { length: 255 }),
+  resumeUploadedAt: timestamp("resumeUploadedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Candidate = typeof candidates.$inferSelect;
+export type InsertCandidate = typeof candidates.$inferInsert;
+
+/**
+ * Customer/Client companies
+ */
+export const customers = mysqlTable("customers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  industry: varchar("industry", { length: 255 }),
+  website: varchar("website", { length: 500 }),
+  description: text("description"),
+  contactEmail: varchar("contactEmail", { length: 320 }),
+  contactPhone: varchar("contactPhone", { length: 50 }),
+  address: text("address"),
+  createdBy: int("createdBy").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = typeof customers.$inferInsert;
+
+/**
+ * Customer contacts
+ */
+export const customerContacts = mysqlTable("customerContacts", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull().references(() => customers.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 50 }),
+  isPrimary: boolean("isPrimary").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomerContact = typeof customerContacts.$inferSelect;
+export type InsertCustomerContact = typeof customerContacts.$inferInsert;
+
+/**
+ * Job postings
+ */
+export const jobs = mysqlTable("jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  requirements: text("requirements"),
+  responsibilities: text("responsibilities"),
+  location: varchar("location", { length: 255 }),
+  employmentType: mysqlEnum("employmentType", ["full-time", "part-time", "contract", "temporary", "internship"]).default("full-time"),
+  salaryMin: int("salaryMin"),
+  salaryMax: int("salaryMax"),
+  salaryCurrency: varchar("salaryCurrency", { length: 10 }).default("USD"),
+  customerId: int("customerId").references(() => customers.id),
+  contactId: int("contactId").references(() => customerContacts.id),
+  status: mysqlEnum("status", ["draft", "active", "closed", "filled"]).default("draft"),
+  isPublic: boolean("isPublic").default(false),
+  postedBy: int("postedBy").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  closedAt: timestamp("closedAt"),
+});
+
+export type Job = typeof jobs.$inferSelect;
+export type InsertJob = typeof jobs.$inferInsert;
+
+/**
+ * Job applications
+ */
+export const applications = mysqlTable("applications", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  coverLetter: text("coverLetter"),
+  resumeUrl: varchar("resumeUrl", { length: 500 }),
+  resumeFilename: varchar("resumeFilename", { length: 255 }),
+  status: mysqlEnum("status", ["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]).default("submitted"),
+  aiScore: int("aiScore"), // AI matching score 0-100
+  notes: text("notes"),
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Application = typeof applications.$inferSelect;
+export type InsertApplication = typeof applications.$inferInsert;
