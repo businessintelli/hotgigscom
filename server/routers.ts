@@ -392,6 +392,23 @@ export const appRouter = router({
         return matchResult;
       }),
     
+    list: protectedProcedure
+      .query(async () => {
+        return await db.getAllApplications();
+      }),
+    
+    bulkUpdateStatus: protectedProcedure
+      .input(z.object({
+        applicationIds: z.array(z.number()),
+        status: z.enum(["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]),
+      }))
+      .mutation(async ({ input }) => {
+        for (const id of input.applicationIds) {
+          await db.updateApplication(id, { status: input.status });
+        }
+        return { success: true };
+      }),
+    
     getMatchedCandidates: protectedProcedure
       .input(z.object({ jobId: z.number() }))
       .query(async ({ input }) => {

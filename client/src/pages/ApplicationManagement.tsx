@@ -1,0 +1,444 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { trpc } from "@/lib/trpc";
+import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2 } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { toast } from "sonner";
+
+export default function ApplicationManagement() {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const [selectedApplications, setSelectedApplications] = useState<number[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+
+  const utils = trpc.useUtils();
+
+  // Fetch recruiter profile
+  const { data: recruiter } = trpc.recruiter.getProfile.useQuery(
+    undefined,
+    { enabled: !!user?.id }
+  );
+
+  // Fetch all jobs
+  const { data: jobs = [] } = trpc.job.list.useQuery(undefined, {
+    enabled: !!recruiter?.id,
+  });
+
+  // Fetch all applications
+  const { data: applications = [], isLoading: applicationsLoading } = trpc.application.list.useQuery(
+    undefined,
+    { enabled: !!recruiter?.id }
+  );
+
+  // Update application status mutation
+  const updateStatusMutation = trpc.application.updateStatus.useMutation({
+    onSuccess: () => {
+      utils.application.list.invalidate();
+      toast.success("Application status updated successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to update status: ${error.message}`);
+    },
+  });
+
+  // Bulk update mutation
+  const bulkUpdateMutation = trpc.application.bulkUpdateStatus.useMutation({
+    onSuccess: () => {
+      utils.application.list.invalidate();
+      setSelectedApplications([]);
+      toast.success("Applications updated successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to update applications: ${error.message}`);
+    },
+  });
+
+  if (authLoading || applicationsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    setLocation("/");
+    return null;
+  }
+
+  // Filter applications
+  const filteredApplications = applications.filter((app: any) => {
+    const matchesStatus = statusFilter === "all" || app.status === statusFilter;
+    const matchesJob = !selectedJobId || app.jobId === selectedJobId;
+    const matchesSearch = !searchQuery || 
+      app.candidate?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.candidate?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesStatus && matchesJob && matchesSearch;
+  });
+
+  const handleSelectAll = () => {
+    if (selectedApplications.length === filteredApplications.length) {
+      setSelectedApplications([]);
+    } else {
+      setSelectedApplications(filteredApplications.map((app: any) => app.id));
+    }
+  };
+
+  const handleSelectApplication = (id: number) => {
+    setSelectedApplications(prev =>
+      prev.includes(id) ? prev.filter(appId => appId !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkStatusUpdate = (status: "submitted" | "reviewing" | "shortlisted" | "interviewing" | "offered" | "rejected" | "withdrawn") => {
+    if (selectedApplications.length === 0) {
+      toast.error("Please select at least one application");
+      return;
+    }
+    bulkUpdateMutation.mutate({
+      applicationIds: selectedApplications,
+      status,
+    });
+  };
+
+  const handleStatusUpdate = (applicationId: number, status: "submitted" | "reviewing" | "shortlisted" | "interviewing" | "offered" | "rejected" | "withdrawn") => {
+    updateStatusMutation.mutate({ id: applicationId, status });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { variant: any; icon: any; label: string }> = {
+      pending: { variant: "outline", icon: Clock, label: "Pending" },
+      reviewing: { variant: "default", icon: Search, label: "Reviewing" },
+      shortlisted: { variant: "default", icon: CheckCircle2, label: "Shortlisted" },
+      interview: { variant: "default", icon: Calendar, label: "Interview" },
+      offered: { variant: "default", icon: CheckCircle2, label: "Offered" },
+      hired: { variant: "default", icon: CheckCircle2, label: "Hired" },
+      rejected: { variant: "destructive", icon: XCircle, label: "Rejected" },
+    };
+
+    const config = statusConfig[status] || statusConfig.pending;
+    const Icon = config.icon;
+
+    return (
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
+  // Calculate statistics
+  const stats = {
+    total: applications.length,
+    pending: applications.filter((app: any) => app.status === "pending").length,
+    reviewing: applications.filter((app: any) => app.status === "reviewing").length,
+    shortlisted: applications.filter((app: any) => app.status === "shortlisted").length,
+    interview: applications.filter((app: any) => app.status === "interview").length,
+    offered: applications.filter((app: any) => app.status === "offered").length,
+    hired: applications.filter((app: any) => app.status === "hired").length,
+    rejected: applications.filter((app: any) => app.status === "rejected").length,
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" onClick={() => setLocation("/recruiter/dashboard")}>
+                ← Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Application Management</h1>
+                <p className="text-sm text-gray-600">Track and manage all candidate applications</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-1" />
+                Export
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Statistics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("all")}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xs text-gray-600">Total</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("pending")}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                <p className="text-xs text-gray-600">Pending</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("reviewing")}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">{stats.reviewing}</p>
+                <p className="text-xs text-gray-600">Reviewing</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("shortlisted")}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-600">{stats.shortlisted}</p>
+                <p className="text-xs text-gray-600">Shortlisted</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("interview")}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-indigo-600">{stats.interview}</p>
+                <p className="text-xs text-gray-600">Interview</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("offered")}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">{stats.offered}</p>
+                <p className="text-xs text-gray-600">Offered</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("hired")}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-emerald-600">{stats.hired}</p>
+                <p className="text-xs text-gray-600">Hired</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("rejected")}>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+                <p className="text-xs text-gray-600">Rejected</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters and Search */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Search Candidates</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Filter by Job</label>
+                <Select value={selectedJobId?.toString() || "all"} onValueChange={(value) => setSelectedJobId(value === "all" ? null : parseInt(value))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Jobs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Jobs</SelectItem>
+                    {jobs.map((job: any) => (
+                      <SelectItem key={job.id} value={job.id.toString()}>
+                        {job.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Filter by Status</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="reviewing">Reviewing</SelectItem>
+                    <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                    <SelectItem value="interview">Interview</SelectItem>
+                    <SelectItem value="offered">Offered</SelectItem>
+                    <SelectItem value="hired">Hired</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bulk Actions */}
+        {selectedApplications.length > 0 && (
+          <Card className="mb-6 border-l-4 border-l-blue-500">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={true} onCheckedChange={handleSelectAll} />
+                  <span className="font-medium">{selectedApplications.length} selected</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("reviewing")}>
+                    Mark as Reviewing
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("shortlisted")}>
+                    Shortlist
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("interviewing")}>
+                    Schedule Interview
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleBulkStatusUpdate("rejected")}>
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Applications List */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Applications ({filteredApplications.length})</CardTitle>
+                <CardDescription>Manage and track candidate applications</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleSelectAll}>
+                {selectedApplications.length === filteredApplications.length ? "Deselect All" : "Select All"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredApplications.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No applications found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredApplications.map((application: any) => (
+                  <div key={application.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start gap-4">
+                      <Checkbox
+                        checked={selectedApplications.includes(application.id)}
+                        onCheckedChange={() => handleSelectApplication(application.id)}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-semibold text-lg text-gray-900">
+                              {application.candidate?.fullName || "Anonymous Candidate"}
+                            </h3>
+                            <p className="text-sm text-gray-600">Applied for: {application.job?.title}</p>
+                          </div>
+                          <div className="text-right">
+                            {getStatusBadge(application.status)}
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(application.appliedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                          {application.candidate?.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="h-4 w-4" />
+                              {application.candidate.email}
+                            </span>
+                          )}
+                          {application.candidate?.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-4 w-4" />
+                              {application.candidate.phone}
+                            </span>
+                          )}
+                        </div>
+
+                        {application.coverLetter && (
+                          <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-700 line-clamp-2">{application.coverLetter}</p>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2 pt-3 border-t">
+                          {application.resumeUrl && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={application.resumeUrl} target="_blank" rel="noopener noreferrer">
+                                <FileText className="h-4 w-4 mr-1" />
+                                Resume
+                              </a>
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm">
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            Message
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Share2 className="h-4 w-4 mr-1" />
+                            Share with Client
+                          </Button>
+                          <Select
+                            value={application.status}
+                            onValueChange={(value) => handleStatusUpdate(application.id, value as any)}
+                          >
+                            <SelectTrigger className="w-[150px] h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="reviewing">Reviewing</SelectItem>
+                              <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                              <SelectItem value="interview">Interview</SelectItem>
+                              <SelectItem value="offered">Offered</SelectItem>
+                              <SelectItem value="hired">Hired</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

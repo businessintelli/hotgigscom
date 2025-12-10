@@ -323,6 +323,24 @@ export async function getApplicationsByJob(jobId: number) {
   return await db.select().from(applications).where(eq(applications.jobId, jobId)).orderBy(desc(applications.submittedAt));
 }
 
+export async function getAllApplications() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db
+    .select()
+    .from(applications)
+    .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+    .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .orderBy(desc(applications.submittedAt));
+  
+  return results.map((row: any) => ({
+    ...row.applications,
+    candidate: row.candidates,
+    job: row.jobs,
+  }));
+}
+
 export async function getApplicationsByCandidate(candidateId: number) {
   const db = await getDb();
   if (!db) return [];

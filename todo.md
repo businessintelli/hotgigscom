@@ -24,8 +24,11 @@
 - [x] AI-powered job description generation
 - [x] Excel bulk import interface (UI complete, parsing pending)
 - [x] Customer/client selection for jobs
+- [x] Application tracking and status updates for recruiters
+- [x] Application Management System with bulk actions
+- [x] Status filtering and candidate search
+- [x] Application statistics dashboard
 - [ ] Customer/client management interface
-- [ ] Application tracking and status updates for recruiters
 
 ## Phase 2: AI-Powered Screening & Matching (NEW - from Talent360 analysis)
 - [x] AI resume parsing and skill extraction
