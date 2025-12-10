@@ -141,8 +141,23 @@ export async function getCandidateByUserId(userId: number) {
   const db = await getDb();
   if (!db) return undefined;
   
-  const result = await db.select().from(candidates).where(eq(candidates.userId, userId)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  // Get candidate data
+  const candidateResult = await db.select().from(candidates).where(eq(candidates.userId, userId)).limit(1);
+  if (candidateResult.length === 0) return undefined;
+  
+  // Get user data
+  const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const user = userResult.length > 0 ? userResult[0] : null;
+  
+  // Combine data
+  const candidate = candidateResult[0];
+  return {
+    ...candidate,
+    fullName: user?.name || '',
+    email: user?.email || '',
+    phone: candidate.phoneNumber,
+    experienceYears: candidate.experience ? parseInt(candidate.experience) : 0,
+  };
 }
 
 export async function updateCandidate(id: number, data: Partial<InsertCandidate>) {

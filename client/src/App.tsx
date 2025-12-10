@@ -10,6 +10,7 @@ import CandidateDashboard from "./pages/CandidateDashboard";
 import JobBrowser from "./pages/JobBrowser";
 import CreateJob from "./pages/CreateJob";
 import CustomerManagement from "./pages/CustomerManagement";
+import JobApplication from "./pages/JobApplication";
 
 function Router() {
   return (
@@ -18,8 +19,9 @@ function Router() {
       <Route path={"/recruiter/dashboard"} component={RecruiterDashboard} />
       <Route path={"/recruiter/jobs/create"} component={CreateJob} />
       <Route path={"/recruiter/customers"} component={CustomerManagement} />
-      <Route path={"/candidate/dashboard"} component={CandidateDashboard} />
-      <Route path={"/candidate/jobs"} component={JobBrowser} />
+      <Route path={"/candidate-dashboard"} component={CandidateDashboard} />
+      <Route path={"/jobs"} component={JobBrowser} />
+      <Route path={"/apply/:id"} component={JobApplication} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -110,27 +110,68 @@ export const appRouter = router({
       .input(z.object({
         candidateId: z.number(),
         fileData: z.string(), // base64 encoded file
-        filename: z.string(),
-        mimeType: z.string(),
+        fileName: z.string(),
       }))
       .mutation(async ({ input }) => {
-        const { candidateId, fileData, filename, mimeType } = input;
+        const { candidateId, fileData, fileName } = input;
         
-        // Convert base64 to buffer
-        const buffer = Buffer.from(fileData, 'base64');
+        // Extract base64 data and mime type
+        const matches = fileData.match(/^data:(.+);base64,(.+)$/);
+        if (!matches) {
+          throw new Error('Invalid file data format');
+        }
+        
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
         
         // Upload to S3
-        const fileKey = `resumes/${candidateId}-${filename}-${randomSuffix()}`;
+        const fileKey = `resumes/${candidateId}-${fileName}-${randomSuffix()}`;
         const { url } = await storagePut(fileKey, buffer, mimeType);
         
         // Update candidate profile
         await db.updateCandidate(candidateId, {
           resumeUrl: url,
-          resumeFilename: filename,
+          resumeFilename: fileName,
           resumeUploadedAt: new Date(),
         });
         
         return { success: true, url };
+      }),
+    
+    getByUserId: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCandidateByUserId(input.userId);
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        fullName: z.string().optional(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        location: z.string().optional(),
+        skills: z.string().optional(),
+        experienceYears: z.number().optional(),
+        bio: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateCandidate(id, data);
+        return { success: true };
+      }),
+    
+    getStats: protectedProcedure
+      .input(z.object({ candidateId: z.number() }))
+      .query(async ({ input }) => {
+        const applications = await db.getApplicationsByCandidate(input.candidateId);
+        return {
+          totalApplications: applications.length,
+          interviews: applications.filter((app: any) => app.status === 'interview').length,
+          profileViews: 0, // TODO: Implement profile views tracking
+          resumeScore: 85, // TODO: Implement AI resume scoring
+        };
       }),
   }),
 
