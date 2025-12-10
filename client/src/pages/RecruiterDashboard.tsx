@@ -119,6 +119,15 @@ export default function RecruiterDashboard() {
                   <div className="text-xs opacity-90">View matched candidates</div>
                 </div>
               </Button>
+              <Button onClick={() => setLocation('/recruiter/customers')} className="h-20 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">🏢</span>
+                    Customers
+                  </div>
+                  <div className="text-xs opacity-90">Manage client companies</div>
+                </div>
+              </Button>
               <Button onClick={() => setLocation('/recruiter/applications')} className="h-20 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white">
                 <div className="text-center">
                   <div className="text-lg font-semibold flex items-center justify-center">
