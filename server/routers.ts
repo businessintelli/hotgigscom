@@ -575,6 +575,147 @@ export const appRouter = router({
         await db.deleteInterview(input.id);
         return { success: true };
       }),
+    
+    // AI Interview - Generate questions
+    generateQuestions: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        jobId: z.number(),
+        candidateId: z.number(),
+        questionCount: z.number().default(5),
+      }))
+      .mutation(async ({ input }) => {
+        const { generateStructuredInterviewQuestions } = await import("./aiHelpers");
+        
+        // Get job details
+        const job = await db.getJobById(input.jobId);
+        if (!job) throw new Error("Job not found");
+        
+        // Get candidate details
+        const candidate = await db.getCandidateById(input.candidateId);
+        if (!candidate) throw new Error("Candidate not found");
+        
+        // Generate questions
+        const candidateSkills = Array.isArray(candidate.skills) ? candidate.skills : [];
+        const questions = await generateStructuredInterviewQuestions(
+          job.title,
+          job.requirements || "",
+          candidateSkills,
+          input.questionCount
+        );
+        
+        // Save questions to database
+        for (let i = 0; i < questions.length; i++) {
+          await db.createInterviewQuestion({
+            interviewId: input.interviewId,
+            questionText: questions[i].questionText,
+            questionType: questions[i].questionType as any,
+            orderIndex: i,
+            expectedDuration: questions[i].expectedDuration,
+          });
+        }
+        
+        return { success: true, questions };
+      }),
+    
+    // AI Interview - Get questions
+    getQuestions: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getInterviewQuestions(input.interviewId);
+      }),
+    
+    // AI Interview - Submit response
+    submitResponse: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        questionId: z.number(),
+        audioFile: z.instanceof(Buffer).optional(),
+        videoFile: z.instanceof(Buffer).optional(),
+        audioUrl: z.string().optional(),
+        videoUrl: z.string().optional(),
+        duration: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+        if (!candidate) throw new Error("Candidate profile not found");
+        
+        // Upload files to S3 if provided
+        let audioUrl = input.audioUrl;
+        let videoUrl = input.videoUrl;
+        
+        if (input.audioFile) {
+          const audioKey = `interviews/${input.interviewId}/audio-${randomSuffix()}.webm`;
+          const result = await storagePut(audioKey, input.audioFile, "audio/webm");
+          audioUrl = result.url;
+        }
+        
+        if (input.videoFile) {
+          const videoKey = `interviews/${input.interviewId}/video-${randomSuffix()}.webm`;
+          const result = await storagePut(videoKey, input.videoFile, "video/webm");
+          videoUrl = result.url;
+        }
+        
+        // Create response record
+        const result = await db.createInterviewResponse({
+          interviewId: input.interviewId,
+          questionId: input.questionId,
+          candidateId: candidate.id,
+          audioUrl,
+          videoUrl,
+          duration: input.duration,
+        });
+        
+        return { success: true };
+      }),
+    
+    // AI Interview - Evaluate response
+    evaluateResponse: protectedProcedure
+      .input(z.object({
+        responseId: z.number(),
+        transcription: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { evaluateInterviewResponse } = await import("./aiHelpers");
+        
+        // Get response and question
+        const data = await db.getInterviewResponseWithQuestion(input.responseId);
+        if (!data || !data.question) throw new Error("Response or question not found");
+        
+        // Get interview and job details
+        const interview = await db.getInterviewById(data.response.interviewId);
+        if (!interview) throw new Error("Interview not found");
+        
+        const job = await db.getJobById(interview.jobId);
+        if (!job) throw new Error("Job not found");
+        
+        // Evaluate response
+        const evaluation = await evaluateInterviewResponse(
+          data.question.questionText,
+          data.question.questionType,
+          input.transcription,
+          job.requirements || ""
+        );
+        
+        // Update response with evaluation
+        await db.updateInterviewResponse(input.responseId, {
+          transcription: input.transcription,
+          aiScore: evaluation.score,
+          aiEvaluation: evaluation.evaluation,
+          strengths: evaluation.strengths,
+          weaknesses: evaluation.weaknesses,
+          recommendations: evaluation.recommendations,
+        });
+        
+        return { success: true, evaluation };
+      }),
+    
+    // AI Interview - Get full interview with questions and responses
+    getFullInterview: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getInterviewWithQuestionsAndResponses(input.interviewId);
+      }),
   }),
 });
 

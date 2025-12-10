@@ -64,9 +64,20 @@
 - [x] Interview notes and feedback collection
 - [ ] Calendar integration (Google Calendar, Outlook)
 - [ ] Interview invitation emails
-- [ ] AI-powered video interview system
+- [x] AI-powered video interview system
+  - [x] AI interview question generation based on job requirements
+  - [x] Video/audio recording interface for candidates
+  - [x] Real-time recording with timer and preview
+  - [x] Question-by-question interview flow
+  - [x] Progress tracking and completion status
+  - [x] Response submission with video upload
+  - [x] Interview response database schema
+  - [x] Backend API for interview management
+  - [ ] Automatic transcription of interview recordings (pending voice API integration)
+  - [ ] AI evaluation and scoring of candidate responses (pending transcription)
+  - [ ] Interview playback interface for recruiters
+  - [ ] Detailed evaluation reports with recommendations
 - [ ] Interview recording and playback
-- [ ] AI interview evaluation and scoring
 - [ ] Coding assessment platform for technical roles
 - [ ] Interview rubrics and evaluation criteria
 - [ ] Human review capability for AI assessments

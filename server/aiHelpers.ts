@@ -344,3 +344,144 @@ Return as JSON.`,
 
   return JSON.parse(content);
 }
+
+/**
+ * Generate structured AI interview questions based on job requirements
+ */
+export async function generateStructuredInterviewQuestions(
+  jobTitle: string,
+  jobRequirements: string,
+  candidateSkills: string[],
+  questionCount: number = 5
+): Promise<Array<{ questionText: string; questionType: string; expectedDuration: number }>> {
+  try {
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert technical interviewer. Generate ${questionCount} interview questions that assess the candidate's fit for the role. Include a mix of technical, behavioral, situational, and experience-based questions.`
+        },
+        {
+          role: "user",
+          content: `Job Title: ${jobTitle}\n\nRequirements: ${jobRequirements}\n\nCandidate Skills: ${candidateSkills.join(", ")}\n\nGenerate ${questionCount} interview questions with types and expected duration.`
+        }
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "interview_questions",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              questions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    questionText: { type: "string" },
+                    questionType: { type: "string", enum: ["technical", "behavioral", "situational", "experience"] },
+                    expectedDuration: { type: "number" }
+                  },
+                  required: ["questionText", "questionType", "expectedDuration"],
+                  additionalProperties: false
+                }
+              }
+            },
+            required: ["questions"],
+            additionalProperties: false
+          }
+        }
+      }
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content || typeof content !== 'string') {
+      throw new Error("No response from AI");
+    }
+
+    const parsed = JSON.parse(content);
+    return parsed.questions || [];
+  } catch (error) {
+    console.error("Error generating structured interview questions:", error);
+    // Fallback questions
+    return [
+      { questionText: "Tell me about your experience with " + jobTitle, questionType: "experience", expectedDuration: 120 },
+      { questionText: "Describe a challenging project you worked on", questionType: "behavioral", expectedDuration: 120 },
+      { questionText: "How would you approach " + jobRequirements.split(".")[0], questionType: "situational", expectedDuration: 120 },
+    ];
+  }
+}
+
+/**
+ * Evaluate a candidate's interview response using AI
+ */
+export async function evaluateInterviewResponse(
+  questionText: string,
+  questionType: string,
+  transcription: string,
+  jobRequirements: string
+): Promise<{
+  score: number;
+  evaluation: string;
+  strengths: string;
+  weaknesses: string;
+  recommendations: string;
+}> {
+  try {
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert interview evaluator. Analyze the candidate's response and provide a detailed evaluation with a score from 0-100."
+        },
+        {
+          role: "user",
+          content: `Question: ${questionText}\nQuestion Type: ${questionType}\nJob Requirements: ${jobRequirements}\n\nCandidate's Response: ${transcription}\n\nProvide a detailed evaluation.`
+        }
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "interview_evaluation",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              score: { type: "number", description: "Score from 0-100" },
+              evaluation: { type: "string", description: "Overall evaluation" },
+              strengths: { type: "string", description: "Key strengths demonstrated" },
+              weaknesses: { type: "string", description: "Areas for improvement" },
+              recommendations: { type: "string", description: "Recommendations for the recruiter" }
+            },
+            required: ["score", "evaluation", "strengths", "weaknesses", "recommendations"],
+            additionalProperties: false
+          }
+        }
+      }
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content || typeof content !== 'string') {
+      throw new Error("No response from AI");
+    }
+
+    const parsed = JSON.parse(content);
+    return {
+      score: Math.min(100, Math.max(0, parsed.score)),
+      evaluation: parsed.evaluation,
+      strengths: parsed.strengths,
+      weaknesses: parsed.weaknesses,
+      recommendations: parsed.recommendations
+    };
+  } catch (error) {
+    console.error("Error evaluating interview response:", error);
+    return {
+      score: 50,
+      evaluation: "Unable to evaluate response automatically. Manual review recommended.",
+      strengths: "N/A",
+      weaknesses: "N/A",
+      recommendations: "Please review the response manually."
+    };
+  }
+}

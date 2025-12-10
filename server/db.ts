@@ -8,7 +8,9 @@ import {
   customerContacts, InsertCustomerContact,
   jobs, InsertJob,
   applications, InsertApplication,
-  interviews, InsertInterview
+  interviews, InsertInterview,
+  interviewQuestions, InsertInterviewQuestion,
+  interviewResponses, InsertInterviewResponse
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -440,5 +442,93 @@ export async function getDashboardStats(userId: number) {
     totalApplications: Number(totalApplicationsCount[0]?.count || 0),
     aiMatches: 0, // Placeholder for AI matching feature
     submittedToClients: 0, // Placeholder for submission tracking
+  };
+}
+
+// Interview Question operations
+export async function createInterviewQuestion(question: InsertInterviewQuestion) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(interviewQuestions).values(question);
+  return result;
+}
+
+export async function getInterviewQuestions(interviewId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(interviewQuestions)
+    .where(eq(interviewQuestions.interviewId, interviewId))
+    .orderBy(interviewQuestions.orderIndex);
+}
+
+// Interview Response operations
+export async function createInterviewResponse(response: InsertInterviewResponse) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(interviewResponses).values(response);
+  return result;
+}
+
+export async function updateInterviewResponse(id: number, data: Partial<InsertInterviewResponse>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(interviewResponses)
+    .set(data)
+    .where(eq(interviewResponses.id, id));
+}
+
+export async function getInterviewResponses(interviewId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(interviewResponses)
+    .where(eq(interviewResponses.interviewId, interviewId));
+}
+
+export async function getInterviewResponseWithQuestion(responseId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select({
+      response: interviewResponses,
+      question: interviewQuestions,
+    })
+    .from(interviewResponses)
+    .leftJoin(interviewQuestions, eq(interviewResponses.questionId, interviewQuestions.id))
+    .where(eq(interviewResponses.id, responseId))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function getInterviewWithQuestionsAndResponses(interviewId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const interview = await db
+    .select()
+    .from(interviews)
+    .where(eq(interviews.id, interviewId))
+    .limit(1);
+  
+  if (!interview[0]) return null;
+  
+  const questions = await getInterviewQuestions(interviewId);
+  const responses = await getInterviewResponses(interviewId);
+  
+  return {
+    interview: interview[0],
+    questions,
+    responses,
   };
 }

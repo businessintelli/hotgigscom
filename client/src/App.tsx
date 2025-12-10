@@ -12,7 +12,8 @@ import CreateJob from "./pages/CreateJob";
 import AIMatchingDashboard from "./pages/AIMatchingDashboard";
 import ApplicationManagement from "@/pages/ApplicationManagement";
 import InterviewManagement from "@/pages/InterviewManagement";
-import CustomerManagement from "./pages/CustomerManagement";
+import AIInterviewPage from "@/pages/AIInterviewPage";
+import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
 
 function Router() {
@@ -28,6 +29,7 @@ function Router() {
       <Route path={"/candidate-dashboard"} component={CandidateDashboard} />
       <Route path={"/jobs"} component={JobBrowser} />
       <Route path={"/apply/:id"} component={JobApplication} />
+      <Route path={"/ai-interview"} component={AIInterviewPage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -169,3 +169,43 @@ export const interviews = mysqlTable("interviews", {
 
 export type Interview = typeof interviews.$inferSelect;
 export type InsertInterview = typeof interviews.$inferInsert;
+
+/**
+ * Interview questions table for storing AI-generated questions
+ */
+export const interviewQuestions = mysqlTable("interviewQuestions", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  questionText: text("questionText").notNull(),
+  questionType: mysqlEnum("questionType", ["technical", "behavioral", "situational", "experience"]).notNull(),
+  orderIndex: int("orderIndex").notNull(),
+  expectedDuration: int("expectedDuration").default(120), // seconds
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type InterviewQuestion = typeof interviewQuestions.$inferSelect;
+export type InsertInterviewQuestion = typeof interviewQuestions.$inferInsert;
+
+/**
+ * Interview responses table for storing candidate answers
+ */
+export const interviewResponses = mysqlTable("interviewResponses", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  questionId: int("questionId").notNull().references(() => interviewQuestions.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  audioUrl: text("audioUrl"),
+  videoUrl: text("videoUrl"),
+  transcription: text("transcription"),
+  duration: int("duration"), // seconds
+  aiScore: int("aiScore"), // 0-100
+  aiEvaluation: text("aiEvaluation"),
+  strengths: text("strengths"),
+  weaknesses: text("weaknesses"),
+  recommendations: text("recommendations"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InterviewResponse = typeof interviewResponses.$inferSelect;
+export type InsertInterviewResponse = typeof interviewResponses.$inferInsert;
