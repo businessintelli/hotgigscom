@@ -160,6 +160,27 @@ export async function getCandidateByUserId(userId: number) {
   };
 }
 
+export async function getCandidateById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(candidates).where(eq(candidates.id, id)).limit(1);
+  if (result.length === 0) return undefined;
+  
+  const candidate = result[0];
+  // Get user data
+  const userResult = await db.select().from(users).where(eq(users.id, candidate.userId)).limit(1);
+  const user = userResult.length > 0 ? userResult[0] : null;
+  
+  return {
+    ...candidate,
+    fullName: user?.name || '',
+    email: user?.email || '',
+    phone: candidate.phoneNumber,
+    experienceYears: candidate.experience ? parseInt(candidate.experience) : 0,
+  };
+}
+
 export async function updateCandidate(id: number, data: Partial<InsertCandidate>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

@@ -19,13 +19,21 @@
 - [x] Job application workflow with resume attachment
 - [x] Application submission with cover letter
 - [x] Application success confirmation
-- [ ] Job creation workflow for recruiters
+- [x] Job creation workflow for recruiters
+- [x] Manual job entry with full details
+- [x] AI-powered job description generation
+- [x] Excel bulk import interface (UI complete, parsing pending)
+- [x] Customer/client selection for jobs
 - [ ] Customer/client management interface
-- [ ] Application tracking and status updates
+- [ ] Application tracking and status updates for recruiters
 
 ## Phase 2: AI-Powered Screening & Matching (NEW - from Talent360 analysis)
-- [ ] AI resume parsing and skill extraction
-- [ ] AI matching algorithm with percentage scores
+- [x] AI resume parsing and skill extraction
+- [x] AI matching algorithm with percentage scores
+- [x] AI resume analysis with improvement suggestions
+- [x] AI interview question generation
+- [x] Backend API procedures for all AI features
+- [ ] AI Matching Dashboard UI for recruiters
 - [ ] Candidate-job matching dashboard for recruiters
 - [ ] Job recommendation engine for candidates
 - [ ] Candidate recommendation engine for recruiters

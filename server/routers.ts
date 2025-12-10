@@ -1,7 +1,8 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
+import { parseResume, calculateMatchScore, generateInterviewQuestions, analyzeResume } from "./aiHelpers";
 import { z } from "zod";
 import * as db from "./db";
 import { storagePut } from "./storage";
@@ -172,6 +173,18 @@ export const appRouter = router({
           profileViews: 0, // TODO: Implement profile views tracking
           resumeScore: 85, // TODO: Implement AI resume scoring
         };
+      }),
+    
+    parseResume: protectedProcedure
+      .input(z.object({ resumeText: z.string() }))
+      .mutation(async ({ input }) => {
+        return await parseResume(input.resumeText);
+      }),
+    
+    analyzeResume: protectedProcedure
+      .input(z.object({ resumeText: z.string() }))
+      .mutation(async ({ input }) => {
+        return await analyzeResume(input.resumeText);
       }),
   }),
 
@@ -348,6 +361,119 @@ export const appRouter = router({
         const { id, ...data } = input;
         await db.updateApplication(id, data);
         return { success: true };
+      }),
+    
+    calculateMatch: protectedProcedure
+      .input(z.object({
+        candidateId: z.number(),
+        jobId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        // Get candidate and job details
+        const candidate = await db.getCandidateById(input.candidateId);
+        const job = await db.getJobById(input.jobId);
+        
+        if (!candidate || !job) {
+          throw new Error("Candidate or job not found");
+        }
+        
+        // Extract skills and experience
+        const candidateSkills = candidate.skills ? candidate.skills.split(',').map((s: string) => s.trim()) : [];
+        const candidateExperience = candidate.experienceYears || 0;
+        
+        // Calculate match score using AI
+        const matchResult = await calculateMatchScore(
+          candidateSkills,
+          candidateExperience,
+          job.requirements || job.description,
+          job.title
+        );
+        
+        return matchResult;
+      }),
+    
+    getMatchedCandidates: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        // Get all applications for this job
+        const applications = await db.getApplicationsByJob(input.jobId);
+        const job = await db.getJobById(input.jobId);
+        
+        if (!job) {
+          throw new Error("Job not found");
+        }
+        
+        // Calculate match scores for each candidate
+        const matchedCandidates = await Promise.all(
+          applications.map(async (app: any) => {
+            const candidate = await db.getCandidateById(app.candidateId);
+            if (!candidate) return null;
+            
+            const candidateSkills = candidate.skills ? candidate.skills.split(',').map((s: string) => s.trim()) : [];
+            const candidateExperience = candidate.experienceYears || 0;
+            
+            try {
+              const matchResult = await calculateMatchScore(
+                candidateSkills,
+                candidateExperience,
+                job.requirements || job.description,
+                job.title
+              );
+              
+              return {
+                ...app,
+                candidate,
+                matchScore: matchResult.overallScore,
+                skillsScore: matchResult.skillsScore,
+                experienceScore: matchResult.experienceScore,
+                matchingSkills: matchResult.matchingSkills,
+                missingSkills: matchResult.missingSkills,
+                recommendation: matchResult.recommendation,
+              };
+            } catch (error) {
+              // If AI fails, return basic info with 0 score
+              return {
+                ...app,
+                candidate,
+                matchScore: 0,
+                skillsScore: 0,
+                experienceScore: 0,
+                matchingSkills: [],
+                missingSkills: [],
+                recommendation: 'review',
+              };
+            }
+          })
+        );
+        
+        // Filter out nulls and sort by match score
+        return matchedCandidates
+          .filter((c: any) => c !== null)
+          .sort((a: any, b: any) => b.matchScore - a.matchScore);
+      }),
+    
+    generateInterviewQuestions: protectedProcedure
+      .input(z.object({
+        jobId: z.number(),
+        candidateId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const candidate = await db.getCandidateById(input.candidateId);
+        const job = await db.getJobById(input.jobId);
+        
+        if (!candidate || !job) {
+          throw new Error("Candidate or job not found");
+        }
+        
+        const candidateSkills = candidate.skills ? candidate.skills.split(',').map((s: string) => s.trim()) : [];
+        
+        const questions = await generateInterviewQuestions(
+          job.title,
+          job.requirements || job.description,
+          candidateSkills
+        );
+        
+        return { questions };
       }),
   }),
 });
