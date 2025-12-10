@@ -109,7 +109,16 @@ export default function RecruiterDashboard() {
             <CardDescription>Streamline your recruitment workflow</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Button onClick={() => setLocation('/recruiter/ai-matching')} className="h-20 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">🎯</span>
+                    AI Matching
+                  </div>
+                  <div className="text-xs opacity-90">View matched candidates</div>
+                </div>
+              </Button>
               <Button onClick={() => setLocation('/recruiter/jobs/create')} className="h-20 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white">
                 <div className="text-center">
                   <div className="text-lg font-semibold flex items-center justify-center">

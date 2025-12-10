@@ -33,8 +33,12 @@
 - [x] AI resume analysis with improvement suggestions
 - [x] AI interview question generation
 - [x] Backend API procedures for all AI features
-- [ ] AI Matching Dashboard UI for recruiters
-- [ ] Candidate-job matching dashboard for recruiters
+- [x] AI Matching Dashboard UI for recruiters
+- [x] Candidate-job matching dashboard with filters and sorting
+- [x] Match score visualization with color coding
+- [x] Skill gap analysis display
+- [x] Experience level filtering
+- [x] Quick actions for shortlisting and scheduling
 - [ ] Job recommendation engine for candidates
 - [ ] Candidate recommendation engine for recruiters
 - [ ] AI match score display on job listings
