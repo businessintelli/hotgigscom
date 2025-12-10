@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { parseResume, calculateMatchScore, generateInterviewQuestions, analyzeResume } from "./aiHelpers";
+import { transcribeAudio } from "./_core/voiceTranscription";
 import { z } from "zod";
 import * as db from "./db";
 import { storagePut } from "./storage";
@@ -666,7 +667,50 @@ export const appRouter = router({
           duration: input.duration,
         });
         
-        return { success: true };
+        // Auto-transcribe audio if available
+        if (audioUrl) {
+          try {
+            const transcriptionResult = await transcribeAudio({ audioUrl });
+            
+            if ('text' in transcriptionResult) {
+              // Update response with transcription
+              await db.updateInterviewResponse(result.id, {
+                transcription: transcriptionResult.text,
+              });
+              
+              // Auto-evaluate the response
+              const question = await db.getInterviewQuestionById(input.questionId);
+              const interview = await db.getInterviewById(input.interviewId);
+              
+              if (question && interview) {
+                const job = await db.getJobById(interview.jobId);
+                if (job) {
+                  const { evaluateInterviewResponse } = await import("./aiHelpers");
+                  const evaluation = await evaluateInterviewResponse(
+                    question.questionText,
+                    question.questionType,
+                    transcriptionResult.text,
+                    job.requirements || job.description
+                  );
+                  
+                  // Update response with evaluation
+                  await db.updateInterviewResponse(result.id, {
+                    aiScore: evaluation.score,
+                    aiEvaluation: evaluation.evaluation,
+                    strengths: evaluation.strengths,
+                    weaknesses: evaluation.weaknesses,
+                    recommendations: evaluation.recommendations,
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Auto-transcription failed:", error);
+            // Continue without transcription - can be done manually later
+          }
+        }
+        
+        return { success: true, responseId: result.id };
       }),
     
     // AI Interview - Evaluate response
@@ -715,6 +759,31 @@ export const appRouter = router({
       .input(z.object({ interviewId: z.number() }))
       .query(async ({ input }) => {
         return await db.getInterviewWithQuestionsAndResponses(input.interviewId);
+      }),
+    
+    // Get interview with responses for playback
+    getWithResponses: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const interview = await db.getInterviewById(input.interviewId);
+        if (!interview) throw new Error("Interview not found");
+        
+        const questions = await db.getInterviewQuestions(input.interviewId);
+        const responses = await db.getInterviewResponses(input.interviewId);
+        
+        // Get candidate and job details
+        const candidate = await db.getCandidateById(interview.candidateId);
+        const job = await db.getJobById(interview.jobId);
+        
+        return {
+          interview: {
+            ...interview,
+            candidateName: candidate?.title || `${candidate?.userId}`,
+            jobTitle: job?.title || "Unknown Position",
+          },
+          questions,
+          responses,
+        };
       }),
   }),
 });

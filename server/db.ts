@@ -465,13 +465,33 @@ export async function getInterviewQuestions(interviewId: number) {
     .orderBy(interviewQuestions.orderIndex);
 }
 
+export async function getInterviewQuestionById(questionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(interviewQuestions)
+    .where(eq(interviewQuestions.id, questionId))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
 // Interview Response operations
 export async function createInterviewResponse(response: InsertInterviewResponse) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
   const result = await db.insert(interviewResponses).values(response);
-  return result;
+  // Get the inserted ID from the result
+  const insertId = (result as any).insertId || (result as any)[0]?.insertId;
+  
+  if (!insertId) {
+    throw new Error("Failed to get inserted response ID");
+  }
+  
+  return { id: insertId as number };
 }
 
 export async function updateInterviewResponse(id: number, data: Partial<InsertInterviewResponse>) {

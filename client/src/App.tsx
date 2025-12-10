@@ -12,6 +12,7 @@ import CreateJob from "./pages/CreateJob";
 import AIMatchingDashboard from "./pages/AIMatchingDashboard";
 import ApplicationManagement from "@/pages/ApplicationManagement";
 import InterviewManagement from "@/pages/InterviewManagement";
+import InterviewPlayback from "@/pages/InterviewPlayback";
 import AIInterviewPage from "@/pages/AIInterviewPage";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/recruiter/ai-matching" component={AIMatchingDashboard} />
       <Route path="/recruiter/applications" component={ApplicationManagement} />
       <Route path="/recruiter/interviews" component={InterviewManagement} />
+      <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path={"/recruiter/customers"} component={CustomerManagement} />
       <Route path={"/candidate-dashboard"} component={CandidateDashboard} />
       <Route path={"/jobs"} component={JobBrowser} />
