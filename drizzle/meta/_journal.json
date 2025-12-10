@@ -15,6 +15,13 @@
       "when": 1762937302652,
       "tag": "0001_flawless_blue_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1765383518202,
+      "tag": "0002_fair_the_order",
+      "breakpoints": true
     }
   ]
 }

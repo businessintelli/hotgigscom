@@ -146,6 +146,15 @@ export default function RecruiterDashboard() {
                   <div className="text-xs opacity-90">Manual, AI-powered, or Excel import</div>
                 </div>
               </Button>
+              <Button onClick={() => setLocation('/recruiter/interviews')} className="h-20 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">📅</span>
+                    Interviews
+                  </div>
+                  <div className="text-xs opacity-90">Schedule and manage interviews</div>
+                </div>
+              </Button>
               <Button className="h-20 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white">
                 <div className="text-center">
                   <div className="text-lg font-semibold">🔍 Search Candidates</div>

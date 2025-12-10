@@ -7,7 +7,8 @@ import {
   customers, InsertCustomer,
   customerContacts, InsertCustomerContact,
   jobs, InsertJob,
-  applications, InsertApplication
+  applications, InsertApplication,
+  interviews, InsertInterview
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -158,6 +159,71 @@ export async function getCandidateByUserId(userId: number) {
     phone: candidate.phoneNumber,
     experienceYears: candidate.experience ? parseInt(candidate.experience) : 0,
   };
+}
+
+// Interview functions
+export async function createInterview(interview: InsertInterview) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(interviews).values(interview);
+  return result;
+}
+
+export async function getInterviewById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(interviews)
+    .where(eq(interviews.id, id))
+    .limit(1);
+  return result[0];
+}
+
+export async function getInterviewsByRecruiterId(recruiterId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      interview: interviews,
+      candidate: candidates,
+      job: jobs,
+      application: applications,
+    })
+    .from(interviews)
+    .leftJoin(candidates, eq(interviews.candidateId, candidates.id))
+    .leftJoin(jobs, eq(interviews.jobId, jobs.id))
+    .leftJoin(applications, eq(interviews.applicationId, applications.id))
+    .where(eq(interviews.recruiterId, recruiterId))
+    .orderBy(desc(interviews.scheduledAt));
+}
+
+export async function getInterviewsByCandidateId(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      interview: interviews,
+      job: jobs,
+      recruiter: recruiters,
+    })
+    .from(interviews)
+    .leftJoin(jobs, eq(interviews.jobId, jobs.id))
+    .leftJoin(recruiters, eq(interviews.recruiterId, recruiters.id))
+    .where(eq(interviews.candidateId, candidateId))
+    .orderBy(desc(interviews.scheduledAt));
+}
+
+export async function updateInterview(id: number, updates: Partial<InsertInterview>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(interviews).set(updates).where(eq(interviews.id, id));
+}
+
+export async function deleteInterview(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(interviews).where(eq(interviews.id, id));
 }
 
 export async function getCandidateById(id: number) {

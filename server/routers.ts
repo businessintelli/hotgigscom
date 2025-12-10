@@ -493,6 +493,89 @@ export const appRouter = router({
         return { questions };
       }),
   }),
+  
+  interview: router({
+    // Create interview
+    create: protectedProcedure
+      .input(z.object({
+        applicationId: z.number(),
+        candidateId: z.number(),
+        jobId: z.number(),
+        scheduledAt: z.string(),
+        duration: z.number().default(60),
+        type: z.enum(["phone", "video", "in-person", "ai-interview"]).default("video"),
+        meetingLink: z.string().optional(),
+        location: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error("Recruiter profile not found");
+        
+        await db.createInterview({
+          ...input,
+          recruiterId: recruiter.id,
+          scheduledAt: new Date(input.scheduledAt),
+        });
+        
+        return { success: true };
+      }),
+    
+    // Get interviews for recruiter
+    listByRecruiter: protectedProcedure.query(async ({ ctx }) => {
+      const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+      if (!recruiter) return [];
+      return await db.getInterviewsByRecruiterId(recruiter.id);
+    }),
+    
+    // Get interviews for candidate
+    listByCandidate: protectedProcedure.query(async ({ ctx }) => {
+      const candidate = await db.getCandidateByUserId(ctx.user.id);
+      if (!candidate) return [];
+      return await db.getInterviewsByCandidateId(candidate.id);
+    }),
+    
+    // Get interview by ID
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getInterviewById(input.id);
+      }),
+    
+    // Update interview
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        scheduledAt: z.string().optional(),
+        duration: z.number().optional(),
+        type: z.enum(["phone", "video", "in-person", "ai-interview"]).optional(),
+        status: z.enum(["scheduled", "in-progress", "completed", "cancelled", "no-show"]).optional(),
+        meetingLink: z.string().optional(),
+        location: z.string().optional(),
+        notes: z.string().optional(),
+        recordingUrl: z.string().optional(),
+        aiEvaluationScore: z.number().optional(),
+        aiEvaluationReport: z.string().optional(),
+        interviewerNotes: z.string().optional(),
+        candidateFeedback: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        await db.updateInterview(id, {
+          ...updates,
+          scheduledAt: updates.scheduledAt ? new Date(updates.scheduledAt) : undefined,
+        });
+        return { success: true };
+      }),
+    
+    // Delete/cancel interview
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteInterview(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

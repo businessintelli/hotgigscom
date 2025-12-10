@@ -141,3 +141,31 @@ export const applications = mysqlTable("applications", {
 
 export type Application = typeof applications.$inferSelect;
 export type InsertApplication = typeof applications.$inferInsert;
+
+/**
+ * Interviews table for scheduling and tracking candidate interviews
+ */
+export const interviews = mysqlTable("interviews", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  scheduledAt: timestamp("scheduledAt").notNull(),
+  duration: int("duration").notNull().default(60), // in minutes
+  type: mysqlEnum("type", ["phone", "video", "in-person", "ai-interview"]).notNull().default("video"),
+  status: mysqlEnum("status", ["scheduled", "in-progress", "completed", "cancelled", "no-show"]).notNull().default("scheduled"),
+  meetingLink: text("meetingLink"),
+  location: text("location"),
+  notes: text("notes"),
+  recordingUrl: text("recordingUrl"),
+  aiEvaluationScore: int("aiEvaluationScore"), // 0-100
+  aiEvaluationReport: text("aiEvaluationReport"),
+  interviewerNotes: text("interviewerNotes"),
+  candidateFeedback: text("candidateFeedback"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Interview = typeof interviews.$inferSelect;
+export type InsertInterview = typeof interviews.$inferInsert;
