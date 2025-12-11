@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Loader2, FileText, CheckCircle, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 export default function JobApplication() {
   const { user } = useAuth();
@@ -17,6 +18,9 @@ export default function JobApplication() {
   const [coverLetter, setCoverLetter] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [useCustomResume, setUseCustomResume] = useState(false);
+  const [customResumeFile, setCustomResumeFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch job details
   const { data: job, isLoading: jobLoading } = trpc.job.getById.useQuery({ id: jobId });
@@ -40,6 +44,30 @@ export default function JobApplication() {
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const validTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ];
+      
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please upload a PDF or Word document");
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size must be less than 5MB");
+        return;
+      }
+      
+      setCustomResumeFile(file);
+      toast.success("Resume selected successfully");
+    }
+  };
+
   const handleSubmit = async () => {
     if (!candidate?.id) {
       toast.error("Please complete your profile first");
@@ -47,20 +75,48 @@ export default function JobApplication() {
       return;
     }
 
-    if (!candidate.resumeUrl) {
+    // Check if we have a resume (either profile or custom)
+    if (!useCustomResume && !candidate.resumeUrl) {
       toast.error("Please upload your resume first");
       setLocation("/candidate-dashboard");
       return;
     }
 
+    if (useCustomResume && !customResumeFile) {
+      toast.error("Please select a resume file");
+      return;
+    }
+
     setIsSubmitting(true);
-    await submitApplicationMutation.mutateAsync({
-      jobId,
-      candidateId: candidate.id,
-      coverLetter: coverLetter || undefined,
-      resumeUrl: candidate.resumeUrl,
-      resumeFilename: candidate.resumeFilename || undefined,
-    });
+
+    try {
+      let resumeUrl = candidate.resumeUrl;
+      let resumeFilename = candidate.resumeFilename;
+
+      // If using custom resume, convert to base64
+      if (useCustomResume && customResumeFile) {
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(customResumeFile);
+        });
+
+        resumeUrl = await base64Promise;
+        resumeFilename = customResumeFile.name;
+      }
+
+      await submitApplicationMutation.mutateAsync({
+        jobId,
+        candidateId: candidate.id,
+        coverLetter: coverLetter || undefined,
+        resumeUrl: resumeUrl!,
+        resumeFilename: resumeFilename || undefined,
+      });
+    } catch (error) {
+      setIsSubmitting(false);
+      toast.error("Failed to process resume");
+    }
   };
 
   if (jobLoading || candidateLoading) {
@@ -168,34 +224,113 @@ export default function JobApplication() {
                 {/* Resume */}
                 <div>
                   <h3 className="font-semibold mb-3">Resume</h3>
-                  {candidate?.resumeUrl ? (
-                    <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-8 w-8 text-green-600" />
-                        <div>
-                          <p className="font-medium text-green-900">Resume attached</p>
-                          <p className="text-sm text-green-700">
-                            {candidate.resumeFilename || "resume.pdf"}
-                          </p>
-                        </div>
+                  
+                  {/* Resume Source Selection */}
+                  <div className="space-y-4">
+                    {candidate?.resumeUrl && (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="useProfileResume"
+                          name="resumeSource"
+                          checked={!useCustomResume}
+                          onChange={() => {
+                            setUseCustomResume(false);
+                            setCustomResumeFile(null);
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="useProfileResume" className="text-sm font-medium cursor-pointer">
+                          Use resume from my profile
+                        </label>
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
-                          View
-                        </a>
-                      </Button>
+                    )}
+
+                    {/* Profile Resume Display */}
+                    {!useCustomResume && candidate?.resumeUrl && (
+                      <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg ml-6">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-8 w-8 text-green-600" />
+                          <div>
+                            <p className="font-medium text-green-900">Resume attached</p>
+                            <p className="text-sm text-green-700">
+                              {candidate.resumeFilename || "resume.pdf"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
+                            View
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Upload Different Resume Option */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="useCustomResume"
+                        name="resumeSource"
+                        checked={useCustomResume}
+                        onChange={() => setUseCustomResume(true)}
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor="useCustomResume" className="text-sm font-medium cursor-pointer">
+                        Upload a different resume for this application
+                      </label>
                     </div>
-                  ) : (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-900 font-medium mb-2">No resume uploaded</p>
-                      <p className="text-sm text-red-700 mb-3">
-                        You need to upload your resume before applying
-                      </p>
-                      <Button onClick={() => setLocation("/candidate-dashboard")} size="sm">
-                        Upload Resume
-                      </Button>
-                    </div>
-                  )}
+
+                    {/* Custom Resume Upload */}
+                    {useCustomResume && (
+                      <div className="ml-6 space-y-3">
+                        <Input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={handleFileChange}
+                          className="cursor-pointer"
+                        />
+                        <p className="text-xs text-gray-600">
+                          Accepted formats: PDF, DOC, DOCX (Max 5MB)
+                        </p>
+                        {customResumeFile && (
+                          <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <FileText className="h-5 w-5 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-900">
+                              {customResumeFile.name}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setCustomResumeFile(null);
+                                if (fileInputRef.current) {
+                                  fileInputRef.current.value = "";
+                                }
+                              }}
+                              className="ml-auto"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* No Profile Resume Warning */}
+                    {!candidate?.resumeUrl && !useCustomResume && (
+                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-yellow-900 font-medium mb-2">No resume in your profile</p>
+                        <p className="text-sm text-yellow-700 mb-3">
+                          Please upload a resume for this application or add one to your profile
+                        </p>
+                        <Button onClick={() => setLocation("/candidate-dashboard")} size="sm" variant="outline">
+                          Go to Profile
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Cover Letter */}
@@ -220,7 +355,7 @@ export default function JobApplication() {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleSubmit}
-                    disabled={isSubmitting || !candidate?.resumeUrl}
+                    disabled={isSubmitting || (!useCustomResume && !candidate?.resumeUrl) || (useCustomResume && !customResumeFile)}
                     className="flex-1"
                   >
                     {isSubmitting ? (

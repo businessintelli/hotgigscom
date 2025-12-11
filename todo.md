@@ -648,3 +648,11 @@
 - [x] Add Analytics route to App.tsx
 - [ ] Test analytics dashboard with real data
 - [ ] Implement actual CSV/PDF export functionality
+
+## Bug Fixes
+- [x] Investigate why "Kanishk Gautam_Mulosoft.DOCX" appears by default - from database test data
+- [x] Add resume upload option in job application form
+- [x] Allow candidates to choose between profile resume or upload new one
+- [x] Update application submission to handle new resume uploads with base64 encoding
+- [x] Add file validation (PDF, DOC, DOCX, max 5MB)
+- [ ] Test resume upload functionality
