@@ -78,6 +78,7 @@ export default function RecruiterDashboard() {
               <div className="ml-10 flex space-x-8">
                 <button onClick={() => setLocation('/recruiter/dashboard')} className="px-3 py-2 rounded-md text-sm font-medium bg-blue-700">📊 Dashboard</button>
                 <button onClick={() => setLocation('/recruiter/jobs/create')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">💼 Jobs</button>
+                <button onClick={() => setLocation('/recruiter/search-candidates')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🔍 Candidates</button>
                 <button onClick={() => setLocation('/recruiter/interview-playback')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🎥 AI Interviews</button>
                 <button onClick={() => setLocation('/recruiter/customers')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🏢 Clients</button>
               </div>
@@ -172,7 +173,7 @@ export default function RecruiterDashboard() {
                   <div className="text-xs opacity-90">Schedule and manage interviews</div>
                 </div>
               </Button>
-              <Button className="h-20 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white">
+              <Button onClick={() => setLocation('/recruiter/search-candidates')} className="h-20 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white">
                 <div className="text-center">
                   <div className="text-lg font-semibold">🔍 Search Candidates</div>
                   <div className="text-xs opacity-90">Find candidates by skills</div>

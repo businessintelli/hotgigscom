@@ -210,3 +210,27 @@ export const interviewResponses = mysqlTable("interviewResponses", {
 
 export type InterviewResponse = typeof interviewResponses.$inferSelect;
 export type InsertInterviewResponse = typeof interviewResponses.$inferInsert;
+
+/**
+ * Saved searches for recruiters with email alert configuration
+ */
+export const savedSearches = mysqlTable("savedSearches", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  searchType: mysqlEnum("searchType", ["candidate", "job"]).notNull().default("candidate"),
+  // Search criteria stored as JSON
+  keyword: text("keyword"),
+  location: text("location"),
+  experienceLevel: varchar("experienceLevel", { length: 50 }),
+  skills: text("skills"), // JSON array
+  // Email alert configuration
+  emailAlerts: boolean("emailAlerts").default(false).notNull(),
+  alertFrequency: mysqlEnum("alertFrequency", ["immediate", "daily", "weekly"]).default("daily"),
+  lastAlertSent: timestamp("lastAlertSent"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SavedSearch = typeof savedSearches.$inferSelect;
+export type InsertSavedSearch = typeof savedSearches.$inferInsert;

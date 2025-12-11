@@ -317,3 +317,35 @@
 - [ ] Add chart components for metrics visualization
 - [ ] Add date range filters for analytics
 - [ ] Test analytics dashboard with real data
+
+## Navigation & UX Improvements (COMPLETED)
+- [x] Add "Search Candidates" button to recruiter dashboard quick actions
+- [x] Update recruiter dashboard navigation to include candidate search link
+- [ ] Test navigation flow from dashboard to candidate search
+
+## Saved Searches & Email Alerts Implementation
+- [x] Create saved_searches table in database schema with search criteria fields
+- [x] Add email_alerts boolean field to saved searches
+- [x] Implement saveSearch backend procedure
+- [x] Implement getSavedSearches backend procedure
+- [x] Implement deleteSavedSearch backend procedure
+- [x] Implement updateSavedSearch backend procedure
+- [x] Build saved search UI component in candidate search page
+- [x] Add email alert configuration toggle
+- [ ] Implement background job to check for new matching candidates
+- [ ] Implement email notification sending for new matches
+- [ ] Test saved search creation and retrieval
+- [ ] Test email alert notifications
+
+## Analytics Dashboard (Future Enhancement)
+- [ ] Create analytics dashboard page component
+- [ ] Implement backend procedures for recruitment metrics
+- [ ] Add time-to-hire calculation and visualization
+- [ ] Add application conversion rate tracking
+- [ ] Add interview success rate metrics
+- [ ] Add candidate pipeline visualization (funnel chart)
+- [ ] Add job performance metrics (views, applications per job)
+- [ ] Add date range filter for analytics
+- [ ] Implement chart components using recharts or similar library
+- [ ] Add export analytics report functionality
+- [ ] Test analytics dashboard with sample data

@@ -82,6 +82,56 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.searchCandidates(input);
       }),
+    
+    saveSearch: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        keyword: z.string().optional(),
+        location: z.string().optional(),
+        experienceLevel: z.string().optional(),
+        skills: z.array(z.string()).optional(),
+        emailAlerts: z.boolean().optional(),
+        alertFrequency: z.enum(["immediate", "daily", "weekly"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { name, emailAlerts, alertFrequency, ...searchCriteria } = input;
+        await db.createSavedSearch({
+          userId: ctx.user.id,
+          name,
+          searchType: "candidate",
+          keyword: searchCriteria.keyword || null,
+          location: searchCriteria.location || null,
+          experienceLevel: searchCriteria.experienceLevel || null,
+          skills: searchCriteria.skills ? JSON.stringify(searchCriteria.skills) : null,
+          emailAlerts: emailAlerts || false,
+          alertFrequency: alertFrequency || "daily",
+        });
+        return { success: true };
+      }),
+    
+    getSavedSearches: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getSavedSearchesByUser(ctx.user.id);
+    }),
+    
+    deleteSavedSearch: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteSavedSearch(input.id);
+        return { success: true };
+      }),
+    
+    updateSavedSearch: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        emailAlerts: z.boolean().optional(),
+        alertFrequency: z.enum(["immediate", "daily", "weekly"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateSavedSearch(id, data);
+        return { success: true };
+      }),
   }),
 
   candidate: router({

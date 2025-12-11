@@ -10,7 +10,8 @@ import {
   applications, InsertApplication,
   interviews, InsertInterview,
   interviewQuestions, InsertInterviewQuestion,
-  interviewResponses, InsertInterviewResponse
+  interviewResponses, InsertInterviewResponse,
+  savedSearches, InsertSavedSearch
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -732,4 +733,66 @@ export async function searchCandidates(filters: {
   }
   
   return await query;
+}
+
+// Saved Searches operations
+export async function createSavedSearch(search: InsertSavedSearch) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(savedSearches).values(search);
+  return result;
+}
+
+export async function getSavedSearchesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(savedSearches)
+    .where(eq(savedSearches.userId, userId))
+    .orderBy(desc(savedSearches.createdAt));
+}
+
+export async function getSavedSearchById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(savedSearches)
+    .where(eq(savedSearches.id, id))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function updateSavedSearch(id: number, data: Partial<InsertSavedSearch>) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .update(savedSearches)
+    .set(data)
+    .where(eq(savedSearches.id, id));
+}
+
+export async function deleteSavedSearch(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .delete(savedSearches)
+    .where(eq(savedSearches.id, id));
+}
+
+export async function getSavedSearchesWithAlerts() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(savedSearches)
+    .where(eq(savedSearches.emailAlerts, true));
 }

@@ -36,6 +36,13 @@
       "when": 1765445263635,
       "tag": "0004_colorful_nico_minoru",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1765461421187,
+      "tag": "0005_slim_proteus",
+      "breakpoints": true
     }
   ]
 }

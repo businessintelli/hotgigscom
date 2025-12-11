@@ -5,13 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Briefcase, Mail, Phone, FileText, SlidersHorizontal, X } from "lucide-react";
+import { Search, MapPin, Briefcase, Mail, Phone, FileText, SlidersHorizontal, X, Save, Bookmark, Bell, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export default function CandidateSearch() {
   const [keyword, setKeyword] = useState("");
   const [location, setLocation] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("all");
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [searchName, setSearchName] = useState("");
+  const [emailAlerts, setEmailAlerts] = useState(false);
+  const [alertFrequency, setAlertFrequency] = useState<"immediate" | "daily" | "weekly">("daily");
+  const [showSavedSearches, setShowSavedSearches] = useState(false);
+  const { toast } = useToast();
+  const utils = trpc.useUtils();
   
   const debouncedKeyword = useDebounce(keyword, 300);
   const debouncedLocation = useDebounce(location, 300);
@@ -23,6 +34,24 @@ export default function CandidateSearch() {
   }), [debouncedKeyword, debouncedLocation, experienceLevel]);
   
   const { data: results = [], isLoading } = trpc.recruiter.searchCandidates.useQuery(searchParams);
+  const { data: savedSearches = [] } = trpc.recruiter.getSavedSearches.useQuery();
+  const saveSearchMutation = trpc.recruiter.saveSearch.useMutation({
+    onSuccess: () => {
+      toast({ title: "Search saved successfully", description: "You can access it from your saved searches." });
+      setSaveDialogOpen(false);
+      setSearchName("");
+      utils.recruiter.getSavedSearches.invalidate();
+    },
+    onError: (error) => {
+      toast({ title: "Failed to save search", description: error.message, variant: "destructive" });
+    },
+  });
+  const deleteSavedSearchMutation = trpc.recruiter.deleteSavedSearch.useMutation({
+    onSuccess: () => {
+      toast({ title: "Search deleted", description: "Saved search has been removed." });
+      utils.recruiter.getSavedSearches.invalidate();
+    },
+  });
   
   const activeFilterCount = [
     debouncedKeyword,
@@ -36,13 +65,162 @@ export default function CandidateSearch() {
     setExperienceLevel("all");
   };
   
+  const handleSaveSearch = () => {
+    if (!searchName.trim()) {
+      toast({ title: "Search name required", description: "Please enter a name for this search.", variant: "destructive" });
+      return;
+    }
+    saveSearchMutation.mutate({
+      name: searchName,
+      keyword: keyword || undefined,
+      location: location || undefined,
+      experienceLevel: experienceLevel !== "all" ? experienceLevel : undefined,
+      emailAlerts,
+      alertFrequency,
+    });
+  };
+  
+  const loadSavedSearch = (search: any) => {
+    setKeyword(search.keyword || "");
+    setLocation(search.location || "");
+    setExperienceLevel(search.experienceLevel || "all");
+    setShowSavedSearches(false);
+    toast({ title: "Search loaded", description: `Loaded "${search.name}"` });
+  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Candidate Search</h1>
-          <p className="text-slate-600">Find the perfect candidates for your open positions</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Candidate Search</h1>
+            <p className="text-slate-600">Find the perfect candidates for your open positions</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowSavedSearches(!showSavedSearches)}
+              className="flex items-center gap-2"
+            >
+              <Bookmark className="h-4 w-4" />
+              Saved Searches
+              {savedSearches.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{savedSearches.length}</Badge>
+              )}
+            </Button>
+            <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Save Search
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Save Search</DialogTitle>
+                  <DialogDescription>
+                    Save your current search criteria for quick access later
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="searchName">Search Name</Label>
+                    <Input
+                      id="searchName"
+                      placeholder="e.g., Senior Python Developers in SF"
+                      value={searchName}
+                      onChange={(e) => setSearchName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="emailAlerts">Email Alerts</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when new candidates match
+                      </p>
+                    </div>
+                    <Switch
+                      id="emailAlerts"
+                      checked={emailAlerts}
+                      onCheckedChange={setEmailAlerts}
+                    />
+                  </div>
+                  {emailAlerts && (
+                    <div className="space-y-2">
+                      <Label htmlFor="alertFrequency">Alert Frequency</Label>
+                      <Select value={alertFrequency} onValueChange={(v: any) => setAlertFrequency(v)}>
+                        <SelectTrigger id="alertFrequency">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="immediate">Immediate</SelectItem>
+                          <SelectItem value="daily">Daily Digest</SelectItem>
+                          <SelectItem value="weekly">Weekly Digest</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveSearch} disabled={saveSearchMutation.isPending}>
+                    {saveSearchMutation.isPending ? "Saving..." : "Save Search"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
+        
+        {/* Saved Searches Panel */}
+        {showSavedSearches && savedSearches.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bookmark className="h-5 w-5" />
+                Your Saved Searches
+              </CardTitle>
+              <CardDescription>Click to load a saved search</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {savedSearches.map((search: any) => (
+                  <Card key={search.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => loadSavedSearch(search)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold text-sm">{search.name}</h4>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 -mt-1 -mr-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteSavedSearchMutation.mutate({ id: search.id });
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        {search.keyword && <div>Keywords: {search.keyword}</div>}
+                        {search.location && <div>Location: {search.location}</div>}
+                        {search.experienceLevel && <div>Level: {search.experienceLevel}</div>}
+                        {search.emailAlerts && (
+                          <div className="flex items-center gap-1 text-green-600 mt-2">
+                            <Bell className="h-3 w-3" />
+                            {search.alertFrequency} alerts
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters Sidebar */}
