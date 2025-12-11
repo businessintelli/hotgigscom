@@ -5,6 +5,7 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { sdk } from "./_core/sdk";
 import { parseResume, calculateMatchScore, generateInterviewQuestions, analyzeResume } from "./aiHelpers";
 import { transcribeAudio } from "./_core/voiceTranscription";
+import { generateFraudDetectionReport, generateInterviewEvaluationReport } from "./reportGenerator";
 import { z } from "zod";
 import * as db from "./db";
 
@@ -943,6 +944,59 @@ export const appRouter = router({
           questions,
           responses,
         };
+      }),
+    
+    // Fraud Detection - Log event
+    logFraudEvent: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        candidateId: z.number(),
+        eventType: z.enum([
+          "no_face_detected",
+          "multiple_faces_detected",
+          "tab_switch",
+          "window_blur",
+          "audio_anomaly",
+          "suspicious_behavior"
+        ]),
+        severity: z.enum(["low", "medium", "high"]).optional(),
+        description: z.string().optional(),
+        metadata: z.string().optional(),
+        questionId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const eventId = await db.createFraudDetectionEvent(input);
+        return { success: true, eventId };
+      }),
+    
+    // Fraud Detection - Get events for interview
+    getFraudEvents: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getFraudEventsByInterview(input.interviewId);
+      }),
+    
+    // Fraud Detection - Calculate fraud score
+    getFraudScore: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.calculateFraudScore(input.interviewId);
+      }),
+    
+    // Report Generation - Fraud detection report
+    generateFraudReport: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const html = await generateFraudDetectionReport(input.interviewId);
+        return { html };
+      }),
+    
+    // Report Generation - Interview evaluation report
+    generateEvaluationReport: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const html = await generateInterviewEvaluationReport(input.interviewId);
+        return { html };
       }),
   }),
 });

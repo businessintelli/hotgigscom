@@ -57,6 +57,13 @@
       "when": 1765467524833,
       "tag": "0008_wakeful_maestro",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1765472002683,
+      "tag": "0008_colossal_shiva",
+      "breakpoints": true
     }
   ]
 }

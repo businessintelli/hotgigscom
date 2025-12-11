@@ -475,3 +475,41 @@
 - [ ] Create comparison view with side-by-side layout
 - [ ] Display salary, requirements, benefits, location comparison
 - [ ] Allow comparison of 2-3 jobs at once
+
+## Phase 7: Advanced AI Interview Features (Current Focus)
+
+### Real-time Fraud Detection System
+- [x] Create fraud detection database schema
+- [x] Add fraud detection helper functions to db.ts
+- [x] Create tRPC procedures for logging fraud events
+- [x] Build fraud risk scoring algorithm
+- [x] Add face detection using video frame analysis
+- [x] Implement tab switching and window focus monitoring
+- [x] Add real-time alerts for suspicious behavior
+- [x] Create FraudDetectionMonitor component
+- [x] Integrate fraud monitoring into AIInterviewPage
+- [x] Store fraud events with timestamps and metadata
+- [ ] Add multiple person detection (requires ML library)
+- [ ] Test fraud detection during live interview
+
+### Professional Report Generation
+- [x] Create HTML report template for fraud detection
+- [x] Create HTML report template for interview evaluation
+- [x] Add color-coded metrics and risk indicators
+- [x] Add report generation tRPC endpoints
+- [x] Style reports with professional layout
+- [x] Include candidate and job metadata
+- [x] Add event timeline and scoring breakdown
+- [ ] Add charts and visualizations (requires chart library)
+- [ ] Implement PDF export functionality
+- [ ] Test report generation with real interview data
+
+### Coding Interview Module
+- [ ] Integrate Monaco Editor (VS Code editor)
+- [ ] Add multi-language support (Python, JavaScript, Java, C++)
+- [ ] Create code execution backend (sandboxed)
+- [ ] Implement test case validation system
+- [ ] Add code quality analysis
+- [ ] Create coding interview UI page
+- [ ] Add real-time code saving
+- [ ] Implement code submission and evaluation

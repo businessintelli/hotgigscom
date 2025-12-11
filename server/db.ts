@@ -12,7 +12,8 @@ import {
   interviewQuestions, InsertInterviewQuestion,
   interviewResponses, InsertInterviewResponse,
   savedSearches, InsertSavedSearch,
-  savedJobs, InsertSavedJob
+  savedJobs, InsertSavedJob,
+  fraudDetectionEvents, InsertFraudDetectionEvent
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -955,4 +956,76 @@ export async function isJobSaved(candidateId: number, jobId: number) {
     ))
     .limit(1);
   return result.length > 0;
+}
+
+
+// Fraud Detection operations
+export async function createFraudDetectionEvent(event: InsertFraudDetectionEvent) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(fraudDetectionEvents).values(event);
+  return result[0].insertId;
+}
+
+export async function getFraudEventsByInterview(interviewId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select()
+    .from(fraudDetectionEvents)
+    .where(eq(fraudDetectionEvents.interviewId, interviewId))
+    .orderBy(fraudDetectionEvents.timestamp);
+}
+
+export async function getFraudEventsByCandidate(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select()
+    .from(fraudDetectionEvents)
+    .where(eq(fraudDetectionEvents.candidateId, candidateId))
+    .orderBy(desc(fraudDetectionEvents.timestamp));
+}
+
+export async function calculateFraudScore(interviewId: number): Promise<{
+  score: number;
+  riskLevel: 'low' | 'medium' | 'high';
+  eventCounts: Record<string, number>;
+}> {
+  const events = await getFraudEventsByInterview(interviewId);
+  
+  // Count events by type
+  const eventCounts: Record<string, number> = {};
+  let totalScore = 0;
+  
+  // Weight different event types
+  const weights = {
+    no_face_detected: 5,
+    multiple_faces_detected: 15,
+    tab_switch: 3,
+    window_blur: 2,
+    audio_anomaly: 10,
+    suspicious_behavior: 8,
+  };
+  
+  events.forEach(event => {
+    const eventType = event.eventType as keyof typeof weights;
+    eventCounts[eventType] = (eventCounts[eventType] || 0) + 1;
+    totalScore += weights[eventType] || 5;
+  });
+  
+  // Normalize score to 0-100
+  const score = Math.min(100, totalScore);
+  
+  // Determine risk level
+  let riskLevel: 'low' | 'medium' | 'high';
+  if (score < 20) {
+    riskLevel = 'low';
+  } else if (score < 50) {
+    riskLevel = 'medium';
+  } else {
+    riskLevel = 'high';
+  }
+  
+  return { score, riskLevel, eventCounts };
 }

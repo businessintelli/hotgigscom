@@ -249,3 +249,28 @@ export const savedJobs = mysqlTable("savedJobs", {
 
 export type SavedJob = typeof savedJobs.$inferSelect;
 export type InsertSavedJob = typeof savedJobs.$inferInsert;
+
+/**
+ * Fraud detection events table for tracking suspicious behavior during AI interviews
+ */
+export const fraudDetectionEvents = mysqlTable("fraudDetectionEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  eventType: mysqlEnum("eventType", [
+    "no_face_detected",
+    "multiple_faces_detected",
+    "tab_switch",
+    "window_blur",
+    "audio_anomaly",
+    "suspicious_behavior"
+  ]).notNull(),
+  severity: mysqlEnum("severity", ["low", "medium", "high"]).notNull().default("medium"),
+  description: text("description"),
+  metadata: text("metadata"), // JSON data with additional details
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  questionId: int("questionId").references(() => interviewQuestions.id),
+});
+
+export type FraudDetectionEvent = typeof fraudDetectionEvents.$inferSelect;
+export type InsertFraudDetectionEvent = typeof fraudDetectionEvents.$inferInsert;

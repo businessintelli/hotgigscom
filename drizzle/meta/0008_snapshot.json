@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "eadb5f34-b70e-4a76-8a2b-0bfd04c59101",
-  "prevId": "fb4e34f5-a3f5-4696-88a9-c72f13db490b",
+  "id": "9be2011b-1bf9-4bcf-bafc-89681e5eb8a0",
+  "prevId": "eadb5f34-b70e-4a76-8a2b-0bfd04c59101",
   "tables": {
     "applications": {
       "name": "applications",
@@ -462,6 +462,128 @@
       "compositePrimaryKeys": {
         "customers_id": {
           "name": "customers_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "fraudDetectionEvents": {
+      "name": "fraudDetectionEvents",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "interviewId": {
+          "name": "interviewId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "candidateId": {
+          "name": "candidateId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "eventType": {
+          "name": "eventType",
+          "type": "enum('no_face_detected','multiple_faces_detected','tab_switch','window_blur','audio_anomaly','suspicious_behavior')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "severity": {
+          "name": "severity",
+          "type": "enum('low','medium','high')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'medium'"
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "questionId": {
+          "name": "questionId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fraudDetectionEvents_interviewId_interviews_id_fk": {
+          "name": "fraudDetectionEvents_interviewId_interviews_id_fk",
+          "tableFrom": "fraudDetectionEvents",
+          "tableTo": "interviews",
+          "columnsFrom": [
+            "interviewId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fraudDetectionEvents_candidateId_candidates_id_fk": {
+          "name": "fraudDetectionEvents_candidateId_candidates_id_fk",
+          "tableFrom": "fraudDetectionEvents",
+          "tableTo": "candidates",
+          "columnsFrom": [
+            "candidateId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fraudDetectionEvents_questionId_interviewQuestions_id_fk": {
+          "name": "fraudDetectionEvents_questionId_interviewQuestions_id_fk",
+          "tableFrom": "fraudDetectionEvents",
+          "tableTo": "interviewQuestions",
+          "columnsFrom": [
+            "questionId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "fraudDetectionEvents_id": {
+          "name": "fraudDetectionEvents_id",
           "columns": [
             "id"
           ]

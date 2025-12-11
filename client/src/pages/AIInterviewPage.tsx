@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Video, Mic, Square, Play, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { FraudDetectionMonitor } from "@/components/FraudDetectionMonitor";
 
 /**
  * AI Interview Page - Candidate-facing interface for AI-powered interviews
@@ -232,8 +233,18 @@ export default function AIInterviewPage() {
     );
   }
   
+  const candidateId = interviewData?.interview?.candidateId || 0;
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
+      {/* Fraud Detection Monitor */}
+      <FraudDetectionMonitor
+        interviewId={interviewId}
+        candidateId={candidateId}
+        videoStream={mediaStream}
+        currentQuestionId={currentQuestion?.id}
+        isRecording={isRecording}
+      />
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <Card>
