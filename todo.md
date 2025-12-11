@@ -354,3 +354,8 @@
 - [x] Check App.tsx for /recruiter/jobs/create route
 - [x] Add missing route or fix routing configuration
 - [ ] Test job creation page access
+
+## Bug Fix: Mock User Context Not Detecting Recruiter Routes (COMPLETED)
+- [x] Check context.ts route detection logic
+- [x] Fix context to provide recruiter user for all /recruiter/* routes
+- [ ] Test job creation page with correct mock user

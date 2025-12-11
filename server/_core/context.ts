@@ -47,8 +47,16 @@ export async function createContext(
   let mockUser = MOCK_RECRUITER; // Default to recruiter
   
   // Use candidate mock user for candidate-related routes
-  if (path.includes("/candidate") || referer.includes("/candidate") || 
-      referer.includes("/jobs") || referer.includes("/apply")) {
+  // Check referer first (more reliable for tRPC calls)
+  if (referer.includes("/candidate") || referer.includes("/jobs") || referer.includes("/apply")) {
+    mockUser = MOCK_CANDIDATE;
+  }
+  // Override with recruiter if referer explicitly contains /recruiter
+  if (referer.includes("/recruiter")) {
+    mockUser = MOCK_RECRUITER;
+  }
+  // Also check path for direct API calls
+  if (path.includes("/candidate")) {
     mockUser = MOCK_CANDIDATE;
   }
   
