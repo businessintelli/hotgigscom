@@ -17,6 +17,7 @@ import InterviewPlayback from "@/pages/InterviewPlayback";
 import AIInterviewPage from "@/pages/AIInterviewPage";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
+import CandidateSearch from "./pages/CandidateSearch";
 
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/recruiter/interviews" component={InterviewManagement} />
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path={"/recruiter/customers"} component={CustomerManagement} />
+      <Route path={"/recruiter/search-candidates"} component={CandidateSearch} />
       <Route path={"/candidate-dashboard"} component={CandidateDashboard} />
       <Route path={"/jobs"} component={JobBrowser} />
       <Route path={"/jobs/search"} component={AdvancedJobSearch} />

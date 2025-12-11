@@ -673,3 +673,63 @@ export async function getInterviewWithQuestionsAndResponses(interviewId: number)
     responses,
   };
 }
+
+export async function searchCandidates(filters: {
+  keyword?: string;
+  location?: string;
+  experienceLevel?: string;
+  skills?: string[];
+  availability?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  
+  // Keyword search (name, bio, skills)
+  if (filters.keyword && filters.keyword.trim()) {
+    const keywordPattern = `%${filters.keyword.trim()}%`;
+    conditions.push(
+      or(
+        like(candidates.skills, keywordPattern),
+        like(candidates.bio, keywordPattern)
+      )!
+    );
+  }
+  
+  // Location filter
+  if (filters.location && filters.location.trim()) {
+    const locationPattern = `%${filters.location.trim()}%`;
+    conditions.push(like(candidates.location, locationPattern));
+  }
+  
+  // Experience level filter (stored in experience text field)
+  if (filters.experienceLevel && filters.experienceLevel !== 'all') {
+    const expPattern = `%${filters.experienceLevel}%`;
+    conditions.push(like(candidates.experience, expPattern));
+  }
+  
+  // Skills filter (check if any of the requested skills are in the candidate's skills)
+  if (filters.skills && filters.skills.length > 0) {
+    const skillConditions = filters.skills.map(skill => 
+      like(candidates.skills, `%${skill}%`)
+    );
+    conditions.push(or(...skillConditions)!);
+  }
+  
+  // Note: availability field doesn't exist in schema, removing this filter
+  
+  const query = db
+    .select({
+      candidate: candidates,
+      user: users
+    })
+    .from(candidates)
+    .leftJoin(users, eq(candidates.userId, users.id));
+  
+  if (conditions.length > 0) {
+    return await query.where(and(...conditions));
+  }
+  
+  return await query;
+}

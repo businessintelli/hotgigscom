@@ -287,3 +287,33 @@
 - [ ] Add "Save Search" functionality for recruiters
 - [x] Test all filter combinations
 - [x] Verify search performance with large datasets
+
+## Candidate Search for Recruiters (COMPLETED)
+- [x] Implement backend candidate search procedure with filters
+- [x] Add skill-based search with matching algorithm
+- [x] Add experience level filter
+- [x] Add location-based search
+- [x] Create candidate search UI page for recruiters
+- [x] Add candidate profile preview cards in search results
+- [x] Test candidate search with various filter combinations
+
+## Saved Searches & Email Alerts
+- [ ] Create saved_searches table in database schema
+- [ ] Implement save search backend procedure
+- [ ] Implement load saved searches procedure
+- [ ] Add email notification system for new matches
+- [ ] Create saved searches UI component
+- [ ] Add "Save this search" button to search pages
+- [ ] Test saved search functionality
+- [ ] Test email notifications for new matches
+
+## Analytics Dashboard
+- [ ] Create analytics data aggregation procedures
+- [ ] Calculate time-to-hire metrics
+- [ ] Calculate application conversion rates
+- [ ] Calculate interview success rates
+- [ ] Track top-performing job postings
+- [ ] Create analytics dashboard UI page
+- [ ] Add chart components for metrics visualization
+- [ ] Add date range filters for analytics
+- [ ] Test analytics dashboard with real data

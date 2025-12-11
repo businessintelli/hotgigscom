@@ -71,6 +71,17 @@ export const appRouter = router({
         recentJobs: recentJobs.slice(0, 5),
       };
     }),
+    
+    searchCandidates: protectedProcedure
+      .input(z.object({
+        keyword: z.string().optional(),
+        location: z.string().optional(),
+        experienceLevel: z.string().optional(),
+        skills: z.array(z.string()).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.searchCandidates(input);
+      }),
   }),
 
   candidate: router({
