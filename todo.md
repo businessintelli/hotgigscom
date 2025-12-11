@@ -735,3 +735,26 @@
 - [x] Add responsive layout for both grid and list views
 - [ ] Maintain view preference in localStorage
 - [ ] Test both view modes
+
+## Schedule Interview Feature Enhancement (Current Focus)
+- [ ] Add "Schedule Interview" option to application status dropdown
+- [ ] Create interview scheduling dialog with AI Bot and Traditional interview options
+- [ ] Add date/time picker for interview scheduling
+- [ ] Add panel email configuration for traditional interviews
+- [ ] Integrate interview scheduling with backend tRPC procedures
+- [ ] Test interview scheduling workflow end-to-end
+
+## Schedule Interview Feature (COMPLETED)
+- [x] Add "Schedule Interview" option to application status dropdown
+- [x] Create comprehensive interview scheduling dialog with:
+  - [x] Interview type selection (AI Bot, Video, Phone, In-Person)
+  - [x] Date and time picker
+  - [x] Duration dropdown
+  - [x] Panel emails field (for non-AI interviews)
+  - [x] Additional notes field
+  - [x] AI interview features info box
+- [x] Implement backend mutation to create interview records
+- [x] Send email notifications to candidates and panel members
+- [x] Tested with all interview types (AI Bot, Video, Phone, In-Person)
+- [x] Verified panel emails field appears for non-AI interviews
+- [x] Verified AI features info box appears for AI Bot interviews

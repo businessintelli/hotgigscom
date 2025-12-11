@@ -6,10 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2 } from "lucide-react";
+import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function ApplicationManagement() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -18,6 +22,14 @@ export default function ApplicationManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [interviewType, setInterviewType] = useState<"ai-interview" | "phone" | "video" | "in-person">("ai-interview");
+  const [interviewDate, setInterviewDate] = useState("");
+  const [interviewTime, setInterviewTime] = useState("");
+  const [interviewDuration, setInterviewDuration] = useState("60");
+  const [panelEmails, setPanelEmails] = useState("");
+  const [interviewNotes, setInterviewNotes] = useState("");
 
   const utils = trpc.useUtils();
 
@@ -58,6 +70,20 @@ export default function ApplicationManagement() {
     },
     onError: (error) => {
       toast.error(`Failed to update applications: ${error.message}`);
+    },
+  });
+
+  // Schedule interview mutation
+  const scheduleInterviewMutation = trpc.interview.create.useMutation({
+    onSuccess: () => {
+      utils.application.list.invalidate();
+      utils.interview.listByRecruiter.invalidate();
+      setScheduleDialogOpen(false);
+      resetScheduleForm();
+      toast.success("Interview scheduled successfully! Invitation email sent to candidate.");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to schedule interview: ${error.message}`);
     },
   });
 
@@ -110,8 +136,47 @@ export default function ApplicationManagement() {
     });
   };
 
-  const handleStatusUpdate = (applicationId: number, status: "submitted" | "reviewing" | "shortlisted" | "interviewing" | "offered" | "rejected" | "withdrawn") => {
-    updateStatusMutation.mutate({ id: applicationId, status });
+  const handleStatusUpdate = (applicationId: number, status: "submitted" | "reviewing" | "shortlisted" | "interviewing" | "offered" | "rejected" | "withdrawn", application?: any) => {
+    if (status === "interviewing" && application) {
+      // Open schedule interview dialog
+      setSelectedApplication(application);
+      setScheduleDialogOpen(true);
+    } else {
+      updateStatusMutation.mutate({ id: applicationId, status });
+    }
+  };
+
+  const resetScheduleForm = () => {
+    setInterviewType("ai-interview");
+    setInterviewDate("");
+    setInterviewTime("");
+    setInterviewDuration("60");
+    setPanelEmails("");
+    setInterviewNotes("");
+    setSelectedApplication(null);
+  };
+
+  const handleScheduleInterview = () => {
+    if (!selectedApplication || !interviewDate || !interviewTime) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Combine date and time into a single datetime
+    const scheduledDateTime = new Date(`${interviewDate}T${interviewTime}`);
+
+    // Add panel emails to notes if provided
+    const notesWithPanel = interviewNotes + (panelEmails ? `\n\nInterview Panel: ${panelEmails}` : '');
+    
+    scheduleInterviewMutation.mutate({
+      applicationId: selectedApplication.id,
+      candidateId: selectedApplication.candidateId,
+      jobId: selectedApplication.jobId,
+      type: interviewType,
+      scheduledAt: scheduledDateTime.toISOString(),
+      duration: parseInt(interviewDuration),
+      notes: notesWithPanel || undefined,
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -414,7 +479,7 @@ export default function ApplicationManagement() {
                           </Button>
                           <Select
                             value={application.status}
-                            onValueChange={(value) => handleStatusUpdate(application.id, value as any)}
+                            onValueChange={(value) => handleStatusUpdate(application.id, value as any, application)}
                           >
                             <SelectTrigger className="w-[150px] h-8">
                               <SelectValue />
@@ -424,6 +489,7 @@ export default function ApplicationManagement() {
                               <SelectItem value="reviewing">Reviewing</SelectItem>
                               <SelectItem value="shortlisted">Shortlisted</SelectItem>
                               <SelectItem value="interview">Interview</SelectItem>
+                              <SelectItem value="interviewing">Schedule Interview</SelectItem>
                               <SelectItem value="offered">Offered</SelectItem>
                               <SelectItem value="hired">Hired</SelectItem>
                               <SelectItem value="rejected">Rejected</SelectItem>
@@ -439,6 +505,164 @@ export default function ApplicationManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Schedule Interview Dialog */}
+      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Schedule Interview</DialogTitle>
+            <DialogDescription>
+              Schedule an interview for {selectedApplication?.candidate?.fullName || "this candidate"} - {selectedApplication?.job?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Interview Type Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Interview Type</Label>
+              <RadioGroup value={interviewType} onValueChange={(value: any) => setInterviewType(value)}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent" onClick={() => setInterviewType("ai-interview")}>
+                    <RadioGroupItem value="ai-interview" id="ai-interview" />
+                    <Label htmlFor="ai-interview" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <Bot className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-semibold">AI Bot Interview</p>
+                        <p className="text-xs text-gray-500">Automated AI-powered interview</p>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent" onClick={() => setInterviewType("video")}>
+                    <RadioGroupItem value="video" id="video" />
+                    <Label htmlFor="video" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <Calendar className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <p className="font-semibold">Video Interview</p>
+                        <p className="text-xs text-gray-500">Live video call interview</p>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent" onClick={() => setInterviewType("phone")}>
+                    <RadioGroupItem value="phone" id="phone" />
+                    <Label htmlFor="phone" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <Phone className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-semibold">Phone Interview</p>
+                        <p className="text-xs text-gray-500">Traditional phone call</p>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent" onClick={() => setInterviewType("in-person")}>
+                    <RadioGroupItem value="in-person" id="in-person" />
+                    <Label htmlFor="in-person" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <User className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <p className="font-semibold">In-Person Interview</p>
+                        <p className="text-xs text-gray-500">Face-to-face meeting</p>
+                      </div>
+                    </Label>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Date and Time */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="interview-date">Interview Date</Label>
+                <Input
+                  id="interview-date"
+                  type="date"
+                  value={interviewDate}
+                  onChange={(e) => setInterviewDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="interview-time">Interview Time</Label>
+                <Input
+                  id="interview-time"
+                  type="time"
+                  value={interviewTime}
+                  onChange={(e) => setInterviewTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Duration */}
+            <div className="space-y-2">
+              <Label htmlFor="duration">Duration (minutes)</Label>
+              <Select value={interviewDuration} onValueChange={setInterviewDuration}>
+                <SelectTrigger id="duration">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30 minutes</SelectItem>
+                  <SelectItem value="45">45 minutes</SelectItem>
+                  <SelectItem value="60">60 minutes</SelectItem>
+                  <SelectItem value="90">90 minutes</SelectItem>
+                  <SelectItem value="120">2 hours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Panel Emails (for non-AI interviews) */}
+            {interviewType !== "ai-interview" && (
+              <div className="space-y-2">
+                <Label htmlFor="panel-emails">Interview Panel Emails</Label>
+                <Textarea
+                  id="panel-emails"
+                  placeholder="Enter email addresses separated by commas\ne.g., john@company.com, sarah@company.com"
+                  value={panelEmails}
+                  onChange={(e) => setPanelEmails(e.target.value)}
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500">These interviewers will receive calendar invitations</p>
+              </div>
+            )}
+
+            {/* Interview Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="interview-notes">Additional Notes (Optional)</Label>
+              <Textarea
+                id="interview-notes"
+                placeholder="Add any special instructions or notes for the interview..."
+                value={interviewNotes}
+                onChange={(e) => setInterviewNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            {/* AI Interview Info */}
+            {interviewType === "ai-interview" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Bot className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-blue-900 mb-1">AI Interview Features:</p>
+                    <ul className="text-blue-800 space-y-1 list-disc list-inside">
+                      <li>Automated question generation based on job requirements</li>
+                      <li>Video recording with real-time fraud detection</li>
+                      <li>Automatic transcription and AI evaluation</li>
+                      <li>Comprehensive evaluation reports for recruiters</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleScheduleInterview} disabled={!interviewDate || !interviewTime}>
+              <Send className="h-4 w-4 mr-2" />
+              Schedule Interview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
