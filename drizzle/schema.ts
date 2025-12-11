@@ -314,3 +314,74 @@ export const codingSubmissions = mysqlTable("codingSubmissions", {
 
 export type CodingSubmission = typeof codingSubmissions.$inferSelect;
 export type InsertCodingSubmission = typeof codingSubmissions.$inferInsert;
+
+
+/**
+ * Skill assessments table
+ */
+export const skillAssessments = mysqlTable("skillAssessments", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("jobId").references(() => jobs.id), // Optional: link to specific job
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  duration: int("duration"), // minutes
+  passingScore: int("passingScore").notNull().default(70), // percentage
+  createdBy: int("createdBy").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SkillAssessment = typeof skillAssessments.$inferSelect;
+export type InsertSkillAssessment = typeof skillAssessments.$inferInsert;
+
+/**
+ * Assessment questions table
+ */
+export const assessmentQuestions = mysqlTable("assessmentQuestions", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentId: int("assessmentId").notNull().references(() => skillAssessments.id),
+  questionText: text("questionText").notNull(),
+  questionType: mysqlEnum("questionType", ["multiple_choice", "true_false", "short_answer"]).notNull(),
+  options: text("options"), // JSON array for multiple choice
+  correctAnswer: text("correctAnswer").notNull(),
+  points: int("points").notNull().default(1),
+  orderIndex: int("orderIndex").notNull(),
+});
+
+export type AssessmentQuestion = typeof assessmentQuestions.$inferSelect;
+export type InsertAssessmentQuestion = typeof assessmentQuestions.$inferInsert;
+
+/**
+ * Assessment attempts table
+ */
+export const assessmentAttempts = mysqlTable("assessmentAttempts", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentId: int("assessmentId").notNull().references(() => skillAssessments.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  applicationId: int("applicationId").references(() => applications.id), // Optional: link to application
+  score: int("score"), // percentage
+  totalPoints: int("totalPoints"),
+  earnedPoints: int("earnedPoints"),
+  passed: boolean("passed"),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  timeSpent: int("timeSpent"), // seconds
+});
+
+export type AssessmentAttempt = typeof assessmentAttempts.$inferSelect;
+export type InsertAssessmentAttempt = typeof assessmentAttempts.$inferInsert;
+
+/**
+ * Assessment answers table
+ */
+export const assessmentAnswers = mysqlTable("assessmentAnswers", {
+  id: int("id").autoincrement().primaryKey(),
+  attemptId: int("attemptId").notNull().references(() => assessmentAttempts.id),
+  questionId: int("questionId").notNull().references(() => assessmentQuestions.id),
+  answer: text("answer").notNull(),
+  isCorrect: boolean("isCorrect"),
+  pointsEarned: int("pointsEarned"),
+});
+
+export type AssessmentAnswer = typeof assessmentAnswers.$inferSelect;
+export type InsertAssessmentAnswer = typeof assessmentAnswers.$inferInsert;

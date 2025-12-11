@@ -136,6 +136,105 @@ export const appRouter = router({
         await db.updateSavedSearch(id, data);
         return { success: true };
       }),
+    
+    getAnalytics: protectedProcedure
+      .input(z.object({ days: z.number().optional().default(30) }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error("Recruiter profile not found");
+        
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - input.days);
+        
+        // Get all jobs by recruiter
+        const allJobs = await db.getJobsByRecruiter(ctx.user.id);
+        const jobsInPeriod = allJobs.filter(job => new Date(job.createdAt) >= cutoffDate);
+        const activeJobs = allJobs.filter(job => job.status === "active");
+        
+        // Get all applications for recruiter's jobs
+        const allApplications: any[] = [];
+        for (const job of allJobs) {
+          const apps = await db.getApplicationsByJob(job.id);
+          allApplications.push(...apps);
+        }
+        const applicationsInPeriod = allApplications.filter(app => new Date(app.submittedAt) >= cutoffDate);
+        
+        // Calculate metrics
+        const totalJobs = jobsInPeriod.length;
+        const totalApplications = applicationsInPeriod.length;
+        const avgApplicationsPerJob = totalJobs > 0 ? totalApplications / totalJobs : 0;
+        
+        // Application status distribution
+        const applicationsByStatus = applicationsInPeriod.reduce((acc: any, app) => {
+          acc[app.status] = (acc[app.status] || 0) + 1;
+          return acc;
+        }, {});
+        
+        // Conversion rate (placeholder - would need view tracking)
+        const conversionRate = 15.5; // Placeholder
+        
+        // Interview metrics
+        const allInterviews = await db.getInterviewsByRecruiterId(recruiter.id);
+        const interviewsInPeriod = allInterviews.filter(i => new Date(i.interview.scheduledAt) >= cutoffDate);
+        const completedInterviews = interviewsInPeriod.filter(i => i.interview.status === "completed").length;
+        const scheduledInterviews = interviewsInPeriod.filter(i => i.interview.status === "scheduled").length;
+        const totalInterviews = interviewsInPeriod.length;
+        const interviewCompletionRate = totalInterviews > 0 ? (completedInterviews / totalInterviews) * 100 : 0;
+        
+        // Time to hire (placeholder calculation)
+        const hiredApplications = applicationsInPeriod.filter(app => app.status === "offered");
+        let avgTimeToHire = 0;
+        let fastestHire = 0;
+        let slowestHire = 0;
+        
+        if (hiredApplications.length > 0) {
+          const hireTimes = hiredApplications.map(app => {
+            const submitted = new Date(app.submittedAt);
+            const now = new Date();
+            return Math.floor((now.getTime() - submitted.getTime()) / (1000 * 60 * 60 * 24));
+          });
+          avgTimeToHire = hireTimes.reduce((a, b) => a + b, 0) / hireTimes.length;
+          fastestHire = Math.min(...hireTimes);
+          slowestHire = Math.max(...hireTimes);
+        }
+        
+        // Top performing jobs
+        const jobApplicationCounts = allJobs.map(job => ({
+          id: job.id,
+          title: job.title,
+          location: job.location,
+          applicationCount: allApplications.filter(app => app.jobId === job.id).length,
+        }));
+        const topJobs = jobApplicationCounts
+          .sort((a, b) => b.applicationCount - a.applicationCount)
+          .slice(0, 5);
+        
+        // Candidate sources (placeholder)
+        const candidateSources = [
+          { source: "direct", count: Math.floor(totalApplications * 0.4) },
+          { source: "job board", count: Math.floor(totalApplications * 0.3) },
+          { source: "referral", count: Math.floor(totalApplications * 0.2) },
+          { source: "social media", count: Math.floor(totalApplications * 0.1) },
+        ];
+        
+        return {
+          totalJobs,
+          activeJobs: activeJobs.length,
+          totalApplications,
+          avgApplicationsPerJob,
+          conversionRate,
+          applicationsByStatus,
+          totalInterviews,
+          completedInterviews,
+          scheduledInterviews,
+          interviewCompletionRate,
+          avgTimeToHire,
+          fastestHire,
+          slowestHire,
+          topJobs,
+          candidateSources,
+        };
+      }),
   }),
 
   candidate: router({

@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import PublicHome from "./pages/PublicHome";
 import AboutUs from "./pages/AboutUs";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
+import RecruiterAnalytics from "./pages/RecruiterAnalytics";
 import CandidateDashboard from "./pages/CandidateDashboard";
 import JobBrowser from "./pages/JobBrowser";
 import AdvancedJobSearch from "./pages/AdvancedJobSearch";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/about" component={AboutUs} />
 
       <Route path={"/recruiter/dashboard"} component={RecruiterDashboard} />
+      <Route path="/recruiter/analytics" component={RecruiterAnalytics} />
       <Route path="/recruiter/create-job" component={CreateJob} />
       <Route path="/recruiter/jobs/create" component={CreateJob} />
       <Route path="/recruiter/ai-matching" component={AIMatchingDashboard} />

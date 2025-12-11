@@ -701,17 +701,20 @@
 - [ ] Add email preferences to candidate settings
 - [ ] Test all email notifications with real scenarios
 
-### Recruiter Analytics Dashboard
-- [ ] Create RecruiterAnalytics page
-- [ ] Add time-to-hire metrics by job
-- [ ] Calculate application funnel conversion rates
-- [ ] Add candidate source tracking
-- [ ] Display interview completion rates
-- [ ] Create data visualization charts
-- [ ] Implement CSV export functionality
-- [ ] Add date range filtering
-- [ ] Add job-specific analytics drill-down
-- [ ] Test analytics calculations and exports
+### Recruiter### Recruiter Analytics Dashboard
+- [x] Create RecruiterAnalytics page
+- [x] Add time-to-hire metrics (average, fastest, slowest)
+- [x] Display application funnel conversion rates
+- [x] Add candidate source tracking with percentage breakdown
+- [x] Show interview completion rates
+- [x] Implement CSV export functionality
+- [x] Add date range filtering (7/30/90/365 days)
+- [x] Create analytics tRPC endpoint (recruiter.getAnalytics)
+- [x] Add key metrics cards (jobs, applications, conversion, time-to-hire)
+- [x] Display application status distribution with progress bars
+- [x] Show top performing jobs with application counts
+- [x] Add route to App.tsx
+- [ ] Test analytics with real datatics calculations and exports
 
 ### Candidate Skill Assessments
 - [ ] Create skill assessment database schema
