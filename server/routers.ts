@@ -1222,18 +1222,183 @@ export const appRouter = router({
       }
       
       const database = await db.getDb();
+      const { sql } = await import("drizzle-orm");
+      const startTime = Date.now();
+      
       if (!database) {
         return {
           healthy: false,
           message: 'Database connection failed',
+          database: {
+            connected: false,
+            responseTime: 0,
+          },
         };
       }
       
+      // Test database connection
+      try {
+        await database.execute(sql`SELECT 1`);
+        const responseTime = Date.now() - startTime;
+        
+        return {
+          healthy: true,
+          message: 'All systems operational',
+          database: {
+            connected: true,
+            responseTime,
+          },
+        };
+      } catch (error) {
+        return {
+          healthy: false,
+          message: 'Database query failed',
+          database: {
+            connected: false,
+            responseTime: 0,
+          },
+        };
+      }
+    }),
+    
+    // Get system metrics
+    getSystemMetrics: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') {
+        throw new Error('Unauthorized: Admin access required');
+      }
+      
+      // Mock metrics (in production, these would come from actual monitoring)
       return {
-        healthy: true,
-        message: 'All systems operational',
+        uptime: process.uptime(),
+        memoryUsage: Math.round((process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100),
+        cpuUsage: Math.round(Math.random() * 30 + 10), // Mock CPU usage
+        activeConnections: Math.floor(Math.random() * 50 + 10),
+        requestRate: Math.floor(Math.random() * 100 + 50),
+        errorRate: Math.round(Math.random() * 2), // Low error rate
+        avgResponseTime: Math.floor(Math.random() * 100 + 50),
       };
     }),
+    
+    // Get error logs
+    getErrorLogs: protectedProcedure
+      .input(z.object({ limit: z.number().default(10) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        // Mock error logs (in production, these would come from a logging system)
+        return [];
+      }),
+    
+    // Get analytics data
+    getAnalytics: protectedProcedure
+      .input(z.object({ days: z.number().default(30) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { count, sql } = await import("drizzle-orm");
+        const { users, jobs, applications, interviews } = await import("../drizzle/schema");
+        
+        // Calculate date range
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - input.days);
+        
+        // Get current period counts
+        const [userCount] = await database.select({ count: count() }).from(users)
+          .where(sql`${users.createdAt} >= ${startDate}`);
+        const [jobCount] = await database.select({ count: count() }).from(jobs)
+          .where(sql`${jobs.createdAt} >= ${startDate}`);
+        const [appCount] = await database.select({ count: count() }).from(applications)
+          .where(sql`${applications.submittedAt} >= ${startDate}`);
+        const [interviewCount] = await database.select({ count: count() }).from(interviews)
+          .where(sql`${interviews.createdAt} >= ${startDate}`);
+        
+        // Get previous period for comparison
+        const prevStartDate = new Date(startDate);
+        prevStartDate.setDate(prevStartDate.getDate() - input.days);
+        const [prevUserCount] = await database.select({ count: count() }).from(users)
+          .where(sql`${users.createdAt} >= ${prevStartDate} AND ${users.createdAt} < ${startDate}`);
+        
+        // Calculate growth percentages
+        const userGrowthPercent = prevUserCount.count > 0 
+          ? Math.round(((userCount.count - prevUserCount.count) / prevUserCount.count) * 100)
+          : 100;
+        
+        // Get user distribution
+        const [candidateCount] = await database.select({ count: count() }).from(users)
+          .where(sql`${users.role} = 'candidate'`);
+        const [recruiterCount] = await database.select({ count: count() }).from(users)
+          .where(sql`${users.role} = 'recruiter'`);
+        const [adminCount] = await database.select({ count: count() }).from(users)
+          .where(sql`${users.role} = 'admin'`);
+        const [totalUsers] = await database.select({ count: count() }).from(users);
+        
+        // Get conversion metrics
+        const [scheduledInterviews] = await database.select({ count: count() }).from(interviews)
+          .where(sql`${interviews.status} = 'scheduled'`);
+        const [completedInterviews] = await database.select({ count: count() }).from(interviews)
+          .where(sql`${interviews.status} = 'completed'`);
+        
+        return {
+          userGrowth: {
+            total: userCount.count,
+            change: userGrowthPercent,
+          },
+          jobPostings: {
+            total: jobCount.count,
+            change: 15, // Mock
+          },
+          applications: {
+            total: appCount.count,
+            change: 20, // Mock
+          },
+          interviews: {
+            total: interviewCount.count,
+            change: 10, // Mock
+          },
+          conversionRates: {
+            applicationRate: 25, // Mock
+            jobViews: 1000, // Mock
+            applications: appCount.count,
+            interviewCompletionRate: scheduledInterviews.count > 0 
+              ? Math.round((completedInterviews.count / scheduledInterviews.count) * 100)
+              : 0,
+            scheduledInterviews: scheduledInterviews.count,
+            completedInterviews: completedInterviews.count,
+          },
+          timeToHire: {
+            average: 14, // Mock
+            fastest: 7, // Mock
+            slowest: 30, // Mock
+          },
+          userDistribution: {
+            total: totalUsers.count,
+            candidates: candidateCount.count,
+            recruiters: recruiterCount.count,
+            admins: adminCount.count,
+          },
+          topJobs: [
+            { title: 'Senior Software Engineer', applications: 45, conversionRate: 30 },
+            { title: 'Product Manager', applications: 38, conversionRate: 25 },
+            { title: 'UX Designer', applications: 32, conversionRate: 28 },
+            { title: 'Data Scientist', applications: 29, conversionRate: 22 },
+            { title: 'DevOps Engineer', applications: 25, conversionRate: 20 },
+          ],
+          trends: {
+            dailySignups: Math.floor(userCount.count / input.days),
+            dailyJobPosts: Math.floor(jobCount.count / input.days),
+            dailyApplications: Math.floor(appCount.count / input.days),
+            dailyInterviews: Math.floor(interviewCount.count / input.days),
+          },
+        };
+      }),
     
     // Get all users
     getAllUsers: protectedProcedure.query(async ({ ctx }) => {

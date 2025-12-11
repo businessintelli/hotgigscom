@@ -25,6 +25,8 @@ import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/UserManagement";
+import SystemHealth from "./pages/SystemHealth";
+import Analytics from "./pages/Analytics";
 
 
 function Router() {
@@ -44,6 +46,8 @@ function Router() {
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
+      <Route path="/admin/health" component={SystemHealth} />
+      <Route path="/admin/analytics" component={Analytics} />
       <Route path="/candidate-dashboard" component={CandidateDashboard} />
       <Route path="/my-applications" component={MyApplications} />
       <Route path="/saved-jobs" component={SavedJobs} />
