@@ -60,10 +60,10 @@ export default function JobDetails() {
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle className="text-3xl mb-2">{job.title}</CardTitle>
-                {job.customerId && (
+                {job.companyName && (
                   <CardDescription className="text-lg flex items-center gap-2">
                     <Building2 className="w-5 h-5" />
-                    Customer ID: {job.customerId}
+                    {job.companyName}
                   </CardDescription>
                 )}
               </div>

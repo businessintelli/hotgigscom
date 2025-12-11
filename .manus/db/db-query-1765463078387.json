@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE jobs j LEFT JOIN customers c ON j.customerId = c.id SET j.companyName = c.name WHERE j.customerId IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute UPDATE jobs j LEFT JOIN customers c ON j.customerId = c.id SET j.companyName = c.name WHERE j.customerId IS NOT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1531
+}

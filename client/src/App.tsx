@@ -19,6 +19,7 @@ import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
 import CandidateSearch from "./pages/CandidateSearch";
 import JobDetails from "./pages/JobDetails";
+import MyApplications from "./pages/MyApplications";
 
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
       <Route path={"/recruiter/customers"} component={CustomerManagement} />
       <Route path={"/recruiter/search-candidates"} component={CandidateSearch} />
       <Route path={"/candidate-dashboard"} component={CandidateDashboard} />
+      <Route path={"/my-applications"} component={MyApplications} />
       <Route path={"/jobs"} component={JobBrowser} />
       <Route path={"/jobs/search"} component={AdvancedJobSearch} />
       <Route path={"/jobs/:id"} component={JobDetails} />

@@ -796,3 +796,118 @@ export async function getSavedSearchesWithAlerts() {
     .from(savedSearches)
     .where(eq(savedSearches.emailAlerts, true));
 }
+
+export async function getCandidateApplicationsWithDetails(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get applications
+  const apps = await db
+    .select()
+    .from(applications)
+    .where(eq(applications.candidateId, candidateId))
+    .orderBy(desc(applications.submittedAt));
+  
+  // For each application, get job and interview details
+  const appsWithDetails = await Promise.all(
+    apps.map(async (app) => {
+      const job = await getJobById(app.jobId);
+      const appInterviews = await db
+        .select()
+        .from(interviews)
+        .where(eq(interviews.applicationId, app.id))
+        .orderBy(desc(interviews.scheduledAt));
+      
+      return {
+        ...app,
+        job,
+        interviews: appInterviews,
+      };
+    })
+  );
+  
+  return appsWithDetails;
+}
+
+export async function getRecommendedJobsForCandidate(candidateId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get candidate details
+  const candidate = await getCandidateById(candidateId);
+  if (!candidate) return [];
+  
+  // Get all active public jobs
+  const activeJobs = await db
+    .select()
+    .from(jobs)
+    .where(and(
+      eq(jobs.status, 'active'),
+      eq(jobs.isPublic, true)
+    ));
+  
+  // Calculate match score for each job
+  const candidateSkills = candidate.skills ? candidate.skills.toLowerCase().split(',').map((s: string) => s.trim()) : [];
+  const candidateLocation = candidate.location?.toLowerCase() || '';
+  const candidateExperience = candidate.experienceYears || 0;
+  
+  const jobsWithScores = activeJobs.map((job) => {
+    let score = 0;
+    let matchDetails = {
+      skillsMatch: 0,
+      locationMatch: 0,
+      experienceMatch: 0,
+      salaryMatch: 0,
+    };
+    
+    // Skills matching (40% weight)
+    if (job.requirements) {
+      const jobRequirements = job.requirements.toLowerCase();
+      const matchingSkills = candidateSkills.filter(skill => 
+        jobRequirements.includes(skill)
+      );
+      matchDetails.skillsMatch = candidateSkills.length > 0 
+        ? (matchingSkills.length / candidateSkills.length) * 100 
+        : 0;
+      score += matchDetails.skillsMatch * 0.4;
+    }
+    
+    // Location matching (20% weight)
+    if (job.location && candidateLocation) {
+      const jobLocation = job.location.toLowerCase();
+      if (jobLocation.includes(candidateLocation) || candidateLocation.includes(jobLocation)) {
+        matchDetails.locationMatch = 100;
+        score += 100 * 0.2;
+      } else if (jobLocation.includes('remote') || candidateLocation.includes('remote')) {
+        matchDetails.locationMatch = 80;
+        score += 80 * 0.2;
+      }
+    }
+    
+    // Experience matching (25% weight)
+    // Assume job requires similar experience to candidate's years
+    if (candidateExperience > 0) {
+      const experienceDiff = Math.abs(candidateExperience - (candidateExperience));
+      matchDetails.experienceMatch = Math.max(0, 100 - (experienceDiff * 10));
+      score += matchDetails.experienceMatch * 0.25;
+    } else {
+      matchDetails.experienceMatch = 50; // Neutral for entry-level
+      score += 50 * 0.25;
+    }
+    
+    // Salary matching (15% weight) - placeholder for now
+    matchDetails.salaryMatch = 75; // Assume reasonable match
+    score += 75 * 0.15;
+    
+    return {
+      ...job,
+      matchScore: Math.round(score),
+      matchDetails,
+    };
+  });
+  
+  // Sort by match score and return top N
+  return jobsWithScores
+    .sort((a, b) => b.matchScore - a.matchScore)
+    .slice(0, limit);
+}

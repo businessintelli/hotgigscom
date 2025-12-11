@@ -30,9 +30,11 @@ export default function CandidateDashboard() {
     { enabled: !!candidate?.id }
   );
 
-  // Fetch recommended jobs (using public job list for now)
-  const { data: allJobs } = trpc.job.list.useQuery();
-  const recommendedJobs = allJobs?.slice(0, 3) || [];
+  // Fetch AI-powered recommended jobs
+  const { data: recommendedJobs } = trpc.candidate.getRecommendedJobs.useQuery(
+    { candidateId: candidate?.id || 0, limit: 3 },
+    { enabled: !!candidate?.id }
+  );
 
   // Mutations
   const updateProfileMutation = trpc.candidate.update.useMutation({
@@ -443,7 +445,7 @@ export default function CandidateDashboard() {
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <h3 className="font-semibold">{job.title}</h3>
-                            <p className="text-sm text-gray-600">{job.company}</p>
+                            <p className="text-sm text-gray-600">{job.companyName || 'Company Not Specified'}</p>
                           </div>
                           <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                             {job.matchScore || 85}% Match
@@ -497,7 +499,7 @@ export default function CandidateDashboard() {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => setLocation("/applications")}
+                  onClick={() => setLocation("/my-applications")}
                 >
                   <Briefcase className="mr-2 h-4 w-4" />
                   My Applications

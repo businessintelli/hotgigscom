@@ -288,6 +288,15 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await analyzeResume(input.resumeText);
       }),
+    
+    getRecommendedJobs: protectedProcedure
+      .input(z.object({ 
+        candidateId: z.number(),
+        limit: z.number().optional().default(10)
+      }))
+      .query(async ({ input }) => {
+        return await db.getRecommendedJobsForCandidate(input.candidateId, input.limit);
+      }),
   }),
 
   customer: router({
@@ -466,6 +475,12 @@ export const appRouter = router({
       .input(z.object({ candidateId: z.number() }))
       .query(async ({ input }) => {
         return await db.getApplicationsByCandidate(input.candidateId);
+      }),
+    
+    getCandidateApplications: protectedProcedure
+      .input(z.object({ candidateId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCandidateApplicationsWithDetails(input.candidateId);
       }),
     
     updateStatus: protectedProcedure

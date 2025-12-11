@@ -102,6 +102,7 @@ export type InsertCustomerContact = typeof customerContacts.$inferInsert;
 export const jobs = mysqlTable("jobs", {
   id: int("id").autoincrement().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
+  companyName: varchar("companyName", { length: 255 }),
   description: text("description").notNull(),
   requirements: text("requirements"),
   responsibilities: text("responsibilities"),

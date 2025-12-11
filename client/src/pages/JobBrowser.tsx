@@ -166,7 +166,7 @@ export default function JobBrowser() {
                         </div>
                         <div className="flex-1">
                           <h3 className="text-xl font-semibold mb-1">{job.title}</h3>
-                          <p className="text-gray-600 mb-3">Company Name</p>
+                          <p className="text-gray-600 mb-3">{job.companyName || 'Company Not Specified'}</p>
 
                           <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
                             {job.location && (

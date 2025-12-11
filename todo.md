@@ -372,3 +372,29 @@
 - [x] Enable job details viewing (created JobDetails page and added route)
 - [x] Search Jobs button works (navigates to /jobs)
 - [ ] Test all candidate dashboard features
+
+## Company Information & Job Display Enhancement (COMPLETED)
+- [x] Add companyName field to jobs table schema
+- [x] Update database with migration (direct SQL)
+- [x] Populate existing jobs with company names from customers table
+- [ ] Update job creation form to include company name
+- [x] Update JobDetails page to display company name
+- [x] Update JobBrowser cards to show company name
+- [x] Update AdvancedJobSearch results to show company name
+- [x] Update recommended jobs in CandidateDashboard to show company name
+
+## Application Status Tracking (COMPLETED)
+- [x] Create MyApplications page component
+- [x] Add backend procedure to get candidate's applications with job details
+- [x] Display applications in timeline/card view with status badges
+- [x] Show interview schedules for each application
+- [x] Show recruiter feedback/notes
+- [x] Add route for /my-applications
+- [x] Add navigation link in candidate dashboard
+
+## AI-Powered Job Recommendations (COMPLETED)
+- [x] Create AI matching algorithm based on skills, experience, location, salary
+- [x] Add backend procedure for personalized job recommendations
+- [x] Replace simple slice logic with AI-powered recommendations
+- [x] Add recommendation score display (matchScore field in response)
+- [ ] Test recommendations with different candidate profiles

@@ -295,6 +295,9 @@ export default function AdvancedJobSearch() {
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <CardTitle className="text-xl mb-2">{job.title}</CardTitle>
+                          {job.companyName && (
+                            <p className="text-gray-600 mb-2">{job.companyName}</p>
+                          )}
                           <CardDescription className="flex flex-wrap gap-3 text-base">
                             {job.location && (
                               <span className="flex items-center gap-1">

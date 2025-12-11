@@ -43,6 +43,13 @@
       "when": 1765461421187,
       "tag": "0005_slim_proteus",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1765463062384,
+      "tag": "0006_lucky_martin_li",
+      "breakpoints": true
     }
   ]
 }
