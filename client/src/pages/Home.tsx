@@ -79,7 +79,7 @@ export default function Home() {
                   window.location.href = getLoginUrl('recruiter');
                 }}
               >
-                Sign In as Recruiter
+                Get Started as Recruiter
               </Button>
             </CardContent>
           </Card>
@@ -107,7 +107,7 @@ export default function Home() {
                   window.location.href = getLoginUrl('candidate');
                 }}
               >
-                Sign In as Candidate
+                Get Started as Candidate
               </Button>
             </CardContent>
           </Card>

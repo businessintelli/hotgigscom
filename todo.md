@@ -193,3 +193,8 @@
 - [x] Build profile completion onboarding flow for recruiters
 - [x] Build profile completion onboarding flow for candidates
 - [x] Test seeding script and verify data integrity
+
+## UI/UX Improvements (Current Focus)
+- [x] Update authentication button text to clarify sign-up/sign-in functionality
+- [x] Change "Sign In as Recruiter" to "Get Started as Recruiter"
+- [x] Change "Sign In as Candidate" to "Get Started as Candidate"
