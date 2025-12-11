@@ -125,12 +125,12 @@ export default function JobBrowser() {
                 />
               </div>
               <div>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <Select value={typeFilter || undefined} onValueChange={(value) => setTypeFilter(value === "all" ? "" : value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Job Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="full-time">Full-time</SelectItem>
                     <SelectItem value="part-time">Part-time</SelectItem>
                     <SelectItem value="contract">Contract</SelectItem>

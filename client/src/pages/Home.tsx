@@ -1,26 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Briefcase, Target } from "lucide-react";
-import { getLoginUrl } from "@/const";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { Link } from "wouter";
 
 export default function Home() {
-  const { user } = useAuth();
-  const [, setLocation] = useLocation();
-
-  // Redirect authenticated users to their dashboard
-  useEffect(() => {
-    if (user) {
-      if (user.role === "candidate") {
-        setLocation("/candidate-dashboard");
-      } else if (user.role === "recruiter") {
-        setLocation("/recruiter/dashboard");
-      }
-    }
-  }, [user, setLocation]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -37,11 +20,28 @@ export default function Home() {
               <p className="text-sm text-gray-600">AI-Powered Recruitment Platform</p>
             </div>
           </div>
+          <div className="flex gap-2">
+            <Link href="/recruiter/dashboard">
+              <Button variant="outline" size="sm">Recruiter Dashboard</Button>
+            </Link>
+            <Link href="/candidate-dashboard">
+              <Button variant="outline" size="sm">Candidate Dashboard</Button>
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16 text-center">
+        <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-4 mb-8 max-w-3xl mx-auto">
+          <p className="text-yellow-800 font-semibold">
+            🧪 Testing Mode: Authentication Disabled
+          </p>
+          <p className="text-yellow-700 text-sm mt-1">
+            You can access all features without logging in. Use the dashboard links in the header.
+          </p>
+        </div>
+
         <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           HotGigs - AI-Powered Recruitment Platform
         </h2>
@@ -81,13 +81,14 @@ export default function Home() {
                 <span>Application tracking</span>
               </li>
             </ul>
-            <Button
-              size="lg"
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-              onClick={() => window.location.href = getLoginUrl("recruiter")}
-            >
-              Get Started as Recruiter
-            </Button>
+            <Link href="/recruiter/dashboard">
+              <Button
+                size="lg"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+              >
+                Go to Recruiter Dashboard
+              </Button>
+            </Link>
           </Card>
 
           {/* Candidate Card */}
@@ -117,13 +118,14 @@ export default function Home() {
                 <span>Get matched with opportunities</span>
               </li>
             </ul>
-            <Button
-              size="lg"
-              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-              onClick={() => window.location.href = getLoginUrl("candidate")}
-            >
-              Get Started as Candidate
-            </Button>
+            <Link href="/candidate-dashboard">
+              <Button
+                size="lg"
+                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+              >
+                Go to Candidate Dashboard
+              </Button>
+            </Link>
           </Card>
         </div>
       </section>

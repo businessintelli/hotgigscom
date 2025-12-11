@@ -8,9 +8,34 @@ export type TrpcContext = {
   user: User | null;
 };
 
+// Mock user for testing without authentication
+const MOCK_USER: User = {
+  id: 1,
+  openId: "mock-open-id",
+  email: "test@recruiter.com",
+  name: "Test Recruiter",
+  role: "recruiter",
+  loginMethod: "oauth",
+  passwordHash: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  lastSignedIn: new Date(),
+};
+
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
+  // TEMPORARY: Bypass authentication for testing
+  // Return mock user instead of checking OAuth
+  console.log("[Auth Bypass] Using mock user for testing");
+  
+  return {
+    req: opts.req,
+    res: opts.res,
+    user: MOCK_USER,
+  };
+  
+  /* Original OAuth authentication (commented out for testing)
   let user: User | null = null;
 
   try {
@@ -25,4 +50,5 @@ export async function createContext(
     res: opts.res,
     user,
   };
+  */
 }
