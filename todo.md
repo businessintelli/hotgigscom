@@ -186,3 +186,10 @@
 - [x] Fix OAuth callback to handle role-based profile creation
 - [x] Add proper redirects after sign-up based on selected role
 - [ ] Test complete authentication flow for both roles
+
+## Platform Improvements (Current Focus)
+- [x] Create database seeding script with sample jobs, candidates, and applications
+- [x] Add Interview Playback link to Recruiter Dashboard sidebar
+- [x] Build profile completion onboarding flow for recruiters
+- [x] Build profile completion onboarding flow for candidates
+- [x] Test seeding script and verify data integrity

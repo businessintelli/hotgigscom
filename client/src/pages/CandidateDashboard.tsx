@@ -6,14 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Briefcase, FileText, Eye, TrendingUp, Upload, Search, Users, MessageSquare, Loader2 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import CandidateOnboarding from "@/components/CandidateOnboarding";
 
 export default function CandidateDashboard() {
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch candidate profile
@@ -124,6 +126,13 @@ export default function CandidateDashboard() {
     });
   };
 
+  // Show onboarding if profile is incomplete
+  useEffect(() => {
+    if (candidate && !candidate.title) {
+      setShowOnboarding(true);
+    }
+  }, [candidate]);
+
   if (authLoading || candidateLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -138,6 +147,12 @@ export default function CandidateDashboard() {
   }
 
   return (
+    <>
+      <CandidateOnboarding 
+        open={showOnboarding} 
+        onComplete={() => setShowOnboarding(false)} 
+      />
+      
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
       <header className="bg-white border-b">
@@ -509,5 +524,6 @@ export default function CandidateDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }

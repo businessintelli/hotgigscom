@@ -4,18 +4,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 
 export default function RecruiterDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const [, setLocation] = useLocation();
   const { data: dashboardData, isLoading } = trpc.recruiter.getDashboardStats.useQuery();
+  const { data: profile } = trpc.recruiter.getProfile.useQuery();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'recruiter')) {
       setLocation('/');
     }
   }, [authLoading, user, setLocation]);
+
+  // Show onboarding if profile is incomplete
+  useEffect(() => {
+    if (profile && !profile.companyName) {
+      setShowOnboarding(true);
+    }
+  }, [profile]);
 
   if (authLoading || isLoading) {
     return (
@@ -47,6 +57,12 @@ export default function RecruiterDashboard() {
   ];
 
   return (
+    <>
+      <RecruiterOnboarding 
+        open={showOnboarding} 
+        onComplete={() => setShowOnboarding(false)} 
+      />
+      
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
       <nav className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
@@ -62,6 +78,7 @@ export default function RecruiterDashboard() {
               <div className="ml-10 flex space-x-8">
                 <button onClick={() => setLocation('/recruiter/dashboard')} className="px-3 py-2 rounded-md text-sm font-medium bg-blue-700">📊 Dashboard</button>
                 <button onClick={() => setLocation('/recruiter/jobs/create')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">💼 Jobs</button>
+                <button onClick={() => setLocation('/recruiter/interview-playback')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🎥 AI Interviews</button>
                 <button onClick={() => setLocation('/recruiter/customers')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🏢 Clients</button>
               </div>
             </div>
@@ -199,5 +216,6 @@ export default function RecruiterDashboard() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
