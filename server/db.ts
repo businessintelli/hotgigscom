@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, or, like, gte, lte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -396,6 +396,104 @@ export async function deleteJob(id: number) {
   if (!db) throw new Error("Database not available");
   
   await db.delete(jobs).where(eq(jobs.id, id));
+}
+
+export async function searchJobs(filters: {
+  keyword?: string;
+  location?: string;
+  employmentType?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  experienceLevel?: string;
+  remoteOption?: string;
+  skills?: string[];
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [
+    eq(jobs.isPublic, true),
+    eq(jobs.status, "active")
+  ];
+  
+  // Keyword search (title, description, requirements)
+  if (filters.keyword && filters.keyword.trim()) {
+    const keywordPattern = `%${filters.keyword.trim()}%`;
+    conditions.push(
+      or(
+        like(jobs.title, keywordPattern),
+        like(jobs.description, keywordPattern),
+        like(jobs.requirements, keywordPattern)
+      )!
+    );
+  }
+  
+  // Location filter
+  if (filters.location && filters.location.trim()) {
+    const locationPattern = `%${filters.location.trim()}%`;
+    conditions.push(like(jobs.location, locationPattern));
+  }
+  
+  // Employment type filter
+  if (filters.employmentType && filters.employmentType !== "all") {
+    conditions.push(eq(jobs.employmentType, filters.employmentType as any));
+  }
+  
+  // Salary range filter
+  if (filters.salaryMin !== undefined) {
+    conditions.push(gte(jobs.salaryMax, filters.salaryMin));
+  }
+  if (filters.salaryMax !== undefined) {
+    conditions.push(lte(jobs.salaryMin, filters.salaryMax));
+  }
+  
+  // Remote option filter (check if location contains remote/hybrid keywords)
+  if (filters.remoteOption && filters.remoteOption !== "all") {
+    if (filters.remoteOption === "remote") {
+      conditions.push(like(jobs.location, "%remote%"));
+    } else if (filters.remoteOption === "hybrid") {
+      conditions.push(like(jobs.location, "%hybrid%"));
+    } else if (filters.remoteOption === "onsite") {
+      // Onsite means NOT remote and NOT hybrid
+      conditions.push(
+        and(
+          sql`${jobs.location} NOT LIKE '%remote%'`,
+          sql`${jobs.location} NOT LIKE '%hybrid%'`
+        )!
+      );
+    }
+  }
+  
+  // Experience level filter (check title and requirements for keywords)
+  if (filters.experienceLevel && filters.experienceLevel !== "all") {
+    const levelKeywords: Record<string, string[]> = {
+      entry: ["junior", "entry", "graduate", "0-2 years", "1-2 years"],
+      mid: ["mid", "intermediate", "2-5 years", "3-5 years"],
+      senior: ["senior", "5+ years", "7+ years", "experienced"],
+      lead: ["lead", "principal", "staff", "architect", "manager"]
+    };
+    
+    const keywords = levelKeywords[filters.experienceLevel] || [];
+    if (keywords.length > 0) {
+      const levelConditions = keywords.map(keyword => 
+        or(
+          like(jobs.title, `%${keyword}%`),
+          like(jobs.requirements, `%${keyword}%`)
+        )!
+      );
+      conditions.push(or(...levelConditions)!);
+    }
+  }
+  
+  // Skills filter (check requirements for skill keywords)
+  if (filters.skills && filters.skills.length > 0) {
+    const skillConditions = filters.skills.map(skill => 
+      like(jobs.requirements, `%${skill}%`)
+    );
+    conditions.push(or(...skillConditions)!);
+  }
+  
+  return await db.select().from(jobs).where(and(...conditions)).orderBy(desc(jobs.createdAt));
 }
 
 // Application operations

@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, title, status, isPublic, salaryMin, salaryMax FROM jobs LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SELECT id, title, status, isPublic, salaryMin, salaryMax FROM jobs LIMIT 5;",
+  "rows": [
+    {
+      "id": "60001",
+      "title": "Senior Full-Stack Engineer",
+      "status": "active",
+      "isPublic": "0",
+      "salaryMin": "150000",
+      "salaryMax": "200000"
+    },
+    {
+      "id": "60002",
+      "title": "Data Scientist",
+      "status": "active",
+      "isPublic": "0",
+      "salaryMin": "130000",
+      "salaryMax": "180000"
+    },
+    {
+      "id": "60003",
+      "title": "DevOps Engineer",
+      "status": "active",
+      "isPublic": "0",
+      "salaryMin": "140000",
+      "salaryMax": "190000"
+    },
+    {
+      "id": "60004",
+      "title": "Product Manager - B2B SaaS",
+      "status": "active",
+      "isPublic": "0",
+      "salaryMin": "120000",
+      "salaryMax": "160000"
+    },
+    {
+      "id": "60005",
+      "title": "Machine Learning Engineer",
+      "status": "active",
+      "isPublic": "0",
+      "salaryMin": "145000",
+      "salaryMax": "195000"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tstatus\tisPublic\tsalaryMin\tsalaryMax\n60001\tSenior Full-Stack Engineer\tactive\t0\t150000\t200000\n60002\tData Scientist\tactive\t0\t130000\t180000\n60003\tDevOps Engineer\tactive\t0\t140000\t190000\n60004\tProduct Manager - B2B SaaS\tactive\t0\t120000\t160000\n60005\tMachine Learning Engineer\tactive\t0\t145000\t195000\n",
+  "stderr": "",
+  "execution_time_ms": 1532
+}

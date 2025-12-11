@@ -274,3 +274,16 @@
 - [ ] Test recruiter: Update application status
 - [ ] Test candidate: See updated status
 - [ ] Verify entire workflow works seamlessly
+
+## Advanced Search & Filtering (COMPLETED)
+- [x] Implement backend job search procedure with filters (salary, experience, remote, keywords)
+- [ ] Implement backend candidate search procedure with filters (skills, experience, location)
+- [x] Create advanced search UI component with filter controls
+- [x] Add salary range slider component
+- [x] Add experience level filter (entry, mid, senior, lead)
+- [x] Add remote/hybrid/onsite filter
+- [x] Add keyword search with debouncing
+- [x] Implement search results display with pagination
+- [ ] Add "Save Search" functionality for recruiters
+- [x] Test all filter combinations
+- [x] Verify search performance with large datasets

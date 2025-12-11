@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import CandidateDashboard from "./pages/CandidateDashboard";
 import JobBrowser from "./pages/JobBrowser";
+import AdvancedJobSearch from "./pages/AdvancedJobSearch";
 import CreateJob from "./pages/CreateJob";
 import AIMatchingDashboard from "./pages/AIMatchingDashboard";
 import ApplicationManagement from "@/pages/ApplicationManagement";
@@ -32,6 +33,7 @@ function Router() {
       <Route path={"/recruiter/customers"} component={CustomerManagement} />
       <Route path={"/candidate-dashboard"} component={CandidateDashboard} />
       <Route path={"/jobs"} component={JobBrowser} />
+      <Route path={"/jobs/search"} component={AdvancedJobSearch} />
       <Route path={"/apply/:id"} component={JobApplication} />
       <Route path={"/ai-interview"} component={AIInterviewPage} />
       <Route path={"/404"} component={NotFound} />

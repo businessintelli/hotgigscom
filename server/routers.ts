@@ -302,6 +302,21 @@ export const appRouter = router({
       return await db.getPublicJobs();
     }),
     
+    search: publicProcedure
+      .input(z.object({
+        keyword: z.string().optional(),
+        location: z.string().optional(),
+        employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship", "all"]).optional(),
+        salaryMin: z.number().optional(),
+        salaryMax: z.number().optional(),
+        experienceLevel: z.enum(["entry", "mid", "senior", "lead", "all"]).optional(),
+        remoteOption: z.enum(["remote", "hybrid", "onsite", "all"]).optional(),
+        skills: z.array(z.string()).optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.searchJobs(input);
+      }),
+    
     getById: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
