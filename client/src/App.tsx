@@ -26,7 +26,8 @@ function Router() {
       <Route path={"/"} component={Home} />
 
       <Route path={"/recruiter/dashboard"} component={RecruiterDashboard} />
-        <Route path="/recruiter/create-job" component={CreateJob} />
+      <Route path="/recruiter/create-job" component={CreateJob} />
+      <Route path="/recruiter/jobs/create" component={CreateJob} />
       <Route path="/recruiter/ai-matching" component={AIMatchingDashboard} />
       <Route path="/recruiter/applications" component={ApplicationManagement} />
       <Route path="/recruiter/interviews" component={InterviewManagement} />
