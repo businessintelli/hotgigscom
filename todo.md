@@ -459,3 +459,19 @@
 - [x] Update existing jobs with varied deadline dates for testing
 - [ ] Test complete bookmarking workflow across all pages
 - [ ] Verify deadline countdown displays correctly
+
+## Phase 6: Job Creation & Notification Enhancements (Current Focus)
+- [x] Add date picker input to CreateJob form for application deadline
+- [x] Update job creation tRPC mutation to accept applicationDeadline
+- [x] Add form validation to ensure deadline is in the future
+- [x] Make deadline field optional (not all jobs need deadlines)
+- [x] Test job creation with and without deadlines (verified via UI)
+- [ ] Implement email notification system for deadline reminders
+- [ ] Create scheduled job to check for approaching deadlines
+- [ ] Send email 3 days before deadline for saved jobs
+- [ ] Add email preferences to candidate settings
+- [ ] Create job comparison feature
+- [ ] Add "Compare" checkbox to saved jobs
+- [ ] Create comparison view with side-by-side layout
+- [ ] Display salary, requirements, benefits, location comparison
+- [ ] Allow comparison of 2-3 jobs at once

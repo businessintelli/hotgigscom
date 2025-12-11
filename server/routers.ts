@@ -436,6 +436,7 @@ export const appRouter = router({
         salaryCurrency: z.string().optional(),
         customerId: z.number().optional(),
         contactId: z.number().optional(),
+        applicationDeadline: z.date().optional(),
         status: z.enum(["draft", "active", "closed", "filled"]).optional(),
         isPublic: z.boolean().optional(),
       }))
@@ -460,6 +461,7 @@ export const appRouter = router({
         salaryMax: z.number().optional(),
         customerId: z.number().optional(),
         contactId: z.number().optional(),
+        applicationDeadline: z.date().optional(),
         status: z.enum(["draft", "active", "closed", "filled"]).optional(),
         isPublic: z.boolean().optional(),
       }))

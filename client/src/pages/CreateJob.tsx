@@ -44,6 +44,7 @@ export default function CreateJob() {
     salaryMax: "",
     salaryCurrency: "USD",
     customerId: "",
+    applicationDeadline: "",
   });
 
   // AI form state
@@ -150,6 +151,18 @@ Format the output as JSON with keys: title, description, responsibilities, requi
       return;
     }
 
+    // Validate deadline if provided
+    if (manualForm.applicationDeadline) {
+      const deadlineDate = new Date(manualForm.applicationDeadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (deadlineDate < today) {
+        toast.error("Application deadline must be in the future");
+        return;
+      }
+    }
+
     await createJobMutation.mutateAsync({
       title: manualForm.title,
       description: manualForm.description,
@@ -161,6 +174,7 @@ Format the output as JSON with keys: title, description, responsibilities, requi
       salaryMax: manualForm.salaryMax ? parseInt(manualForm.salaryMax) : undefined,
       salaryCurrency: manualForm.salaryCurrency,
       customerId: manualForm.customerId ? parseInt(manualForm.customerId) : undefined,
+      applicationDeadline: manualForm.applicationDeadline ? new Date(manualForm.applicationDeadline) : undefined,
       status: "active",
       isPublic: true,
     });
@@ -358,6 +372,20 @@ Format the output as JSON with keys: title, description, responsibilities, requi
                       value={manualForm.salaryMax}
                       onChange={(e) => setManualForm({ ...manualForm, salaryMax: e.target.value })}
                     />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="applicationDeadline">Application Deadline (Optional)</Label>
+                    <Input
+                      id="applicationDeadline"
+                      type="date"
+                      value={manualForm.applicationDeadline}
+                      onChange={(e) => setManualForm({ ...manualForm, applicationDeadline: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Set a deadline to create urgency for candidates
+                    </p>
                   </div>
 
                   <div>
