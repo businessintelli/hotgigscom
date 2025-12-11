@@ -364,3 +364,11 @@
 - [x] Check if candidate profile exists for userId 2 (2 profiles found)
 - [x] Fix useAuth hook to not use stale localStorage data
 - [ ] Test candidate dashboard with correct profile data
+
+## Candidate Dashboard Bug Fixes (COMPLETED)
+- [x] Add edit profile functionality to candidate dashboard (already exists)
+- [x] Connect resume upload button to parsing function (already connected)
+- [x] Fix resume upload to auto-populate profile fields from parsed data (fixed parser error)
+- [x] Enable job details viewing (created JobDetails page and added route)
+- [x] Search Jobs button works (navigates to /jobs)
+- [ ] Test all candidate dashboard features

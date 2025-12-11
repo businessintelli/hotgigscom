@@ -18,6 +18,7 @@ import AIInterviewPage from "@/pages/AIInterviewPage";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
 import CandidateSearch from "./pages/CandidateSearch";
+import JobDetails from "./pages/JobDetails";
 
 
 function Router() {
@@ -37,6 +38,7 @@ function Router() {
       <Route path={"/candidate-dashboard"} component={CandidateDashboard} />
       <Route path={"/jobs"} component={JobBrowser} />
       <Route path={"/jobs/search"} component={AdvancedJobSearch} />
+      <Route path={"/jobs/:id"} component={JobDetails} />
       <Route path={"/apply/:id"} component={JobApplication} />
       <Route path={"/ai-interview"} component={AIInterviewPage} />
       <Route path={"/404"} component={NotFound} />

@@ -100,9 +100,14 @@ Return ONLY the JSON object, no other text.`
     }
   });
 
-  const content = response.choices[0].message.content;
-  if (!content || typeof content !== 'string') {
+  // Check if response has choices
+  if (!response.choices || response.choices.length === 0) {
     throw new Error('Failed to parse resume: No response from AI');
+  }
+  
+  const content = response.choices[0]?.message?.content;
+  if (!content || typeof content !== 'string') {
+    throw new Error('Failed to parse resume: Invalid response from AI');
   }
 
   return JSON.parse(content);
