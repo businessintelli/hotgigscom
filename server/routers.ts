@@ -297,6 +297,32 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getRecommendedJobsForCandidate(input.candidateId, input.limit);
       }),
+    
+    saveJob: protectedProcedure
+      .input(z.object({ candidateId: z.number(), jobId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.saveJob(input.candidateId, input.jobId);
+        return { success: true };
+      }),
+    
+    unsaveJob: protectedProcedure
+      .input(z.object({ candidateId: z.number(), jobId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.unsaveJob(input.candidateId, input.jobId);
+        return { success: true };
+      }),
+    
+    getSavedJobs: protectedProcedure
+      .input(z.object({ candidateId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSavedJobs(input.candidateId);
+      }),
+    
+    isJobSaved: protectedProcedure
+      .input(z.object({ candidateId: z.number(), jobId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.isJobSaved(input.candidateId, input.jobId);
+      }),
   }),
 
   customer: router({

@@ -8,13 +8,14 @@ import { Briefcase, MapPin, DollarSign, Clock, Search, Loader2, Building2, Slide
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export default function JobBrowser() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useLocalStorage("jobBrowser_searchQuery", "");
+  const [locationFilter, setLocationFilter] = useLocalStorage("jobBrowser_locationFilter", "");
+  const [typeFilter, setTypeFilter] = useLocalStorage("jobBrowser_typeFilter", "all");
 
   // Fetch all public jobs
   const { data: jobs, isLoading } = trpc.job.list.useQuery();
@@ -35,7 +36,7 @@ export default function JobBrowser() {
     const matchesLocation =
       !locationFilter || job.location?.toLowerCase().includes(locationFilter.toLowerCase());
 
-    const matchesType = !typeFilter || job.employmentType === typeFilter;
+    const matchesType = !typeFilter || typeFilter === "all" || job.employmentType === typeFilter;
 
     return matchesSearch && matchesLocation && matchesType;
   });

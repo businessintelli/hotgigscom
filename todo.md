@@ -416,3 +416,26 @@
 - [x] Find SelectItem with empty string value in JobBrowser
 - [x] Remove or fix the empty value SelectItem (changed "" to "all")
 - [ ] Test /jobs page to ensure error is resolved
+
+## Filter State Persistence (COMPLETED)
+- [x] Add localStorage hooks for saving filter state
+- [x] Update JobBrowser to persist location and job type filters
+- [x] Update AdvancedJobSearch to persist all filters (keywords, location, salary, experience, work location)
+- [ ] Test filter persistence across page refreshes
+
+## Job Bookmarking Feature
+- [ ] Add savedJobs table to database schema
+- [ ] Create backend procedures for saving/removing bookmarks
+- [ ] Add "Save Job" button to job cards
+- [ ] Create Saved Jobs page component
+- [ ] Add route for /saved-jobs
+- [ ] Add navigation link in candidate dashboard
+- [ ] Test bookmarking functionality
+
+## Application Deadline Indicators
+- [ ] Add applicationDeadline field to jobs table schema
+- [ ] Update job creation form to include deadline
+- [ ] Create countdown badge component
+- [ ] Add deadline indicators to job cards in all views
+- [ ] Add urgency styling (red for <3 days, yellow for <7 days)
+- [ ] Test deadline display and countdown

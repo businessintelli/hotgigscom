@@ -235,3 +235,16 @@ export const savedSearches = mysqlTable("savedSearches", {
 
 export type SavedSearch = typeof savedSearches.$inferSelect;
 export type InsertSavedSearch = typeof savedSearches.$inferInsert;
+
+/**
+ * Saved jobs for candidates to bookmark interesting positions
+ */
+export const savedJobs = mysqlTable("savedJobs", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SavedJob = typeof savedJobs.$inferSelect;
+export type InsertSavedJob = typeof savedJobs.$inferInsert;

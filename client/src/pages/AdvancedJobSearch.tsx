@@ -14,18 +14,19 @@ import {
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export default function AdvancedJobSearch() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
-  // Search filters
-  const [keyword, setKeyword] = useState("");
-  const [location, setLocationFilter] = useState("");
-  const [employmentType, setEmploymentType] = useState<string>("all");
-  const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 300000]);
-  const [experienceLevel, setExperienceLevel] = useState<string>("all");
-  const [remoteOption, setRemoteOption] = useState<string>("all");
+  // Search filters with localStorage persistence
+  const [keyword, setKeyword] = useLocalStorage("advancedSearch_keyword", "");
+  const [location, setLocationFilter] = useLocalStorage("advancedSearch_location", "");
+  const [employmentType, setEmploymentType] = useLocalStorage<string>("advancedSearch_employmentType", "all");
+  const [salaryRange, setSalaryRange] = useLocalStorage<[number, number]>("advancedSearch_salaryRange", [0, 300000]);
+  const [experienceLevel, setExperienceLevel] = useLocalStorage<string>("advancedSearch_experienceLevel", "all");
+  const [remoteOption, setRemoteOption] = useLocalStorage<string>("advancedSearch_remoteOption", "all");
   const [showFilters, setShowFilters] = useState(true);
 
   // Debounced search

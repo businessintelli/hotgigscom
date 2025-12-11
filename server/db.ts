@@ -11,7 +11,8 @@ import {
   interviews, InsertInterview,
   interviewQuestions, InsertInterviewQuestion,
   interviewResponses, InsertInterviewResponse,
-  savedSearches, InsertSavedSearch
+  savedSearches, InsertSavedSearch,
+  savedJobs, InsertSavedJob
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -910,4 +911,48 @@ export async function getRecommendedJobsForCandidate(candidateId: number, limit:
   return jobsWithScores
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, limit);
+}
+
+// Saved Jobs
+export async function saveJob(candidateId: number, jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.insert(savedJobs).values({ candidateId, jobId });
+}
+
+export async function unsaveJob(candidateId: number, jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.delete(savedJobs).where(and(
+    eq(savedJobs.candidateId, candidateId),
+    eq(savedJobs.jobId, jobId)
+  ));
+}
+
+export async function getSavedJobs(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select({
+      savedJob: savedJobs,
+      job: jobs,
+    })
+    .from(savedJobs)
+    .innerJoin(jobs, eq(savedJobs.jobId, jobs.id))
+    .where(eq(savedJobs.candidateId, candidateId))
+    .orderBy(desc(savedJobs.createdAt));
+}
+
+export async function isJobSaved(candidateId: number, jobId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .select()
+    .from(savedJobs)
+    .where(and(
+      eq(savedJobs.candidateId, candidateId),
+      eq(savedJobs.jobId, jobId)
+    ))
+    .limit(1);
+  return result.length > 0;
 }

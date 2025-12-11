@@ -50,6 +50,13 @@
       "when": 1765463062384,
       "tag": "0006_lucky_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1765464580459,
+      "tag": "0007_large_moonstone",
+      "breakpoints": true
     }
   ]
 }
