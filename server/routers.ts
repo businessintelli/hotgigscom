@@ -7,7 +7,7 @@ import { parseResume, calculateMatchScore, generateInterviewQuestions, analyzeRe
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { z } from "zod";
 import * as db from "./db";
-import { hashPassword, verifyPassword, generateToken, isValidEmail, isValidPassword } from "./auth";
+
 import { storagePut } from "./storage";
 
 // Helper to generate random suffix for file keys
@@ -26,91 +26,7 @@ export const appRouter = router({
       return { success: true } as const;
     }),
     
-    // Custom authentication endpoints
-    signup: publicProcedure
-      .input(z.object({
-        email: z.string().email(),
-        password: z.string().min(8),
-        name: z.string().optional(),
-        role: z.enum(["recruiter", "candidate"]),
-      }))
-      .mutation(async ({ input }) => {
-        // Validate email
-        if (!isValidEmail(input.email)) {
-          throw new Error("Invalid email format");
-        }
-        
-        // Validate password strength
-        if (!isValidPassword(input.password)) {
-          throw new Error("Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number");
-        }
-        
-        // Check if user already exists
-        const existing = await db.getUserByEmail(input.email);
-        if (existing) {
-          throw new Error("Email already registered");
-        }
-        
-        // Hash password
-        const passwordHash = await hashPassword(input.password);
-        
-        // Create user
-        const userId = await db.createUser({
-          email: input.email,
-          name: input.name || null,
-          passwordHash,
-          loginMethod: "password",
-          role: input.role,
-        });
-        
-        // Create profile based on role
-        if (input.role === "recruiter") {
-          await db.createRecruiter({ userId });
-        } else if (input.role === "candidate") {
-          await db.createCandidate({ userId });
-        }
-        
-        // Generate token
-        const token = generateToken(userId, input.email);
-        
-        return { success: true, token, userId };
-      }),
-    
-    login: publicProcedure
-      .input(z.object({
-        email: z.string().email(),
-        password: z.string(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        // Find user by email
-        const user = await db.getUserByEmail(input.email);
-        if (!user) {
-          throw new Error("Invalid email or password");
-        }
-        
-        // Check if user uses password auth
-        if (user.loginMethod !== "password" || !user.passwordHash) {
-          throw new Error("This account uses OAuth login. Please use the social login buttons.");
-        }
-        
-        // Verify password
-        const isValid = await verifyPassword(input.password, user.passwordHash);
-        if (!isValid) {
-          throw new Error("Invalid email or password");
-        }
-        
-        // Update last signed in
-        await db.updateUserLastSignedIn(user.id);
-        
-        // Generate JWT token for password-based auth
-        const token = generateToken(user.id, user.email!);
-        
-        // Set session cookie with JWT token
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-        
-        return { success: true, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
-      }),
+
   }),
 
   recruiter: router({

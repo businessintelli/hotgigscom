@@ -11,19 +11,14 @@ import "./index.css";
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
-  if (!(error instanceof TRPCClientError)) return;
-  if (typeof window === "undefined") return;
-
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
-
-  if (!isUnauthorized) return;
-
-  window.location.href = getLoginUrl();
+  // Disabled global redirect - let pages handle their own auth redirects via useAuth hook
+  return;
 };
 
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
+    // The redirect check is now inside redirectToLoginIfUnauthorized
     redirectToLoginIfUnauthorized(error);
     console.error("[API Query Error]", error);
   }

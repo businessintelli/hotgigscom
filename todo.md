@@ -206,3 +206,22 @@
 - [x] Phase 4: Update seeding script with demo credentials
 - [x] Phase 5: Context updated to handle both OAuth and password-based sessions
 - [x] Demo accounts created: demo@recruiter.com / Demo123! and demo@candidate.com / Demo123!
+
+## Authentication Testing & Debugging (Current Focus)
+- [ ] Debug custom login form submission issue
+- [ ] Verify JWT token generation and cookie setting
+- [ ] Test recruiter demo account login flow
+- [ ] Test candidate demo account login flow
+- [ ] Verify dashboard redirect after successful login
+- [ ] Test logout functionality
+- [ ] Verify session persistence across page refreshes
+
+## Revert to OAuth-Only Authentication (COMPLETED)
+- [x] Remove custom auth endpoints (login, signup) from routers.ts
+- [x] Revert context.ts to OAuth-only (remove JWT logic)
+- [x] Remove Login.tsx and Signup.tsx pages
+- [x] Update Home.tsx to use OAuth buttons only
+- [x] Remove auth.ts helper file
+- [x] Home page displays correctly with OAuth buttons
+- [x] TypeScript compilation successful with no errors
+- [x] Server running without errors
