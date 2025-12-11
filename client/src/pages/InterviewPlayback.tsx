@@ -19,8 +19,11 @@ import {
   Star,
   AlertCircle,
   ChevronLeft,
-  Download
+  Download,
+  Shield,
+  FileBarChart
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function InterviewPlayback() {
   const [, setLocation] = useLocation();
@@ -28,6 +31,48 @@ export default function InterviewPlayback() {
   
   // Fetch all completed AI interviews
   const { data: interviews, isLoading } = trpc.interview.listByRecruiter.useQuery();
+  
+  // Report generation queries
+  const generateFraudReportQuery = trpc.interview.generateFraudReport.useQuery;
+  const generateEvaluationReportQuery = trpc.interview.generateEvaluationReport.useQuery;
+  
+  // Handle report download
+  const handleDownloadReport = async (interviewId: number, reportType: 'fraud' | 'evaluation') => {
+    try {
+      toast.loading(`Generating ${reportType} report...`);
+      
+      let reportHtml: string;
+      
+      if (reportType === 'fraud') {
+        const { data } = await generateFraudReportQuery({ interviewId });
+        reportHtml = data?.html || '';
+      } else {
+        const { data } = await generateEvaluationReportQuery({ interviewId });
+        reportHtml = data?.html || '';
+      }
+      
+      if (!reportHtml) {
+        toast.error('Failed to generate report');
+        return;
+      }
+      
+      // Download HTML file
+      const blob = new Blob([reportHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${reportType}-report-${interviewId}-${Date.now()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report downloaded!`);
+    } catch (error) {
+      console.error('Report download error:', error);
+      toast.error('Failed to download report');
+    }
+  };
   
   // Filter for AI interviews that are completed
   const aiInterviews = interviews?.filter(
@@ -485,10 +530,34 @@ export default function InterviewPlayback() {
                   </CardDescription>
                 </div>
                 
-                <Button variant="outline">
-                  <Play className="h-4 w-4 mr-2" />
-                  Review Interview
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Play className="h-4 w-4 mr-2" />
+                    Review
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadReport(item.interview.id, 'evaluation');
+                    }}
+                  >
+                    <FileBarChart className="h-4 w-4 mr-2" />
+                    Evaluation
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadReport(item.interview.id, 'fraud');
+                    }}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Fraud Report
+                  </Button>
+                </div>
               </div>
             </CardHeader>
           </Card>

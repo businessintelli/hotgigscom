@@ -6,8 +6,10 @@ import { sdk } from "./_core/sdk";
 import { parseResume, calculateMatchScore, generateInterviewQuestions, analyzeResume } from "./aiHelpers";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { generateFraudDetectionReport, generateInterviewEvaluationReport } from "./reportGenerator";
+import { executeCode } from "./codeExecutor";
 import { z } from "zod";
 import * as db from "./db";
+import { codingChallenges, codingSubmissions, candidates } from "../drizzle/schema";
 
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
@@ -997,6 +999,79 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const html = await generateInterviewEvaluationReport(input.interviewId);
         return { html };
+      }),
+  }),
+  
+  coding: router({
+    // Get coding challenge
+    getChallenge: protectedProcedure
+      .input(z.object({ challengeId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { eq } = await import("drizzle-orm");
+        const challenges = await database
+          .select()
+          .from(codingChallenges)
+          .where(eq(codingChallenges.id, input.challengeId))
+          .limit(1);
+        
+        return challenges[0] || null;
+      }),
+    
+    // Submit code for evaluation
+    submitCode: protectedProcedure
+      .input(z.object({
+        challengeId: z.number(),
+        code: z.string(),
+        language: z.enum(["python", "javascript", "java", "cpp"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { eq } = await import("drizzle-orm");
+        
+        // Get challenge details
+        const challenges = await database
+          .select()
+          .from(codingChallenges)
+          .where(eq(codingChallenges.id, input.challengeId))
+          .limit(1);
+        
+        const challenge = challenges[0];
+        if (!challenge) throw new Error("Challenge not found");
+        
+        // Parse test cases
+        const testCases = challenge.testCases ? JSON.parse(challenge.testCases) : [];
+        
+        // Execute code
+        const result = await executeCode(input.code, input.language, testCases);
+        
+        // Get candidate ID
+        const candidate = await database
+          .select()
+          .from(candidates)
+          .where(eq(candidates.userId, ctx.user.id))
+          .limit(1);
+        
+        const candidateId = candidate[0]?.id;
+        if (!candidateId) throw new Error("Candidate not found");
+        
+        // Save submission
+        await database.insert(codingSubmissions).values({
+          challengeId: input.challengeId,
+          candidateId,
+          code: input.code,
+          language: input.language,
+          status: result.status,
+          testResults: JSON.stringify(result.testResults),
+          executionTime: result.executionTime,
+          score: result.score,
+        });
+        
+        return result;
       }),
   }),
 });

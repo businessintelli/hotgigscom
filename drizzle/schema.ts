@@ -274,3 +274,42 @@ export const fraudDetectionEvents = mysqlTable("fraudDetectionEvents", {
 
 export type FraudDetectionEvent = typeof fraudDetectionEvents.$inferSelect;
 export type InsertFraudDetectionEvent = typeof fraudDetectionEvents.$inferInsert;
+
+
+/**
+ * Coding interview challenges table
+ */
+export const codingChallenges = mysqlTable("codingChallenges", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  language: mysqlEnum("language", ["python", "javascript", "java", "cpp"]).notNull(),
+  starterCode: text("starterCode"),
+  testCases: text("testCases"), // JSON array of test cases
+  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).notNull(),
+  timeLimit: int("timeLimit"), // seconds
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CodingChallenge = typeof codingChallenges.$inferSelect;
+export type InsertCodingChallenge = typeof codingChallenges.$inferInsert;
+
+/**
+ * Coding interview submissions table
+ */
+export const codingSubmissions = mysqlTable("codingSubmissions", {
+  id: int("id").autoincrement().primaryKey(),
+  challengeId: int("challengeId").notNull().references(() => codingChallenges.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  code: text("code").notNull(),
+  language: varchar("language", { length: 50 }).notNull(),
+  status: mysqlEnum("status", ["pending", "running", "passed", "failed", "error"]).notNull().default("pending"),
+  testResults: text("testResults"), // JSON array of test results
+  executionTime: int("executionTime"), // milliseconds
+  score: int("score"), // 0-100
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+});
+
+export type CodingSubmission = typeof codingSubmissions.$inferSelect;
+export type InsertCodingSubmission = typeof codingSubmissions.$inferInsert;

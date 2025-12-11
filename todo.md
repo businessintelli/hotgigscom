@@ -513,3 +513,45 @@
 - [ ] Create coding interview UI page
 - [ ] Add real-time code saving
 - [ ] Implement code submission and evaluation
+
+
+## Phase 8: Report Download UI & Advanced Features (Current Focus)
+
+### Report Download UI
+- [x] Add "Download Reports" buttons to interview list in InterviewPlayback
+- [x] Add separate buttons for Fraud Detection and Evaluation reports
+- [x] Implement HTML download functionality with toast notifications
+- [x] Add report generation with tRPC query integration
+- [x] Show loading states during report generation
+- [x] Add proper error handling for report downloads
+- [ ] Add PDF export using browser print API or library
+- [ ] Create report viewer modal for HTML preview
+- [ ] Test report download with real interview data
+
+### Coding Interview Module
+- [x] Install Monaco Editor package
+- [x] Create CodingInterviewPage component with Monaco Editor
+- [x] Add language selector (Python, JavaScript, Java, C++)
+- [x] Implement code editor with syntax highlighting and VS Code features
+- [x] Create test case display UI with input/output
+- [x] Add code execution backend endpoint (codeExecutor.ts)
+- [x] Implement code execution with timeout and safety limits
+- [x] Add automated test case validation with pass/fail results
+- [x] Create coding interview database schema (codingChallenges, codingSubmissions)
+- [x] Add coding router to tRPC with getChallenge and submitCode procedures
+- [x] Show execution results with detailed test pass/fail status and scoring
+- [ ] Add coding interview route to App.tsx
+- [ ] Create sample coding challenges for testing
+- [ ] Test complete coding interview workflow
+
+### Advanced Face Detection
+- [ ] Install face-api.js library
+- [ ] Initialize face detection models
+- [ ] Replace basic face detection with face-api.js
+- [ ] Implement multi-person detection
+- [ ] Add face landmark detection
+- [ ] Implement identity verification (face matching)
+- [ ] Add confidence scores to fraud events
+- [ ] Create face detection calibration UI
+- [ ] Test face detection accuracy
+- [ ] Optimize performance for real-time detection
