@@ -727,3 +727,11 @@
 - [ ] Display assessment scores alongside applications
 - [ ] Add assessment analytics and statistics
 - [ ] Test complete assessment workflow
+
+
+## Home Page Enhancement
+- [x] Add grid/list view toggle button on home page
+- [x] Implement list view layout for job listings
+- [x] Add responsive layout for both grid and list views
+- [ ] Maintain view preference in localStorage
+- [ ] Test both view modes

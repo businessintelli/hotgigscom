@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Briefcase, DollarSign, Clock, Building2, Target } from "lucide-react";
+import { Search, MapPin, Briefcase, DollarSign, Clock, Building2, Target, Grid3x3, List } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -15,6 +15,7 @@ export default function PublicHome() {
   const [location, setLocationFilter] = useState("");
   const [jobType, setJobType] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Fetch latest jobs
   const { data: jobs, isLoading } = trpc.job.search.useQuery({
@@ -169,9 +170,27 @@ export default function PublicHome() {
       {/* Latest Jobs */}
       <section className="py-12 px-4">
         <div className="container mx-auto">
-          <h3 className="text-3xl font-bold text-gray-900 mb-8">
-            {keyword || location ? "Search Results" : "Latest Job Openings"}
-          </h3>
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-3xl font-bold text-gray-900">
+              {keyword || location ? "Search Results" : "Latest Job Openings"}
+            </h3>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === "grid" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -189,21 +208,21 @@ export default function PublicHome() {
               ))}
             </div>
           ) : jobs && jobs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
               {jobs.map((job) => (
                 <Card 
                   key={job.id} 
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  className={`hover:shadow-lg transition-shadow cursor-pointer ${viewMode === "list" ? "flex" : ""}`}
                   onClick={() => setLocation(`/jobs/${job.id}`)}
                 >
-                  <CardHeader>
+                  <CardHeader className={viewMode === "list" ? "flex-1" : ""}>
                     <CardTitle className="text-xl">{job.title}</CardTitle>
                     <CardDescription className="flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
                       {job.companyName || "Company"}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className={`space-y-3 ${viewMode === "list" ? "flex-1 flex items-center gap-6" : ""}`}>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <MapPin className="h-4 w-4" />
                       {job.location}
@@ -236,8 +255,8 @@ export default function PublicHome() {
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter>
-                    <Button className="w-full">View Details</Button>
+                  <CardFooter className={viewMode === "list" ? "ml-auto" : ""}>
+                    <Button className={viewMode === "list" ? "" : "w-full"}>View Details</Button>
                   </CardFooter>
                 </Card>
               ))}
