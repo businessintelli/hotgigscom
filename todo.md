@@ -246,3 +246,31 @@
 - [x] Test candidate dashboard with mock candidate user
 - [x] Test recruiter dashboard still works with mock recruiter user
 - [x] Verify both dashboards work independently without errors
+
+## Database Population & Resume Parsing (Current Focus)
+- [x] Create comprehensive database seeding script with realistic data
+- [x] Add 10+ diverse candidate profiles with different skills and experience levels
+- [x] Add 15+ job postings across various roles and industries
+- [x] Add 30+ applications with varied statuses
+- [x] Add 10+ scheduled/completed interviews
+- [x] Implement resume file upload (PDF/DOCX) with S3 storage
+- [x] Implement automatic resume text extraction from PDF/DOCX
+- [x] Implement AI-powered resume parsing to extract skills, experience, education
+- [x] Auto-populate candidate profile fields from parsed resume data
+- [ ] Test resume upload and parsing functionality
+
+## End-to-End Workflow Testing (Current Focus)
+- [ ] Test recruiter: Create new job posting
+- [ ] Test recruiter: View job on dashboard
+- [ ] Test candidate: Browse jobs and find the new posting
+- [ ] Test candidate: Upload resume (PDF or DOCX)
+- [ ] Test candidate: Apply for the job
+- [ ] Test candidate: View application status
+- [ ] Test recruiter: View new application
+- [ ] Test recruiter: Review AI match score
+- [ ] Test recruiter: Schedule AI interview
+- [ ] Test candidate: Complete AI interview (record responses)
+- [ ] Test recruiter: View interview playback with transcription and evaluation
+- [ ] Test recruiter: Update application status
+- [ ] Test candidate: See updated status
+- [ ] Verify entire workflow works seamlessly

@@ -9,6 +9,7 @@ import { z } from "zod";
 import * as db from "./db";
 
 import { storagePut } from "./storage";
+import { extractResumeText, parseResumeWithAI } from "./resumeParser";
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -117,9 +118,10 @@ export const appRouter = router({
         candidateId: z.number(),
         fileData: z.string(), // base64 encoded file
         fileName: z.string(),
+        autoFill: z.boolean().optional(), // Whether to auto-fill profile from resume
       }))
       .mutation(async ({ input }) => {
-        const { candidateId, fileData, fileName } = input;
+        const { candidateId, fileData, fileName, autoFill = true } = input;
         
         // Extract base64 data and mime type
         const matches = fileData.match(/^data:(.+);base64,(.+)$/);
@@ -135,14 +137,48 @@ export const appRouter = router({
         const fileKey = `resumes/${candidateId}-${fileName}-${randomSuffix()}`;
         const { url } = await storagePut(fileKey, buffer, mimeType);
         
-        // Update candidate profile
-        await db.updateCandidate(candidateId, {
-          resumeUrl: url,
-          resumeFilename: fileName,
-          resumeUploadedAt: new Date(),
-        });
+        // Parse resume if autoFill is enabled
+        let parsedData = null;
+        if (autoFill) {
+          try {
+            // Extract text from PDF/DOCX
+            const resumeText = await extractResumeText(buffer, mimeType);
+            
+            // Parse with AI
+            parsedData = await parseResumeWithAI(resumeText);
+            
+            // Update candidate profile with parsed data
+            await db.updateCandidate(candidateId, {
+              resumeUrl: url,
+              resumeFilename: fileName,
+              resumeUploadedAt: new Date(),
+              ...(parsedData.title && { title: parsedData.title }),
+              ...(parsedData.phone && { phoneNumber: parsedData.phone }),
+              ...(parsedData.location && { location: parsedData.location }),
+              ...(parsedData.summary && { bio: parsedData.summary }),
+              ...(parsedData.skills && { skills: parsedData.skills }),
+              ...(parsedData.experience && { experience: parsedData.experience }),
+              ...(parsedData.education && { education: parsedData.education }),
+            });
+          } catch (error) {
+            console.error('Resume parsing failed:', error);
+            // Still save the resume URL even if parsing fails
+            await db.updateCandidate(candidateId, {
+              resumeUrl: url,
+              resumeFilename: fileName,
+              resumeUploadedAt: new Date(),
+            });
+          }
+        } else {
+          // Just update resume URL without parsing
+          await db.updateCandidate(candidateId, {
+            resumeUrl: url,
+            resumeFilename: fileName,
+            resumeUploadedAt: new Date(),
+          });
+        }
         
-        return { success: true, url };
+        return { success: true, url, parsedData };
       }),
     
     getByUserId: protectedProcedure
