@@ -411,3 +411,8 @@
 - [x] Make AI Matches stat card clickable (navigates to /recruiter/ai-matching)
 - [x] Make Submitted to Clients stat card clickable (navigates to /recruiter/submissions)
 - [ ] Test all recruiter dashboard functionality
+
+## Bug Fix: Select Component Error on /jobs Page (COMPLETED)
+- [x] Find SelectItem with empty string value in JobBrowser
+- [x] Remove or fix the empty value SelectItem (changed "" to "all")
+- [ ] Test /jobs page to ensure error is resolved
