@@ -359,3 +359,8 @@
 - [x] Check context.ts route detection logic
 - [x] Fix context to provide recruiter user for all /recruiter/* routes
 - [ ] Test job creation page with correct mock user
+
+## Bug Fix: Missing Candidate Profile for Mock User (COMPLETED)
+- [x] Check if candidate profile exists for userId 2 (2 profiles found)
+- [x] Fix useAuth hook to not use stale localStorage data
+- [ ] Test candidate dashboard with correct profile data
