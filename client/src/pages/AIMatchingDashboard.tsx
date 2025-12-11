@@ -34,6 +34,9 @@ export default function AIMatchingDashboard() {
     { enabled: !!selectedJobId }
   );
 
+  // Mutation for updating application status
+  const updateApplicationMutation = trpc.application.updateStatus.useMutation();
+
   if (authLoading || jobsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -410,15 +413,43 @@ export default function AIMatchingDashboard() {
                             </a>
                           </Button>
                         )}
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            if (application.candidate.email) {
+                              window.location.href = `mailto:${application.candidate.email}`;
+                            }
+                          }}
+                        >
                           <Mail className="h-4 w-4 mr-1" />
                           Contact
                         </Button>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                        <Button 
+                          size="sm" 
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={async () => {
+                            try {
+                              await updateApplicationMutation.mutateAsync({
+                                id: application.id,
+                                status: 'shortlisted'
+                              });
+                              refetch();
+                            } catch (error) {
+                              console.error('Failed to shortlist:', error);
+                            }
+                          }}
+                        >
                           <CheckCircle2 className="h-4 w-4 mr-1" />
                           Shortlist
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setLocation(`/recruiter/interviews?applicationId=${application.id}`);
+                          }}
+                        >
                           Schedule Interview
                         </Button>
                       </div>

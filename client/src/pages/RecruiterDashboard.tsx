@@ -50,10 +50,10 @@ export default function RecruiterDashboard() {
   const recentJobs = dashboardData?.recentJobs || [];
 
   const statCards = [
-    { title: 'Active Jobs', value: stats.activeJobs, change: '+2 this week', icon: '💼', color: 'bg-blue-500' },
-    { title: 'Total Applications', value: stats.totalApplications, change: '+23 this week', icon: '📄', color: 'bg-green-500' },
-    { title: 'AI Matches', value: stats.aiMatches, change: '+15 this week', icon: '🤖', color: 'bg-purple-500' },
-    { title: 'Submitted to Clients', value: stats.submittedToClients, change: '+8 this week', icon: '📧', color: 'bg-orange-500' },
+    { title: 'Active Jobs', value: stats.activeJobs, change: '+2 this week', icon: '💼', color: 'bg-blue-500', link: '/recruiter/jobs' },
+    { title: 'Total Applications', value: stats.totalApplications, change: '+23 this week', icon: '📄', color: 'bg-green-500', link: '/recruiter/applications' },
+    { title: 'AI Matches', value: stats.aiMatches, change: '+15 this week', icon: '🤖', color: 'bg-purple-500', link: '/recruiter/ai-matching' },
+    { title: 'Submitted to Clients', value: stats.submittedToClients, change: '+8 this week', icon: '📧', color: 'bg-orange-500', link: '/recruiter/submissions' },
   ];
 
   return (
@@ -103,7 +103,11 @@ export default function RecruiterDashboard() {
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {statCards.map((stat, index) => (
-            <Card key={index}>
+            <Card 
+              key={index} 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setLocation(stat.link)}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -198,7 +202,11 @@ export default function RecruiterDashboard() {
           <CardContent>
             <div className="space-y-4">
               {recentJobs.length > 0 ? recentJobs.map(job => (
-                <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div 
+                  key={job.id} 
+                  className="flex items-center justify-between p-3 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => setLocation(`/jobs/${job.id}`)}
+                >
                   <div>
                     <h4 className="font-semibold">{job.title}</h4>
                     <p className="text-sm text-gray-600">{job.location}</p>

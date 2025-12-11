@@ -425,11 +425,23 @@ export default function CandidateSearch() {
                       </CardContent>
                       
                       <CardFooter className="flex gap-2">
-                        <Button variant="default" className="flex-1">
+                        <Button 
+                          variant="default" 
+                          className="flex-1"
+                          onClick={() => {
+                            if (user?.email) {
+                              window.location.href = `mailto:${user.email}`;
+                            }
+                          }}
+                        >
                           <Mail className="h-4 w-4 mr-2" />
                           Contact
                         </Button>
-                        <Button variant="outline" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => setLocation(`/recruiter/candidates/${candidate.id}`)}
+                        >
                           View Full Profile
                         </Button>
                         {candidate.resumeUrl && (

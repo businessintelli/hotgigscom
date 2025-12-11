@@ -398,3 +398,16 @@
 - [x] Replace simple slice logic with AI-powered recommendations
 - [x] Add recommendation score display (matchScore field in response)
 - [ ] Test recommendations with different candidate profiles
+
+## Recruiter Dashboard Bug Fixes (Current Focus)
+- [x] Fix Contact button in AI Matching Dashboard (opens mailto)
+- [x] Fix Shortlist button in AI Matching Dashboard (updates status)
+- [x] Fix Schedule Interview button in AI Matching Dashboard (navigates to interviews)
+- [x] Fix job details viewing when clicking recent jobs (navigates to /jobs/:id)
+- [x] Fix Contact button in Candidates tab (opens mailto)
+- [x] Fix View Full Profile button in Candidates tab (navigates to candidate profile)
+- [x] Make Active Jobs stat card clickable (navigates to /recruiter/jobs)
+- [x] Make Total Applicants stat card clickable (navigates to /recruiter/applications)
+- [x] Make AI Matches stat card clickable (navigates to /recruiter/ai-matching)
+- [x] Make Submitted to Clients stat card clickable (navigates to /recruiter/submissions)
+- [ ] Test all recruiter dashboard functionality
