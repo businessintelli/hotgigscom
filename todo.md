@@ -545,13 +545,14 @@
 - [ ] Test complete coding interview workflow
 
 ### Advanced Face Detection
-- [ ] Install face-api.js library
-- [ ] Initialize face detection models
-- [ ] Replace basic face detection with face-api.js
-- [ ] Implement multi-person detection
-- [ ] Add face landmark detection
+- [x] Install face-api.js library
+- [x] Initialize face detection models from CDN
+- [x] Replace basic face detection with face-api.js
+- [x] Implement multi-person detection with real-time alerts
+- [x] Add face landmark detection
+- [x] Add confidence scores to fraud events
+- [x] Create real-time fraud detection UI widget
+- [x] Optimize performance with 3-second detection intervals
+- [x] Add debouncing to prevent duplicate fraud event logging
 - [ ] Implement identity verification (face matching)
-- [ ] Add confidence scores to fraud events
-- [ ] Create face detection calibration UI
-- [ ] Test face detection accuracy
-- [ ] Optimize performance for real-time detection
+- [ ] Test face detection accuracy with live interviews

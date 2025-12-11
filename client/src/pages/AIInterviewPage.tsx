@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Video, Mic, Square, Play, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { FraudDetectionMonitor } from "@/components/FraudDetectionMonitor";
+import FraudDetectionMonitorV2 from "@/components/FraudDetectionMonitorV2";
 
 /**
  * AI Interview Page - Candidate-facing interface for AI-powered interviews
@@ -238,12 +238,11 @@ export default function AIInterviewPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
       {/* Fraud Detection Monitor */}
-      <FraudDetectionMonitor
+      <FraudDetectionMonitorV2
         interviewId={interviewId}
         candidateId={candidateId}
-        videoStream={mediaStream}
-        currentQuestionId={currentQuestion?.id}
-        isRecording={isRecording}
+        videoElement={videoRef.current}
+        isActive={true}
       />
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
