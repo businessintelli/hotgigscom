@@ -13,6 +13,7 @@ import { codingChallenges, codingSubmissions, candidates } from "../drizzle/sche
 
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
+import { sendInterviewInvitation, sendApplicationStatusUpdate } from "./emailNotifications";
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -523,6 +524,30 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
         await db.updateApplication(id, data);
+        
+        // Send email notification to candidate
+        try {
+          const applications = await db.getApplicationsByJob(0); // Get application details
+          const application = applications.find(app => app.id === id);
+          if (application) {
+            const candidate = await db.getCandidateById(application.candidateId);
+            const job = await db.getJobById(application.jobId);
+            if (candidate && job) {
+              const user = await db.getUserById(candidate.userId);
+              if (user?.email) {
+                await sendApplicationStatusUpdate({
+                  candidateEmail: user.email,
+                  candidateName: user.name || "Candidate",
+                  jobTitle: job.title,
+                  status: input.status,
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Failed to send application status email:", error);
+        }
+        
         return { success: true };
       }),
     
@@ -675,11 +700,31 @@ export const appRouter = router({
         const recruiter = await db.getRecruiterByUserId(ctx.user.id);
         if (!recruiter) throw new Error("Recruiter profile not found");
         
-        await db.createInterview({
+        const interview = await db.createInterview({
           ...input,
           recruiterId: recruiter.id,
           scheduledAt: new Date(input.scheduledAt),
         });
+        
+        // Send email notification to candidate
+        try {
+          const candidate = await db.getCandidateById(input.candidateId);
+          const job = await db.getJobById(input.jobId);
+          if (candidate && job) {
+            const user = await db.getUserById(candidate.userId);
+            if (user?.email) {
+              await sendInterviewInvitation({
+                candidateEmail: user.email,
+                candidateName: user.name || "Candidate",
+                jobTitle: job.title,
+                interviewDate: new Date(input.scheduledAt),
+                interviewType: input.type || "AI Interview",
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to send interview invitation email:", error);
+        }
         
         return { success: true };
       }),

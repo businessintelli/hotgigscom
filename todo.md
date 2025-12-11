@@ -673,3 +673,54 @@
 - [ ] Test S3 resume upload and retrieval
 - [ ] Test resume preview functionality
 - [ ] Test draft auto-save and restoration
+
+
+## Phase 12: Platform Transformation
+### Indeed-Style Home Page Redesign
+- [x] Create public landing page with hero section
+- [x] Add job search bar with keyword and location inputs
+- [x] Display latest jobs list below search bar with cards
+- [x] Add job filters (job type, experience level) with clear filters option
+- [x] Create top navigation menu (Home, About Us, Sign In/Sign Up)
+- [x] Create About Us page with mission, values, and story
+- [x] Make home page accessible without authentication
+- [x] Add footer with links and company info
+- [x] Update App.tsx routing to use PublicHome as default
+- [ ] Implement role-based redirect after login (recruiter/candidate/admin)
+- [ ] Add logout functionality that returns to home page
+
+### Email Notification System
+- [x] Set up email notification infrastructure (emailNotifications.ts)
+- [x] Create interview invitation email template
+- [x] Send email when interview is scheduled
+- [x] Create application status update email template
+- [x] Send email when application status changes
+- [x] Create saved job deadline reminder email template
+- [x] Implement function to check deadlines (3 days before expiry)
+- [ ] Implement scheduled job/cron to run deadline checker daily
+- [ ] Add email preferences to candidate settings
+- [ ] Test all email notifications with real scenarios
+
+### Recruiter Analytics Dashboard
+- [ ] Create RecruiterAnalytics page
+- [ ] Add time-to-hire metrics by job
+- [ ] Calculate application funnel conversion rates
+- [ ] Add candidate source tracking
+- [ ] Display interview completion rates
+- [ ] Create data visualization charts
+- [ ] Implement CSV export functionality
+- [ ] Add date range filtering
+- [ ] Add job-specific analytics drill-down
+- [ ] Test analytics calculations and exports
+
+### Candidate Skill Assessments
+- [ ] Create skill assessment database schema
+- [ ] Build assessment creation form for recruiters
+- [ ] Add question types (multiple choice, coding, essay)
+- [ ] Implement assessment assignment to jobs
+- [ ] Create candidate assessment taking interface
+- [ ] Add automatic scoring for objective questions
+- [ ] Create assessment results view for recruiters
+- [ ] Display assessment scores alongside applications
+- [ ] Add assessment analytics and statistics
+- [ ] Test complete assessment workflow
