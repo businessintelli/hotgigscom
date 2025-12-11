@@ -8,8 +8,8 @@ export type TrpcContext = {
   user: User | null;
 };
 
-// Mock user for testing without authentication
-const MOCK_USER: User = {
+// Mock users for testing without authentication
+const MOCK_RECRUITER: User = {
   id: 1,
   openId: "mock-open-id",
   email: "test@recruiter.com",
@@ -22,17 +22,42 @@ const MOCK_USER: User = {
   lastSignedIn: new Date(),
 };
 
+const MOCK_CANDIDATE: User = {
+  id: 2,
+  openId: "mock-candidate-open-id",
+  email: "test@candidate.com",
+  name: "Test Candidate",
+  role: "user",
+  loginMethod: "oauth",
+  passwordHash: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  lastSignedIn: new Date(),
+};
+
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   // TEMPORARY: Bypass authentication for testing
-  // Return mock user instead of checking OAuth
-  console.log("[Auth Bypass] Using mock user for testing");
+  // Return appropriate mock user based on the request path
+  const path = opts.req.path || "";
+  const referer = opts.req.headers.referer || "";
+  
+  // Determine which mock user to use based on the route
+  let mockUser = MOCK_RECRUITER; // Default to recruiter
+  
+  // Use candidate mock user for candidate-related routes
+  if (path.includes("/candidate") || referer.includes("/candidate") || 
+      referer.includes("/jobs") || referer.includes("/apply")) {
+    mockUser = MOCK_CANDIDATE;
+  }
+  
+  console.log(`[Auth Bypass] Using mock ${mockUser.role === 'recruiter' ? 'recruiter' : 'candidate'} for testing`);
   
   return {
     req: opts.req,
     res: opts.res,
-    user: MOCK_USER,
+    user: mockUser,
   };
   
   /* Original OAuth authentication (commented out for testing)
