@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Briefcase, FileText, Eye, TrendingUp, Upload, Search, Users, MessageSquare, Loader2 } from "lucide-react";
+import { Briefcase, FileText, Eye, TrendingUp, Upload, Search, Users, MessageSquare, Loader2, Heart } from "lucide-react";
+import { BookmarkButton } from "@/components/BookmarkButton";
+import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -439,20 +441,28 @@ export default function CandidateDashboard() {
                     {recommendedJobs.map((job: any) => (
                       <div
                         key={job.id}
-                        className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => setLocation(`/jobs/${job.id}`)}
+                        className="p-4 border rounded-lg hover:shadow-md transition-shadow"
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <div>
+                          <div className="flex-1 cursor-pointer" onClick={() => setLocation(`/jobs/${job.id}`)}>
                             <h3 className="font-semibold">{job.title}</h3>
                             <p className="text-sm text-gray-600">{job.companyName || 'Company Not Specified'}</p>
                           </div>
-                          <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            {job.matchScore || 85}% Match
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                              {job.matchScore || 85}% Match
+                            </span>
+                            <DeadlineBadge deadline={job.applicationDeadline} />
+                            <BookmarkButton
+                              jobId={job.id}
+                              candidateId={candidate?.id}
+                              variant="ghost"
+                              size="sm"
+                            />
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-700 mb-2">{job.location}</p>
-                        <div className="flex gap-2">
+                        <p className="text-sm text-gray-700 mb-2 cursor-pointer" onClick={() => setLocation(`/jobs/${job.id}`)}>{job.location}</p>
+                        <div className="flex gap-2 cursor-pointer" onClick={() => setLocation(`/jobs/${job.id}`)}>
                           <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
                             {job.type}
                           </span>
@@ -503,6 +513,14 @@ export default function CandidateDashboard() {
                 >
                   <Briefcase className="mr-2 h-4 w-4" />
                   My Applications
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setLocation("/saved-jobs")}
+                >
+                  <Heart className="mr-2 h-4 w-4" />
+                  Saved Jobs
                 </Button>
               </CardContent>
             </Card>

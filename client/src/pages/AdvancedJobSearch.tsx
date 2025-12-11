@@ -11,6 +11,8 @@ import {
   Briefcase, MapPin, DollarSign, Clock, Search, Loader2, Building2, 
   Filter, X, SlidersHorizontal, Home, Wifi, MapPinned 
 } from "lucide-react";
+import { BookmarkButton } from "@/components/BookmarkButton";
+import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -295,7 +297,10 @@ export default function AdvancedJobSearch() {
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <CardTitle className="text-xl mb-2">{job.title}</CardTitle>
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <CardTitle className="text-xl">{job.title}</CardTitle>
+                            <DeadlineBadge deadline={job.applicationDeadline} />
+                          </div>
                           {job.companyName && (
                             <p className="text-gray-600 mb-2">{job.companyName}</p>
                           )}
@@ -345,6 +350,13 @@ export default function AdvancedJobSearch() {
                         >
                           View Details
                         </Button>
+                        <BookmarkButton
+                          jobId={job.id}
+                          candidateId={candidate?.id}
+                          variant="outline"
+                          size="default"
+                          showText
+                        />
                       </div>
                     </CardContent>
                   </Card>

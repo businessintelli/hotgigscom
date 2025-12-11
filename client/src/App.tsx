@@ -20,6 +20,7 @@ import JobApplication from "./pages/JobApplication";
 import CandidateSearch from "./pages/CandidateSearch";
 import JobDetails from "./pages/JobDetails";
 import MyApplications from "./pages/MyApplications";
+import SavedJobs from "./pages/SavedJobs";
 
 
 function Router() {
@@ -36,9 +37,10 @@ function Router() {
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path={"/recruiter/customers"} component={CustomerManagement} />
       <Route path={"/recruiter/search-candidates"} component={CandidateSearch} />
-      <Route path={"/candidate-dashboard"} component={CandidateDashboard} />
-      <Route path={"/my-applications"} component={MyApplications} />
-      <Route path={"/jobs"} component={JobBrowser} />
+      <Route path="/candidate-dashboard" component={CandidateDashboard} />
+      <Route path="/my-applications" component={MyApplications} />
+      <Route path="/saved-jobs" component={SavedJobs} />
+      <Route path="/jobs" component={JobBrowser} />
       <Route path={"/jobs/search"} component={AdvancedJobSearch} />
       <Route path={"/jobs/:id"} component={JobDetails} />
       <Route path={"/apply/:id"} component={JobApplication} />

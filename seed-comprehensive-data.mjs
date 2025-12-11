@@ -133,10 +133,24 @@ const jobs = [
 ];
 
 const jobIds = [];
-for (const job of jobs) {
+for (let i = 0; i < jobs.length; i++) {
+  const job = jobs[i];
+  // Create varied deadlines for testing:
+  // - Some urgent (1-2 days)
+  // - Some moderate (3-7 days)
+  // - Some comfortable (8-30 days)
+  // - Some without deadlines
+  let applicationDeadline = null;
+  if (i % 4 !== 3) { // 75% of jobs have deadlines
+    const daysUntilDeadline = i % 3 === 0 ? 2 : i % 3 === 1 ? 5 : 15; // Varied urgency
+    applicationDeadline = new Date();
+    applicationDeadline.setDate(applicationDeadline.getDate() + daysUntilDeadline);
+  }
+  
   const [result] = await db.insert(schema.jobs).values({
     ...job,
     postedBy: 1, // Posted by mock recruiter
+    applicationDeadline,
     createdAt: new Date(),
     updatedAt: new Date(),
   });

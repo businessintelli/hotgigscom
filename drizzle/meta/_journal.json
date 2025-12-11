@@ -33,29 +33,29 @@
     {
       "idx": 4,
       "version": "5",
-      "when": 1765445263635,
-      "tag": "0004_colorful_nico_minoru",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
       "when": 1765461421187,
       "tag": "0005_slim_proteus",
       "breakpoints": true
     },
     {
-      "idx": 6,
+      "idx": 5,
       "version": "5",
       "when": 1765463062384,
       "tag": "0006_lucky_martin_li",
       "breakpoints": true
     },
     {
-      "idx": 7,
+      "idx": 6,
       "version": "5",
       "when": 1765464580459,
       "tag": "0007_large_moonstone",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1765467524833,
+      "tag": "0008_wakeful_maestro",
       "breakpoints": true
     }
   ]

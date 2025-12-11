@@ -116,6 +116,7 @@ export const jobs = mysqlTable("jobs", {
   status: mysqlEnum("status", ["draft", "active", "closed", "filled"]).default("draft"),
   isPublic: boolean("isPublic").default(false),
   postedBy: int("postedBy").notNull().references(() => users.id),
+  applicationDeadline: timestamp("applicationDeadline"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   closedAt: timestamp("closedAt"),

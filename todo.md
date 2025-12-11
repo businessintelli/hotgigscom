@@ -423,10 +423,10 @@
 - [x] Update AdvancedJobSearch to persist all filters (keywords, location, salary, experience, work location)
 - [ ] Test filter persistence across page refreshes
 
-## Job Bookmarking Feature
-- [ ] Add savedJobs table to database schema
-- [ ] Create backend procedures for saving/removing bookmarks
-- [ ] Add "Save Job" button to job cards
+## Job Bookmarking Feature (Current Focus)
+- [x] Add savedJobs table to database schema
+- [x] Create backend procedures for saving/removing bookmarks
+- [ ] Add "Save Job" button to job cards (JobBrowser, AdvancedJobSearch, CandidateDashboard)
 - [ ] Create Saved Jobs page component
 - [ ] Add route for /saved-jobs
 - [ ] Add navigation link in candidate dashboard
@@ -439,3 +439,23 @@
 - [ ] Add deadline indicators to job cards in all views
 - [ ] Add urgency styling (red for <3 days, yellow for <7 days)
 - [ ] Test deadline display and countdown
+
+## Phase 5: Job Bookmarking & Application Deadlines (Current Focus)
+- [x] Create savedJobs table in database schema
+- [x] Build backend tRPC procedures (saveJob, unsaveJob, getSavedJobs)
+- [x] Create BookmarkButton reusable component with heart icon
+- [x] Create SavedJobs page at /saved-jobs route
+- [x] Integrate BookmarkButton into JobBrowser page
+- [x] Integrate BookmarkButton into AdvancedJobSearch page
+- [x] Integrate BookmarkButton into CandidateDashboard recommended jobs
+- [x] Add "Saved Jobs" navigation link to Candidate Dashboard Quick Actions
+- [x] Add applicationDeadline field to jobs table schema
+- [ ] Update job creation form to include deadline input
+- [x] Create DeadlineBadge component with countdown logic
+- [x] Add deadline indicators to all job cards with color-coded urgency (red <3 days, yellow 3-7 days, green >7 days)
+- [x] Integrate DeadlineBadge into JobBrowser page
+- [x] Integrate DeadlineBadge into AdvancedJobSearch page
+- [x] Integrate DeadlineBadge into CandidateDashboard recommended jobs
+- [x] Update existing jobs with varied deadline dates for testing
+- [ ] Test complete bookmarking workflow across all pages
+- [ ] Verify deadline countdown displays correctly

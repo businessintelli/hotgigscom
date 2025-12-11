@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { Briefcase, MapPin, DollarSign, Clock, Search, Loader2, Building2, SlidersHorizontal } from "lucide-react";
+import { BookmarkButton } from "@/components/BookmarkButton";
+import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -166,7 +168,10 @@ export default function JobBrowser() {
                           <Building2 className="h-6 w-6" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-semibold mb-1">{job.title}</h3>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="text-xl font-semibold">{job.title}</h3>
+                            <DeadlineBadge deadline={job.applicationDeadline} />
+                          </div>
                           <p className="text-gray-600 mb-3">{job.companyName || 'Company Not Specified'}</p>
 
                           <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
@@ -230,6 +235,13 @@ export default function JobBrowser() {
                       >
                         View Details
                       </Button>
+                      <BookmarkButton
+                        jobId={job.id}
+                        candidateId={candidate?.id}
+                        variant="outline"
+                        size="default"
+                        showText
+                      />
                     </div>
                   </div>
                 </CardContent>
