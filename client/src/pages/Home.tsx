@@ -73,14 +73,19 @@ export default function Home() {
                 <li>✓ Client management tools</li>
                 <li>✓ Application tracking</li>
               </ul>
-              <Button 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                onClick={() => {
-                  window.location.href = getLoginUrl('recruiter');
-                }}
-              >
-                Get Started as Recruiter
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  onClick={() => {
+                    window.location.href = getLoginUrl('recruiter');
+                  }}
+                >
+                  Get Started as Recruiter
+                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Demo: <a href="/login" className="text-blue-600 hover:underline">demo@recruiter.com</a> / Demo123!
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -101,14 +106,19 @@ export default function Home() {
                 <li>✓ Track application status</li>
                 <li>✓ Get matched with opportunities</li>
               </ul>
-              <Button 
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                onClick={() => {
-                  window.location.href = getLoginUrl('candidate');
-                }}
-              >
-                Get Started as Candidate
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  onClick={() => {
+                    window.location.href = getLoginUrl('candidate');
+                  }}
+                >
+                  Get Started as Candidate
+                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Demo: <a href="/login" className="text-purple-600 hover:underline">demo@candidate.com</a> / Demo123!
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -16,11 +16,15 @@ import InterviewPlayback from "@/pages/InterviewPlayback";
 import AIInterviewPage from "@/pages/AIInterviewPage";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/login"} component={Login} />
+      <Route path={"/signup"} component={Signup} />
       <Route path={"/recruiter/dashboard"} component={RecruiterDashboard} />
         <Route path="/recruiter/create-job" component={CreateJob} />
       <Route path="/recruiter/ai-matching" component={AIMatchingDashboard} />

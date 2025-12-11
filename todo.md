@@ -198,3 +198,11 @@
 - [x] Update authentication button text to clarify sign-up/sign-in functionality
 - [x] Change "Sign In as Recruiter" to "Get Started as Recruiter"
 - [x] Change "Sign In as Candidate" to "Get Started as Candidate"
+
+## Hybrid Authentication System (Completed)
+- [x] Phase 1: Update database schema with email and passwordHash fields
+- [x] Phase 2: Build backend authentication logic (bcrypt, JWT, login/signup endpoints)
+- [x] Phase 3: Create frontend login and signup forms
+- [x] Phase 4: Update seeding script with demo credentials
+- [x] Phase 5: Context updated to handle both OAuth and password-based sessions
+- [x] Demo accounts created: demo@recruiter.com / Demo123! and demo@candidate.com / Demo123!

@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import * as schema from './drizzle/schema.ts';
+import bcrypt from 'bcryptjs';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -16,17 +17,22 @@ async function seed() {
   const db = drizzle(connection, { schema, mode: 'default' });
 
   try {
-    // Create demo recruiter user
+    // Hash demo password: Demo123!
+    const demoPasswordHash = await bcrypt.hash('Demo123!', 10);
+    console.log('✅ Hashed demo password');
+
+    // Create demo recruiter user with password auth
     const [recruiterUserResult] = await db.insert(schema.users).values({
-      openId: 'demo-recruiter-' + Date.now(),
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@techrecruit.com',
-      loginMethod: 'email',
-      role: 'admin',
+      openId: null,
+      name: 'Demo Recruiter',
+      email: 'demo@recruiter.com',
+      passwordHash: demoPasswordHash,
+      loginMethod: 'password',
+      role: 'recruiter',
       lastSignedIn: new Date(),
     });
     const recruiterUserId = Number(recruiterUserResult.insertId);
-    console.log('✅ Created demo recruiter user');
+    console.log('✅ Created demo recruiter user (demo@recruiter.com / Demo123!)');
 
     // Create recruiter profile
     const [recruiterResult] = await db.insert(schema.recruiters).values({
@@ -124,7 +130,34 @@ async function seed() {
       },
     ];
 
-    const candidateIds = [];
+    // Create demo candidate user with password auth
+    const [demoCandidateUserResult] = await db.insert(schema.users).values({
+      openId: null,
+      name: 'Demo Candidate',
+      email: 'demo@candidate.com',
+      passwordHash: demoPasswordHash,
+      loginMethod: 'password',
+      role: 'candidate',
+      lastSignedIn: new Date(),
+    });
+    const demoCandidateUserId = Number(demoCandidateUserResult.insertId);
+    console.log('✅ Created demo candidate user (demo@candidate.com / Demo123!)');
+
+    // Create demo candidate profile
+    const [demoCandidateResult] = await db.insert(schema.candidates).values({
+      userId: demoCandidateUserId,
+      title: 'Software Engineer',
+      phoneNumber: '+1-555-DEMO',
+      location: 'Remote',
+      bio: 'Demo candidate account for testing the platform',
+      skills: JSON.stringify(['JavaScript', 'React', 'Node.js']),
+      experience: JSON.stringify([{ company: 'Demo Corp', role: 'Developer', duration: '2020-Present' }]),
+      education: JSON.stringify([{ degree: 'BS Computer Science', school: 'Demo University', year: '2020' }]),
+    });
+    const demoCandidateId = Number(demoCandidateResult.insertId);
+    console.log('✅ Created demo candidate profile');
+
+    const candidateIds = [demoCandidateId];
     for (const candidate of candidatesData) {
       // Create user for candidate
       const [userResult] = await db.insert(schema.users).values({
