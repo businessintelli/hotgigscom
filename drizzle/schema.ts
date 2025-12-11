@@ -281,7 +281,7 @@ export type InsertFraudDetectionEvent = typeof fraudDetectionEvents.$inferInsert
  */
 export const codingChallenges = mysqlTable("codingChallenges", {
   id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  interviewId: int("interviewId").references(() => interviews.id), // Optional: for interview-specific challenges
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description").notNull(),
   language: mysqlEnum("language", ["python", "javascript", "java", "cpp"]).notNull(),
@@ -289,6 +289,7 @@ export const codingChallenges = mysqlTable("codingChallenges", {
   testCases: text("testCases"), // JSON array of test cases
   difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).notNull(),
   timeLimit: int("timeLimit"), // seconds
+  createdBy: int("createdBy").references(() => users.id), // User who created the challenge
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

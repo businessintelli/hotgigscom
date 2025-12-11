@@ -1003,6 +1003,64 @@ export const appRouter = router({
   }),
   
   coding: router({
+    // List all challenges
+    listChallenges: protectedProcedure
+      .query(async () => {
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const challenges = await database
+          .select()
+          .from(codingChallenges)
+          .orderBy(codingChallenges.createdAt);
+        
+        return challenges;
+      }),
+    
+    // Create new challenge
+    createChallenge: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        description: z.string(),
+        language: z.enum(["python", "javascript", "java", "cpp"]),
+        difficulty: z.enum(["easy", "medium", "hard"]),
+        starterCode: z.string().optional(),
+        testCases: z.string(),
+        timeLimit: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        await database.insert(codingChallenges).values({
+          title: input.title,
+          description: input.description,
+          language: input.language,
+          difficulty: input.difficulty,
+          starterCode: input.starterCode,
+          testCases: input.testCases,
+          timeLimit: input.timeLimit,
+          createdBy: ctx.user.id,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Delete challenge
+    deleteChallenge: protectedProcedure
+      .input(z.object({ challengeId: z.number() }))
+      .mutation(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { eq } = await import("drizzle-orm");
+        await database
+          .delete(codingChallenges)
+          .where(eq(codingChallenges.id, input.challengeId));
+        
+        return { success: true };
+      }),
+    
     // Get coding challenge
     getChallenge: protectedProcedure
       .input(z.object({ challengeId: z.number() }))

@@ -21,6 +21,8 @@ import CandidateSearch from "./pages/CandidateSearch";
 import JobDetails from "./pages/JobDetails";
 import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
+import ChallengeLibrary from "./pages/ChallengeLibrary";
+import CodingInterviewPage from "./pages/CodingInterviewPage";
 
 
 function Router() {
@@ -36,7 +38,8 @@ function Router() {
       <Route path="/recruiter/interviews" component={InterviewManagement} />
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path={"/recruiter/customers"} component={CustomerManagement} />
-      <Route path={"/recruiter/search-candidates"} component={CandidateSearch} />
+      <Route path="/recruiter/search-candidates" component={CandidateSearch} />
+      <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/candidate-dashboard" component={CandidateDashboard} />
       <Route path="/my-applications" component={MyApplications} />
       <Route path="/saved-jobs" component={SavedJobs} />
@@ -44,7 +47,8 @@ function Router() {
       <Route path={"/jobs/search"} component={AdvancedJobSearch} />
       <Route path={"/jobs/:id"} component={JobDetails} />
       <Route path={"/apply/:id"} component={JobApplication} />
-      <Route path={"/ai-interview"} component={AIInterviewPage} />
+      <Route path="/ai-interview" component={AIInterviewPage} />
+      <Route path="/coding-interview" component={CodingInterviewPage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

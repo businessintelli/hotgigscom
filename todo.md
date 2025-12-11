@@ -556,3 +556,40 @@
 - [x] Add debouncing to prevent duplicate fraud event logging
 - [ ] Implement identity verification (face matching)
 - [ ] Test face detection accuracy with live interviews
+
+
+## Phase 9: Platform Enhancements (Current Focus)
+
+### Coding Challenge Library & Management
+- [x] Create ChallengeLibrary page for recruiters
+- [x] Add challenge browsing with filters (difficulty, language, category)
+- [x] Create challenge creation form with test case editor
+- [x] Add challenge deletion
+- [x] Create pre-built challenge templates
+- [x] Seed database with 10 common algorithm problems
+- [x] Add challenge search functionality
+- [x] Create challenge preview interface (links to coding interview page)
+- [x] Add tRPC procedures (listChallenges, createChallenge, deleteChallenge)
+- [x] Update database schema to support library use case
+- [ ] Add challenge editing functionality
+- [ ] Implement challenge assignment to specific jobs/interviews
+
+### S3 Video Storage for Interviews
+- [ ] Replace base64 video storage with S3 upload
+- [ ] Add video upload progress indicator
+- [ ] Implement video playback from S3 URLs
+- [ ] Add video thumbnail generation
+- [ ] Update interview response submission to use S3
+- [ ] Add video file size validation
+- [ ] Implement video compression before upload
+- [ ] Test video recording and playback workflow
+
+### Automated Email Notifications
+- [ ] Design email templates (interview invitation, deadline reminder, completion)
+- [ ] Implement email sending service
+- [ ] Add interview invitation emails with calendar integration
+- [ ] Create deadline reminder system for saved jobs (3 days before)
+- [ ] Add interview completion confirmation emails
+- [ ] Implement email preferences in user settings
+- [ ] Add email queue system for batch sending
+- [ ] Test email delivery and formatting
