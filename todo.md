@@ -758,3 +758,35 @@
 - [x] Tested with all interview types (AI Bot, Video, Phone, In-Person)
 - [x] Verified panel emails field appears for non-AI interviews
 - [x] Verified AI features info box appears for AI Bot interviews
+
+## Interview Calendar View & Reminders (Current Focus)
+- [ ] Install calendar library (react-big-calendar or fullcalendar)
+- [ ] Create InterviewCalendar page component
+- [ ] Fetch all scheduled interviews for calendar display
+- [ ] Implement calendar view with month/week/day views
+- [ ] Add drag-and-drop rescheduling functionality
+- [ ] Create backend mutation for updating interview datetime
+- [ ] Add visual indicators for interview types (color coding)
+- [ ] Add interview details popup on event click
+- [ ] Implement automated reminder system:
+  - [ ] Create reminder scheduling logic (24h and 1h before)
+  - [ ] Implement email reminder sending
+  - [ ] Add SMS reminder support (optional)
+  - [ ] Create reminder status tracking in database
+- [ ] Add calendar view to recruiter dashboard navigation
+- [ ] Test calendar view with multiple interviews
+- [ ] Test drag-and-drop rescheduling
+- [ ] Test reminder email delivery
+
+## Interview Calendar View & Automated Reminders (COMPLETED)
+- [x] Create InterviewCalendar page with react-big-calendar
+- [x] Implement drag-and-drop rescheduling functionality
+- [x] Add color-coded interview types (AI Bot, Video, Phone, In-Person)
+- [x] Add calendar view quick action to recruiter dashboard
+- [x] Add route for /recruiter/interview-calendar
+- [x] Create interview reminder system (24h and 1h before interviews)
+- [x] Add database functions for reminder tracking (getUpcomingInterviews, checkReminderSent, markReminderSent)
+- [x] Implement email reminder templates with interview details
+- [x] Add reschedule mutation to interview router
+- [x] Fix TypeScript errors in getInterviewById to include joined data
+- [x] Update reportGenerator and routers to use correct interview data structure

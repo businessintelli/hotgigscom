@@ -849,6 +849,22 @@ export const appRouter = router({
         return await db.getInterviewById(input.id);
       }),
     
+    // Reschedule interview
+    reschedule: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        scheduledAt: z.string(),
+        duration: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, scheduledAt, duration } = input;
+        await db.updateInterview(id, {
+          scheduledAt: new Date(scheduledAt),
+          ...(duration && { duration }),
+        });
+        return { success: true };
+      }),
+    
     // Update interview
     update: protectedProcedure
       .input(z.object({
@@ -989,7 +1005,7 @@ export const appRouter = router({
               const interview = await db.getInterviewById(input.interviewId);
               
               if (question && interview) {
-                const job = await db.getJobById(interview.jobId);
+                const job = await db.getJobById(interview.interview.jobId);
                 if (job) {
                   const { evaluateInterviewResponse } = await import("./aiHelpers");
                   const evaluation = await evaluateInterviewResponse(
@@ -1036,7 +1052,7 @@ export const appRouter = router({
         const interview = await db.getInterviewById(data.response.interviewId);
         if (!interview) throw new Error("Interview not found");
         
-        const job = await db.getJobById(interview.jobId);
+        const job = await db.getJobById(interview.interview.jobId);
         if (!job) throw new Error("Job not found");
         
         // Evaluate response
@@ -1078,8 +1094,8 @@ export const appRouter = router({
         const responses = await db.getInterviewResponses(input.interviewId);
         
         // Get candidate and job details
-        const candidate = await db.getCandidateById(interview.candidateId);
-        const job = await db.getJobById(interview.jobId);
+        const candidate = await db.getCandidateById(interview.interview.candidateId);
+        const job = await db.getJobById(interview.interview.jobId);
         
         return {
           interview: {

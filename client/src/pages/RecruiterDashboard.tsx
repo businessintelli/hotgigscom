@@ -177,6 +177,15 @@ export default function RecruiterDashboard() {
                   <div className="text-xs opacity-90">Schedule and manage interviews</div>
                 </div>
               </Button>
+              <Button onClick={() => setLocation('/recruiter/interview-calendar')} className="h-20 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">📆</span>
+                    Calendar View
+                  </div>
+                  <div className="text-xs opacity-90">Drag & drop to reschedule</div>
+                </div>
+              </Button>
               <Button onClick={() => setLocation('/recruiter/search-candidates')} className="h-20 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white">
                 <div className="text-center">
                   <div className="text-lg font-semibold">🔍 Search Candidates</div>

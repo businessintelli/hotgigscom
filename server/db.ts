@@ -201,8 +201,18 @@ export async function getInterviewById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db
-    .select()
+    .select({
+      interview: interviews,
+      candidate: candidates,
+      candidateUser: users,
+      job: jobs,
+      application: applications,
+    })
     .from(interviews)
+    .leftJoin(candidates, eq(interviews.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .leftJoin(jobs, eq(interviews.jobId, jobs.id))
+    .leftJoin(applications, eq(interviews.applicationId, applications.id))
     .where(eq(interviews.id, id))
     .limit(1);
   return result[0];
@@ -215,15 +225,73 @@ export async function getInterviewsByRecruiterId(recruiterId: number) {
     .select({
       interview: interviews,
       candidate: candidates,
+      candidateUser: users,
       job: jobs,
       application: applications,
     })
     .from(interviews)
     .leftJoin(candidates, eq(interviews.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
     .leftJoin(jobs, eq(interviews.jobId, jobs.id))
     .leftJoin(applications, eq(interviews.applicationId, applications.id))
     .where(eq(interviews.recruiterId, recruiterId))
     .orderBy(desc(interviews.scheduledAt));
+}
+
+export async function getUpcomingInterviews(startTime: Date, endTime: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      interview: interviews,
+      candidate: candidates,
+      candidateUser: users,
+      job: jobs,
+      application: applications,
+    })
+    .from(interviews)
+    .leftJoin(candidates, eq(interviews.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .leftJoin(jobs, eq(interviews.jobId, jobs.id))
+    .leftJoin(applications, eq(interviews.applicationId, applications.id))
+    .where(
+      and(
+        gte(interviews.scheduledAt, startTime),
+        lte(interviews.scheduledAt, endTime),
+        eq(interviews.status, "scheduled")
+      )
+    )
+    .orderBy(interviews.scheduledAt);
+}
+
+export async function checkReminderSent(interviewId: number, hoursBeforeInterview: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  // For now, we'll use a simple check based on interview notes
+  // In production, you'd want a separate reminders table
+  const interview = await getInterviewById(interviewId);
+  if (!interview) return false;
+  
+  const reminderKey = `reminder_${hoursBeforeInterview}h_sent`;
+  const notes = interview.interview.notes || "";
+  return notes.includes(reminderKey);
+}
+
+export async function markReminderSent(interviewId: number, hoursBeforeInterview: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  // For now, we'll append to notes
+  // In production, you'd want a separate reminders table
+  const interview = await getInterviewById(interviewId);
+  if (!interview) return;
+  
+  const reminderKey = `reminder_${hoursBeforeInterview}h_sent`;
+  const currentNotes = interview.interview.notes || "";
+  const updatedNotes = currentNotes + `\n[System] ${reminderKey} at ${new Date().toISOString()}`;
+  
+  await updateInterview(interviewId, { notes: updatedNotes });
 }
 
 export async function getInterviewsByCandidateId(candidateId: number) {

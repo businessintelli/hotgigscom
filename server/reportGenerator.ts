@@ -17,8 +17,8 @@ export async function generateFraudDetectionReport(interviewId: number): Promise
   const interview = await db.getInterviewById(interviewId);
   if (!interview) throw new Error("Interview not found");
   
-  const candidate = await db.getCandidateById(interview.candidateId);
-  const job = await db.getJobById(interview.jobId);
+  const candidate = await db.getCandidateById(interview.interview.candidateId);
+  const job = await db.getJobById(interview.interview.jobId);
   const fraudEvents = await db.getFraudEventsByInterview(interviewId);
   const fraudScore = await db.calculateFraudScore(interviewId);
   
@@ -275,8 +275,8 @@ export async function generateInterviewEvaluationReport(interviewId: number): Pr
   const interview = await db.getInterviewById(interviewId);
   if (!interview) throw new Error("Interview not found");
   
-  const candidate = await db.getCandidateById(interview.candidateId);
-  const job = await db.getJobById(interview.jobId);
+  const candidate = await db.getCandidateById(interview.interview.candidateId);
+  const job = await db.getJobById(interview.interview.jobId);
   const questions = await db.getInterviewQuestions(interviewId);
   const responses = await db.getInterviewResponses(interviewId);
   
