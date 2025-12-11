@@ -75,7 +75,9 @@ export default function Home() {
               </ul>
               <Button 
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                onClick={() => window.location.href = getLoginUrl()}
+                onClick={() => {
+                  window.location.href = getLoginUrl('recruiter');
+                }}
               >
                 Sign In as Recruiter
               </Button>
@@ -101,7 +103,9 @@ export default function Home() {
               </ul>
               <Button 
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                onClick={() => window.location.href = getLoginUrl()}
+                onClick={() => {
+                  window.location.href = getLoginUrl('candidate');
+                }}
               >
                 Sign In as Candidate
               </Button>

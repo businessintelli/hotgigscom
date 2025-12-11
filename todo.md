@@ -179,3 +179,10 @@
 - [x] Auto-transcribe audio responses after submission
 - [x] Auto-evaluate responses with AI scoring
 - [x] Display transcriptions, evaluations, and recordings in playback UI
+
+## Authentication Flow Fixes (Current Focus)
+- [x] Fix home page to show proper sign-up vs sign-in options
+- [x] Implement role selection during sign-up (recruiter vs candidate)
+- [x] Fix OAuth callback to handle role-based profile creation
+- [x] Add proper redirects after sign-up based on selected role
+- [ ] Test complete authentication flow for both roles
