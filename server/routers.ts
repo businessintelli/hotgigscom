@@ -1132,6 +1132,201 @@ export const appRouter = router({
         return result;
       }),
   }),
+  
+  // Admin router for platform administration
+  admin: router({
+    // Get platform statistics
+    getPlatformStats: protectedProcedure.query(async ({ ctx }) => {
+      // Check if user is admin
+      if (ctx.user.role !== 'admin') {
+        throw new Error('Unauthorized: Admin access required');
+      }
+      
+      const database = await db.getDb();
+      if (!database) throw new Error("Database not available");
+      
+      const { count, sql } = await import("drizzle-orm");
+      const { users, jobs, applications, interviews, recruiters, candidates } = await import("../drizzle/schema");
+      
+      // Get total counts
+      const [totalUsersResult] = await database.select({ count: count() }).from(users);
+      const [activeJobsResult] = await database.select({ count: count() }).from(jobs).where(sql`${jobs.status} = 'open'`);
+      const [totalApplicationsResult] = await database.select({ count: count() }).from(applications);
+      const [totalInterviewsResult] = await database.select({ count: count() }).from(interviews);
+      
+      // Get user distribution
+      const [recruiterCountResult] = await database.select({ count: count() }).from(recruiters);
+      const [candidateCountResult] = await database.select({ count: count() }).from(candidates);
+      const [adminCountResult] = await database.select({ count: count() }).from(users).where(sql`${users.role} = 'admin'`);
+      
+      // Get application stats by status
+      const [pendingResult] = await database.select({ count: count() }).from(applications).where(sql`${applications.status} = 'pending'`);
+      const [reviewedResult] = await database.select({ count: count() }).from(applications).where(sql`${applications.status} = 'reviewed'`);
+      const [acceptedResult] = await database.select({ count: count() }).from(applications).where(sql`${applications.status} = 'accepted'`);
+      
+      // Get interview stats by status
+      const [scheduledResult] = await database.select({ count: count() }).from(interviews).where(sql`${interviews.status} = 'scheduled'`);
+      const [completedResult] = await database.select({ count: count() }).from(interviews).where(sql`${interviews.status} = 'completed'`);
+      const [cancelledResult] = await database.select({ count: count() }).from(interviews).where(sql`${interviews.status} = 'cancelled'`);
+      
+      return {
+        totalUsers: totalUsersResult.count,
+        activeJobs: activeJobsResult.count,
+        totalApplications: totalApplicationsResult.count,
+        totalInterviews: totalInterviewsResult.count,
+        recruiterCount: recruiterCountResult.count,
+        candidateCount: candidateCountResult.count,
+        adminCount: adminCountResult.count,
+        pendingApplications: pendingResult.count,
+        reviewedApplications: reviewedResult.count,
+        acceptedApplications: acceptedResult.count,
+        scheduledInterviews: scheduledResult.count,
+        completedInterviews: completedResult.count,
+        cancelledInterviews: cancelledResult.count,
+        // Mock growth percentages (would calculate from historical data)
+        userGrowth: 12,
+        jobGrowth: 8,
+        applicationGrowth: 15,
+        interviewGrowth: 10,
+      };
+    }),
+    
+    // Get recent activity
+    getRecentActivity: protectedProcedure
+      .input(z.object({ limit: z.number().default(10) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { desc, sql } = await import("drizzle-orm");
+        const { users, jobs, applications, interviews } = await import("../drizzle/schema");
+        
+        // Get recent users
+        const recentUsers = await database.select({
+          type: sql`'user_signup'`,
+          description: sql`CONCAT('New user registered: ', ${users.name})`,
+          timestamp: users.createdAt,
+        }).from(users).orderBy(desc(users.createdAt)).limit(input.limit);
+        
+        return recentUsers;
+      }),
+    
+    // Get system health
+    getSystemHealth: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') {
+        throw new Error('Unauthorized: Admin access required');
+      }
+      
+      const database = await db.getDb();
+      if (!database) {
+        return {
+          healthy: false,
+          message: 'Database connection failed',
+        };
+      }
+      
+      return {
+        healthy: true,
+        message: 'All systems operational',
+      };
+    }),
+    
+    // Get all users
+    getAllUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') {
+        throw new Error('Unauthorized: Admin access required');
+      }
+      
+      const database = await db.getDb();
+      if (!database) throw new Error("Database not available");
+      
+      const { desc, sql } = await import("drizzle-orm");
+      const { users } = await import("../drizzle/schema");
+      
+      const allUsers = await database
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: users.role,
+          active: sql`CASE WHEN ${users.lastSignedIn} IS NOT NULL THEN 1 ELSE 0 END`,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .orderBy(desc(users.createdAt));
+      
+      return allUsers;
+    }),
+    
+    // Update user role
+    updateUserRole: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        role: z.enum(["user", "admin", "recruiter", "candidate"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { eq } = await import("drizzle-orm");
+        const { users } = await import("../drizzle/schema");
+        
+        await database
+          .update(users)
+          .set({ role: input.role })
+          .where(eq(users.id, input.userId));
+        
+        return { success: true };
+      }),
+    
+    // Toggle user active status
+    toggleUserStatus: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { eq, sql } = await import("drizzle-orm");
+        const { users } = await import("../drizzle/schema");
+        
+        // Get current status
+        const [user] = await database
+          .select({ lastSignedIn: users.lastSignedIn })
+          .from(users)
+          .where(eq(users.id, input.userId));
+        
+        const isActive = user?.lastSignedIn !== null;
+        
+        // Toggle status by setting/clearing lastSignedIn
+        if (isActive) {
+          await database
+            .update(users)
+            .set({ lastSignedIn: sql`NULL` })
+            .where(eq(users.id, input.userId));
+        } else {
+          await database
+            .update(users)
+            .set({ lastSignedIn: new Date() })
+            .where(eq(users.id, input.userId));
+        }
+        
+        return { success: true, active: !isActive };
+      }),
+  }),
 });
+
+
 
 export type AppRouter = typeof appRouter;
