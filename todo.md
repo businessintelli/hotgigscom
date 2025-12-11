@@ -656,3 +656,20 @@
 - [x] Update application submission to handle new resume uploads with base64 encoding
 - [x] Add file validation (PDF, DOC, DOCX, max 5MB)
 - [ ] Test resume upload functionality
+
+
+## Phase 11: Application System Enhancements
+- [x] Migrate resume uploads from base64 to S3 storage
+- [x] Update resume upload in CandidateDashboard to use S3 (already implemented)
+- [x] Update custom resume upload in JobApplication to use S3
+- [x] Add resume preview modal component with PDF/image preview
+- [x] Integrate preview modal in JobApplication form
+- [x] Add preview buttons for both profile and custom resumes
+- [x] Implement application draft auto-save with localStorage
+- [x] Add draft restoration on page load with toast notification
+- [x] Add visual indicator for auto-save status (last saved time)
+- [x] Auto-save triggers 1 second after user stops typing
+- [x] Clear draft on successful application submission
+- [ ] Test S3 resume upload and retrieval
+- [ ] Test resume preview functionality
+- [ ] Test draft auto-save and restoration

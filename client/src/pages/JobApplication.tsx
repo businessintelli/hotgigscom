@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Loader2, FileText, CheckCircle, ArrowLeft } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { ResumePreviewModal } from "@/components/ResumePreviewModal";
 
 export default function JobApplication() {
   const { user } = useAuth();
@@ -21,6 +22,55 @@ export default function JobApplication() {
   const [useCustomResume, setUseCustomResume] = useState(false);
   const [customResumeFile, setCustomResumeFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewResumeUrl, setPreviewResumeUrl] = useState("");
+  const [previewResumeFilename, setPreviewResumeFilename] = useState("");
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Upload resume mutation
+  const uploadResumeMutation = trpc.candidate.uploadResume.useMutation();
+  
+  // Draft key for localStorage
+  const draftKey = `job-application-draft-${jobId}`;
+  
+  // Load draft on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(draftKey);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setCoverLetter(draft.coverLetter || "");
+        setUseCustomResume(draft.useCustomResume || false);
+        toast.info("Draft restored", { duration: 2000 });
+      } catch (error) {
+        console.error("Failed to restore draft:", error);
+      }
+    }
+  }, [jobId]);
+  
+  // Auto-save draft
+  useEffect(() => {
+    if (!coverLetter && !useCustomResume) return; // Don't save empty drafts
+    
+    const timeoutId = setTimeout(() => {
+      const draft = {
+        coverLetter,
+        useCustomResume,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      setLastSaved(new Date());
+    }, 1000); // Save 1 second after user stops typing
+    
+    return () => clearTimeout(timeoutId);
+  }, [coverLetter, useCustomResume, draftKey]);
+  
+  // Clear draft on successful submission
+  useEffect(() => {
+    if (isSubmitted) {
+      localStorage.removeItem(draftKey);
+    }
+  }, [isSubmitted, draftKey]);
 
   // Fetch job details
   const { data: job, isLoading: jobLoading } = trpc.job.getById.useQuery({ id: jobId });
@@ -93,8 +143,10 @@ export default function JobApplication() {
       let resumeUrl = candidate.resumeUrl;
       let resumeFilename = candidate.resumeFilename;
 
-      // If using custom resume, convert to base64
+      // If using custom resume, upload to S3 first
       if (useCustomResume && customResumeFile) {
+        toast.info("Uploading resume...");
+        
         const reader = new FileReader();
         const base64Promise = new Promise<string>((resolve, reject) => {
           reader.onload = () => resolve(reader.result as string);
@@ -102,8 +154,19 @@ export default function JobApplication() {
           reader.readAsDataURL(customResumeFile);
         });
 
-        resumeUrl = await base64Promise;
+        const fileData = await base64Promise;
+        
+        // Upload to S3 via tRPC (without auto-fill to avoid overwriting profile)
+        const uploadResult = await uploadResumeMutation.mutateAsync({
+          candidateId: candidate.id,
+          fileData,
+          fileName: customResumeFile.name,
+          autoFill: false, // Don't overwrite profile data
+        });
+        
+        resumeUrl = uploadResult.url;
         resumeFilename = customResumeFile.name;
+        toast.success("Resume uploaded successfully");
       }
 
       await submitApplicationMutation.mutateAsync({
@@ -113,9 +176,9 @@ export default function JobApplication() {
         resumeUrl: resumeUrl!,
         resumeFilename: resumeFilename || undefined,
       });
-    } catch (error) {
+    } catch (error: any) {
       setIsSubmitting(false);
-      toast.error("Failed to process resume");
+      toast.error(`Failed to submit application: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -258,11 +321,24 @@ export default function JobApplication() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
-                            View
-                          </a>
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setPreviewResumeUrl(candidate.resumeUrl!);
+                              setPreviewResumeFilename(candidate.resumeFilename || "resume.pdf");
+                              setShowPreviewModal(true);
+                            }}
+                          >
+                            Preview
+                          </Button>
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
+                              Download
+                            </a>
+                          </Button>
+                        </div>
                       </div>
                     )}
 
@@ -300,19 +376,35 @@ export default function JobApplication() {
                             <span className="text-sm font-medium text-blue-900">
                               {customResumeFile.name}
                             </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setCustomResumeFile(null);
-                                if (fileInputRef.current) {
-                                  fileInputRef.current.value = "";
-                                }
-                              }}
-                              className="ml-auto"
-                            >
-                              Remove
-                            </Button>
+                            <div className="ml-auto flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const reader = new FileReader();
+                                  reader.onload = (e) => {
+                                    setPreviewResumeUrl(e.target?.result as string);
+                                    setPreviewResumeFilename(customResumeFile.name);
+                                    setShowPreviewModal(true);
+                                  };
+                                  reader.readAsDataURL(customResumeFile);
+                                }}
+                              >
+                                Preview
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setCustomResumeFile(null);
+                                  if (fileInputRef.current) {
+                                    fileInputRef.current.value = "";
+                                  }
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -335,9 +427,16 @@ export default function JobApplication() {
 
                 {/* Cover Letter */}
                 <div>
-                  <Label htmlFor="coverLetter">
-                    Cover Letter <span className="text-gray-500">(Optional)</span>
-                  </Label>
+                  <div className="flex justify-between items-center mb-2">
+                    <Label htmlFor="coverLetter">
+                      Cover Letter <span className="text-gray-500">(Optional)</span>
+                    </Label>
+                    {lastSaved && (
+                      <span className="text-xs text-gray-500">
+                        Saved {lastSaved.toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
                   <Textarea
                     id="coverLetter"
                     placeholder="Tell the employer why you're a great fit for this position..."
@@ -430,6 +529,14 @@ export default function JobApplication() {
           </div>
         </div>
       </div>
+
+      {/* Resume Preview Modal */}
+      <ResumePreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        resumeUrl={previewResumeUrl}
+        resumeFilename={previewResumeFilename}
+      />
     </div>
   );
 }
