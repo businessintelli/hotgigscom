@@ -18,6 +18,7 @@ import { rankCandidatesForJob, getTopCandidatesForJob, compareCandidates } from 
 import { exportCandidatesToExcel, exportCandidatesToCSV } from './resumeExport';
 import * as notificationHelpers from './notificationHelpers';
 import * as candidateSearchHelpers from './candidateSearchHelpers';
+import * as emailCampaignHelpers from './emailCampaignHelpers';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -1989,6 +1990,157 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteSavedSearch(input.id);
+      }),
+  }),
+
+  // Email Campaign System
+  emailCampaigns: router({
+    // Template management
+    createTemplate: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        subject: z.string(),
+        body: z.string(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await emailCampaignHelpers.createEmailTemplate({
+          ...input,
+          userId: ctx.user.id,
+        });
+      }),
+
+    getTemplates: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await emailCampaignHelpers.getEmailTemplatesByUser(ctx.user.id);
+      }),
+
+    getTemplateById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await emailCampaignHelpers.getEmailTemplateById(input.id);
+      }),
+
+    updateTemplate: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        subject: z.string().optional(),
+        body: z.string().optional(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await emailCampaignHelpers.updateEmailTemplate(id, data);
+        return { success: true };
+      }),
+
+    deleteTemplate: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await emailCampaignHelpers.deleteEmailTemplate(input.id);
+        return { success: true };
+      }),
+
+    // Campaign management
+    createCampaign: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        templateId: z.number().optional(),
+        subject: z.string(),
+        body: z.string(),
+        scheduledAt: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await emailCampaignHelpers.createEmailCampaign({
+          ...input,
+          userId: ctx.user.id,
+          scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : undefined,
+        });
+      }),
+
+    getCampaigns: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await emailCampaignHelpers.getCampaignsByUser(ctx.user.id);
+      }),
+
+    getCampaignById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await emailCampaignHelpers.getCampaignById(input.id);
+      }),
+
+    addRecipients: protectedProcedure
+      .input(z.object({
+        campaignId: z.number(),
+        candidateIds: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        const count = await emailCampaignHelpers.addCampaignRecipients(
+          input.campaignId,
+          input.candidateIds
+        );
+        return { count };
+      }),
+
+    sendCampaign: protectedProcedure
+      .input(z.object({ campaignId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await emailCampaignHelpers.sendCampaign(input.campaignId);
+      }),
+
+    // Tracking
+    trackOpen: publicProcedure
+      .input(z.object({ trackingId: z.string() }))
+      .mutation(async ({ input }) => {
+        await emailCampaignHelpers.trackEmailOpen(input.trackingId);
+        return { success: true };
+      }),
+
+    trackClick: publicProcedure
+      .input(z.object({ trackingId: z.string() }))
+      .mutation(async ({ input }) => {
+        await emailCampaignHelpers.trackEmailClick(input.trackingId);
+        return { success: true };
+      }),
+
+    // Follow-up sequences
+    createSequence: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        steps: z.array(z.object({
+          stepNumber: z.number(),
+          delayDays: z.number(),
+          subject: z.string(),
+          body: z.string(),
+          condition: z.string().optional(),
+          templateId: z.number().optional(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await emailCampaignHelpers.createFollowUpSequence({
+          ...input,
+          userId: ctx.user.id,
+        });
+      }),
+
+    getSequences: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await emailCampaignHelpers.getSequencesByUser(ctx.user.id);
+      }),
+
+    enrollCandidates: protectedProcedure
+      .input(z.object({
+        sequenceId: z.number(),
+        candidateIds: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        const count = await emailCampaignHelpers.enrollCandidatesInSequence(
+          input.sequenceId,
+          input.candidateIds
+        );
+        return { count };
       }),
   }),
 });

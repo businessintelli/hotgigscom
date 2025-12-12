@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `campaignRecipients` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `campaignId` int NOT NULL,\n  `candidateId` int NOT NULL,\n  `email` varchar(255) NOT NULL,\n  `personalizedSubject` varchar(500),\n  `personalizedBody` text,\n  `status` varchar(50) NOT NULL DEFAULT 'pending',\n  `sentAt` timestamp,\n  `openedAt` timestamp,\n  `clickedAt` timestamp,\n  `bouncedAt` timestamp,\n  `repliedAt` timestamp,\n  `trackingId` varchar(100),\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `campaignRecipients_id` PRIMARY KEY(`id`),\n  CONSTRAINT `campaignRecipients_campaignId_fk` FOREIGN KEY (`campaignId`) REFERENCES `emailCampaigns`(`id`),\n  CONSTRAINT `campaignRecipients_candidateId_fk` FOREIGN KEY (`candidateId`) REFERENCES `candidates`(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `campaignRecipients` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `campaignId` int NOT NULL,\n  `candidateId` int NOT NULL,\n  `email` varchar(255) NOT NULL,\n  `personalizedSubject` varchar(500),\n  `personalizedBody` text,\n  `status` varchar(50) NOT NULL DEFAULT 'pending',\n  `sentAt` timestamp,\n  `openedAt` timestamp,\n  `clickedAt` timestamp,\n  `bouncedAt` timestamp,\n  `repliedAt` timestamp,\n  `trackingId` varchar(100),\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `campaignRecipients_id` PRIMARY KEY(`id`),\n  CONSTRAINT `campaignRecipients_campaignId_fk` FOREIGN KEY (`campaignId`) REFERENCES `emailCampaigns`(`id`),\n  CONSTRAINT `campaignRecipients_candidateId_fk` FOREIGN KEY (`candidateId`) REFERENCES `candidates`(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 272
+}

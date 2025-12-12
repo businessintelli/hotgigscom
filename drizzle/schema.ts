@@ -450,3 +450,121 @@ export const candidateTagAssignments = mysqlTable("candidateTagAssignments", {
 
 export type CandidateTagAssignment = typeof candidateTagAssignments.$inferSelect;
 export type InsertCandidateTagAssignment = typeof candidateTagAssignments.$inferInsert;
+
+/**
+ * Email templates for bulk campaigns
+ */
+export const emailTemplates = mysqlTable("emailTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(), // HTML content with variables like {{name}}, {{jobTitle}}
+  category: varchar("category", { length: 100 }), // 'outreach', 'follow-up', 'interview-invite', etc.
+  userId: int("userId").notNull().references(() => users.id), // creator
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
+
+/**
+ * Email campaigns for bulk candidate outreach
+ */
+export const emailCampaigns = mysqlTable("emailCampaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  templateId: int("templateId").references(() => emailTemplates.id),
+  subject: varchar("subject", { length: 500 }).notNull(), // can override template subject
+  body: text("body").notNull(), // can override template body
+  userId: int("userId").notNull().references(() => users.id), // campaign creator
+  status: varchar("status", { length: 50 }).default("draft").notNull(), // 'draft', 'scheduled', 'sending', 'sent', 'paused'
+  scheduledAt: timestamp("scheduledAt"), // when to send
+  sentAt: timestamp("sentAt"), // when actually sent
+  totalRecipients: int("totalRecipients").default(0),
+  sentCount: int("sentCount").default(0),
+  openedCount: int("openedCount").default(0),
+  clickedCount: int("clickedCount").default(0),
+  bouncedCount: int("bouncedCount").default(0),
+  repliedCount: int("repliedCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailCampaign = typeof emailCampaigns.$inferSelect;
+export type InsertEmailCampaign = typeof emailCampaigns.$inferInsert;
+
+/**
+ * Campaign recipients and tracking
+ */
+export const campaignRecipients = mysqlTable("campaignRecipients", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull().references(() => emailCampaigns.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  email: varchar("email", { length: 255 }).notNull(),
+  personalizedSubject: varchar("personalizedSubject", { length: 500 }),
+  personalizedBody: text("personalizedBody"),
+  status: varchar("status", { length: 50 }).default("pending").notNull(), // 'pending', 'sent', 'opened', 'clicked', 'bounced', 'replied'
+  sentAt: timestamp("sentAt"),
+  openedAt: timestamp("openedAt"),
+  clickedAt: timestamp("clickedAt"),
+  bouncedAt: timestamp("bouncedAt"),
+  repliedAt: timestamp("repliedAt"),
+  trackingId: varchar("trackingId", { length: 100 }), // unique ID for tracking opens/clicks
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
+export type InsertCampaignRecipient = typeof campaignRecipients.$inferInsert;
+
+/**
+ * Automated follow-up sequences
+ */
+export const followUpSequences = mysqlTable("followUpSequences", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  userId: int("userId").notNull().references(() => users.id),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FollowUpSequence = typeof followUpSequences.$inferSelect;
+export type InsertFollowUpSequence = typeof followUpSequences.$inferInsert;
+
+/**
+ * Steps in a follow-up sequence
+ */
+export const sequenceSteps = mysqlTable("sequenceSteps", {
+  id: int("id").autoincrement().primaryKey(),
+  sequenceId: int("sequenceId").notNull().references(() => followUpSequences.id),
+  stepNumber: int("stepNumber").notNull(), // order in sequence (1, 2, 3...)
+  delayDays: int("delayDays").notNull(), // days after previous step (0 for first step)
+  templateId: int("templateId").references(() => emailTemplates.id),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(),
+  condition: varchar("condition", { length: 100 }), // 'no_response', 'not_opened', 'always', etc.
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SequenceStep = typeof sequenceSteps.$inferSelect;
+export type InsertSequenceStep = typeof sequenceSteps.$inferInsert;
+
+/**
+ * Sequence enrollments (candidates enrolled in sequences)
+ */
+export const sequenceEnrollments = mysqlTable("sequenceEnrollments", {
+  id: int("id").autoincrement().primaryKey(),
+  sequenceId: int("sequenceId").notNull().references(() => followUpSequences.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  currentStep: int("currentStep").default(0), // which step they're on
+  status: varchar("status", { length: 50 }).default("active").notNull(), // 'active', 'completed', 'paused', 'unsubscribed'
+  enrolledAt: timestamp("enrolledAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  nextStepAt: timestamp("nextStepAt"), // when to send next email
+});
+
+export type SequenceEnrollment = typeof sequenceEnrollments.$inferSelect;
+export type InsertSequenceEnrollment = typeof sequenceEnrollments.$inferInsert;

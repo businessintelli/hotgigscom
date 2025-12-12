@@ -248,6 +248,24 @@ export default function RecruiterDashboard() {
                   <div className="text-xs opacity-90">Upload multiple resumes at once</div>
                 </div>
               </Button>
+              <Button onClick={() => setLocation('/recruiter/email-templates')} className="h-20 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">📧</span>
+                    Email Templates
+                  </div>
+                  <div className="text-xs opacity-90">Create reusable email templates</div>
+                </div>
+              </Button>
+              <Button onClick={() => setLocation('/recruiter/campaigns')} className="h-20 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">📬</span>
+                    Email Campaigns
+                  </div>
+                  <div className="text-xs opacity-90">Bulk email with tracking</div>
+                </div>
+              </Button>
             </div>
           </CardContent>
         </Card>

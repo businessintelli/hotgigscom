@@ -25,6 +25,9 @@ import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
 import CandidateSearch from "./pages/CandidateSearch";
 import AdvancedCandidateSearch from "./pages/AdvancedCandidateSearch";
+import EmailTemplateManager from "./pages/EmailTemplateManager";
+import CampaignBuilder from "./pages/CampaignBuilder";
+import FollowUpSequenceBuilder from "./pages/FollowUpSequenceBuilder";
 import JobDetails from "./pages/JobDetails";
 import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
@@ -56,6 +59,9 @@ function Router() {
       <Route path="/recruiter/customers" component={CustomerManagement} />
       <Route path="/recruiter/search-candidates" component={CandidateSearch} />
       <Route path="/recruiter/advanced-search" component={AdvancedCandidateSearch} />
+      <Route path="/recruiter/email-templates" component={EmailTemplateManager} />
+      <Route path="/recruiter/campaigns" component={CampaignBuilder} />
+      <Route path="/recruiter/sequences" component={FollowUpSequenceBuilder} />
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
