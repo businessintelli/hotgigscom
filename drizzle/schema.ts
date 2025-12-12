@@ -11,6 +11,13 @@ export const users = mysqlTable("users", {
   passwordHash: varchar("passwordHash", { length: 255 }), // For custom auth
   loginMethod: varchar("loginMethod", { length: 64 }), // 'oauth' or 'password'
   role: mysqlEnum("role", ["user", "admin", "recruiter", "candidate"]).default("user").notNull(),
+  // Email verification
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  verificationToken: varchar("verificationToken", { length: 255 }),
+  verificationTokenExpiry: timestamp("verificationTokenExpiry"),
+  // Password reset
+  passwordResetToken: varchar("passwordResetToken", { length: 255 }),
+  passwordResetTokenExpiry: timestamp("passwordResetTokenExpiry"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

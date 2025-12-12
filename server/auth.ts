@@ -42,3 +42,17 @@ export function isValidPassword(password: string): boolean {
   const hasNumber = /[0-9]/.test(password);
   return hasLetter && hasNumber;
 }
+
+/**
+ * Generate a secure verification token
+ */
+export function generateVerificationToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+/**
+ * Generate token expiry time (24 hours from now)
+ */
+export function generateTokenExpiry(hours: number = 24): Date {
+  return new Date(Date.now() + hours * 60 * 60 * 1000);
+}

@@ -169,6 +169,13 @@
       "when": 1765536273876,
       "tag": "0023_loud_snowbird",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1765557382729,
+      "tag": "0024_powerful_madrox",
+      "breakpoints": true
     }
   ]
 }

@@ -59,7 +59,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     };
     const updateSet: Record<string, unknown> = {};
 
-    const textFields = ["name", "email", "loginMethod", "passwordHash"] as const;
+    const textFields = ["name", "email", "loginMethod", "passwordHash", "verificationToken", "passwordResetToken"] as const;
     type TextField = (typeof textFields)[number];
 
     const assignNullable = (field: TextField) => {
@@ -82,6 +82,22 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     } else if (user.openId === ENV.ownerOpenId) {
       values.role = 'admin';
       updateSet.role = 'admin';
+    }
+    
+    // Handle boolean fields
+    if (user.emailVerified !== undefined) {
+      values.emailVerified = user.emailVerified;
+      updateSet.emailVerified = user.emailVerified;
+    }
+    
+    // Handle timestamp fields
+    if (user.verificationTokenExpiry !== undefined) {
+      values.verificationTokenExpiry = user.verificationTokenExpiry;
+      updateSet.verificationTokenExpiry = user.verificationTokenExpiry;
+    }
+    if (user.passwordResetTokenExpiry !== undefined) {
+      values.passwordResetTokenExpiry = user.passwordResetTokenExpiry;
+      updateSet.passwordResetTokenExpiry = user.passwordResetTokenExpiry;
     }
 
     if (!values.lastSignedIn) {

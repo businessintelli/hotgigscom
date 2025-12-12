@@ -8,10 +8,12 @@ import { generateFraudDetectionReport, generateInterviewEvaluationReport } from 
 import { executeCode } from "./codeExecutor";
 import { z } from "zod";
 import * as db from "./db";
-import { hashPassword, comparePassword, generateSessionToken, isValidEmail, isValidPassword } from "./auth";
+import { hashPassword, comparePassword, generateSessionToken, isValidEmail, isValidPassword, generateVerificationToken, generateTokenExpiry } from "./auth";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
-import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes } from "../drizzle/schema";
+import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
@@ -113,6 +115,10 @@ export const appRouter = router({
         // Hash password
         const passwordHash = await hashPassword(input.password);
         
+        // Generate verification token
+        const verificationToken = generateVerificationToken();
+        const verificationTokenExpiry = generateTokenExpiry(24); // 24 hours
+        
         // Create user
         await db.upsertUser({
           openId: null,
@@ -121,6 +127,9 @@ export const appRouter = router({
           passwordHash,
           loginMethod: 'password',
           lastSignedIn: new Date(),
+          emailVerified: false,
+          verificationToken,
+          verificationTokenExpiry,
         });
         
         const user = await db.getUserByEmail(input.email);
@@ -165,10 +174,15 @@ export const appRouter = router({
         const encodedSession = Buffer.from(sessionData).toString('base64');
         ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge: ONE_YEAR_MS });
         
+        // Send verification email
+        const baseUrl = `${ctx.req.protocol}://${ctx.req.get('host')}`;
+        await sendVerificationEmail(user.email!, user.name || 'User', verificationToken, baseUrl);
+        
         return { 
           success: true, 
           user: { id: user.id, email: user.email, name: user.name },
-          role: input.role
+          role: input.role,
+          message: 'Account created! Please check your email to verify your account.'
         };
       }),
       
@@ -176,6 +190,7 @@ export const appRouter = router({
       .input(z.object({
         email: z.string().email(),
         password: z.string(),
+        rememberMe: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Find user by email
@@ -205,11 +220,13 @@ export const appRouter = router({
           lastSignedIn: new Date(),
         });
         
-        // Create session
+        // Create session with appropriate duration
         const sessionData = JSON.stringify({ userId: user.id, email: user.email });
         const encodedSession = Buffer.from(sessionData).toString('base64');
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        // Remember me: 30 days, otherwise 1 day
+        const maxAge = input.rememberMe ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000);
+        ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge });
         
         // Determine role
         const recruiter = await db.getRecruiterByUserId(user.id);
@@ -224,6 +241,161 @@ export const appRouter = router({
           user: { id: user.id, email: user.email, name: user.name },
           role
         };
+      }),
+      
+    requestPasswordReset: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Find user
+        const user = await db.getUserByEmail(input.email);
+        if (!user) {
+          // Don't reveal if email exists or not
+          return { success: true, message: 'If an account exists with this email, you will receive a password reset link.' };
+        }
+        
+        // Generate reset token
+        const resetToken = generateVerificationToken();
+        const resetTokenExpiry = generateTokenExpiry(1); // 1 hour
+        
+        // Update user with reset token
+        await db.upsertUser({
+          openId: user.openId,
+          name: user.name,
+          email: user.email,
+          passwordHash: user.passwordHash,
+          loginMethod: user.loginMethod,
+          lastSignedIn: user.lastSignedIn,
+          passwordResetToken: resetToken,
+          passwordResetTokenExpiry: resetTokenExpiry,
+        });
+        
+        // Send reset email
+        const baseUrl = `${ctx.req.protocol}://${ctx.req.get('host')}`;
+        await sendPasswordResetEmail(user.email!, user.name || 'User', resetToken, baseUrl);
+        
+        return { success: true, message: 'If an account exists with this email, you will receive a password reset link.' };
+      }),
+      
+    resetPassword: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        newPassword: z.string().min(6),
+      }))
+      .mutation(async ({ input }) => {
+        // Validate password
+        if (!isValidPassword(input.newPassword)) {
+          throw new Error('Password must be at least 6 characters and contain both letters and numbers');
+        }
+        
+        // Find user by reset token
+        const dbInstance = await getDb();
+        if (!dbInstance) throw new Error('Database not available');
+        
+        const userResults = await dbInstance.select().from(users).where(eq(users.passwordResetToken, input.token)).limit(1);
+        const user = userResults.length > 0 ? userResults[0] : null;
+        
+        if (!user || !user.passwordResetTokenExpiry) {
+          throw new Error('Invalid or expired reset token');
+        }
+        
+        // Check if token is expired
+        if (new Date() > user.passwordResetTokenExpiry) {
+          throw new Error('Reset token has expired');
+        }
+        
+        // Hash new password
+        const passwordHash = await hashPassword(input.newPassword);
+        
+        // Update password and clear reset token
+        await db.upsertUser({
+          openId: user.openId,
+          name: user.name,
+          email: user.email,
+          passwordHash,
+          loginMethod: user.loginMethod,
+          lastSignedIn: user.lastSignedIn,
+          passwordResetToken: null,
+          passwordResetTokenExpiry: null,
+        });
+        
+        return { success: true, message: 'Password reset successful. You can now sign in with your new password.' };
+      }),
+      
+    verifyEmail: publicProcedure
+      .input(z.object({
+        token: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        // Find user by verification token
+        const dbInstance = await getDb();
+        if (!dbInstance) throw new Error('Database not available');
+        
+        const userResults = await dbInstance.select().from(users).where(eq(users.verificationToken, input.token)).limit(1);
+        const user = userResults.length > 0 ? userResults[0] : null;
+        
+        if (!user || !user.verificationTokenExpiry) {
+          throw new Error('Invalid or expired verification token');
+        }
+        
+        // Check if token is expired
+        if (new Date() > user.verificationTokenExpiry) {
+          throw new Error('Verification token has expired');
+        }
+        
+        // Mark email as verified and clear token
+        await db.upsertUser({
+          openId: user.openId,
+          name: user.name,
+          email: user.email,
+          passwordHash: user.passwordHash,
+          loginMethod: user.loginMethod,
+          lastSignedIn: user.lastSignedIn,
+          emailVerified: true,
+          verificationToken: null,
+          verificationTokenExpiry: null,
+        });
+        
+        return { success: true, message: 'Email verified successfully!' };
+      }),
+      
+    resendVerification: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Find user
+        const user = await db.getUserByEmail(input.email);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        
+        if (user.emailVerified) {
+          throw new Error('Email is already verified');
+        }
+        
+        // Generate new verification token
+        const verificationToken = generateVerificationToken();
+        const verificationTokenExpiry = generateTokenExpiry(24); // 24 hours
+        
+        // Update user with new token
+        await db.upsertUser({
+          openId: user.openId,
+          name: user.name,
+          email: user.email,
+          passwordHash: user.passwordHash,
+          loginMethod: user.loginMethod,
+          lastSignedIn: user.lastSignedIn,
+          verificationToken,
+          verificationTokenExpiry,
+        });
+        
+        // Send verification email
+        const baseUrl = `${ctx.req.protocol}://${ctx.req.get('host')}`;
+        await sendVerificationEmail(user.email!, user.name || 'User', verificationToken, baseUrl);
+        
+        return { success: true, message: 'Verification email sent!' };
       }),
 
   }),

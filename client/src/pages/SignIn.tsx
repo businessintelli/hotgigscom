@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock } from "lucide-react";
 import { useState } from "react";
 import { APP_TITLE } from "@/const";
@@ -11,6 +12,7 @@ import { useLocation } from "wouter";
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
@@ -26,6 +28,7 @@ export default function SignIn() {
       const result = await loginMutation.mutateAsync({
         email,
         password,
+        rememberMe,
       });
 
       if (result.success) {
@@ -87,6 +90,26 @@ export default function SignIn() {
                   required
                 />
               </div>
+            </div>
+
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="remember" 
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                />
+                <label
+                  htmlFor="remember"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Remember me
+                </label>
+              </div>
+              <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                Forgot password?
+              </a>
             </div>
 
             {/* Error Message */}

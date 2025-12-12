@@ -1353,3 +1353,70 @@
 - [x] Test email validation
 - [x] Test complete sign-up flow for recruiter and candidate
 - [x] Test sign-in flow with password verification
+
+
+## Authentication Enhancements (IN PROGRESS)
+
+### Database Schema Updates
+- [ ] Add emailVerified field to users table
+- [ ] Add verificationToken field to users table
+- [ ] Add verificationTokenExpiry field to users table
+- [ ] Add passwordResetToken field to users table
+- [ ] Add passwordResetTokenExpiry field to users table
+- [ ] Run database migration
+
+### Forgot Password / Password Reset
+- [ ] Create password reset request endpoint (generates token, sends email)
+- [ ] Create password reset verification endpoint (validates token, updates password)
+- [ ] Build forgot password form UI
+- [ ] Build reset password form UI
+- [ ] Create password reset email template
+- [ ] Test complete password reset flow
+
+### Email Verification
+- [ ] Update signup to generate verification token and send email
+- [ ] Create email verification endpoint
+- [ ] Create email verification page
+- [ ] Add email verification check to protected routes
+- [ ] Create verification email template
+- [ ] Add "Resend verification email" functionality
+- [ ] Test complete email verification flow
+
+### Remember Me
+- [ ] Add rememberMe checkbox to sign-in form
+- [ ] Update login endpoint to handle different session durations
+- [ ] Set 30-day cookie for remember me, 1-day for normal
+- [ ] Test remember me functionality
+
+### Profile Completion Onboarding
+- [ ] Create profile completion check after sign-up
+- [ ] Build recruiter profile completion form
+- [ ] Build candidate profile completion form
+- [ ] Add progress indicator
+- [ ] Redirect to onboarding if profile incomplete
+- [ ] Test onboarding flow for both roles
+
+
+## Authentication Enhancements (COMPLETED ✅)
+- [x] Update database schema with verification and reset token fields
+- [x] Add SQL migration for new columns (emailVerified, verificationToken, verificationTokenExpiry, passwordResetToken, passwordResetTokenExpiry)
+- [x] Create token generation helpers (generateVerificationToken, generateTokenExpiry)
+- [x] Create email templates for verification and password reset
+- [x] Create email sending helpers (sendVerificationEmail, sendPasswordResetEmail)
+- [x] Build forgot password API endpoint (auth.requestPasswordReset)
+- [x] Build reset password API endpoint (auth.resetPassword)
+- [x] Build email verification API endpoint (auth.verifyEmail)
+- [x] Add remember me functionality to login (30-day vs 1-day sessions)
+- [x] Create ForgotPassword page with email input
+- [x] Create ResetPassword page with token validation
+- [x] Create VerifyEmail page with automatic verification
+- [x] Update SignIn page with remember me checkbox
+- [x] Update SignIn page with forgot password link
+- [x] Add routes for new pages in App.tsx (/forgot-password, /reset-password, /verify-email)
+- [x] Update signup flow to send verification email automatically
+- [x] Create updateUserByEmail and updateUserById helpers for database updates
+- [x] Write comprehensive tests for all new features (11 tests)
+- [x] Test email verification flow (all tests passing)
+- [x] Test password reset flow (all tests passing)
+- [x] Test token generation and expiry (all tests passing)
+- [x] All 39 authentication tests passing (11 enhancements + 12 core + 16 email/password)
