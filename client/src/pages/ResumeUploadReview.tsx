@@ -78,24 +78,19 @@ export default function ResumeUploadReview() {
 
         try {
           // Upload and parse resume
-          await uploadResumeMutation.mutateAsync({
+          const result = await uploadResumeMutation.mutateAsync({
             candidateId: candidateProfile.id,
             fileData,
             fileName: selectedFile.name,
             autoFill: true,
           });
 
-          // Refresh candidate profile to get parsed data
-          const updatedProfile = await utils.candidate.getProfile.fetch();
+          // Use parsed data directly from mutation response
+          const parsed = result.parsedData;
           
-          if (!updatedProfile) {
-            throw new Error('Failed to fetch updated profile');
+          if (!parsed) {
+            throw new Error('No parsed data returned from server');
           }
-          
-          // Extract parsed data
-          const parsed = updatedProfile.parsedResumeData 
-            ? JSON.parse(updatedProfile.parsedResumeData)
-            : null;
 
           setParsedData(parsed);
           setEditedData(parsed);

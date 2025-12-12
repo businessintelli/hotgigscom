@@ -1107,3 +1107,11 @@
 - [ ] Add automatic meeting reminders
 - [ ] Test Zoom meeting creation and join flow
 - [ ] Test Teams meeting creation and join flow
+
+## Resume Upload Review Screen Bug Fix (Current Focus)
+- [x] Debug why parsed data is not showing in review screen
+- [x] Fix ResumeUploadReview component to display parsed results
+- [x] Ensure all editable fields are rendered correctly
+- [ ] Test resume upload with PDF file
+- [ ] Test resume upload with DOCX file
+- [ ] Verify save functionality works after editing
