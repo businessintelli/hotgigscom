@@ -14,6 +14,7 @@ import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
 import VideoIntroduction from "@/components/VideoIntroduction";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 
 export default function CandidateDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -27,6 +28,9 @@ export default function CandidateDashboard() {
     { userId: user?.id || 0 },
     { enabled: !!user?.id }
   );
+
+  // Fetch profile completion status
+  const { data: completionStatus } = trpc.profileCompletion.getStatus.useQuery();
 
   // Fetch candidate statistics
   const { data: stats } = trpc.candidate.getStats.useQuery(
@@ -188,6 +192,14 @@ export default function CandidateDashboard() {
       </header>
 
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        {/* Profile Completion Banner */}
+        {completionStatus && completionStatus.percentage !== undefined && completionStatus.percentage < 100 && (
+          <ProfileCompletionBanner 
+            percentage={completionStatus.percentage} 
+            role="candidate"
+          />
+        )}
+        
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Card>

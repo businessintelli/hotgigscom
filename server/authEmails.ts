@@ -1,8 +1,8 @@
 import { notifyOwner } from './_core/notification';
+import { getVerificationEmailTemplate } from './emailTemplates/verificationEmail';
+import { getPasswordResetEmailTemplate } from './emailTemplates/passwordResetEmail';
 import {
-  getVerificationEmailHtml,
   getVerificationEmailText,
-  getPasswordResetEmailHtml,
   getPasswordResetEmailText,
 } from './authEmailTemplates';
 
@@ -42,7 +42,7 @@ export async function sendVerificationEmail(
   return sendEmail({
     to: email,
     subject: 'Verify Your Email Address',
-    html: getVerificationEmailHtml(verificationUrl, userName),
+    html: getVerificationEmailTemplate(verificationUrl, userName, "HotGigs"),
     text: getVerificationEmailText(verificationUrl, userName),
   });
 }
@@ -61,7 +61,7 @@ export async function sendPasswordResetEmail(
   return sendEmail({
     to: email,
     subject: 'Reset Your Password',
-    html: getPasswordResetEmailHtml(resetUrl, userName),
+    html: getPasswordResetEmailTemplate(resetUrl, userName, "HotGigs"),
     text: getPasswordResetEmailText(resetUrl, userName),
   });
 }

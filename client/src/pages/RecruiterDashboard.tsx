@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { Menu, X } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -14,6 +15,7 @@ export default function RecruiterDashboard() {
   const [, setLocation] = useLocation();
   const { data: dashboardData, isLoading } = trpc.recruiter.getDashboardStats.useQuery();
   const { data: profile } = trpc.recruiter.getProfile.useQuery();
+  const { data: completionStatus } = trpc.profileCompletion.getStatus.useQuery();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -117,6 +119,14 @@ export default function RecruiterDashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-4 px-4 sm:py-6 sm:px-6 lg:px-8">
+        {/* Profile Completion Banner */}
+        {completionStatus && completionStatus.percentage !== undefined && completionStatus.percentage < 100 && (
+          <ProfileCompletionBanner 
+            percentage={completionStatus.percentage} 
+            role="recruiter"
+          />
+        )}
+        
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 sm:p-6 text-white mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold mb-2">Welcome back, {user?.name}! 👋</h1>

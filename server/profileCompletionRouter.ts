@@ -4,6 +4,7 @@ import * as db from "./db";
 import { getDb } from "./db";
 import { recruiters, candidates } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { calculateRecruiterCompletion, calculateCandidateCompletion } from "./profileCompletionHelpers";
 
 export const profileCompletionRouter = router({
   /**
@@ -17,20 +18,24 @@ export const profileCompletionRouter = router({
     const candidate = await db.getCandidateByUserId(user.id);
     
     if (recruiter) {
+      const percentage = calculateRecruiterCompletion(recruiter);
       return {
         role: 'recruiter' as const,
         profileCompleted: recruiter.profileCompleted || false,
         currentStep: recruiter.profileCompletionStep || 0,
         totalSteps: 3, // company info, bio, preferences
+        percentage,
       };
     }
     
     if (candidate) {
+      const percentage = calculateCandidateCompletion(candidate);
       return {
         role: 'candidate' as const,
         profileCompleted: candidate.profileCompleted || false,
         currentStep: candidate.profileCompletionStep || 0,
         totalSteps: 4, // resume, skills, experience, preferences
+        percentage,
       };
     }
     
