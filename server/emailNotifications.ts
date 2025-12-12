@@ -201,3 +201,271 @@ export async function checkAndSendDeadlineReminders(db: any): Promise<number> {
 
   return remindersSent;
 }
+
+/**
+ * Send resume upload confirmation email
+ */
+export async function sendResumeUploadConfirmation(params: {
+  candidateEmail: string;
+  candidateName: string;
+  profileName?: string;
+  resumeUrl: string;
+}): Promise<boolean> {
+  const { candidateEmail, candidateName, profileName, resumeUrl } = params;
+  
+  const subject = profileName 
+    ? `Resume Profile "${profileName}" Uploaded Successfully`
+    : 'Resume Uploaded Successfully';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>✅ Resume Uploaded Successfully!</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${candidateName},</p>
+          <p>Great news! Your resume${profileName ? ` profile "<strong>${profileName}</strong>"` : ''} has been successfully uploaded and processed with AI-powered parsing.</p>
+          <p><strong>What's Next?</strong></p>
+          <ul>
+            <li>Your profile has been automatically updated with information from your resume</li>
+            <li>Recruiters can now discover your profile when searching for candidates</li>
+            <li>You'll receive notifications when recruiters view your profile or invite you to interviews</li>
+          </ul>
+          <p style="text-align: center;">
+            <a href="https://hotgigs.manus.space/candidate/dashboard" class="button">View Your Profile</a>
+          </p>
+          <p>Keep your profile up to date to maximize your chances of landing your dream job!</p>
+        </div>
+        <div class="footer">
+          <p>© 2024 HotGigs - AI-Powered Recruitment Platform</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const body = `Hi ${candidateName},\n\nYour resume${profileName ? ` profile "${profileName}"` : ''} has been successfully uploaded and processed!\n\nYour profile has been automatically updated with information from your resume. Recruiters can now discover your profile when searching for candidates.\n\nView your profile: https://hotgigs.manus.space/candidate/dashboard\n\nBest regards,\nThe HotGigs Team`;
+
+  return sendEmail({
+    to: candidateEmail,
+    subject,
+    body,
+    html,
+  });
+}
+
+/**
+ * Send profile update confirmation email
+ */
+export async function sendProfileUpdateConfirmation(params: {
+  candidateEmail: string;
+  candidateName: string;
+  updatedFields: string[];
+}): Promise<boolean> {
+  const { candidateEmail, candidateName, updatedFields } = params;
+  
+  const subject = 'Profile Updated Successfully';
+  
+  const fieldsList = updatedFields.map(field => `<li>${field}</li>`).join('');
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+        ul { background: white; padding: 20px; border-radius: 5px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>✅ Profile Updated!</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${candidateName},</p>
+          <p>Your profile has been successfully updated with the following changes:</p>
+          <ul>
+            ${fieldsList}
+          </ul>
+          <p>Your updated profile is now visible to recruiters searching for candidates with your skills and experience.</p>
+          <p style="text-align: center;">
+            <a href="https://hotgigs.manus.space/candidate/dashboard" class="button">View Your Profile</a>
+          </p>
+        </div>
+        <div class="footer">
+          <p>© 2024 HotGigs - AI-Powered Recruitment Platform</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const body = `Hi ${candidateName},\n\nYour profile has been successfully updated!\n\nUpdated fields:\n${updatedFields.map(f => `- ${f}`).join('\n')}\n\nView your profile: https://hotgigs.manus.space/candidate/dashboard\n\nBest regards,\nThe HotGigs Team`;
+
+  return sendEmail({
+    to: candidateEmail,
+    subject,
+    body,
+    html,
+  });
+}
+
+/**
+ * Send video introduction upload confirmation email
+ */
+export async function sendVideoIntroductionConfirmation(params: {
+  candidateEmail: string;
+  candidateName: string;
+  duration: number;
+}): Promise<boolean> {
+  const { candidateEmail, candidateName, duration } = params;
+  
+  const subject = 'Video Introduction Uploaded Successfully';
+  
+  const minutes = Math.floor(duration / 60);
+  const seconds = duration % 60;
+  const durationText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+        .stats { background: white; padding: 20px; border-radius: 5px; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎥 Video Introduction Uploaded!</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${candidateName},</p>
+          <p>Your video introduction has been successfully uploaded and is now part of your profile!</p>
+          <div class="stats">
+            <p><strong>Video Duration:</strong> ${durationText}</p>
+          </div>
+          <p><strong>Why video introductions matter:</strong></p>
+          <ul>
+            <li>Stand out from other candidates with a personal touch</li>
+            <li>Showcase your communication skills and personality</li>
+            <li>Help recruiters understand you better before the interview</li>
+            <li>Increase your chances of getting interview invitations</li>
+          </ul>
+          <p style="text-align: center;">
+            <a href="https://hotgigs.manus.space/candidate/dashboard" class="button">View Your Profile</a>
+          </p>
+        </div>
+        <div class="footer">
+          <p>© 2024 HotGigs - AI-Powered Recruitment Platform</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const body = `Hi ${candidateName},\n\nYour video introduction (${durationText}) has been successfully uploaded!\n\nVideo introductions help you stand out and showcase your personality to recruiters.\n\nView your profile: https://hotgigs.manus.space/candidate/dashboard\n\nBest regards,\nThe HotGigs Team`;
+
+  return sendEmail({
+    to: candidateEmail,
+    subject,
+    body,
+    html,
+  });
+}
+
+/**
+ * Notify recruiter when a new candidate completes their profile
+ */
+export async function notifyRecruiterNewCandidateProfile(params: {
+  recruiterEmail: string;
+  recruiterName: string;
+  candidateName: string;
+  candidateTitle: string;
+  candidateSkills: string[];
+  candidateLocation: string;
+  profileUrl: string;
+}): Promise<boolean> {
+  const { recruiterEmail, recruiterName, candidateName, candidateTitle, candidateSkills, candidateLocation, profileUrl } = params;
+  
+  const subject = `New Candidate Profile: ${candidateName} - ${candidateTitle}`;
+  
+  const skillsList = candidateSkills.slice(0, 10).map(skill => `<span style="background: #e0e7ff; padding: 4px 12px; border-radius: 12px; margin: 4px; display: inline-block;">${skill}</span>`).join('');
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+        .profile-card { background: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎯 New Candidate Profile</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${recruiterName},</p>
+          <p>A new candidate has completed their profile and is now available for recruitment:</p>
+          <div class="profile-card">
+            <h2>${candidateName}</h2>
+            <p><strong>${candidateTitle}</strong></p>
+            <p>📍 ${candidateLocation}</p>
+            <p><strong>Top Skills:</strong></p>
+            <div style="margin: 10px 0;">
+              ${skillsList}
+            </div>
+          </div>
+          <p style="text-align: center;">
+            <a href="${profileUrl}" class="button">View Full Profile</a>
+          </p>
+        </div>
+        <div class="footer">
+          <p>© 2024 HotGigs - AI-Powered Recruitment Platform</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const body = `Hi ${recruiterName},\n\nNew candidate profile available:\n\nName: ${candidateName}\nTitle: ${candidateTitle}\nLocation: ${candidateLocation}\nSkills: ${candidateSkills.slice(0, 5).join(', ')}\n\nView profile: ${profileUrl}\n\nBest regards,\nThe HotGigs Team`;
+
+  return sendEmail({
+    to: recruiterEmail,
+    subject,
+    body,
+    html,
+  });
+}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Loader2, FileText, CheckCircle, ArrowLeft } from "lucide-react";
+import { Loader2, FileText, CheckCircle, ArrowLeft, Video } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
@@ -26,6 +26,8 @@ export default function JobApplication() {
   const [previewResumeUrl, setPreviewResumeUrl] = useState("");
   const [previewResumeFilename, setPreviewResumeFilename] = useState("");
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [selectedResumeProfileId, setSelectedResumeProfileId] = useState<number | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   
   // Upload resume mutation
   const uploadResumeMutation = trpc.candidate.uploadResume.useMutation();
@@ -79,6 +81,18 @@ export default function JobApplication() {
   const { data: candidate, isLoading: candidateLoading } = trpc.candidate.getByUserId.useQuery(
     { userId: user?.id || 0 },
     { enabled: !!user?.id }
+  );
+
+  // Fetch resume profiles
+  const { data: resumeProfiles = [] } = trpc.resumeProfile.getResumeProfiles.useQuery(
+    { candidateId: candidate?.id || 0 },
+    { enabled: !!candidate?.id }
+  );
+
+  // Fetch video introduction
+  const { data: videoIntroduction } = trpc.resumeProfile.getVideoIntroduction.useQuery(
+    { candidateId: candidate?.id || 0 },
+    { enabled: !!candidate?.id }
   );
 
   // Submit application mutation
@@ -175,6 +189,8 @@ export default function JobApplication() {
         coverLetter: coverLetter || undefined,
         resumeUrl: resumeUrl!,
         resumeFilename: resumeFilename || undefined,
+        resumeProfileId: selectedResumeProfileId || undefined,
+        videoIntroductionId: selectedVideoId || undefined,
       });
     } catch (error: any) {
       setIsSubmitting(false);
@@ -283,6 +299,82 @@ export default function JobApplication() {
                     </div>
                   </div>
                 </div>
+
+                {/* Resume Profile Selection */}
+                {resumeProfiles.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-3">Select Resume Profile</h3>
+                    <div className="space-y-2">
+                      {resumeProfiles.map((profile) => (
+                        <div
+                          key={profile.id}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                            selectedResumeProfileId === profile.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => setSelectedResumeProfileId(profile.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                checked={selectedResumeProfileId === profile.id}
+                                onChange={() => setSelectedResumeProfileId(profile.id)}
+                                className="w-4 h-4"
+                              />
+                              <div>
+                                <p className="font-medium">{profile.profileName}</p>
+                                <p className="text-sm text-gray-600">
+                                  Uploaded {new Date(profile.uploadedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            {profile.isDefault && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Video Introduction Selection */}
+                {videoIntroduction && (
+                  <div>
+                    <h3 className="font-semibold mb-3">Video Introduction</h3>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="includeVideo"
+                        checked={selectedVideoId === videoIntroduction.id}
+                        onChange={(e) => setSelectedVideoId(e.target.checked ? videoIntroduction.id : null)}
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor="includeVideo" className="text-sm font-medium cursor-pointer">
+                        Include my video introduction
+                      </label>
+                    </div>
+                    {selectedVideoId && (
+                      <div className="mt-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                            <Video className="h-5 w-5 text-purple-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Video Introduction</p>
+                            <p className="text-sm text-gray-600">
+                              Duration: {Math.floor(videoIntroduction.duration / 60)}:{(videoIntroduction.duration % 60).toString().padStart(2, '0')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Resume */}
                 <div>

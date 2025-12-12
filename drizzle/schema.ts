@@ -77,6 +77,46 @@ export type Candidate = typeof candidates.$inferSelect;
 export type InsertCandidate = typeof candidates.$inferInsert;
 
 /**
+ * Resume profiles table - allows candidates to maintain up to 5 different resume versions
+ */
+export const resumeProfiles = mysqlTable("resumeProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  profileName: varchar("profileName", { length: 255 }).notNull(), // e.g., "Software Engineer", "Full Stack Developer"
+  resumeUrl: varchar("resumeUrl", { length: 500 }).notNull(),
+  resumeFileKey: varchar("resumeFileKey", { length: 500 }).notNull(), // S3 key for file management
+  resumeFilename: varchar("resumeFilename", { length: 255 }).notNull(),
+  parsedData: text("parsedData"), // Full ParsedResume JSON from AI parsing
+  isDefault: boolean("isDefault").default(false).notNull(),
+  uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ResumeProfile = typeof resumeProfiles.$inferSelect;
+export type InsertResumeProfile = typeof resumeProfiles.$inferInsert;
+
+/**
+ * Video introductions table - stores candidate self-introduction videos (max 15 minutes)
+ */
+export const videoIntroductions = mysqlTable("videoIntroductions", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  videoUrl: varchar("videoUrl", { length: 500 }).notNull(),
+  videoFileKey: varchar("videoFileKey", { length: 500 }).notNull(), // S3 key for file management
+  thumbnailUrl: varchar("thumbnailUrl", { length: 500 }),
+  duration: int("duration").notNull(), // in seconds, max 900 (15 minutes)
+  fileSize: int("fileSize"), // in bytes
+  mimeType: varchar("mimeType", { length: 100 }),
+  transcription: text("transcription"), // Optional: AI-generated transcription
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type VideoIntroduction = typeof videoIntroductions.$inferSelect;
+export type InsertVideoIntroduction = typeof videoIntroductions.$inferInsert;
+
+/**
  * Customer/Client companies
  */
 export const customers = mysqlTable("customers", {
@@ -150,6 +190,8 @@ export const applications = mysqlTable("applications", {
   id: int("id").autoincrement().primaryKey(),
   jobId: int("jobId").notNull().references(() => jobs.id),
   candidateId: int("candidateId").notNull().references(() => candidates.id),
+  resumeProfileId: int("resumeProfileId").references(() => resumeProfiles.id), // Selected resume profile for this application
+  videoIntroductionId: int("videoIntroductionId").references(() => videoIntroductions.id), // Optional video introduction
   coverLetter: text("coverLetter"),
   resumeUrl: varchar("resumeUrl", { length: 500 }),
   resumeFilename: varchar("resumeFilename", { length: 255 }),

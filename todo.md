@@ -1125,3 +1125,59 @@
 - [x] Verify review screen displays all extracted fields correctly
 - [x] Verify save functionality updates candidate profile in database
 - [x] Both PDF and DOCX formats working flawlessly with AI extraction
+
+## Resume Management System with Multiple Profiles (Current Focus)
+- [ ] Update database schema to support multiple resume profiles per candidate (up to 5)
+- [ ] Add resume_profiles table with fields: id, candidateId, profileName, resumeUrl, resumeFileKey, parsedData, isDefault, createdAt, updatedAt
+- [ ] Add video_introductions table with fields: id, candidateId, videoUrl, videoFileKey, duration, thumbnail, createdAt, updatedAt
+- [ ] Update applications table to include selectedResumeProfileId
+- [ ] Build backend API for creating, reading, updating, deleting resume profiles
+- [ ] Build backend API for video upload, storage, and management
+- [ ] Implement S3 storage for resume files and video files
+- [ ] Create "My Resumes" page in candidate dashboard
+- [ ] Build resume profile card UI with edit, delete, set as default actions
+- [ ] Implement resume upload for new profiles (reuse existing AI parsing)
+- [ ] Add profile name/label input for each resume
+- [ ] Build video recording interface with 15-minute timer
+- [ ] Add video preview, delete, and re-record functionality
+- [ ] Implement resume profile selection during job application
+- [ ] Display video introduction in application review for recruiters
+- [ ] Add video player with controls in recruiter application view
+- [ ] Implement email notifications for resume upload confirmation
+- [ ] Implement email notifications for profile updates
+- [ ] Implement email notifications to recruiters when candidates complete profiles
+- [ ] Build bulk resume upload interface for recruiters
+- [ ] Implement ZIP file parsing and extraction
+- [ ] Process multiple resumes in parallel with AI parsing
+- [ ] Show upload progress and results summary
+- [ ] Add validation: max 5 profiles per candidate
+- [ ] Add validation: max 15 minutes for video recording
+- [ ] Add validation: supported video formats (mp4, webm, mov)
+- [ ] Test complete flow: upload multiple profiles, record video, apply with selected profile
+- [ ] Test recruiter view: see candidate video and selected resume profile
+
+## Resume Management System with Multiple Profiles (Current Focus - 12/12/2024)
+- [x] Update database schema for resume profiles and video introductions
+- [x] Create resumeProfiles table (up to 5 profiles per candidate)
+- [x] Create videoIntroductions table (15-minute video limit)
+- [x] Add resumeProfileId and videoIntroductionId to applications table
+- [x] Build backend API for resume management and video storage
+- [x] Create resumeProfileRouter with CRUD operations
+- [x] Implement 5-profile limit enforcement
+- [x] Implement 15-minute video duration validation
+- [x] Implement email notification system for profile updates
+- [x] Add resume upload confirmation emails
+- [x] Add profile update confirmation emails
+- [x] Add video introduction confirmation emails
+- [x] Add recruiter notifications for new candidate profiles
+- [x] Create My Resumes UI with profile management
+- [x] Build resume profile list view with upload dialog
+- [x] Add set default profile functionality
+- [x] Add profile deletion with confirmation
+- [x] Add visual progress indicator (X/5 profiles)
+- [x] Build video recording interface with preview and management
+- [x] Implement resume selection during job application
+- [x] Integrate video recording into candidate dashboard
+- [ ] Build bulk resume upload for recruiters with ZIP support
+- [ ] Add video display in recruiter application review
+- [ ] Test all features end-to-end and create checkpoint

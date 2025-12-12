@@ -21,6 +21,7 @@ import * as notificationHelpers from './notificationHelpers';
 import * as candidateSearchHelpers from './candidateSearchHelpers';
 import * as emailCampaignHelpers from './emailCampaignHelpers';
 import * as analyticsHelpers from './analyticsHelpers';
+import { resumeProfileRouter } from './resumeProfileRouter';
 import { createVideoMeeting } from './videoMeetingService';
 
 // Helper to generate random suffix for file keys
@@ -30,6 +31,7 @@ function randomSuffix() {
 
 export const appRouter = router({
   system: systemRouter,
+  resumeProfile: resumeProfileRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -649,6 +651,8 @@ export const appRouter = router({
         coverLetter: z.string().optional(),
         resumeUrl: z.string().optional(),
         resumeFilename: z.string().optional(),
+        resumeProfileId: z.number().optional(),
+        videoIntroductionId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
         await db.createApplication(input);

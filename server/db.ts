@@ -4,6 +4,8 @@ import {
   InsertUser, users, 
   recruiters, InsertRecruiter,
   candidates, InsertCandidate,
+  resumeProfiles, InsertResumeProfile,
+  videoIntroductions, InsertVideoIntroduction,
   customers, InsertCustomer,
   customerContacts, InsertCustomerContact,
   jobs, InsertJob,
@@ -1096,4 +1098,130 @@ export async function calculateFraudScore(interviewId: number): Promise<{
   }
   
   return { score, riskLevel, eventCounts };
+}
+
+// Resume Profile operations
+export async function createResumeProfile(profile: InsertResumeProfile) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(resumeProfiles).values(profile);
+  return result;
+}
+
+export async function getResumeProfilesByCandidate(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(resumeProfiles)
+    .where(eq(resumeProfiles.candidateId, candidateId))
+    .orderBy(desc(resumeProfiles.isDefault), desc(resumeProfiles.createdAt));
+}
+
+export async function getResumeProfileById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db
+    .select()
+    .from(resumeProfiles)
+    .where(eq(resumeProfiles.id, id))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateResumeProfile(id: number, data: Partial<InsertResumeProfile>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(resumeProfiles).set(data).where(eq(resumeProfiles.id, id));
+}
+
+export async function deleteResumeProfile(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(resumeProfiles).where(eq(resumeProfiles.id, id));
+}
+
+export async function setDefaultResumeProfile(candidateId: number, profileId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // First, unset all defaults for this candidate
+  await db
+    .update(resumeProfiles)
+    .set({ isDefault: false })
+    .where(eq(resumeProfiles.candidateId, candidateId));
+  
+  // Then set the new default
+  await db
+    .update(resumeProfiles)
+    .set({ isDefault: true })
+    .where(eq(resumeProfiles.id, profileId));
+}
+
+export async function countResumeProfiles(candidateId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(resumeProfiles)
+    .where(eq(resumeProfiles.candidateId, candidateId));
+  
+  return result[0]?.count || 0;
+}
+
+// Video Introduction operations
+export async function createVideoIntroduction(video: InsertVideoIntroduction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(videoIntroductions).values(video);
+  return result;
+}
+
+export async function getVideoIntroductionByCandidate(candidateId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db
+    .select()
+    .from(videoIntroductions)
+    .where(eq(videoIntroductions.candidateId, candidateId))
+    .orderBy(desc(videoIntroductions.createdAt))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getVideoIntroductionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db
+    .select()
+    .from(videoIntroductions)
+    .where(eq(videoIntroductions.id, id))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateVideoIntroduction(id: number, data: Partial<InsertVideoIntroduction>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(videoIntroductions).set(data).where(eq(videoIntroductions.id, id));
+}
+
+export async function deleteVideoIntroduction(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(videoIntroductions).where(eq(videoIntroductions.id, id));
 }

@@ -12,6 +12,7 @@ import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
+import VideoIntroduction from "@/components/VideoIntroduction";
 import { NotificationBell } from "@/components/NotificationBell";
 
 export default function CandidateDashboard() {
@@ -36,6 +37,12 @@ export default function CandidateDashboard() {
   // Fetch AI-powered recommended jobs
   const { data: recommendedJobs } = trpc.candidate.getRecommendedJobs.useQuery(
     { candidateId: candidate?.id || 0, limit: 3 },
+    { enabled: !!candidate?.id }
+  );
+
+  // Fetch video introduction
+  const { data: videoIntroduction, refetch: refetchVideo } = trpc.resumeProfile.getVideoIntroduction.useQuery(
+    { candidateId: candidate?.id || 0 },
     { enabled: !!candidate?.id }
   );
 
@@ -430,6 +437,20 @@ export default function CandidateDashboard() {
                 />
               </CardContent>
             </Card>
+
+            {/* Video Introduction */}
+            {candidate?.id && (
+              <VideoIntroduction
+                candidateId={candidate.id}
+                existingVideo={videoIntroduction ? {
+                  id: videoIntroduction.id,
+                  videoUrl: videoIntroduction.videoUrl,
+                  duration: videoIntroduction.duration,
+                  uploadedAt: videoIntroduction.createdAt
+                } : null}
+                onUploadSuccess={() => refetchVideo()}
+              />
+            )}
 
             {/* Recommended Jobs */}
             <Card>

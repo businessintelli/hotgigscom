@@ -148,6 +148,13 @@
       "when": 1765531360470,
       "tag": "0020_normal_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1765533410148,
+      "tag": "0021_calm_firelord",
+      "breakpoints": true
     }
   ]
 }
