@@ -16,31 +16,26 @@ export async function createContext(
   let user: User | null = null;
   const sessionCookie = opts.req.cookies?.[COOKIE_NAME];
 
-  try {
-    // First try OAuth authentication
-    user = await sdk.authenticateRequest(opts.req);
-  } catch (error) {
-    // Log OAuth authentication failure for debugging
-    if (sessionCookie) {
-      console.log('[Auth] OAuth authentication failed, trying fallback:', error instanceof Error ? error.message : 'Unknown error');
-    }
-    
-    // If OAuth fails, try email/password session
-    if (sessionCookie) {
-      try {
-        // Decode session data from cookie
-        const sessionData = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
-        if (sessionData.userId) {
-          // Fetch user from database
-          const dbUser = await db.getUserById(sessionData.userId);
-          if (dbUser) {
-            user = dbUser;
-            console.log('[Auth] Email/password session authenticated successfully');
-          }
+  if (sessionCookie) {
+    // Try email/password session first (base64-encoded JSON)
+    try {
+      const sessionData = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+      if (sessionData.userId) {
+        // This is an email/password session
+        const dbUser = await db.getUserById(sessionData.userId);
+        if (dbUser) {
+          user = dbUser;
+          console.log('[Auth] Email/password session authenticated successfully');
         }
-      } catch (decodeError) {
+      }
+    } catch (decodeError) {
+      // Not a valid email/password session, try OAuth
+      try {
+        user = await sdk.authenticateRequest(opts.req);
+        console.log('[Auth] OAuth session authenticated successfully');
+      } catch (oauthError) {
         // Invalid session cookie - clear it
-        console.log('[Auth] Invalid session cookie, clearing');
+        console.log('[Auth] Invalid session cookie (neither email/password nor OAuth), clearing');
         opts.res.clearCookie(COOKIE_NAME);
       }
     }

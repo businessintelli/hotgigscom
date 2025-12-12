@@ -1482,3 +1482,20 @@
 - [x] Updated RecruiterOnboarding to check authentication and redirect if needed
 - [x] Updated CandidateOnboarding to check authentication and redirect if needed
 - [x] Users with invalid sessions will now be automatically redirected to sign-in
+
+
+## SignIn Page Authentication Error (CRITICAL)
+- [ ] Investigate why SignIn page is calling protected procedures
+- [ ] Check if useAuth hook is being called on SignIn page
+- [ ] Remove any protected procedure calls from SignIn page
+- [ ] Ensure SignIn page works without authentication
+- [ ] Test complete sign-in flow
+
+
+## Invalid Session Cookie Fix (COMPLETED ✅)
+- [x] Fixed context.ts to check email/password sessions FIRST before OAuth
+- [x] Added automatic cookie clearing for invalid sessions in context
+- [x] Added detailed logging for debugging session authentication
+- [x] Email/password sessions now work correctly even with old OAuth cookies present
+- [x] Invalid OAuth cookies are automatically cleared when detected
+- [x] Restarted server to apply authentication context fixes
