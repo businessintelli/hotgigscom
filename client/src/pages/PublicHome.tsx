@@ -7,7 +7,7 @@ import { Search, MapPin, Briefcase, DollarSign, Clock, Building2, Target, Grid3x
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { APP_TITLE } from "@/const";
+import { APP_TITLE, getLoginUrl } from "@/const";
 
 export default function PublicHome() {
   const [, setLocation] = useLocation();
@@ -48,10 +48,10 @@ export default function PublicHome() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setLocation("/auth/login")}>
+              <Button variant="outline" onClick={() => window.location.href = getLoginUrl()}>
                 Sign In
               </Button>
-              <Button onClick={() => setLocation("/auth/signup")}>
+              <Button onClick={() => window.location.href = getLoginUrl()}>
                 Sign Up
               </Button>
             </div>

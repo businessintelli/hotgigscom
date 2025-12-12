@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Target, Users, Zap, Shield } from "lucide-react";
 import { useLocation } from "wouter";
-import { APP_TITLE } from "@/const";
+import { APP_TITLE, getLoginUrl } from "@/const";
 
 export default function AboutUs() {
   const [, setLocation] = useLocation();
@@ -33,10 +33,10 @@ export default function AboutUs() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setLocation("/auth/login")}>
+              <Button variant="outline" onClick={() => window.location.href = getLoginUrl()}>
                 Sign In
               </Button>
-              <Button onClick={() => setLocation("/auth/signup")}>
+              <Button onClick={() => window.location.href = getLoginUrl()}>
                 Sign Up
               </Button>
             </div>
