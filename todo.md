@@ -793,3 +793,39 @@
 
 ## Bug Fixes - Current Session
 - [x] Fix React Hooks error in fraud report generation (Invalid hook call when downloading report)
+
+## Advanced Resume Parsing & Ranking System
+- [ ] Review research paper on automated resume parsing
+- [ ] Design resume parsing architecture with NLP pipeline
+- [ ] Implement text extraction from PDF/DOCX formats
+- [ ] Integrate spaCy/NLTK for Named Entity Recognition (NER)
+- [ ] Build skill extraction system with semantic embeddings
+- [ ] Implement all-MiniLM-L6-v2 or bge-small-en-v1.5 for embeddings
+- [ ] Create vector database integration (pgvector or similar)
+- [ ] Build resume ranking algorithm based on skill strength
+- [ ] Implement semantic search for resume matching
+- [ ] Create in-browser PDF viewer (no downloads)
+- [ ] Create in-browser DOCX viewer (no downloads)
+- [ ] Update candidate profile upload to use new parsing
+- [ ] Update application submission to use new parsing
+- [ ] Add bulk resume import with parsing
+- [ ] Create resume analytics dashboard showing skill distributions
+- [ ] Test parsing accuracy with various resume formats
+
+## Advanced Resume Parsing & Ranking (Current Session)
+- [x] Implement AI-powered resume parsing with NLP and structured extraction
+- [x] Add comprehensive skill extraction and categorization (7 categories)
+- [x] Build semantic skill matching with Levenshtein distance algorithm
+- [x] Create resume ranking system with skill strength calculation
+- [x] Add experience scoring based on years (entry to executive levels)
+- [x] Add education scoring (associate to PhD)
+- [x] Implement primary domain detection (9 domains)
+- [x] Create in-browser PDF resume viewer with react-pdf
+- [x] Add zoom controls and page navigation for PDF viewer
+- [x] Create resume ranking API endpoints (rankCandidatesForJob, compareCandidates)
+- [x] Add database schema fields for parsed resume data
+- [ ] Integrate ResumeViewer into application management page
+- [ ] Integrate ResumeViewer into candidate profile pages
+- [ ] Add resume ranking UI to job applications view
+- [ ] Write vitest tests for resume parsing functions
+- [ ] Write vitest tests for resume ranking algorithms

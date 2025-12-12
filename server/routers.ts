@@ -308,7 +308,7 @@ export const appRouter = router({
             // Extract text from PDF/DOCX
             const resumeText = await extractResumeText(buffer, mimeType);
             
-            // Parse with AI
+            // Parse with AI (new advanced parser)
             parsedData = await parseResumeWithAI(resumeText);
             
             // Update candidate profile with parsed data
@@ -316,13 +316,26 @@ export const appRouter = router({
               resumeUrl: url,
               resumeFilename: fileName,
               resumeUploadedAt: new Date(),
-              ...(parsedData.title && { title: parsedData.title }),
-              ...(parsedData.phone && { phoneNumber: parsedData.phone }),
-              ...(parsedData.location && { location: parsedData.location }),
+              // Personal info
+              ...(parsedData.personalInfo.phone && { phoneNumber: parsedData.personalInfo.phone }),
+              ...(parsedData.personalInfo.location && { location: parsedData.personalInfo.location }),
+              ...(parsedData.personalInfo.linkedin && { linkedinUrl: parsedData.personalInfo.linkedin }),
+              ...(parsedData.personalInfo.github && { githubUrl: parsedData.personalInfo.github }),
+              // Basic fields
               ...(parsedData.summary && { bio: parsedData.summary }),
-              ...(parsedData.skills && { skills: parsedData.skills }),
-              ...(parsedData.experience && { experience: parsedData.experience }),
-              ...(parsedData.education && { education: parsedData.education }),
+              skills: JSON.stringify(parsedData.skills),
+              experience: JSON.stringify(parsedData.experience),
+              education: JSON.stringify(parsedData.education),
+              // Advanced fields
+              certifications: JSON.stringify(parsedData.certifications),
+              languages: JSON.stringify(parsedData.languages),
+              projects: JSON.stringify(parsedData.projects),
+              parsedResumeData: JSON.stringify(parsedData),
+              // Metadata
+              totalExperienceYears: parsedData.metadata.totalExperienceYears,
+              seniorityLevel: parsedData.metadata.seniorityLevel,
+              primaryDomain: parsedData.metadata.primaryDomain,
+              skillCategories: JSON.stringify(parsedData.metadata.skillCategories),
             });
           } catch (error) {
             console.error('Resume parsing failed:', error);

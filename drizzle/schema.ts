@@ -51,6 +51,17 @@ export const candidates = mysqlTable("candidates", {
   resumeUrl: varchar("resumeUrl", { length: 500 }),
   resumeFilename: varchar("resumeFilename", { length: 255 }),
   resumeUploadedAt: timestamp("resumeUploadedAt"),
+  // Advanced parsed resume data (JSON)
+  parsedResumeData: text("parsedResumeData"), // Full ParsedResume JSON
+  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
+  githubUrl: varchar("githubUrl", { length: 500 }),
+  certifications: text("certifications"), // JSON array
+  languages: text("languages"), // JSON array
+  projects: text("projects"), // JSON array
+  totalExperienceYears: int("totalExperienceYears"),
+  seniorityLevel: varchar("seniorityLevel", { length: 50 }),
+  primaryDomain: varchar("primaryDomain", { length: 100 }),
+  skillCategories: text("skillCategories"), // JSON object
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
