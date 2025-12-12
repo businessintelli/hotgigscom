@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ResumeViewer } from "@/components/ResumeViewer";
 
 export default function ApplicationManagement() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -30,6 +31,9 @@ export default function ApplicationManagement() {
   const [interviewDuration, setInterviewDuration] = useState("60");
   const [panelEmails, setPanelEmails] = useState("");
   const [interviewNotes, setInterviewNotes] = useState("");
+  const [resumeViewerOpen, setResumeViewerOpen] = useState(false);
+  const [selectedResumeUrl, setSelectedResumeUrl] = useState("");
+  const [selectedResumeFilename, setSelectedResumeFilename] = useState("");
 
   const utils = trpc.useUtils();
 
@@ -462,11 +466,17 @@ export default function ApplicationManagement() {
 
                         <div className="flex items-center gap-2 pt-3 border-t">
                           {application.resumeUrl && (
-                            <Button variant="outline" size="sm" asChild>
-                              <a href={application.resumeUrl} target="_blank" rel="noopener noreferrer">
-                                <FileText className="h-4 w-4 mr-1" />
-                                Resume
-                              </a>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedResumeUrl(application.resumeUrl!);
+                                setSelectedResumeFilename(application.resumeFilename || 'resume.pdf');
+                                setResumeViewerOpen(true);
+                              }}
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              View Resume
                             </Button>
                           )}
                           <Button variant="outline" size="sm">
@@ -663,6 +673,14 @@ export default function ApplicationManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Resume Viewer Dialog */}
+      <ResumeViewer
+        resumeUrl={selectedResumeUrl}
+        resumeFilename={selectedResumeFilename}
+        open={resumeViewerOpen}
+        onClose={() => setResumeViewerOpen(false)}
+      />
     </div>
   );
 }

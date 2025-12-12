@@ -14,6 +14,7 @@ import { codingChallenges, codingSubmissions, candidates } from "../drizzle/sche
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
 import { sendInterviewInvitation, sendApplicationStatusUpdate } from "./emailNotifications";
+import { rankCandidatesForJob, getTopCandidatesForJob, compareCandidates } from "./resumeRanking";
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -1661,6 +1662,41 @@ export const appRouter = router({
         }
         
         return { success: true, active: !isActive };
+      }),
+  }),
+
+  // Resume Ranking Router
+  ranking: router({
+    // Rank candidates for a specific job
+    rankCandidatesForJob: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        return await rankCandidatesForJob(input.jobId);
+      }),
+
+    // Get top N candidates for a job
+    getTopCandidates: protectedProcedure
+      .input(z.object({ 
+        jobId: z.number(),
+        limit: z.number().optional().default(10)
+      }))
+      .query(async ({ input }) => {
+        return await getTopCandidatesForJob(input.jobId, input.limit);
+      }),
+
+    // Compare two candidates
+    compareCandidates: protectedProcedure
+      .input(z.object({ 
+        candidateId1: z.number(),
+        candidateId2: z.number(),
+        jobId: z.number().optional()
+      }))
+      .query(async ({ input }) => {
+        return await compareCandidates(
+          input.candidateId1,
+          input.candidateId2,
+          input.jobId
+        );
       }),
   }),
 });

@@ -19,6 +19,7 @@ import InterviewManagement from "@/pages/InterviewManagement";
 import InterviewPlayback from "@/pages/InterviewPlayback";
 import InterviewCalendar from "@/pages/InterviewCalendar";
 import AIInterviewPage from "@/pages/AIInterviewPage";
+import ResumeRankingDashboard from "@/pages/ResumeRankingDashboard";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
 import CandidateSearch from "./pages/CandidateSearch";
@@ -47,8 +48,9 @@ function Router() {
       <Route path="/recruiter/applications" component={ApplicationManagement} />
       <Route path="/recruiter/interviews" component={InterviewManagement} />
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
-      <Route path="/recruiter/interview-calendar" component={InterviewCalendar} />
-      <Route path={"/recruiter/customers"} component={CustomerManagement} />
+       <Route path="/recruiter/interview-calendar" component={InterviewCalendar} />
+      <Route path="/recruiter/resume-ranking" component={ResumeRankingDashboard} />
+      <Route path="/recruiter/customers" component={CustomerManagement} />
       <Route path="/recruiter/search-candidates" component={CandidateSearch} />
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/admin/dashboard" component={AdminDashboard} />

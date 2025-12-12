@@ -198,6 +198,15 @@ export default function RecruiterDashboard() {
                   <div className="text-xs opacity-90">Add and manage clients</div>
                 </div>
               </Button>
+              <Button onClick={() => setLocation('/recruiter/resume-ranking')} className="h-20 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">📊</span>
+                    Resume Ranking
+                  </div>
+                  <div className="text-xs opacity-90">AI-powered candidate ranking</div>
+                </div>
+              </Button>
             </div>
           </CardContent>
         </Card>

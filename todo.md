@@ -829,3 +829,19 @@
 - [ ] Add resume ranking UI to job applications view
 - [ ] Write vitest tests for resume parsing functions
 - [ ] Write vitest tests for resume ranking algorithms
+
+## Resume Viewer & Ranking Integration (Current Session)
+- [x] Integrate ResumeViewer component into ApplicationManagement page
+- [x] Add "View Resume" button to application cards
+- [x] Add resume ranking procedures to tRPC router
+- [x] Create Resume Ranking Dashboard page
+- [x] Add visual skill match indicators (progress bars, badges)
+- [x] Add experience and education score displays
+- [x] Add sorting by overall score, skill match, experience
+- [x] Add Resume Ranking quick action to recruiter dashboard
+- [ ] Implement bulk resume upload feature (ZIP file support)
+- [ ] Add automatic candidate profile creation from bulk upload
+- [ ] Add automatic ranking against open positions
+- [ ] Test resume viewer integration
+- [ ] Test ranking dashboard functionality
+- [ ] Test bulk upload and parsing
