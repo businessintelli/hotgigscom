@@ -1459,3 +1459,15 @@
 - [x] Add HotGigs logo and purple-blue gradient brand colors to email templates
 - [x] Update email sending functions to use new branded templates
 - [x] Add proper TypeScript type guards for completion status
+
+
+## Authentication Context Bug Fix (COMPLETED ✅)
+- [x] Investigate why logged-in users get "Please login (10001)" error
+- [x] Root cause: Users signed in via OAuth without role selection had no recruiter/candidate profile
+- [x] Fixed RecruiterOnboarding to check if profile exists on page load
+- [x] Fixed CandidateOnboarding to check if profile exists on page load
+- [x] Added automatic profile creation if missing (with error handling)
+- [x] Added toast notifications for better error feedback
+- [x] Fixed import paths (useAuth from @/_core/hooks/useAuth)
+- [x] Added useEffect to create profile before attempting updates
+- [x] Redirect to /select-role if profile creation fails

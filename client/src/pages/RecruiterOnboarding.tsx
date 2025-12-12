@@ -9,8 +9,12 @@ import { Building2, Phone, FileText, CheckCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { APP_TITLE } from "@/const";
+import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useEffect } from "react";
 
 export default function RecruiterOnboarding() {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [, setLocation] = useLocation();
   
@@ -21,8 +25,41 @@ export default function RecruiterOnboarding() {
   // Step 2: Bio
   const [bio, setBio] = useState("");
   
-  const updateStepMutation = trpc.profileCompletion.updateRecruiterStep.useMutation();
-  const skipMutation = trpc.profileCompletion.skipOnboarding.useMutation();
+  // Check if recruiter profile exists
+  const { data: profile, isLoading: profileLoading } = trpc.recruiter.getProfile.useQuery(
+    undefined,
+    { retry: false }
+  );
+
+  const createRecruiterMutation = trpc.recruiter.createProfile.useMutation();
+  const updateStepMutation = trpc.profileCompletion.updateRecruiterStep.useMutation({
+    onError: (error) => {
+      toast.error(`Failed to save step: ${error.message}`);
+    },
+  });
+  const skipMutation = trpc.profileCompletion.skipOnboarding.useMutation({
+    onError: (error) => {
+      toast.error(`Failed to skip onboarding: ${error.message}`);
+    },
+  });
+
+  // Create recruiter profile if it doesn't exist
+  useEffect(() => {
+    if (!profileLoading && !profile && user) {
+      createRecruiterMutation.mutate(
+        {},
+        {
+          onSuccess: () => {
+            toast.success('Profile created successfully!');
+          },
+          onError: (error: any) => {
+            toast.error(`Failed to create profile: ${error.message}`);
+            setLocation('/select-role');
+          },
+        }
+      );
+    }
+  }, [profile, profileLoading, user]);
 
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;

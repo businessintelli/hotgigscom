@@ -10,8 +10,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { User, Briefcase, DollarSign, CheckCircle, MapPin, Phone } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useEffect } from "react";
 
 export default function CandidateOnboarding() {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [, setLocation] = useLocation();
   
@@ -31,8 +35,41 @@ export default function CandidateOnboarding() {
   const [expectedSalaryMax, setExpectedSalaryMax] = useState("");
   const [willingToRelocate, setWillingToRelocate] = useState(false);
   
-  const updateStepMutation = trpc.profileCompletion.updateCandidateStep.useMutation();
-  const skipMutation = trpc.profileCompletion.skipOnboarding.useMutation();
+  // Check if candidate profile exists
+  const { data: profile, isLoading: profileLoading } = trpc.candidate.getProfile.useQuery(
+    undefined,
+    { retry: false }
+  );
+
+  const createCandidateMutation = trpc.candidate.createProfile.useMutation();
+  const updateStepMutation = trpc.profileCompletion.updateCandidateStep.useMutation({
+    onError: (error) => {
+      toast.error(`Failed to save step: ${error.message}`);
+    },
+  });
+  const skipMutation = trpc.profileCompletion.skipOnboarding.useMutation({
+    onError: (error) => {
+      toast.error(`Failed to skip onboarding: ${error.message}`);
+    },
+  });
+
+  // Create candidate profile if it doesn't exist
+  useEffect(() => {
+    if (!profileLoading && !profile && user) {
+      createCandidateMutation.mutate(
+        {},
+        {
+          onSuccess: () => {
+            toast.success('Profile created successfully!');
+          },
+          onError: (error: any) => {
+            toast.error(`Failed to create profile: ${error.message}`);
+            setLocation('/select-role');
+          },
+        }
+      );
+    }
+  }, [profile, profileLoading, user]);
 
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
