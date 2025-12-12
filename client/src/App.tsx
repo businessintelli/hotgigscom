@@ -24,6 +24,7 @@ import BulkResumeUpload from "@/pages/BulkResumeUpload";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
 import CandidateSearch from "./pages/CandidateSearch";
+import AdvancedCandidateSearch from "./pages/AdvancedCandidateSearch";
 import JobDetails from "./pages/JobDetails";
 import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/recruiter/resume-ranking" component={ResumeRankingDashboard} />
       <Route path="/recruiter/customers" component={CustomerManagement} />
       <Route path="/recruiter/search-candidates" component={CandidateSearch} />
+      <Route path="/recruiter/advanced-search" component={AdvancedCandidateSearch} />
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />

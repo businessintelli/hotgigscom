@@ -62,6 +62,13 @@ export const candidates = mysqlTable("candidates", {
   seniorityLevel: varchar("seniorityLevel", { length: 50 }),
   primaryDomain: varchar("primaryDomain", { length: 100 }),
   skillCategories: text("skillCategories"), // JSON object
+  // Smart filter fields for advanced search
+  availability: varchar("availability", { length: 50 }), // 'immediate', '2-weeks', '1-month', '2-months', 'not-looking'
+  visaStatus: varchar("visaStatus", { length: 100 }), // 'citizen', 'permanent-resident', 'work-visa', 'requires-sponsorship'
+  expectedSalaryMin: int("expectedSalaryMin"),
+  expectedSalaryMax: int("expectedSalaryMax"),
+  noticePeriod: varchar("noticePeriod", { length: 50 }), // 'immediate', '2-weeks', '1-month', '2-months', '3-months'
+  willingToRelocate: boolean("willingToRelocate").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -415,3 +422,31 @@ export const notifications = mysqlTable("notifications", {
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+/**
+ * Candidate tags table for organizing candidates
+ */
+export const candidateTags = mysqlTable("candidateTags", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  color: varchar("color", { length: 50 }).default("blue"), // badge color
+  userId: int("userId").notNull().references(() => users.id), // recruiter who created the tag
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CandidateTag = typeof candidateTags.$inferSelect;
+export type InsertCandidateTag = typeof candidateTags.$inferInsert;
+
+/**
+ * Candidate tag assignments (many-to-many relationship)
+ */
+export const candidateTagAssignments = mysqlTable("candidateTagAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  tagId: int("tagId").notNull().references(() => candidateTags.id),
+  assignedBy: int("assignedBy").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CandidateTagAssignment = typeof candidateTagAssignments.$inferSelect;
+export type InsertCandidateTagAssignment = typeof candidateTagAssignments.$inferInsert;

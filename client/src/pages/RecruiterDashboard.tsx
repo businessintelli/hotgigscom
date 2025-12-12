@@ -155,6 +155,15 @@ export default function RecruiterDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button onClick={() => setLocation('/recruiter/advanced-search')} className="h-20 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">🔍</span>
+                    Advanced Search
+                  </div>
+                  <div className="text-xs opacity-90">Boolean operators & smart filters</div>
+                </div>
+              </Button>
               <Button onClick={() => setLocation('/recruiter/ai-matching')} className="h-20 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
                 <div className="text-center">
                   <div className="text-lg font-semibold flex items-center justify-center">

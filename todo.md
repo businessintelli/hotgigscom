@@ -929,3 +929,19 @@
 - [x] Test responsive design on mobile and tablet viewports
 - [x] Ensure all dialogs and modals work on mobile
 - [x] Test notification bell and dropdown on mobile
+
+## Advanced Candidate Search (Current Focus)
+- [x] Create database schema for saved searches
+- [x] Create database schema for candidate tags
+- [x] Add smart filter fields to candidates table (availability, visa status, salary expectations)
+- [x] Build backend API for boolean search operators (AND, OR, NOT)
+- [x] Implement smart filters API (skills, experience, location, availability, visa, salary)
+- [x] Create AdvancedCandidateSearch page with search builder UI
+- [x] Implement boolean operator UI (visual query builder)
+- [x] Add smart filter controls (dropdowns, sliders, checkboxes)
+- [x] Implement saved search functionality (save, load, delete)
+- [x] Add bulk candidate tagging feature
+- [x] Create tag management UI
+- [x] Test advanced search with complex queries
+- [x] Test saved searches persistence
+- [x] Test bulk tagging workflow

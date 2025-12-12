@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `candidates` \nADD COLUMN IF NOT EXISTS `availability` varchar(50),\nADD COLUMN IF NOT EXISTS `visaStatus` varchar(100),\nADD COLUMN IF NOT EXISTS `expectedSalaryMin` int,\nADD COLUMN IF NOT EXISTS `expectedSalaryMax` int,\nADD COLUMN IF NOT EXISTS `noticePeriod` varchar(50),\nADD COLUMN IF NOT EXISTS `willingToRelocate` boolean DEFAULT false;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE `candidates` \nADD COLUMN IF NOT EXISTS `availability` varchar(50),\nADD COLUMN IF NOT EXISTS `visaStatus` varchar(100),\nADD COLUMN IF NOT EXISTS `expectedSalaryMin` int,\nADD COLUMN IF NOT EXISTS `expectedSalaryMax` int,\nADD COLUMN IF NOT EXISTS `noticePeriod` varchar(50),\nADD COLUMN IF NOT EXISTS `willingToRelocate` boolean DEFAULT false;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1954
+}

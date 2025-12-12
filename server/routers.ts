@@ -17,6 +17,7 @@ import { sendInterviewInvitation, sendApplicationStatusUpdate } from "./emailNot
 import { rankCandidatesForJob, getTopCandidatesForJob, compareCandidates } from './resumeRanking';
 import { exportCandidatesToExcel, exportCandidatesToCSV } from './resumeExport';
 import * as notificationHelpers from './notificationHelpers';
+import * as candidateSearchHelpers from './candidateSearchHelpers';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -1872,6 +1873,122 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await notificationHelpers.deleteNotification(input.notificationId);
         return { success: true };
+      }),
+  }),
+
+  // Advanced Candidate Search with Boolean Operators and Smart Filters
+  candidateSearch: router({
+    // Advanced search with boolean operators
+    advancedSearch: protectedProcedure
+      .input(z.object({
+        keywords: z.string().optional(),
+        skills: z.array(z.string()).optional(),
+        experienceYears: z.object({
+          min: z.number().optional(),
+          max: z.number().optional(),
+        }).optional(),
+        location: z.string().optional(),
+        availability: z.array(z.string()).optional(),
+        visaStatus: z.array(z.string()).optional(),
+        salaryRange: z.object({
+          min: z.number().optional(),
+          max: z.number().optional(),
+        }).optional(),
+        noticePeriod: z.array(z.string()).optional(),
+        willingToRelocate: z.boolean().optional(),
+        seniorityLevel: z.array(z.string()).optional(),
+        tags: z.array(z.number()).optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await candidateSearchHelpers.advancedCandidateSearch(input);
+      }),
+
+    // Get all tags for current recruiter
+    getTags: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await candidateSearchHelpers.getCandidateTagsByRecruiter(ctx.user.id);
+      }),
+
+    // Create a new tag
+    createTag: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        color: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await candidateSearchHelpers.createCandidateTag(
+          ctx.user.id,
+          input.name,
+          input.color
+        );
+      }),
+
+    // Bulk assign tags to candidates
+    bulkAssignTags: protectedProcedure
+      .input(z.object({
+        candidateIds: z.array(z.number()),
+        tagIds: z.array(z.number()),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await candidateSearchHelpers.bulkAssignTags(
+          input.candidateIds,
+          input.tagIds,
+          ctx.user.id
+        );
+        return { success: true };
+      }),
+
+    // Remove tag from candidates
+    removeTagFromCandidates: protectedProcedure
+      .input(z.object({
+        candidateIds: z.array(z.number()),
+        tagId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await candidateSearchHelpers.removeTagFromCandidates(
+          input.candidateIds,
+          input.tagId
+        );
+        return { success: true };
+      }),
+
+    // Get tags for specific candidates
+    getTagsForCandidates: protectedProcedure
+      .input(z.object({
+        candidateIds: z.array(z.number()),
+      }))
+      .query(async ({ input }) => {
+        return await candidateSearchHelpers.getTagsForCandidates(input.candidateIds);
+      }),
+
+    // Save search query
+    saveSearch: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        searchQuery: z.string(), // JSON stringified search params
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await db.createSavedSearch({
+          userId: ctx.user.id,
+          name: input.name,
+          searchType: "candidate",
+          keyword: input.searchQuery,
+        });
+      }),
+
+    // Get saved searches
+    getSavedSearches: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getSavedSearchesByUser(ctx.user.id);
+      }),
+
+    // Delete saved search
+    deleteSavedSearch: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteSavedSearch(input.id);
       }),
   }),
 });
