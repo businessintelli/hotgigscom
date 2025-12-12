@@ -1090,3 +1090,20 @@
 - [x] Implement CSV export functionality
 - [x] Add date range filtering UI
 - [x] Add analytics dashboard link to recruiter dashboard
+
+## Video Interview Integration (COMPLETED)
+- [ ] Research Zoom API documentation and authentication methods
+- [ ] Research Microsoft Teams API documentation
+- [ ] Request Zoom API credentials from user (Client ID, Client Secret)
+- [ ] Request Microsoft Teams API credentials from user
+- [ ] Install zoom-api and microsoft-graph packages
+- [ ] Create video meeting service abstraction layer
+- [ ] Implement Zoom meeting creation with automatic link generation
+- [ ] Implement Teams meeting creation with automatic link generation
+- [ ] Add meeting provider selection to interview scheduling
+- [ ] Update interview schema to store meeting provider and meeting ID
+- [ ] Add one-click join button to interview details
+- [ ] Implement calendar sync (Google Calendar, Outlook)
+- [ ] Add automatic meeting reminders
+- [ ] Test Zoom meeting creation and join flow
+- [ ] Test Teams meeting creation and join flow

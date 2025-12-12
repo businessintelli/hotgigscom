@@ -31,6 +31,7 @@ import FollowUpSequenceBuilder from './pages/FollowUpSequenceBuilder';
 import Unsubscribe from './pages/Unsubscribe';
 import ResumeUploadReview from './pages/ResumeUploadReview';
 import EmailProviderSettings from "./pages/EmailProviderSettings";
+import VideoProviderSettings from "./pages/VideoProviderSettings";
 import EmailDeliveryDashboard from "./pages/EmailDeliveryDashboard";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import JobDetails from "./pages/JobDetails";
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />
       <Route path="/admin/email-settings" component={EmailProviderSettings} />
+      <Route path="/admin/video-settings" component={VideoProviderSettings} />
       <Route path="/admin/email-delivery" component={EmailDeliveryDashboard} />
       <Route path="/admin/analytics" component={Analytics} />
       <Route path="/analytics" component={AnalyticsDashboard} />

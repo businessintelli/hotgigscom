@@ -184,6 +184,11 @@ export const interviews = mysqlTable("interviews", {
   aiEvaluationReport: text("aiEvaluationReport"),
   interviewerNotes: text("interviewerNotes"),
   candidateFeedback: text("candidateFeedback"),
+  videoMeetingId: varchar("videoMeetingId", { length: 255 }),
+  videoJoinUrl: text("videoJoinUrl"),
+  videoStartUrl: text("videoStartUrl"),
+  videoPassword: varchar("videoPassword", { length: 255 }),
+  videoProvider: mysqlEnum("videoProvider", ["zoom", "teams", "none"]).default("none"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

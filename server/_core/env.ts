@@ -9,4 +9,11 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   sendGridApiKey: process.env.SENDGRID_API_KEY ?? "",
   resendApiKey: process.env.RESEND_API_KEY ?? "",
+  zoomClientId: process.env.ZOOM_CLIENT_ID ?? "",
+  zoomClientSecret: process.env.ZOOM_CLIENT_SECRET ?? "",
+  zoomAccountId: process.env.ZOOM_ACCOUNT_ID ?? "",
+  teamsClientId: process.env.TEAMS_CLIENT_ID ?? "",
+  teamsClientSecret: process.env.TEAMS_CLIENT_SECRET ?? "",
+  teamsTenantId: process.env.TEAMS_TENANT_ID ?? "",
+  videoProvider: process.env.VIDEO_PROVIDER ?? "none",
 };

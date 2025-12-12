@@ -48,6 +48,10 @@ interface CalendarEvent {
     location?: string;
     meetingLink?: string;
     notes?: string;
+    videoJoinUrl?: string;
+    videoStartUrl?: string;
+    videoPassword?: string;
+    videoProvider?: string;
   };
 }
 
@@ -102,6 +106,10 @@ export default function InterviewCalendar() {
           location: interview.interview.location || undefined,
           meetingLink: interview.interview.meetingLink || undefined,
           notes: interview.interview.notes || undefined,
+          videoJoinUrl: interview.interview.videoJoinUrl || undefined,
+          videoStartUrl: interview.interview.videoStartUrl || undefined,
+          videoPassword: interview.interview.videoPassword || undefined,
+          videoProvider: interview.interview.videoProvider || undefined,
         },
       };
     });
@@ -303,8 +311,33 @@ export default function InterviewCalendar() {
                 </div>
               </div>
 
-              {/* Location or Meeting Link */}
-              {(selectedEvent.resource.location || selectedEvent.resource.meetingLink) && (
+              {/* Video Meeting Link */}
+              {selectedEvent.resource.videoJoinUrl && (
+                <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <Video className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-blue-900 mb-2">
+                      {selectedEvent.resource.videoProvider === 'zoom' ? 'Zoom' : selectedEvent.resource.videoProvider === 'teams' ? 'Microsoft Teams' : 'Video'} Meeting
+                    </p>
+                    <Button
+                      onClick={() => window.open(selectedEvent.resource.videoJoinUrl, '_blank')}
+                      className="w-full mb-2"
+                      size="sm"
+                    >
+                      <Video className="h-4 w-4 mr-2" />
+                      Join Meeting
+                    </Button>
+                    {selectedEvent.resource.videoPassword && (
+                      <p className="text-xs text-gray-600">
+                        Password: <span className="font-mono font-semibold">{selectedEvent.resource.videoPassword}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Location or Meeting Link (fallback) */}
+              {!selectedEvent.resource.videoJoinUrl && (selectedEvent.resource.location || selectedEvent.resource.meetingLink) && (
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
                   <div>

@@ -21,6 +21,7 @@ import * as notificationHelpers from './notificationHelpers';
 import * as candidateSearchHelpers from './candidateSearchHelpers';
 import * as emailCampaignHelpers from './emailCampaignHelpers';
 import * as analyticsHelpers from './analyticsHelpers';
+import { createVideoMeeting } from './videoMeetingService';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -896,10 +897,32 @@ export const appRouter = router({
         const recruiter = await db.getRecruiterByUserId(ctx.user.id);
         if (!recruiter) throw new Error("Recruiter profile not found");
         
+        // Create video meeting if interview type is video
+        let videoMeetingDetails = null;
+        if (input.type === 'video') {
+          try {
+            const job = await db.getJobById(input.jobId);
+            videoMeetingDetails = await createVideoMeeting({
+              topic: `Interview for ${job?.title || 'Position'}`,
+              startTime: new Date(input.scheduledAt),
+              duration: input.duration || 60,
+              agenda: input.notes || 'Interview discussion',
+            });
+          } catch (error) {
+            console.error('Failed to create video meeting:', error);
+            // Continue without video meeting if creation fails
+          }
+        }
+        
         const interview = await db.createInterview({
           ...input,
           recruiterId: recruiter.id,
           scheduledAt: new Date(input.scheduledAt),
+          videoMeetingId: videoMeetingDetails?.meetingId,
+          videoJoinUrl: videoMeetingDetails?.joinUrl,
+          videoStartUrl: videoMeetingDetails?.startUrl,
+          videoPassword: videoMeetingDetails?.password,
+          videoProvider: videoMeetingDetails?.provider || 'none',
         });
         
         // Send email notification and in-app notification to candidate
@@ -1817,6 +1840,55 @@ export const appRouter = router({
           .limit(input.limit);
         
         return logs;
+      }),
+
+    // Video provider configuration
+    getVideoProvider: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { systemSettings } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        
+        const [setting] = await database
+          .select()
+          .from(systemSettings)
+          .where(eq(systemSettings.settingKey, 'videoProvider'));
+        
+        const { ENV } = await import('./_core/env');
+        const provider = setting?.settingValue || ENV.videoProvider || 'none';
+        
+        return {
+          provider,
+          hasZoomCredentials: !!(ENV.zoomClientId && ENV.zoomClientSecret && ENV.zoomAccountId),
+          hasTeamsCredentials: !!(ENV.teamsClientId && ENV.teamsClientSecret && ENV.teamsTenantId),
+        };
+      }),
+    
+    setVideoProvider: protectedProcedure
+      .input(z.object({ provider: z.enum(['zoom', 'teams', 'none']) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { systemSettings } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        
+        await database
+          .update(systemSettings)
+          .set({ settingValue: input.provider, updatedAt: new Date() })
+          .where(eq(systemSettings.settingKey, 'videoProvider'));
+        
+        return { success: true };
       }),
 
     // Get delivery statistics

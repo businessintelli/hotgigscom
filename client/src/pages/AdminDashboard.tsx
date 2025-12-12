@@ -204,6 +204,12 @@ export default function AdminDashboard() {
                 Email Settings
               </Button>
             </Link>
+            <Link href="/admin/video-settings">
+              <Button variant="outline" className="w-full justify-start">
+                <Video className="w-4 h-4 mr-2" />
+                Video Settings
+              </Button>
+            </Link>
             <Link href="/admin/email-delivery">
               <Button variant="outline" className="w-full justify-start">
                 <TrendingUp className="w-4 h-4 mr-2" />

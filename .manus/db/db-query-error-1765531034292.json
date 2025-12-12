@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO systemSettings (settingKey, settingValue, category, description, createdAt, updatedAt) \nVALUES ('videoProvider', 'none', 'video', 'Active video conferencing provider (zoom, teams, or none)', NOW(), NOW())\nON DUPLICATE KEY UPDATE settingValue = settingValue;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute INSERT INTO systemSettings (settingKey, settingValue, category, description, createdAt, updatedAt) \nVALUES ('videoProvider', 'none', 'video', 'Active video conferencing provider (zoom, teams, or none)', NOW(), NOW())\nON DUPLICATE KEY UPDATE settingValue = settingValue;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'category' in 'field list'"
+  ]
+}
