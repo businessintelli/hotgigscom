@@ -1035,3 +1035,11 @@
 - [x] Add save functionality to update candidate profile
 - [x] Integrate with candidate dashboard
 - [x] Add resume upload link to candidate quick actions
+
+## Bug Fixes: Notification Table and Mock User Context (Current Focus)
+- [x] Create notifications table in database (missing table causing query errors)
+- [x] Fix mock user context to provide candidate user for candidate routes
+- [x] Fix mock user context to provide recruiter user for recruiter routes
+- [x] Test /my-applications page loads without errors
+- [x] Test notification bell component works correctly
+- [x] Verify all candidate pages work with mock candidate user
