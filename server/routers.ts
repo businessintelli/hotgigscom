@@ -22,6 +22,7 @@ import * as candidateSearchHelpers from './candidateSearchHelpers';
 import * as emailCampaignHelpers from './emailCampaignHelpers';
 import * as analyticsHelpers from './analyticsHelpers';
 import { resumeProfileRouter } from './resumeProfileRouter';
+import { onboardingRouter } from './onboardingRouter';
 import { createVideoMeeting } from './videoMeetingService';
 
 // Helper to generate random suffix for file keys
@@ -32,6 +33,7 @@ function randomSuffix() {
 export const appRouter = router({
   system: systemRouter,
   resumeProfile: resumeProfileRouter,
+  onboarding: onboardingRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

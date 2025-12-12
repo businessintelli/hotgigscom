@@ -44,6 +44,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/UserManagement";
 import SystemHealth from "./pages/SystemHealth";
 import Analytics from "./pages/Analytics";
+import { ActiveAssociates } from "./pages/ActiveAssociates";
+import { OnboardingTasks } from "./pages/OnboardingTasks";
 
 
 function Router() {
@@ -71,6 +73,8 @@ function Router() {
       <Route path="/recruiter/sequences" component={FollowUpSequenceBuilder} />
       <Route path="/unsubscribe/:trackingId" component={Unsubscribe} />
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
+      <Route path="/recruiter/active-associates" component={ActiveAssociates} />
+      <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />

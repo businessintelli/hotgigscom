@@ -1249,3 +1249,16 @@
 - [ ] Test candidate search filters with real authentication
 - [ ] Test application management features
 - [ ] Test bulk resume upload functionality
+
+
+## Onboarding/Offboarding System Implementation (COMPLETED)
+- [x] Fix TypeScript errors in onboardingRouter.ts (18 type mismatches in query results)
+- [x] Uncomment and enable onboardingRouter in routers/index.ts
+- [x] Create Active Associates page UI at /recruiter/active-associates
+- [x] Build initiate onboarding workflow for selected candidates
+- [x] Create task creation and assignment interface (assign to multiple recruiters)
+- [x] Implement task completion tracking UI
+- [x] Build offboarding workflow initiation
+- [x] Implement automated email reminders for pending tasks
+- [x] Add Active Associates navigation link to recruiter dashboard
+- [x] Test complete onboarding/offboarding workflow end-to-end

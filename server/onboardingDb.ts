@@ -8,7 +8,8 @@ import {
   taskReminders, InsertTaskReminder,
   taskTemplates, InsertTaskTemplate,
   candidates,
-  recruiters
+  recruiters,
+  users
 } from "../drizzle/schema";
 
 // ============= Associates =============
@@ -29,6 +30,7 @@ export async function getAssociateById(id: number) {
     .select()
     .from(associates)
     .leftJoin(candidates, eq(associates.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
     .leftJoin(recruiters, eq(associates.managerId, recruiters.id))
     .where(eq(associates.id, id));
   
@@ -43,6 +45,7 @@ export async function getAllAssociates(status?: string) {
     .select()
     .from(associates)
     .leftJoin(candidates, eq(associates.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
     .leftJoin(recruiters, eq(associates.managerId, recruiters.id));
   
   if (status) {
@@ -232,6 +235,7 @@ export async function getTaskAssignments(taskId: number) {
     .select()
     .from(taskAssignments)
     .leftJoin(recruiters, eq(taskAssignments.recruiterId, recruiters.id))
+    .leftJoin(users, eq(recruiters.userId, users.id))
     .where(eq(taskAssignments.taskId, taskId));
 }
 
@@ -423,7 +427,19 @@ export async function getRecruiterById(id: number) {
   const [recruiter] = await db
     .select()
     .from(recruiters)
+    .leftJoin(users, eq(recruiters.userId, users.id))
     .where(eq(recruiters.id, id));
   
   return recruiter;
+}
+
+export async function getAllRecruiters() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(recruiters)
+    .leftJoin(users, eq(recruiters.userId, users.id))
+    .orderBy(users.name);
 }

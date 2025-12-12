@@ -9,7 +9,7 @@ import {
 interface EmailNotification {
   to: string;
   subject: string;
-  body: string;
+  body?: string;
   html?: string;
 }
 
@@ -18,13 +18,13 @@ interface EmailNotification {
  * Note: This uses the owner notification API as a placeholder
  * In production, integrate with a proper email service (SendGrid, AWS SES, etc.)
  */
-async function sendEmail(notification: EmailNotification): Promise<boolean> {
+export async function sendEmail(notification: EmailNotification): Promise<boolean> {
   // For now, send to owner as notification
   // TODO: Integrate with actual email service (SendGrid, AWS SES, etc.)
   // When integrated, use notification.html for rich email content
   const success = await notifyOwner({
     title: `Email to ${notification.to}: ${notification.subject}`,
-    content: notification.html || notification.body,
+    content: notification.html || notification.body || '',
   });
   
   console.log(`[Email] Sent "${notification.subject}" to ${notification.to}`);
