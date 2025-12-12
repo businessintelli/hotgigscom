@@ -1794,6 +1794,83 @@ export const appRouter = router({
         
         return { success: true };
       }),
+
+    // Get webhook logs for debugging
+    getWebhookLogs: protectedProcedure
+      .input(z.object({ limit: z.number().optional().default(50) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { emailWebhookLogs } = await import("../drizzle/schema");
+        const { desc } = await import("drizzle-orm");
+        
+        const logs = await database
+          .select()
+          .from(emailWebhookLogs)
+          .orderBy(desc(emailWebhookLogs.createdAt))
+          .limit(input.limit);
+        
+        return logs;
+      }),
+
+    // Get delivery statistics
+    getDeliveryStats: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { emailDeliveryEvents, campaignRecipients } = await import("../drizzle/schema");
+        const { sql, count } = await import("drizzle-orm");
+        
+        // Get overall stats
+        const allRecipients = await database.select().from(campaignRecipients);
+        const allEvents = await database.select().from(emailDeliveryEvents);
+        
+        const totalSent = allRecipients.length;
+        const delivered = allEvents.filter(e => e.eventType === 'delivered').length;
+        const bounced = allRecipients.filter(r => r.bouncedAt).length;
+        const opened = allRecipients.filter(r => r.openedAt).length;
+        const clicked = allRecipients.filter(r => r.clickedAt).length;
+        const spamReports = allEvents.filter(e => e.eventType === 'spam_report').length;
+        
+        // Get provider-specific stats
+        const sendgridEvents = allEvents.filter(e => e.provider === 'sendgrid');
+        const resendEvents = allEvents.filter(e => e.provider === 'resend');
+        
+        const sendgridStats = sendgridEvents.length > 0 ? {
+          sent: sendgridEvents.length,
+          delivered: sendgridEvents.filter(e => e.eventType === 'delivered').length,
+          bounced: sendgridEvents.filter(e => e.eventType === 'bounce').length,
+          opened: sendgridEvents.filter(e => e.eventType === 'open').length,
+        } : null;
+        
+        const resendStats = resendEvents.length > 0 ? {
+          sent: resendEvents.length,
+          delivered: resendEvents.filter(e => e.eventType === 'delivered').length,
+          bounced: resendEvents.filter(e => e.eventType === 'bounce').length,
+          opened: resendEvents.filter(e => e.eventType === 'open').length,
+        } : null;
+        
+        return {
+          totalSent,
+          delivered,
+          bounced,
+          opened,
+          clicked,
+          spamReports,
+          sendgridStats,
+          resendStats,
+        };
+      }),
   }),
 
   // Resume Ranking Router

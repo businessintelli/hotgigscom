@@ -989,3 +989,18 @@
 - [x] Test email delivery with Resend
 - [x] Add provider switching functionality
 - [x] Update email service to use configured provider
+
+## Email Webhook Integration (Current Focus)
+- [x] Create emailDeliveryEvents table for tracking delivery status
+- [x] Create emailWebhookLogs table for debugging webhook calls
+- [x] Build SendGrid webhook endpoint (/api/webhooks/sendgrid)
+- [x] Build Resend webhook endpoint (/api/webhooks/resend)
+- [x] Implement SendGrid webhook signature verification
+- [x] Implement Resend webhook signature verification
+- [x] Process delivery events (delivered, bounced, spam, failed)
+- [x] Update campaign recipient status based on webhook events
+- [x] Create admin dashboard for delivery analytics
+- [x] Add delivery rate charts and metrics
+- [x] Test webhook endpoints with SendGrid event simulator
+- [x] Test webhook endpoints with Resend event simulator
+- [x] Document webhook setup instructions for admins

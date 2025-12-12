@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -597,3 +597,47 @@ export const systemSettings = mysqlTable("systemSettings", {
 
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = typeof systemSettings.$inferInsert;
+
+/**
+ * Email delivery events from webhooks
+ */
+export const emailDeliveryEvents = mysqlTable("emailDeliveryEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignRecipientId: int("campaignRecipientId"),
+  eventType: varchar("eventType", { length: 50 }).notNull(),
+  provider: varchar("provider", { length: 20 }).notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  messageId: varchar("messageId", { length: 255 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  reason: text("reason"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: index("idx_email").on(table.email),
+  eventTypeIdx: index("idx_event_type").on(table.eventType),
+  providerIdx: index("idx_provider").on(table.provider),
+  timestampIdx: index("idx_timestamp").on(table.timestamp),
+}));
+
+/**
+ * Webhook logs for debugging
+ */
+export const emailWebhookLogs = mysqlTable("emailWebhookLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  provider: varchar("provider", { length: 20 }).notNull(),
+  eventType: varchar("eventType", { length: 50 }),
+  payload: json("payload").notNull(),
+  signature: text("signature"),
+  verified: boolean("verified").default(false),
+  processed: boolean("processed").default(false),
+  error: text("error"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  providerIdx: index("idx_provider").on(table.provider),
+  createdIdx: index("idx_created").on(table.createdAt),
+}));
+
+export type EmailDeliveryEvent = typeof emailDeliveryEvents.$inferSelect;
+export type InsertEmailDeliveryEvent = typeof emailDeliveryEvents.$inferInsert;
+export type EmailWebhookLog = typeof emailWebhookLogs.$inferSelect;
+export type InsertEmailWebhookLog = typeof emailWebhookLogs.$inferInsert;

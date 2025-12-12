@@ -30,6 +30,7 @@ import CampaignBuilder from "./pages/CampaignBuilder";
 import FollowUpSequenceBuilder from "./pages/FollowUpSequenceBuilder";
 import Unsubscribe from "./pages/Unsubscribe";
 import EmailProviderSettings from "./pages/EmailProviderSettings";
+import EmailDeliveryDashboard from "./pages/EmailDeliveryDashboard";
 import JobDetails from "./pages/JobDetails";
 import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />
       <Route path="/admin/email-settings" component={EmailProviderSettings} />
+      <Route path="/admin/email-delivery" component={EmailDeliveryDashboard} />
       <Route path="/admin/analytics" component={Analytics} />
       <Route path="/candidate-dashboard" component={CandidateDashboard} />
       <Route path="/my-applications" component={MyApplications} />

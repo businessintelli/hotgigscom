@@ -134,6 +134,13 @@
       "when": 1765526859707,
       "tag": "0018_glossy_whiplash",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1765527379690,
+      "tag": "0019_brave_namora",
+      "breakpoints": true
     }
   ]
 }

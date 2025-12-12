@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `emailWebhookLogs` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `provider` varchar(20) NOT NULL,\n  `eventType` varchar(50),\n  `payload` json NOT NULL,\n  `signature` text,\n  `verified` boolean DEFAULT false,\n  `processed` boolean DEFAULT false,\n  `error` text,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `emailWebhookLogs_id` PRIMARY KEY(`id`),\n  INDEX `idx_provider` (`provider`),\n  INDEX `idx_created` (`createdAt`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `emailWebhookLogs` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `provider` varchar(20) NOT NULL,\n  `eventType` varchar(50),\n  `payload` json NOT NULL,\n  `signature` text,\n  `verified` boolean DEFAULT false,\n  `processed` boolean DEFAULT false,\n  `error` text,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `emailWebhookLogs_id` PRIMARY KEY(`id`),\n  INDEX `idx_provider` (`provider`),\n  INDEX `idx_created` (`createdAt`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 215
+}
