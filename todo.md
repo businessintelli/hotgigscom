@@ -1471,3 +1471,14 @@
 - [x] Fixed import paths (useAuth from @/_core/hooks/useAuth)
 - [x] Added useEffect to create profile before attempting updates
 - [x] Redirect to /select-role if profile creation fails
+
+
+## Session Validation Bug (COMPLETED ✅)
+- [x] Investigate "JWSInvalid: Invalid Compact JWS" error in session verification
+- [x] Root cause: OAuth session cookies became invalid after authentication system changes
+- [x] Added better error logging in context.ts for debugging auth failures
+- [x] Added automatic cookie clearing for invalid sessions
+- [x] Added client-side redirect to /signin when not authenticated
+- [x] Updated RecruiterOnboarding to check authentication and redirect if needed
+- [x] Updated CandidateOnboarding to check authentication and redirect if needed
+- [x] Users with invalid sessions will now be automatically redirected to sign-in

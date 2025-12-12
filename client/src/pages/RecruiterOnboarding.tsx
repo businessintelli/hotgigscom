@@ -14,9 +14,17 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
 
 export default function RecruiterOnboarding() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [, setLocation] = useLocation();
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      toast.error('Please sign in to continue');
+      setLocation('/signin');
+    }
+  }, [loading, isAuthenticated, setLocation]);
   
   // Step 1: Company Information
   const [companyName, setCompanyName] = useState("");

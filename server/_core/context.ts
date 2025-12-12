@@ -14,13 +14,18 @@ export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   let user: User | null = null;
+  const sessionCookie = opts.req.cookies?.[COOKIE_NAME];
 
   try {
     // First try OAuth authentication
     user = await sdk.authenticateRequest(opts.req);
   } catch (error) {
+    // Log OAuth authentication failure for debugging
+    if (sessionCookie) {
+      console.log('[Auth] OAuth authentication failed, trying fallback:', error instanceof Error ? error.message : 'Unknown error');
+    }
+    
     // If OAuth fails, try email/password session
-    const sessionCookie = opts.req.cookies?.[COOKIE_NAME];
     if (sessionCookie) {
       try {
         // Decode session data from cookie
@@ -30,10 +35,13 @@ export async function createContext(
           const dbUser = await db.getUserById(sessionData.userId);
           if (dbUser) {
             user = dbUser;
+            console.log('[Auth] Email/password session authenticated successfully');
           }
         }
       } catch (decodeError) {
-        // Invalid session cookie, user remains null
+        // Invalid session cookie - clear it
+        console.log('[Auth] Invalid session cookie, clearing');
+        opts.res.clearCookie(COOKIE_NAME);
       }
     }
   }
