@@ -440,6 +440,44 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.isJobSaved(input.candidateId, input.jobId);
       }),
+
+    // Bulk resume upload
+    bulkUploadResumes: protectedProcedure
+      .input(z.object({
+        zipFileData: z.string(), // base64 encoded ZIP file
+        jobId: z.number().optional(), // Optional: rank against this job
+        autoCreateProfiles: z.boolean().optional().default(true),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { zipFileData, jobId, autoCreateProfiles } = input;
+        
+        // Extract base64 data
+        const matches = zipFileData.match(/^data:(.+);base64,(.+)$/);
+        if (!matches) {
+          throw new Error('Invalid file data format');
+        }
+        
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        // Import bulk upload service
+        const { processBulkResumeUpload, validateBulkUploadZip } = await import('./bulkResumeUpload');
+        
+        // Validate ZIP file
+        const validation = validateBulkUploadZip(buffer);
+        if (!validation.valid) {
+          throw new Error(validation.error || 'Invalid ZIP file');
+        }
+        
+        // Process bulk upload
+        const result = await processBulkResumeUpload(buffer, {
+          userId: ctx.user.id,
+          jobId,
+          autoCreateProfiles,
+        });
+        
+        return result;
+      }),
   }),
 
   customer: router({
