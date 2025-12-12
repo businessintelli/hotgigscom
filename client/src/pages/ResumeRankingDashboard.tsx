@@ -4,11 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Loader2, TrendingUp, Award, Briefcase, GraduationCap, Target, CheckCircle, Eye } from "lucide-react";
+import { Loader2, TrendingUp, Award, Briefcase, GraduationCap, Target, CheckCircle, Eye, Calendar, Download } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Progress } from "@/components/ui/progress";
 import { ResumeViewer } from "@/components/ResumeViewer";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export default function ResumeRankingDashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -17,6 +22,71 @@ export default function ResumeRankingDashboard() {
   const [resumeViewerOpen, setResumeViewerOpen] = useState(false);
   const [selectedResumeUrl, setSelectedResumeUrl] = useState("");
   const [selectedResumeFilename, setSelectedResumeFilename] = useState("");
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<number | null>(null);
+
+  // Export mutations
+  const exportToExcelMutation = trpc.export.exportToExcel.useMutation({
+    onSuccess: (data) => {
+      // Convert base64 to blob and download
+      const blob = new Blob([Uint8Array.from(atob(data.data), c => c.charCodeAt(0))], { type: data.mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Excel file downloaded successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to export to Excel');
+    },
+  });
+
+  const exportToCSVMutation = trpc.export.exportToCSV.useMutation({
+    onSuccess: (data) => {
+      // Create blob and download
+      const blob = new Blob([data.data], { type: data.mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('CSV file downloaded successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to export to CSV');
+    },
+  });
+
+  const handleExportExcel = () => {
+    if (!selectedJobId) {
+      toast.error('Please select a job first');
+      return;
+    }
+    exportToExcelMutation.mutate({
+      jobId: selectedJobId,
+      includeRankings: true,
+      includeSkills: true,
+      includeExperience: true,
+      includeEducation: true,
+    });
+  };
+
+  const handleExportCSV = () => {
+    if (!selectedJobId) {
+      toast.error('Please select a job first');
+      return;
+    }
+    exportToCSVMutation.mutate({
+      jobId: selectedJobId,
+      includeRankings: true,
+      includeSkills: true,
+      includeExperience: true,
+      includeEducation: true,
+    });
+  };
 
   // Fetch recruiter profile
   const { data: recruiter } = trpc.recruiter.getProfile.useQuery(
@@ -108,9 +178,38 @@ export default function ResumeRankingDashboard() {
       {selectedJobId && !rankingLoading && rankedCandidates.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">
-              Top {rankedCandidates.length} Candidates
-            </h2>
+            <div>
+              <h2 className="text-2xl font-bold">Ranked Candidates</h2>
+              <p className="text-muted-foreground text-sm">Top candidates ranked by AI-powered resume analysis</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleExportCSV}
+                disabled={exportToCSVMutation.isPending}
+              >
+                {exportToCSVMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                Export CSV
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleExportExcel}
+                disabled={exportToExcelMutation.isPending}
+              >
+                {exportToExcelMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                Export Excel
+              </Button>
+            </div>
+          </div>
+          <div>
             <Badge variant="outline" className="text-sm">
               Sorted by Overall Score
             </Badge>
@@ -255,6 +354,18 @@ export default function ResumeRankingDashboard() {
                     </Button>
                     <Button
                       size="sm"
+                      variant="default"
+                      onClick={() => {
+                        setSelectedCandidateId(candidate.id);
+                        setScheduleDialogOpen(true);
+                      }}
+                    >
+                      <Calendar className="h-4 w-4 mr-1" />
+                      Schedule Interview
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => setLocation(`/recruiter/applications?candidateId=${candidate.id}`)}
                     >
                       <Award className="h-4 w-4 mr-1" />
@@ -301,6 +412,245 @@ export default function ResumeRankingDashboard() {
         open={resumeViewerOpen}
         onClose={() => setResumeViewerOpen(false)}
       />
+
+      {/* Schedule Interview Dialog */}
+      <ScheduleInterviewDialog
+        open={scheduleDialogOpen}
+        onClose={() => setScheduleDialogOpen(false)}
+        candidateId={selectedCandidateId}
+        jobId={selectedJobId}
+      />
     </div>
+  );
+}
+
+// Schedule Interview Dialog Component
+function ScheduleInterviewDialog({
+  open,
+  onClose,
+  candidateId,
+  jobId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  candidateId: number | null;
+  jobId: number | null;
+}) {
+  const [interviewType, setInterviewType] = useState<'ai-interview' | 'video' | 'phone' | 'in-person'>('ai-interview');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [duration, setDuration] = useState('60');
+  const [notes, setNotes] = useState('');
+  const [panelEmails, setPanelEmails] = useState('');
+
+  const createInterviewMutation = trpc.interview.create.useMutation({
+    onSuccess: () => {
+      toast.success('Interview scheduled successfully!');
+      onClose();
+      // Reset form
+      setScheduledDate('');
+      setScheduledTime('');
+      setNotes('');
+      setPanelEmails('');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to schedule interview');
+    },
+  });
+
+  const handleSchedule = () => {
+    if (!candidateId || !jobId) {
+      toast.error('Missing candidate or job information');
+      return;
+    }
+
+    if (!scheduledDate || !scheduledTime) {
+      toast.error('Please select date and time');
+      return;
+    }
+
+    const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`);
+
+    createInterviewMutation.mutate({
+      applicationId: 0, // TODO: Get actual application ID
+      candidateId,
+      jobId,
+      type: interviewType,
+      scheduledAt: scheduledAt.toISOString(),
+      duration: parseInt(duration),
+      notes: notes || undefined,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Schedule Interview</DialogTitle>
+          <DialogDescription>
+            Schedule an interview for this candidate
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          {/* Interview Type */}
+          <div className="space-y-2">
+            <Label>Interview Type</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={interviewType === 'ai-interview' ? 'default' : 'outline'}
+                onClick={() => setInterviewType('ai-interview')}
+                className="h-auto py-3"
+              >
+                <div className="text-center">
+                  <div className="text-lg">🤖</div>
+                  <div className="text-sm font-medium">AI Bot Interview</div>
+                </div>
+              </Button>
+              <Button
+                type="button"
+                variant={interviewType === 'video' ? 'default' : 'outline'}
+                onClick={() => setInterviewType('video')}
+                className="h-auto py-3"
+              >
+                <div className="text-center">
+                  <div className="text-lg">📹</div>
+                  <div className="text-sm font-medium">Video Interview</div>
+                </div>
+              </Button>
+              <Button
+                type="button"
+                variant={interviewType === 'phone' ? 'default' : 'outline'}
+                onClick={() => setInterviewType('phone')}
+                className="h-auto py-3"
+              >
+                <div className="text-center">
+                  <div className="text-lg">📞</div>
+                  <div className="text-sm font-medium">Phone Interview</div>
+                </div>
+              </Button>
+              <Button
+                type="button"
+                variant={interviewType === 'in-person' ? 'default' : 'outline'}
+                onClick={() => setInterviewType('in-person')}
+                className="h-auto py-3"
+              >
+                <div className="text-center">
+                  <div className="text-lg">👤</div>
+                  <div className="text-sm font-medium">In-Person</div>
+                </div>
+              </Button>
+            </div>
+          </div>
+
+          {/* Date and Time */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="date">Interview Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="time">Interview Time</Label>
+              <Input
+                id="time"
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div className="space-y-2">
+            <Label htmlFor="duration">Duration (minutes)</Label>
+            <Select value={duration} onValueChange={setDuration}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="45">45 minutes</SelectItem>
+                <SelectItem value="60">60 minutes</SelectItem>
+                <SelectItem value="90">90 minutes</SelectItem>
+                <SelectItem value="120">120 minutes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Panel Emails (for non-AI interviews) */}
+          {interviewType !== 'ai-interview' && (
+            <div className="space-y-2">
+              <Label htmlFor="panelEmails">Interview Panel Emails</Label>
+              <Textarea
+                id="panelEmails"
+                placeholder="Enter email addresses separated by commas\ne.g., john@company.com, sarah@company.com"
+                value={panelEmails}
+                onChange={(e) => setPanelEmails(e.target.value)}
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground">
+                These interviewers will receive calendar invitations
+              </p>
+            </div>
+          )}
+
+          {/* AI Interview Info */}
+          {interviewType === 'ai-interview' && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-2">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                🤖 AI Interview Features:
+              </p>
+              <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                <li>• Automated question generation based on job requirements</li>
+                <li>• Video recording with real-time fraud detection</li>
+                <li>• Automatic transcription and AI evaluation</li>
+                <li>• Comprehensive evaluation reports for recruiters</li>
+              </ul>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Additional Notes (Optional)</Label>
+            <Textarea
+              id="notes"
+              placeholder="Any special instructions or notes for this interview"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSchedule}
+            disabled={createInterviewMutation.isPending}
+          >
+            {createInterviewMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Scheduling...
+              </>
+            ) : (
+              <>
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule Interview
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

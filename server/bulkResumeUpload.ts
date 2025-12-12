@@ -1,5 +1,6 @@
 import AdmZip from 'adm-zip';
 import { extractResumeText, parseResumeWithAI } from './resumeParser';
+import { checkForDuplicates, DeduplicationResult } from './resumeDeduplication';
 import { storagePut } from './storage';
 import * as db from './db';
 import { rankCandidatesForJob } from './resumeRanking';
@@ -19,6 +20,13 @@ export interface BulkUploadResult {
     candidateId?: number;
     error?: string;
     parsedData?: any;
+    isDuplicate?: boolean;
+    duplicateInfo?: {
+      confidence: number;
+      matchCount: number;
+      recommendation: string;
+      duplicates: any[];
+    };
   }>;
 }
 
@@ -82,6 +90,9 @@ export async function processBulkResumeUpload(
 
         // Parse resume with AI
         const parsedData = await parseResumeWithAI(resumeText);
+        
+        // Check for duplicates
+        const dedupeResult = await checkForDuplicates(parsedData, options.userId);
 
         let candidateId: number | undefined;
 
@@ -120,6 +131,13 @@ export async function processBulkResumeUpload(
           success: true,
           candidateId,
           parsedData,
+          isDuplicate: dedupeResult.isDuplicate,
+          duplicateInfo: dedupeResult.isDuplicate ? {
+            confidence: dedupeResult.confidence,
+            matchCount: dedupeResult.duplicates.length,
+            recommendation: dedupeResult.recommendation,
+            duplicates: dedupeResult.duplicates,
+          } : undefined,
         });
       } catch (error) {
         console.error(`Failed to process resume ${filename}:`, error);

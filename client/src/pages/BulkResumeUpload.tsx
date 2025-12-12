@@ -8,7 +8,7 @@ import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Checkbox } from '../components/ui/checkbox';
-import { Upload, FileArchive, CheckCircle2, XCircle, Loader2, FileText } from 'lucide-react';
+import { Upload, FileArchive, CheckCircle2, XCircle, Loader2, FileText, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BulkResumeUpload() {
@@ -279,6 +279,22 @@ export default function BulkResumeUpload() {
                                 <Badge variant="outline" className="mt-1">
                                   {candidate.parsedData.metadata.seniorityLevel}
                                 </Badge>
+                              )}
+                              {candidate.isDuplicate && candidate.duplicateInfo && (
+                                <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+                                  <div className="flex items-start gap-2">
+                                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                                    <div>
+                                      <p className="font-medium text-yellow-800 dark:text-yellow-200">Potential Duplicate</p>
+                                      <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                                        {candidate.duplicateInfo.confidence}% match confidence • {candidate.duplicateInfo.matchCount} similar profile(s)
+                                      </p>
+                                      <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                                        Recommendation: {candidate.duplicateInfo.recommendation.replace('_', ' ')}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
                               )}
                             </div>
                           )}

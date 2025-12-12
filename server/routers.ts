@@ -14,7 +14,8 @@ import { codingChallenges, codingSubmissions, candidates } from "../drizzle/sche
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
 import { sendInterviewInvitation, sendApplicationStatusUpdate } from "./emailNotifications";
-import { rankCandidatesForJob, getTopCandidatesForJob, compareCandidates } from "./resumeRanking";
+import { rankCandidatesForJob, getTopCandidatesForJob, compareCandidates } from './resumeRanking';
+import { exportCandidatesToExcel, exportCandidatesToCSV } from './resumeExport';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -1735,6 +1736,48 @@ export const appRouter = router({
           input.candidateId2,
           input.jobId
         );
+      }),
+  }),
+
+  // Resume Export Router
+  export: router({
+    // Export candidates to Excel
+    exportToExcel: protectedProcedure
+      .input(z.object({
+        jobId: z.number().optional(),
+        candidateIds: z.array(z.number()).optional(),
+        includeRankings: z.boolean().default(true),
+        includeSkills: z.boolean().default(true),
+        includeExperience: z.boolean().default(true),
+        includeEducation: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = await exportCandidatesToExcel(input);
+        // Convert buffer to base64 for transmission
+        return {
+          data: buffer.toString('base64'),
+          filename: `candidates_export_${Date.now()}.xlsx`,
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        };
+      }),
+
+    // Export candidates to CSV
+    exportToCSV: protectedProcedure
+      .input(z.object({
+        jobId: z.number().optional(),
+        candidateIds: z.array(z.number()).optional(),
+        includeRankings: z.boolean().default(true),
+        includeSkills: z.boolean().default(true),
+        includeExperience: z.boolean().default(true),
+        includeEducation: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const csv = await exportCandidatesToCSV(input);
+        return {
+          data: csv,
+          filename: `candidates_export_${Date.now()}.csv`,
+          mimeType: 'text/csv',
+        };
       }),
   }),
 });

@@ -861,3 +861,19 @@
 - [ ] Test bulk upload with 10+ resumes
 - [ ] Test automatic profile creation
 - [ ] Test automatic ranking functionality
+
+## Resume System Enhancements (Current Session)
+- [ ] Implement resume deduplication algorithm (email, name, phone matching)
+- [ ] Add similarity scoring for fuzzy matching
+- [ ] Create deduplication UI showing potential duplicates
+- [ ] Add merge/skip options for duplicate candidates
+- [ ] Add "Schedule Interview" button to Resume Ranking Dashboard
+- [ ] Implement quick interview scheduling modal from rankings
+- [ ] Add bulk interview scheduling for multiple top candidates
+- [ ] Install Excel export library (xlsx)
+- [ ] Create resume export service with parsed data
+- [ ] Add Excel/CSV export buttons to ranking dashboard
+- [ ] Include skill matrices and ranking scores in exports
+- [ ] Test deduplication with similar resumes
+- [ ] Test interview scheduling from rankings
+- [ ] Test Excel/CSV export functionality
