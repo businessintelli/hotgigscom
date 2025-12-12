@@ -582,3 +582,18 @@ export const emailUnsubscribes = mysqlTable("emailUnsubscribes", {
 
 export type EmailUnsubscribe = typeof emailUnsubscribes.$inferSelect;
 export type InsertEmailUnsubscribe = typeof emailUnsubscribes.$inferInsert;
+
+/**
+ * System settings table for application configuration
+ */
+export const systemSettings = mysqlTable("systemSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  settingKey: varchar("settingKey", { length: 100 }).notNull().unique(),
+  settingValue: text("settingValue"),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = typeof systemSettings.$inferInsert;

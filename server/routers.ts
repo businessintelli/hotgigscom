@@ -1760,6 +1760,40 @@ export const appRouter = router({
         
         return { success: true, active: !isActive };
       }),
+
+    // Email provider configuration
+    getEmailProvider: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const { getCurrentEmailProvider } = await import('./emailService');
+        const { ENV } = await import('./_core/env');
+        const provider = await getCurrentEmailProvider();
+        
+        return {
+          provider,
+          availableProviders: [
+            { value: 'sendgrid', label: 'SendGrid', configured: !!ENV.sendGridApiKey },
+            { value: 'resend', label: 'Resend', configured: !!ENV.resendApiKey },
+            { value: 'mock', label: 'Mock (Testing)', configured: true },
+          ],
+        };
+      }),
+
+    setEmailProvider: protectedProcedure
+      .input(z.object({ provider: z.enum(['sendgrid', 'resend', 'mock']) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const { setEmailProvider } = await import('./emailService');
+        await setEmailProvider(input.provider);
+        
+        return { success: true };
+      }),
   }),
 
   // Resume Ranking Router

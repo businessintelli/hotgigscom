@@ -127,6 +127,13 @@
       "when": 1765526174369,
       "tag": "0017_previous_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1765526859707,
+      "tag": "0018_glossy_whiplash",
+      "breakpoints": true
     }
   ]
 }

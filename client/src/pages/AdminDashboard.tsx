@@ -8,7 +8,8 @@ import {
   TrendingUp, 
   AlertCircle,
   Activity,
-  Database
+  Database,
+  Mail
 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -195,6 +196,12 @@ export default function AdminDashboard() {
               <Button variant="outline" className="w-full justify-start">
                 <Activity className="w-4 h-4 mr-2" />
                 System Health
+              </Button>
+            </Link>
+            <Link href="/admin/email-settings">
+              <Button variant="outline" className="w-full justify-start">
+                <Mail className="w-4 h-4 mr-2" />
+                Email Settings
               </Button>
             </Link>
             <Link href="/admin/database">
