@@ -877,3 +877,31 @@
 - [ ] Test deduplication with similar resumes
 - [ ] Test interview scheduling from rankings
 - [ ] Test Excel/CSV export functionality
+
+## Email Notification System (Current Session)
+- [x] Create email service with SMTP configuration
+- [x] Design professional HTML email templates (interview invitation, status update, reminder, new application)
+- [x] Implement interview invitation email trigger (fires when interview is scheduled)
+- [x] Implement application status update email trigger (fires when status changes)
+- [x] Integrate with existing interview reminder system (24h and 1h)
+- [ ] Add email preference settings for candidates
+- [ ] Test all email notifications
+
+## Mobile-Responsive Design (Current Session)
+- [ ] Audit all pages for mobile responsiveness
+- [ ] Optimize recruiter dashboard for mobile
+- [ ] Optimize candidate dashboard for mobile
+- [ ] Optimize job listing and search for mobile
+- [ ] Optimize application forms for mobile
+- [ ] Add touch-friendly controls and gestures
+- [ ] Test on multiple device sizes
+
+## Real-Time Notifications (Current Session)
+- [ ] Set up WebSocket server infrastructure
+- [ ] Create notifications database schema
+- [ ] Implement notification bell component
+- [ ] Add notification for new applications
+- [ ] Add notification for interview requests
+- [ ] Add notification for status updates
+- [ ] Implement notification read/unread tracking
+- [ ] Test real-time notification delivery

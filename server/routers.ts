@@ -691,7 +691,9 @@ export const appRouter = router({
                   candidateEmail: user.email,
                   candidateName: user.name || "Candidate",
                   jobTitle: job.title,
-                  status: input.status,
+                  companyName: job.companyName || "Company",
+                  oldStatus: application.status || "pending",
+                  newStatus: input.status,
                 });
               }
             }
@@ -869,8 +871,11 @@ export const appRouter = router({
                 candidateEmail: user.email,
                 candidateName: user.name || "Candidate",
                 jobTitle: job.title,
+                companyName: job.companyName || "Company",
                 interviewDate: new Date(input.scheduledAt),
                 interviewType: input.type || "AI Interview",
+                duration: input.duration || 60,
+                notes: input.notes,
               });
             }
           }

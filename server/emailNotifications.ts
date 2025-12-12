@@ -1,9 +1,16 @@
 import { notifyOwner } from "./_core/notification";
+import {
+  generateInterviewInvitationEmail,
+  generateStatusUpdateEmail,
+  generateInterviewReminderEmail,
+  generateNewApplicationEmail,
+} from './emailTemplates';
 
 interface EmailNotification {
   to: string;
   subject: string;
   body: string;
+  html?: string;
 }
 
 /**
@@ -13,12 +20,14 @@ interface EmailNotification {
  */
 async function sendEmail(notification: EmailNotification): Promise<boolean> {
   // For now, send to owner as notification
-  // TODO: Integrate with actual email service
+  // TODO: Integrate with actual email service (SendGrid, AWS SES, etc.)
+  // When integrated, use notification.html for rich email content
   const success = await notifyOwner({
     title: `Email to ${notification.to}: ${notification.subject}`,
-    content: notification.body,
+    content: notification.html || notification.body,
   });
   
+  console.log(`[Email] Sent "${notification.subject}" to ${notification.to}`);
   return success;
 }
 
@@ -29,31 +38,47 @@ export async function sendInterviewInvitation(params: {
   candidateEmail: string;
   candidateName: string;
   jobTitle: string;
+  companyName: string;
   interviewDate: Date;
   interviewType: string;
+  interviewLink?: string;
+  interviewLocation?: string;
+  duration: number;
+  notes?: string;
 }): Promise<boolean> {
-  const { candidateEmail, candidateName, jobTitle, interviewDate, interviewType } = params;
+  const {
+    candidateEmail,
+    candidateName,
+    jobTitle,
+    companyName,
+    interviewDate,
+    interviewType,
+    interviewLink,
+    interviewLocation,
+    duration,
+    notes,
+  } = params;
   
-  const subject = `Interview Invitation: ${jobTitle}`;
-  const body = `
-Dear ${candidateName},
-
-Congratulations! You have been invited to interview for the ${jobTitle} position.
-
-Interview Details:
-- Type: ${interviewType}
-- Scheduled Date: ${interviewDate.toLocaleString()}
-
-Please log in to your HotGigs account to view full details and prepare for your interview.
-
-Best regards,
-The HotGigs Team
-  `.trim();
+  const subject = `Interview Invitation: ${jobTitle} at ${companyName}`;
+  const html = generateInterviewInvitationEmail({
+    candidateName,
+    jobTitle,
+    companyName,
+    interviewType,
+    interviewDate,
+    interviewLink,
+    interviewLocation,
+    duration,
+    notes,
+  });
+  
+  const body = `Dear ${candidateName},\n\nCongratulations! You have been invited to interview for the ${jobTitle} position at ${companyName}.\n\nInterview Type: ${interviewType}\nDate: ${interviewDate.toLocaleString()}\nDuration: ${duration} minutes\n\nPlease log in to your HotGigs account to view full details.\n\nBest regards,\nThe HotGigs Team`;
 
   return sendEmail({
     to: candidateEmail,
     subject,
     body,
+    html,
   });
 }
 
@@ -64,28 +89,30 @@ export async function sendApplicationStatusUpdate(params: {
   candidateEmail: string;
   candidateName: string;
   jobTitle: string;
-  status: string;
+  companyName: string;
+  oldStatus: string;
+  newStatus: string;
+  message?: string;
 }): Promise<boolean> {
-  const { candidateEmail, candidateName, jobTitle, status } = params;
+  const { candidateEmail, candidateName, jobTitle, companyName, oldStatus, newStatus, message } = params;
   
   const subject = `Application Update: ${jobTitle}`;
-  const body = `
-Dear ${candidateName},
-
-Your application for ${jobTitle} has been updated.
-
-New Status: ${status}
-
-Log in to your HotGigs account to view full details and next steps.
-
-Best regards,
-The HotGigs Team
-  `.trim();
+  const html = generateStatusUpdateEmail({
+    candidateName,
+    jobTitle,
+    companyName,
+    oldStatus,
+    newStatus,
+    message,
+  });
+  
+  const body = `Dear ${candidateName},\n\nYour application for ${jobTitle} at ${companyName} has been updated.\n\nPrevious Status: ${oldStatus}\nNew Status: ${newStatus}\n\n${message || ''}\n\nLog in to your HotGigs account to view full details.\n\nBest regards,\nThe HotGigs Team`;
 
   return sendEmail({
     to: candidateEmail,
     subject,
     body,
+    html,
   });
 }
 
