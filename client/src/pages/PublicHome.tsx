@@ -67,7 +67,7 @@ export default function PublicHome() {
               <Button variant="outline" onClick={() => window.location.href = getLoginUrl()}>
                 Sign In
               </Button>
-              <Button onClick={() => window.location.href = getLoginUrl()}>
+              <Button onClick={() => window.location.href = "/signup"}>
                 Sign Up
               </Button>
             </div>

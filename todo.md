@@ -1311,3 +1311,15 @@
 - [x] Verify recruiter profile is created correctly
 - [x] Verify candidate profile is created correctly
 - [x] Test that returning users go to correct dashboard
+
+
+## Radio Button Role Selection During Sign-Up (COMPLETED)
+- [x] Create sign-up page with radio buttons for Recruiter/Candidate selection
+- [x] Add authentication method buttons (Google, Microsoft, Apple, Email) to sign-up page
+- [x] Update Sign Up button to navigate to new sign-up page
+- [x] Pass selected role to OAuth via URL parameter
+- [x] Update OAuth callback to create profile automatically based on role parameter
+- [x] Keep SelectRole page as fallback for edge cases
+- [x] Update Sign In button to go directly to OAuth (no role needed)
+- [x] Test sign-up flow with role selection
+- [x] Test sign-in flow for returning users

@@ -36,7 +36,7 @@ export default function AboutUs() {
               <Button variant="outline" onClick={() => window.location.href = getLoginUrl()}>
                 Sign In
               </Button>
-              <Button onClick={() => window.location.href = getLoginUrl()}>
+              <Button onClick={() => window.location.href = "/signup"}>
                 Sign Up
               </Button>
             </div>
