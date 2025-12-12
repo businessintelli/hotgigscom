@@ -92,6 +92,13 @@
       "when": 1765513301550,
       "tag": "0012_bouncy_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1765523318405,
+      "tag": "0013_sticky_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

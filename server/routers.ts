@@ -16,6 +16,7 @@ import { extractResumeText, parseResumeWithAI } from "./resumeParser";
 import { sendInterviewInvitation, sendApplicationStatusUpdate } from "./emailNotifications";
 import { rankCandidatesForJob, getTopCandidatesForJob, compareCandidates } from './resumeRanking';
 import { exportCandidatesToExcel, exportCandidatesToCSV } from './resumeExport';
+import * as notificationHelpers from './notificationHelpers';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -646,6 +647,30 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await db.createApplication(input);
+        
+        // Create notification for recruiter about new application
+        try {
+          const job = await db.getJobById(input.jobId);
+          const candidate = await db.getCandidateById(input.candidateId);
+          if (job && candidate) {
+            const recruiter = await db.getRecruiterByUserId(job.postedBy);
+            if (recruiter) {
+              await notificationHelpers.createNotification({
+                userId: job.postedBy,
+                type: 'application',
+                title: 'New Application Received',
+                message: `${candidate.fullName || 'A candidate'} has applied for ${job.title}`,
+                isRead: false,
+                relatedEntityType: 'application',
+                relatedEntityId: input.jobId,
+                actionUrl: `/recruiter/applications?jobId=${input.jobId}`,
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to create notification:', error);
+        }
+        
         return { success: true };
       }),
     
@@ -677,7 +702,7 @@ export const appRouter = router({
         const { id, ...data } = input;
         await db.updateApplication(id, data);
         
-        // Send email notification to candidate
+        // Send email notification and in-app notification to candidate
         try {
           const applications = await db.getApplicationsByJob(0); // Get application details
           const application = applications.find(app => app.id === id);
@@ -687,6 +712,7 @@ export const appRouter = router({
             if (candidate && job) {
               const user = await db.getUserById(candidate.userId);
               if (user?.email) {
+                // Send email
                 await sendApplicationStatusUpdate({
                   candidateEmail: user.email,
                   candidateName: user.name || "Candidate",
@@ -694,6 +720,18 @@ export const appRouter = router({
                   companyName: job.companyName || "Company",
                   oldStatus: application.status || "pending",
                   newStatus: input.status,
+                });
+                
+                // Create in-app notification
+                await notificationHelpers.createNotification({
+                  userId: candidate.userId,
+                  type: 'status_change',
+                  title: 'Application Status Updated',
+                  message: `Your application for ${job.title} has been updated to: ${input.status}`,
+                  isRead: false,
+                  relatedEntityType: 'application',
+                  relatedEntityId: id,
+                  actionUrl: '/my-applications',
                 });
               }
             }
@@ -860,13 +898,14 @@ export const appRouter = router({
           scheduledAt: new Date(input.scheduledAt),
         });
         
-        // Send email notification to candidate
+        // Send email notification and in-app notification to candidate
         try {
           const candidate = await db.getCandidateById(input.candidateId);
           const job = await db.getJobById(input.jobId);
           if (candidate && job) {
             const user = await db.getUserById(candidate.userId);
             if (user?.email) {
+              // Send email
               await sendInterviewInvitation({
                 candidateEmail: user.email,
                 candidateName: user.name || "Candidate",
@@ -876,6 +915,17 @@ export const appRouter = router({
                 interviewType: input.type || "AI Interview",
                 duration: input.duration || 60,
                 notes: input.notes,
+              });
+              
+              // Create in-app notification
+              await notificationHelpers.createNotification({
+                userId: candidate.userId,
+                type: 'interview',
+                title: 'Interview Scheduled',
+                message: `You have been scheduled for a ${input.type} interview for ${job.title}`,
+                isRead: false,
+                relatedEntityType: 'interview',
+                actionUrl: '/my-applications',
               });
             }
           }
@@ -1783,6 +1833,45 @@ export const appRouter = router({
           filename: `candidates_export_${Date.now()}.csv`,
           mimeType: 'text/csv',
         };
+      }),
+  }),
+
+  notification: router({
+    list: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional().default(50),
+      }))
+      .query(async ({ ctx, input }) => {
+        return await notificationHelpers.getNotificationsByUserId(ctx.user.id, input.limit);
+      }),
+
+    getUnreadCount: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await notificationHelpers.getUnreadCount(ctx.user.id);
+      }),
+
+    markAsRead: protectedProcedure
+      .input(z.object({
+        notificationId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await notificationHelpers.markNotificationAsRead(input.notificationId);
+        return { success: true };
+      }),
+
+    markAllAsRead: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await notificationHelpers.markAllAsRead(ctx.user.id);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({
+        notificationId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await notificationHelpers.deleteNotification(input.notificationId);
+        return { success: true };
       }),
   }),
 });

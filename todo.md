@@ -905,3 +905,15 @@
 - [ ] Add notification for status updates
 - [ ] Implement notification read/unread tracking
 - [ ] Test real-time notification delivery
+
+## Real-Time Notification System (Current Focus)
+- [x] Create notifications database schema
+- [x] Build notification tRPC procedures (list, markRead, getUnreadCount)
+- [x] Create NotificationBell UI component with unread badge
+- [x] Build notification dropdown menu with recent notifications
+- [x] Implement mark-as-read functionality
+- [x] Add polling mechanism to check for new notifications (30s interval)
+- [x] Integrate notification triggers for new applications
+- [x] Integrate notification triggers for interview scheduling
+- [x] Integrate notification triggers for status changes
+- [x] Test notification system end-to-end

@@ -12,6 +12,7 @@ import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default function CandidateDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -170,6 +171,7 @@ export default function CandidateDashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <span className="text-sm text-gray-600">Welcome, {candidate?.fullName || user.name}</span>
             <Button variant="outline" onClick={() => setLocation("/")}>
               Logout

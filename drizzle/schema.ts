@@ -396,3 +396,22 @@ export const assessmentAnswers = mysqlTable("assessmentAnswers", {
 
 export type AssessmentAnswer = typeof assessmentAnswers.$inferSelect;
 export type InsertAssessmentAnswer = typeof assessmentAnswers.$inferInsert;
+
+/**
+ * Notifications table for real-time user notifications
+ */
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  type: varchar("type", { length: 50 }).notNull(), // 'application', 'interview', 'status_change', 'message', etc.
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("isRead").default(false).notNull(),
+  relatedEntityType: varchar("relatedEntityType", { length: 50 }), // 'job', 'application', 'interview', etc.
+  relatedEntityId: int("relatedEntityId"), // ID of the related entity
+  actionUrl: varchar("actionUrl", { length: 500 }), // URL to navigate when clicked
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;

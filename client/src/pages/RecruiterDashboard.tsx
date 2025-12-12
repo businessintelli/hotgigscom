@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default function RecruiterDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -84,6 +85,7 @@ export default function RecruiterDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <NotificationBell />
               <span className="text-sm">Welcome, {user?.name}!</span>
               <Badge variant="secondary">Recruiter</Badge>
               <Button variant="ghost" size="sm" onClick={() => logout()} className="text-blue-200 hover:text-white hover:bg-blue-500">Sign Out</Button>
