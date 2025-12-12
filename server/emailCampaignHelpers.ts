@@ -596,9 +596,31 @@ function generateTrackingId(): string {
 }
 
 /**
- * Add tracking pixel to email HTML
+ * Add tracking pixel and unsubscribe link to email HTML
  */
 function addTrackingPixel(html: string, trackingId: string): string {
-  const trackingPixel = `<img src="${process.env.VITE_APP_URL || "http://localhost:3000"}/api/track/open/${trackingId}" width="1" height="1" style="display:none;" />`;
-  return html + trackingPixel;
+  const appUrl = process.env.VITE_APP_URL || "http://localhost:3000";
+  const trackingPixel = `<img src="${appUrl}/api/track/open/${trackingId}" width="1" height="1" style="display:none;" />`;
+  const unsubscribeLink = `
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; font-size: 12px; color: #666;">
+      <p>If you no longer wish to receive these emails, you can <a href="${appUrl}/unsubscribe/${trackingId}" style="color: #666; text-decoration: underline;">unsubscribe here</a>.</p>
+    </div>
+  `;
+  return html + trackingPixel + unsubscribeLink;
+}
+
+/**
+ * Get recipient by tracking ID
+ */
+export async function getRecipientByTrackingId(trackingId: string) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  
+  const [recipient] = await db
+    .select()
+    .from(campaignRecipients)
+    .where(eq(campaignRecipients.trackingId, trackingId))
+    .limit(1);
+  
+  return recipient;
 }

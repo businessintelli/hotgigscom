@@ -568,3 +568,17 @@ export const sequenceEnrollments = mysqlTable("sequenceEnrollments", {
 
 export type SequenceEnrollment = typeof sequenceEnrollments.$inferSelect;
 export type InsertSequenceEnrollment = typeof sequenceEnrollments.$inferInsert;
+
+/**
+ * Email unsubscribes table
+ */
+export const emailUnsubscribes = mysqlTable("emailUnsubscribes", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  trackingId: varchar("trackingId", { length: 100 }),
+  reason: text("reason"),
+  unsubscribedAt: timestamp("unsubscribedAt").defaultNow().notNull(),
+});
+
+export type EmailUnsubscribe = typeof emailUnsubscribes.$inferSelect;
+export type InsertEmailUnsubscribe = typeof emailUnsubscribes.$inferInsert;

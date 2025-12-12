@@ -1,7 +1,8 @@
+import sgMail from '@sendgrid/mail';
+import { ENV } from './_core/env';
+
 /**
- * Email service for sending emails
- * In production, this would integrate with services like SendGrid, AWS SES, or Mailgun
- * For now, we'll use a simple mock implementation that logs emails
+ * Email service for sending emails via SendGrid
  */
 
 export interface EmailOptions {
@@ -14,41 +15,59 @@ export interface EmailOptions {
   bcc?: string | string[];
 }
 
+// Initialize SendGrid
+if (ENV.sendGridApiKey) {
+  sgMail.setApiKey(ENV.sendGridApiKey);
+  console.log('[Email Service] SendGrid initialized');
+} else {
+  console.warn('[Email Service] SENDGRID_API_KEY not found, email sending will be mocked');
+}
+
 /**
- * Send email
- * TODO: Integrate with real email service (SendGrid, AWS SES, etc.)
+ * Send email via SendGrid
  */
 export async function sendEmail(options: EmailOptions): Promise<void> {
-  // Mock implementation - logs email details
-  console.log("[Email Service] Sending email:", {
-    to: options.to,
-    subject: options.subject,
-    from: options.from || "noreply@hotgigs.com",
-    htmlLength: options.html.length,
-  });
+  const fromEmail = options.from || 'noreply@hotgigs.com';
 
-  // Simulate email sending delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // If SendGrid is not configured, use mock implementation
+  if (!ENV.sendGridApiKey) {
+    console.log('[Email Service] Mock: Sending email:', {
+      to: options.to,
+      subject: options.subject,
+      from: fromEmail,
+      htmlLength: options.html.length,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    console.log('[Email Service] Mock: Email sent successfully');
+    return;
+  }
 
-  // In production, replace with actual email service:
-  /*
-  // Example with SendGrid:
-  const sgMail = require('@sendgrid/mail');
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  
-  await sgMail.send({
-    to: options.to,
-    from: options.from || 'noreply@hotgigs.com',
-    subject: options.subject,
-    html: options.html,
-    replyTo: options.replyTo,
-    cc: options.cc,
-    bcc: options.bcc,
-  });
-  */
+  try {
+    // Send via SendGrid
+    await sgMail.send({
+      to: options.to,
+      from: fromEmail,
+      subject: options.subject,
+      html: options.html,
+      replyTo: options.replyTo,
+      cc: options.cc,
+      bcc: options.bcc,
+    });
 
-  // For now, just log success
-  console.log("[Email Service] Email sent successfully");
+    console.log('[Email Service] Email sent successfully via SendGrid:', {
+      to: options.to,
+      subject: options.subject,
+    });
+  } catch (error: any) {
+    console.error('[Email Service] Failed to send email:', error.message);
+    
+    // Log detailed error for debugging
+    if (error.response) {
+      console.error('[Email Service] SendGrid error details:', error.response.body);
+    }
+    
+    throw new Error(`Failed to send email: ${error.message}`);
+  }
 }
 
 /**

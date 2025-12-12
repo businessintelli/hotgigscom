@@ -9,7 +9,8 @@ import { generateFraudDetectionReport, generateInterviewEvaluationReport } from 
 import { executeCode } from "./codeExecutor";
 import { z } from "zod";
 import * as db from "./db";
-import { codingChallenges, codingSubmissions, candidates } from "../drizzle/schema";
+import { getDb } from "./db";
+import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes } from "../drizzle/schema";
 
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
@@ -2141,6 +2142,38 @@ export const appRouter = router({
           input.candidateIds
         );
         return { count };
+      }),
+
+    // Unsubscribe from emails
+    unsubscribe: publicProcedure
+      .input(z.object({
+        trackingId: z.string(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Get recipient email from tracking ID
+        const recipient = await emailCampaignHelpers.getRecipientByTrackingId(input.trackingId);
+        if (!recipient) {
+          throw new Error('Invalid tracking ID');
+        }
+
+        // Add to unsubscribe list
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        
+        await database.insert(emailUnsubscribes).values({
+          email: recipient.email,
+          trackingId: input.trackingId,
+          reason: input.reason,
+        }).onDuplicateKeyUpdate({
+          set: {
+            trackingId: input.trackingId,
+            reason: input.reason,
+            unsubscribedAt: new Date(),
+          },
+        });
+
+        return { success: true };
       }),
   }),
 });
