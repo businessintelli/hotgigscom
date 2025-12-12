@@ -1207,3 +1207,31 @@
 - [ ] Add automated email reminders for pending tasks
 - [ ] Add dashboard indicators for pending/overdue tasks
 - [ ] Test complete onboarding/offboarding workflow
+
+
+## Search & Filter Testing and Fixes (Current Focus)
+- [x] Test home page job search functionality
+- [x] Fix home page search if not working
+- [x] Test home page filter dropdowns (Job Type, Experience Level)
+- [x] Fix home page filters if not working
+- [x] Test job browsing page search and filters
+- [x] Fix job browsing search/filters if needed
+- [ ] Test candidate search page for recruiters (requires recruiter authentication)
+- [ ] Fix candidate search/filters if needed (pending authentication testing)
+- [ ] Verify all search results display correctly
+- [ ] Verify pagination works on all search pages
+
+## Onboarding/Offboarding System UI (Current Focus)
+- [x] Database schema created (associates, onboardingProcesses, onboardingTasks, taskAssignments, taskReminders, taskTemplates)
+- [x] Database helpers implemented in onboardingDb.ts
+- [ ] Build tRPC router for onboarding/offboarding operations
+- [ ] Create Active Associates page component
+- [ ] Add Active Associates tab to recruiter dashboard navigation
+- [ ] Build onboarding initiation dialog with task template selection
+- [ ] Build offboarding initiation dialog with exit tasks
+- [ ] Create task assignment interface for multi-recruiter assignments
+- [ ] Build task completion tracking UI for recruiters
+- [ ] Implement automated email reminders for pending tasks
+- [ ] Add dashboard indicators for pending/overdue tasks
+- [ ] Test complete onboarding workflow end-to-end
+- [ ] Test complete offboarding workflow end-to-end
