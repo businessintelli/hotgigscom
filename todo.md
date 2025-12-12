@@ -1004,3 +1004,34 @@
 - [x] Test webhook endpoints with SendGrid event simulator
 - [x] Test webhook endpoints with Resend event simulator
 - [x] Document webhook setup instructions for admins
+
+## Resume Parsing System (Current Focus)
+- [ ] Analyze sample PDF and DOCX resumes to understand structure
+- [ ] Install document parsing libraries (pdf-parse, mammoth for DOCX)
+- [ ] Build AI-powered resume parser using LLM for extraction
+- [ ] Extract: name, email, phone, skills, experience, education, certifications
+- [ ] Create resume upload API endpoint
+- [ ] Store original resume file in S3
+- [ ] Create resume review/correction UI component
+- [ ] Allow users to edit parsed fields before saving
+- [ ] Save parsed data to candidates table
+- [ ] Link resume file URL to candidate profile
+- [ ] Test with provided PDF and DOCX samples
+- [ ] Add error handling for malformed resumes
+- [ ] Support bulk resume upload
+
+## Resume Parsing System with Review UI (COMPLETED)
+- [x] Analyze sample resumes (PDF and DOCX)
+- [x] Install pdf-parse and mammoth packages
+- [x] Create resume parser service using LLM
+- [x] Extract personal information (name, email, phone, location)
+- [x] Extract skills and technologies
+- [x] Extract work experience with dates
+- [x] Extract education history
+- [x] Extract certifications
+- [x] Calculate metadata (total experience, seniority level)
+- [x] Create resume review and correction UI
+- [x] Build editable form for parsed data
+- [x] Add save functionality to update candidate profile
+- [x] Integrate with candidate dashboard
+- [x] Add resume upload link to candidate quick actions

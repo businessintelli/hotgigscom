@@ -27,8 +27,9 @@ import CandidateSearch from "./pages/CandidateSearch";
 import AdvancedCandidateSearch from "./pages/AdvancedCandidateSearch";
 import EmailTemplateManager from "./pages/EmailTemplateManager";
 import CampaignBuilder from "./pages/CampaignBuilder";
-import FollowUpSequenceBuilder from "./pages/FollowUpSequenceBuilder";
-import Unsubscribe from "./pages/Unsubscribe";
+import FollowUpSequenceBuilder from './pages/FollowUpSequenceBuilder';
+import Unsubscribe from './pages/Unsubscribe';
+import ResumeUploadReview from './pages/ResumeUploadReview';
 import EmailProviderSettings from "./pages/EmailProviderSettings";
 import EmailDeliveryDashboard from "./pages/EmailDeliveryDashboard";
 import JobDetails from "./pages/JobDetails";
@@ -82,6 +83,7 @@ function Router() {
       <Route path={"/apply/:id"} component={JobApplication} />
       <Route path="/ai-interview" component={AIInterviewPage} />
       <Route path="/coding-interview" component={CodingInterviewPage} />
+      <Route path="/resume-upload" component={ResumeUploadReview} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

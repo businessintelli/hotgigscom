@@ -498,7 +498,15 @@ export default function CandidateDashboard() {
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  Update Resume
+                  Quick Upload Resume
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setLocation("/resume-upload")}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Upload with AI Parsing
                 </Button>
                 <Button
                   variant="outline"
