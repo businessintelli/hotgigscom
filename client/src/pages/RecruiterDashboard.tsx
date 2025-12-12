@@ -266,6 +266,15 @@ export default function RecruiterDashboard() {
                   <div className="text-xs opacity-90">Bulk email with tracking</div>
                 </div>
               </Button>
+              <Button onClick={() => setLocation('/analytics')} className="h-20 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">📊</span>
+                    Analytics Dashboard
+                  </div>
+                  <div className="text-xs opacity-90">Hiring metrics & insights</div>
+                </div>
+              </Button>
             </div>
           </CardContent>
         </Card>

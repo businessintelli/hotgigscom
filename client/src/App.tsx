@@ -32,6 +32,7 @@ import Unsubscribe from './pages/Unsubscribe';
 import ResumeUploadReview from './pages/ResumeUploadReview';
 import EmailProviderSettings from "./pages/EmailProviderSettings";
 import EmailDeliveryDashboard from "./pages/EmailDeliveryDashboard";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import JobDetails from "./pages/JobDetails";
 import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
@@ -74,6 +75,7 @@ function Router() {
       <Route path="/admin/email-settings" component={EmailProviderSettings} />
       <Route path="/admin/email-delivery" component={EmailDeliveryDashboard} />
       <Route path="/admin/analytics" component={Analytics} />
+      <Route path="/analytics" component={AnalyticsDashboard} />
       <Route path="/candidate-dashboard" component={CandidateDashboard} />
       <Route path="/my-applications" component={MyApplications} />
       <Route path="/saved-jobs" component={SavedJobs} />

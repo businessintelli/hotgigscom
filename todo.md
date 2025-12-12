@@ -1051,3 +1051,42 @@
 - [x] Capture parsed results for both resumes
 - [x] Document extracted data (personal info, skills, experience, education)
 - [x] Show editable review screen for both resumes
+
+## Analytics Dashboard (Current Focus)
+- [ ] Design analytics data models and metrics
+- [ ] Create backend queries for application funnel metrics
+- [ ] Create backend queries for time-to-hire calculations
+- [ ] Create backend queries for email campaign performance
+- [ ] Create backend queries for interview completion rates
+- [ ] Create backend queries for AI matching accuracy
+- [ ] Build analytics API endpoints (tRPC procedures)
+- [ ] Create AnalyticsDashboard page with layout
+- [ ] Add application funnel chart (applied → screening → interview → offer → hired)
+- [ ] Add time-to-hire trend chart
+- [ ] Add email campaign performance metrics
+- [ ] Add interview completion rate chart
+- [ ] Add AI matching accuracy metrics
+- [ ] Add date range filters for analytics
+- [ ] Add CSV export functionality
+- [ ] Test analytics with real data
+- [ ] Add analytics link to recruiter dashboard
+
+## Analytics Dashboard (COMPLETED)
+- [x] Design analytics data models and aggregation queries
+- [x] Create helper functions for application funnel metrics
+- [x] Create helper functions for time-to-hire calculations
+- [x] Create helper functions for interview completion rates
+- [x] Create helper functions for email campaign performance
+- [x] Create helper functions for AI matching accuracy
+- [x] Build tRPC analytics router with date range filtering
+- [x] Install recharts for chart visualization
+- [x] Create AnalyticsDashboard page with responsive design
+- [x] Add application funnel chart with conversion rates
+- [x] Add time-to-hire metrics display
+- [x] Add interview status pie chart
+- [x] Add AI matching accuracy bar chart
+- [x] Add top performing jobs list
+- [x] Add email campaign performance metrics
+- [x] Implement CSV export functionality
+- [x] Add date range filtering UI
+- [x] Add analytics dashboard link to recruiter dashboard

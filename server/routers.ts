@@ -20,6 +20,7 @@ import { exportCandidatesToExcel, exportCandidatesToCSV } from './resumeExport';
 import * as notificationHelpers from './notificationHelpers';
 import * as candidateSearchHelpers from './candidateSearchHelpers';
 import * as emailCampaignHelpers from './emailCampaignHelpers';
+import * as analyticsHelpers from './analyticsHelpers';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -2285,6 +2286,91 @@ export const appRouter = router({
         });
 
         return { success: true };
+      }),
+  }),
+
+  // Analytics router
+  analytics: router({
+    // Application funnel metrics
+    getFunnelMetrics: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const startDate = input.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input.endDate ? new Date(input.endDate) : undefined;
+        return await analyticsHelpers.getApplicationFunnelMetrics(startDate, endDate);
+      }),
+
+    // Time to hire metrics
+    getTimeToHireMetrics: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const startDate = input.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input.endDate ? new Date(input.endDate) : undefined;
+        return await analyticsHelpers.getTimeToHireMetrics(startDate, endDate);
+      }),
+
+    // Interview completion metrics
+    getInterviewMetrics: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const startDate = input.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input.endDate ? new Date(input.endDate) : undefined;
+        return await analyticsHelpers.getInterviewCompletionMetrics(startDate, endDate);
+      }),
+
+    // Email campaign metrics
+    getEmailMetrics: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const startDate = input.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input.endDate ? new Date(input.endDate) : undefined;
+        return await analyticsHelpers.getEmailCampaignMetrics(startDate, endDate);
+      }),
+
+    // AI matching metrics
+    getAIMatchingMetrics: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const startDate = input.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input.endDate ? new Date(input.endDate) : undefined;
+        return await analyticsHelpers.getAIMatchingMetrics(startDate, endDate);
+      }),
+
+    // Top performing jobs
+    getTopJobs: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await analyticsHelpers.getTopPerformingJobs(input.limit || 10);
+      }),
+
+    // Recruiter performance
+    getRecruiterPerformance: protectedProcedure
+      .input(z.object({
+        recruiterId: z.number(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const startDate = input.startDate ? new Date(input.startDate) : undefined;
+        const endDate = input.endDate ? new Date(input.endDate) : undefined;
+        return await analyticsHelpers.getRecruiterPerformance(input.recruiterId, startDate, endDate);
       }),
   }),
 });
