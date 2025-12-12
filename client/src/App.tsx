@@ -46,6 +46,7 @@ import SystemHealth from "./pages/SystemHealth";
 import Analytics from "./pages/Analytics";
 import { ActiveAssociates } from "./pages/ActiveAssociates";
 import { OnboardingTasks } from "./pages/OnboardingTasks";
+import SelectRole from "./pages/SelectRole";
 
 
 function Router() {
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/recruiter/active-associates" component={ActiveAssociates} />
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
+      <Route path="/select-role" component={SelectRole} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />

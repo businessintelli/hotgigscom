@@ -35,6 +35,40 @@ export const appRouter = router({
   resumeProfile: resumeProfileRouter,
   onboarding: onboardingRouter,
   
+  user: router({
+    createRecruiterProfile: protectedProcedure.mutation(async ({ ctx }) => {
+      const existingRecruiter = await db.getRecruiterByUserId(ctx.user.id);
+      if (existingRecruiter) {
+        throw new Error("Recruiter profile already exists");
+      }
+      await db.createRecruiter({
+        userId: ctx.user.id,
+        companyName: null,
+        phoneNumber: null,
+        bio: null,
+      });
+      return { success: true };
+    }),
+    
+    createCandidateProfile: protectedProcedure.mutation(async ({ ctx }) => {
+      const existingCandidate = await db.getCandidateByUserId(ctx.user.id);
+      if (existingCandidate) {
+        throw new Error("Candidate profile already exists");
+      }
+      await db.createCandidate({
+        userId: ctx.user.id,
+        title: null,
+        phoneNumber: null,
+        location: null,
+        bio: null,
+        skills: null,
+        experience: null,
+        education: null,
+      });
+      return { success: true };
+    }),
+  }),
+  
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

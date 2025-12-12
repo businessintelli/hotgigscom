@@ -41,8 +41,22 @@ export function registerOAuthRoutes(app: Express) {
       // Get the user ID to create role-specific profile
       const user = await db.getUserByOpenId(userInfo.openId);
       
-      if (user && role) {
-        // Create appropriate profile based on role if it doesn't exist
+      if (!user) {
+        res.status(500).json({ error: "Failed to create user" });
+        return;
+      }
+
+      // Create session token first
+      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
+        name: userInfo.name || "",
+        expiresInMs: ONE_YEAR_MS,
+      });
+
+      const cookieOptions = getSessionCookieOptions(req);
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+      // If role is specified in query param, create that profile
+      if (role) {
         if (role === 'recruiter') {
           const existingRecruiter = await db.getRecruiterByUserId(user.id);
           if (!existingRecruiter) {
@@ -53,6 +67,8 @@ export function registerOAuthRoutes(app: Express) {
               bio: null,
             });
           }
+          res.redirect(302, "/recruiter/dashboard");
+          return;
         } else if (role === 'candidate') {
           const existingCandidate = await db.getCandidateByUserId(user.id);
           if (!existingCandidate) {
@@ -67,26 +83,23 @@ export function registerOAuthRoutes(app: Express) {
               education: null,
             });
           }
+          res.redirect(302, "/candidate-dashboard");
+          return;
         }
       }
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
-      });
+      // Check if user already has a role
+      const existingRecruiter = await db.getRecruiterByUserId(user.id);
+      const existingCandidate = await db.getCandidateByUserId(user.id);
 
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      // Redirect to appropriate dashboard based on role
-      let redirectPath = "/";
-      if (role === 'recruiter') {
-        redirectPath = "/recruiter/dashboard";
-      } else if (role === 'candidate') {
-        redirectPath = "/candidate-dashboard";
+      if (existingRecruiter) {
+        res.redirect(302, "/recruiter/dashboard");
+      } else if (existingCandidate) {
+        res.redirect(302, "/candidate-dashboard");
+      } else {
+        // New user without role - redirect to role selection page
+        res.redirect(302, "/select-role");
       }
-
-      res.redirect(302, redirectPath);
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });
