@@ -48,6 +48,7 @@ import { ActiveAssociates } from "./pages/ActiveAssociates";
 import { OnboardingTasks } from "./pages/OnboardingTasks";
 import SelectRole from "./pages/SelectRole";
 import SignUp from "./pages/SignUp";
+import SignIn from "./pages/SignIn";
 
 
 function Router() {
@@ -79,6 +80,7 @@ function Router() {
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
       <Route path="/select-role" component={SelectRole} />
       <Route path="/signup" component={SignUp} />
+      <Route path="/signin" component={SignIn} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />

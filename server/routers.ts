@@ -1,4 +1,3 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
@@ -9,6 +8,8 @@ import { generateFraudDetectionReport, generateInterviewEvaluationReport } from 
 import { executeCode } from "./codeExecutor";
 import { z } from "zod";
 import * as db from "./db";
+import { hashPassword, comparePassword, generateSessionToken, isValidEmail, isValidPassword } from "./auth";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getDb } from "./db";
 import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes } from "../drizzle/schema";
 
@@ -85,6 +86,145 @@ export const appRouter = router({
       return { success: true } as const;
     }),
     
+    signup: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+        name: z.string().min(1),
+        role: z.enum(['recruiter', 'candidate']),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Validate email format
+        if (!isValidEmail(input.email)) {
+          throw new Error('Invalid email format');
+        }
+        
+        // Validate password strength
+        if (!isValidPassword(input.password)) {
+          throw new Error('Password must be at least 6 characters and contain both letters and numbers');
+        }
+        
+        // Check if user already exists
+        const existingUser = await db.getUserByEmail(input.email);
+        if (existingUser) {
+          throw new Error('Email already registered');
+        }
+        
+        // Hash password
+        const passwordHash = await hashPassword(input.password);
+        
+        // Create user
+        await db.upsertUser({
+          openId: null,
+          name: input.name,
+          email: input.email,
+          passwordHash,
+          loginMethod: 'password',
+          lastSignedIn: new Date(),
+        });
+        
+        const user = await db.getUserByEmail(input.email);
+        if (!user) {
+          throw new Error('Failed to create user');
+        }
+        
+        // Create role-specific profile
+        if (input.role === 'recruiter') {
+          await db.createRecruiter({
+            userId: user.id,
+            companyName: null,
+            phoneNumber: null,
+            bio: null,
+          });
+        } else {
+          await db.createCandidate({
+            userId: user.id,
+            title: null,
+            phoneNumber: null,
+            location: null,
+            bio: null,
+            skills: null,
+            experience: null,
+            education: null,
+          });
+        }
+        
+        // Create session token
+        const sessionToken = generateSessionToken();
+        
+        // Store session in database (you may want to create a sessions table)
+        // For now, we'll use a simple approach with cookies
+        
+        // Set cookie
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        // Store session mapping (email -> token) in memory or database
+        // For simplicity, we'll encode user info in the token
+        const sessionData = JSON.stringify({ userId: user.id, email: user.email });
+        const encodedSession = Buffer.from(sessionData).toString('base64');
+        ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        return { 
+          success: true, 
+          user: { id: user.id, email: user.email, name: user.name },
+          role: input.role
+        };
+      }),
+      
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Find user by email
+        const user = await db.getUserByEmail(input.email);
+        if (!user) {
+          throw new Error('Invalid email or password');
+        }
+        
+        // Check if user has a password (not OAuth user)
+        if (!user.passwordHash) {
+          throw new Error('This account uses social login. Please sign in with Google, Microsoft, or Apple.');
+        }
+        
+        // Verify password
+        const isValid = await comparePassword(input.password, user.passwordHash);
+        if (!isValid) {
+          throw new Error('Invalid email or password');
+        }
+        
+        // Update last signed in
+        await db.upsertUser({
+          openId: user.openId,
+          name: user.name,
+          email: user.email,
+          passwordHash: user.passwordHash,
+          loginMethod: user.loginMethod,
+          lastSignedIn: new Date(),
+        });
+        
+        // Create session
+        const sessionData = JSON.stringify({ userId: user.id, email: user.email });
+        const encodedSession = Buffer.from(sessionData).toString('base64');
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        // Determine role
+        const recruiter = await db.getRecruiterByUserId(user.id);
+        const candidate = await db.getCandidateByUserId(user.id);
+        
+        let role: 'recruiter' | 'candidate' | null = null;
+        if (recruiter) role = 'recruiter';
+        else if (candidate) role = 'candidate';
+        
+        return { 
+          success: true, 
+          user: { id: user.id, email: user.email, name: user.name },
+          role
+        };
+      }),
 
   }),
 

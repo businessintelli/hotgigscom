@@ -64,7 +64,7 @@ export default function PublicHome() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => window.location.href = getLoginUrl()}>
+              <Button variant="outline" onClick={() => setLocation("/signin")}>
                 Sign In
               </Button>
               <Button onClick={() => window.location.href = "/signup"}>

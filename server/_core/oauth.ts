@@ -27,12 +27,21 @@ export function registerOAuthRoutes(app: Express) {
     console.log("[OAuth] Callback received", { query: req.query });
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
-    const role = getQueryParam(req, "role"); // Get role from query parameter
 
     if (!code || !state) {
       console.error("[OAuth] Missing code or state", { code: !!code, state: !!state });
       res.status(400).json({ error: "code and state are required" });
       return;
+    }
+
+    // Decode role from state parameter
+    let role: string | undefined;
+    try {
+      const stateData = JSON.parse(atob(state));
+      role = stateData.role;
+      console.log("[OAuth] Decoded role from state", { role });
+    } catch (error) {
+      console.log("[OAuth] Could not decode role from state, continuing without role");
     }
 
     try {

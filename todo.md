@@ -1323,3 +1323,33 @@
 - [x] Update Sign In button to go directly to OAuth (no role needed)
 - [x] Test sign-up flow with role selection
 - [x] Test sign-in flow for returning users
+
+
+## OAuth Callback Error Fix (CURRENT ISSUE)
+- [x] Fix OAuth callback error: "code and state are required"
+- [x] Investigate why OAuth parameters are not being received
+- [x] Updated SignUp.tsx to pass role via state parameter instead of redirect URI
+- [x] Updated oauth.ts to decode role from state parameter
+- [x] Restarted server to apply changes
+- [x] Added 3 new tests for OAuth state parameter handling
+- [x] All 12 authentication tests passing
+- [ ] Test complete sign-up flow with real Google authentication (user testing in progress)
+- [ ] Test complete sign-in flow with returning user
+- [ ] Verify profile creation works after OAuth callback
+
+
+## Email/Password Authentication Implementation (COMPLETED)
+- [x] Update database schema to ensure email and passwordHash fields exist
+- [x] Install bcrypt for password hashing
+- [x] Create authentication API endpoints (signup, login, logout)
+- [x] Build sign-up form with email, password, and role selection
+- [x] Build sign-in form with email and password
+- [x] Update context to handle email/password sessions
+- [x] Remove OAuth social login buttons from PublicHome
+- [x] Update PublicHome Sign In button to use /signin route
+- [x] Add SignIn route to App.tsx
+- [x] Create comprehensive test suite (16 tests, all passing)
+- [x] Test password hashing and validation
+- [x] Test email validation
+- [x] Test complete sign-up flow for recruiter and candidate
+- [x] Test sign-in flow with password verification

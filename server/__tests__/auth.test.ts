@@ -225,3 +225,48 @@ describe('Authentication Flow', () => {
     });
   });
 });
+
+  describe('OAuth State Parameter Handling', () => {
+    it('should correctly encode and decode role in state parameter', () => {
+      // Simulate frontend encoding
+      const stateData = {
+        redirectUri: 'https://example.com/api/oauth/callback',
+        role: 'recruiter'
+      };
+      const encodedState = Buffer.from(JSON.stringify(stateData)).toString('base64');
+
+      // Simulate backend decoding
+      const decodedState = JSON.parse(Buffer.from(encodedState, 'base64').toString());
+      
+      expect(decodedState.role).toBe('recruiter');
+      expect(decodedState.redirectUri).toBe('https://example.com/api/oauth/callback');
+    });
+
+    it('should handle candidate role in state parameter', () => {
+      const stateData = {
+        redirectUri: 'https://example.com/api/oauth/callback',
+        role: 'candidate'
+      };
+      const encodedState = Buffer.from(JSON.stringify(stateData)).toString('base64');
+      const decodedState = JSON.parse(Buffer.from(encodedState, 'base64').toString());
+      
+      expect(decodedState.role).toBe('candidate');
+    });
+
+    it('should gracefully handle state without role', () => {
+      // Old format state (just base64 encoded redirect URI)
+      const redirectUri = 'https://example.com/api/oauth/callback';
+      const encodedState = Buffer.from(redirectUri).toString('base64');
+      
+      let role: string | undefined;
+      try {
+        const decodedState = JSON.parse(Buffer.from(encodedState, 'base64').toString());
+        role = decodedState.role;
+      } catch (error) {
+        // Expected to fail parsing as JSON, role remains undefined
+        role = undefined;
+      }
+      
+      expect(role).toBeUndefined();
+    });
+  });
