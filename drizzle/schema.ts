@@ -688,3 +688,117 @@ export type EmailDeliveryEvent = typeof emailDeliveryEvents.$inferSelect;
 export type InsertEmailDeliveryEvent = typeof emailDeliveryEvents.$inferInsert;
 export type EmailWebhookLog = typeof emailWebhookLogs.$inferSelect;
 export type InsertEmailWebhookLog = typeof emailWebhookLogs.$inferInsert;
+
+
+/**
+ * Associates table - Onboarded employees/candidates
+ */
+export const associates = mysqlTable("associates", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  employeeId: varchar("employeeId", { length: 100 }), // Company employee ID
+  jobTitle: varchar("jobTitle", { length: 255 }).notNull(),
+  department: varchar("department", { length: 255 }),
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate"), // null if currently employed
+  status: mysqlEnum("status", ["active", "onboarding", "offboarding", "terminated"]).default("onboarding").notNull(),
+  managerId: int("managerId").references(() => recruiters.id), // Reporting manager
+  onboardedBy: int("onboardedBy").notNull().references(() => recruiters.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Associate = typeof associates.$inferSelect;
+export type InsertAssociate = typeof associates.$inferInsert;
+
+/**
+ * Onboarding/Offboarding processes
+ */
+export const onboardingProcesses = mysqlTable("onboardingProcesses", {
+  id: int("id").autoincrement().primaryKey(),
+  associateId: int("associateId").notNull().references(() => associates.id),
+  processType: mysqlEnum("processType", ["onboarding", "offboarding"]).notNull(),
+  status: mysqlEnum("status", ["pending", "in_progress", "completed", "cancelled"]).default("pending").notNull(),
+  startedBy: int("startedBy").notNull().references(() => recruiters.id),
+  completedAt: timestamp("completedAt"),
+  dueDate: timestamp("dueDate"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OnboardingProcess = typeof onboardingProcesses.$inferSelect;
+export type InsertOnboardingProcess = typeof onboardingProcesses.$inferInsert;
+
+/**
+ * Tasks within onboarding/offboarding processes
+ */
+export const onboardingTasks = mysqlTable("onboardingTasks", {
+  id: int("id").autoincrement().primaryKey(),
+  processId: int("processId").notNull().references(() => onboardingProcesses.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  taskType: varchar("taskType", { length: 100 }), // e.g., 'documentation', 'equipment', 'training', 'system_access'
+  status: mysqlEnum("status", ["pending", "in_progress", "completed", "blocked"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  dueDate: timestamp("dueDate"),
+  completedAt: timestamp("completedAt"),
+  completedBy: int("completedBy").references(() => recruiters.id),
+  orderIndex: int("orderIndex").default(0).notNull(), // For task ordering
+  dependsOnTaskId: int("dependsOnTaskId"), // Task dependency (self-reference)
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OnboardingTask = typeof onboardingTasks.$inferSelect;
+export type InsertOnboardingTask = typeof onboardingTasks.$inferInsert;
+
+/**
+ * Task assignments - assign tasks to specific recruiters
+ */
+export const taskAssignments = mysqlTable("taskAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull().references(() => onboardingTasks.id),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  assignedBy: int("assignedBy").notNull().references(() => recruiters.id),
+  assignedAt: timestamp("assignedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskAssignment = typeof taskAssignments.$inferSelect;
+export type InsertTaskAssignment = typeof taskAssignments.$inferInsert;
+
+/**
+ * Task reminders - track reminder emails sent for pending tasks
+ */
+export const taskReminders = mysqlTable("taskReminders", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull().references(() => onboardingTasks.id),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  reminderType: mysqlEnum("reminderType", ["due_soon", "overdue", "manual"]).notNull(),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  emailStatus: varchar("emailStatus", { length: 50 }), // 'sent', 'delivered', 'failed'
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskReminder = typeof taskReminders.$inferSelect;
+export type InsertTaskReminder = typeof taskReminders.$inferInsert;
+
+/**
+ * Task templates - predefined task lists for onboarding/offboarding
+ */
+export const taskTemplates = mysqlTable("taskTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  processType: mysqlEnum("processType", ["onboarding", "offboarding"]).notNull(),
+  description: text("description"),
+  tasks: text("tasks").notNull(), // JSON array of task definitions
+  isDefault: boolean("isDefault").default(false).notNull(),
+  createdBy: int("createdBy").notNull().references(() => recruiters.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TaskTemplate = typeof taskTemplates.$inferSelect;
+export type InsertTaskTemplate = typeof taskTemplates.$inferInsert;

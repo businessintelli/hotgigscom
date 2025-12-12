@@ -15,7 +15,13 @@ import {
   interviewResponses, InsertInterviewResponse,
   savedSearches, InsertSavedSearch,
   savedJobs, InsertSavedJob,
-  fraudDetectionEvents, InsertFraudDetectionEvent
+  fraudDetectionEvents, InsertFraudDetectionEvent,
+  associates, InsertAssociate,
+  onboardingProcesses, InsertOnboardingProcess,
+  onboardingTasks, InsertOnboardingTask,
+  taskAssignments, InsertTaskAssignment,
+  taskReminders, InsertTaskReminder,
+  taskTemplates, InsertTaskTemplate
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 

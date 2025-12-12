@@ -1194,3 +1194,16 @@
 - [ ] Test complete end-to-end workflow (job creation → application → interview → review)
 - [ ] Migrate interview video storage from base64 to S3
 - [ ] Add video upload progress indicators
+
+
+## Onboarding/Offboarding System (Current Focus - 12/12/2024)
+- [x] Design and create database schema for onboarding/offboarding and tasks
+- [ ] Build backend API for onboarding/offboarding workflows and task management
+- [ ] Create Active Associates page with onboarded employees list
+- [ ] Build onboarding initiation UI with task templates
+- [ ] Build offboarding initiation UI with exit tasks
+- [ ] Create task assignment and tracking interface
+- [ ] Implement task completion workflow for recruiters
+- [ ] Add automated email reminders for pending tasks
+- [ ] Add dashboard indicators for pending/overdue tasks
+- [ ] Test complete onboarding/offboarding workflow

@@ -155,6 +155,20 @@
       "when": 1765533410148,
       "tag": "0021_calm_firelord",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1765535983290,
+      "tag": "0022_shocking_jazinda",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1765536273876,
+      "tag": "0023_loud_snowbird",
+      "breakpoints": true
     }
   ]
 }
