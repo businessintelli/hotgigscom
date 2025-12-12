@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, MapPin, Briefcase, DollarSign, Clock, Building2, Target, Grid3x3, List, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { RoleSelectionDialog } from "@/components/RoleSelectionDialog";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { APP_TITLE, getLoginUrl } from "@/const";
@@ -15,7 +14,6 @@ export default function PublicHome() {
   const [, setLocation] = useLocation();
   const [keyword, setKeyword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showRoleDialog, setShowRoleDialog] = useState(false);
 
   useEffect(() => {
     // Check for error in URL query parameters
@@ -69,7 +67,7 @@ export default function PublicHome() {
               <Button variant="outline" onClick={() => window.location.href = getLoginUrl()}>
                 Sign In
               </Button>
-              <Button onClick={() => setShowRoleDialog(true)}>
+              <Button onClick={() => window.location.href = getLoginUrl()}>
                 Sign Up
               </Button>
             </div>
@@ -352,12 +350,6 @@ export default function PublicHome() {
           </div>
         </div>
       </footer>
-
-      {/* Role Selection Dialog */}
-      <RoleSelectionDialog 
-        open={showRoleDialog} 
-        onOpenChange={setShowRoleDialog}
-      />
     </div>
   );
 }

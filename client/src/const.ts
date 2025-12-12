@@ -5,15 +5,14 @@ export const APP_TITLE = import.meta.env.VITE_APP_TITLE || "App";
 export const APP_LOGO = "https://placehold.co/128x128/E1E7EF/1F2937?text=App";
 
 // Generate login URL at runtime so redirect URI reflects the current origin.
-export const getLoginUrl = (role?: 'recruiter' | 'candidate') => {
+export const getLoginUrl = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
   
-  // Include role in redirect URI as query parameter
-  const redirectUri = role 
-    ? `${window.location.origin}/api/oauth/callback?role=${role}`
-    : `${window.location.origin}/api/oauth/callback`;
+  // Clean redirect URI without query parameters
+  const redirectUri = `${window.location.origin}/api/oauth/callback`;
   
+  // Encode redirect URI in state parameter
   const state = btoa(redirectUri);
 
   const url = new URL(`${oauthPortalUrl}/app-auth`);

@@ -3,12 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Target, Users, Zap, Shield } from "lucide-react";
 import { useLocation } from "wouter";
 import { APP_TITLE, getLoginUrl } from "@/const";
-import { useState } from "react";
-import { RoleSelectionDialog } from "@/components/RoleSelectionDialog";
 
 export default function AboutUs() {
   const [, setLocation] = useLocation();
-  const [showRoleDialog, setShowRoleDialog] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -39,7 +36,7 @@ export default function AboutUs() {
               <Button variant="outline" onClick={() => window.location.href = getLoginUrl()}>
                 Sign In
               </Button>
-              <Button onClick={() => setShowRoleDialog(true)}>
+              <Button onClick={() => window.location.href = getLoginUrl()}>
                 Sign Up
               </Button>
             </div>
@@ -206,12 +203,6 @@ export default function AboutUs() {
           </div>
         </div>
       </footer>
-
-      {/* Role Selection Dialog */}
-      <RoleSelectionDialog 
-        open={showRoleDialog} 
-        onOpenChange={setShowRoleDialog}
-      />
     </div>
   );
 }

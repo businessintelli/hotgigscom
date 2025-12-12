@@ -1295,3 +1295,19 @@
 - [x] Implement role selection BEFORE OAuth (better UX)
 - [x] Create RoleSelectionDialog component
 - [x] Update Sign Up button to show role dialog first
+
+
+## OAuth URL Construction Fix (COMPLETED)
+- [x] Fix getLoginUrl to encode role in state parameter instead of redirect URI
+- [x] Update OAuth callback to decode role from state parameter
+
+## Role Selection During OAuth (COMPLETED)
+- [x] Clear existing users from database
+- [x] Remove RoleSelectionDialog component
+- [x] Update Sign Up button to go directly to OAuth
+- [x] Create post-OAuth role selection page (already exists as SelectRole)
+- [x] Update OAuth callback to redirect to role selection for new users
+- [x] Test sign-up flow with role selection after OAuth
+- [x] Verify recruiter profile is created correctly
+- [x] Verify candidate profile is created correctly
+- [x] Test that returning users go to correct dashboard
