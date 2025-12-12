@@ -193,19 +193,19 @@ export default function InterviewCalendar() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6" />
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-2xl">
+            <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             Interview Calendar
           </CardTitle>
-          <CardDescription>
-            View and manage all scheduled interviews. Drag and drop to reschedule.
+          <CardDescription className="text-xs sm:text-sm">
+            View and manage all scheduled interviews. <span className="hidden sm:inline">Drag and drop to reschedule.</span>
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex gap-4 flex-wrap">
+        <CardContent className="px-2 sm:px-6">
+          <div className="mb-4 flex gap-2 sm:gap-4 flex-wrap text-xs sm:text-sm">
             <div className="flex items-center gap-2">
               <Bot className="h-4 w-4 text-blue-600" />
               <span className="text-sm">AI Bot Interview</span>
@@ -224,7 +224,7 @@ export default function InterviewCalendar() {
             </div>
           </div>
 
-          <div style={{ height: "600px" }}>
+          <div className="h-[400px] sm:h-[500px] lg:h-[600px]">
             <DnDCalendar
               localizer={localizer}
               events={events}
@@ -247,7 +247,7 @@ export default function InterviewCalendar() {
 
       {/* Interview Details Dialog */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Interview Details</DialogTitle>
             <DialogDescription>

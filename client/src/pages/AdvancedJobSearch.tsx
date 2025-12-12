@@ -110,32 +110,49 @@ export default function AdvancedJobSearch() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="container mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation("/")}>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm sm:text-base">
               HG
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">HotGigs</h1>
-              <p className="text-xs text-gray-500">Advanced Job Search</p>
+              <h1 className="text-base sm:text-xl font-bold text-gray-900">HotGigs</h1>
+              <p className="text-[10px] sm:text-xs text-gray-500 hidden sm:block">Advanced Job Search</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => setLocation("/candidate-dashboard")}>
+          <div className="flex gap-1 sm:gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/candidate-dashboard")} className="text-xs sm:text-sm">
               Dashboard
             </Button>
-            <Button variant="outline" onClick={() => setLocation("/")}>
+            <Button variant="outline" size="sm" onClick={() => setLocation("/")} className="text-xs sm:text-sm hidden sm:inline-flex">
               Home
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        {/* Mobile Filter Toggle */}
+        <div className="lg:hidden mb-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            {showFilters ? "Hide Filters" : "Show Filters"}
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24">
+          <div className={`lg:col-span-1 ${showFilters ? "block" : "hidden lg:block"}`}>
+            <Card className="lg:sticky lg:top-24">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">

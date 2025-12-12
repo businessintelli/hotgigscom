@@ -222,39 +222,39 @@ export default function ApplicationManagement() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => setLocation("/recruiter/dashboard")}>
-                ← Back to Dashboard
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/recruiter/dashboard")}>
+                ← Back
               </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Application Management</h1>
-                <p className="text-sm text-gray-600">Track and manage all candidate applications</p>
+              <div className="flex-1 sm:flex-none">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Application Management</h1>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Track and manage all candidate applications</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
                 <Download className="h-4 w-4 mr-1" />
-                Export
+                <span className="hidden sm:inline">Export</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("all")}>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-xs text-gray-600">Total</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-[10px] sm:text-xs text-gray-600">Total</p>
               </div>
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("pending")}>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
                 <p className="text-xs text-gray-600">Pending</p>
@@ -262,7 +262,7 @@ export default function ApplicationManagement() {
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("reviewing")}>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-blue-600">{stats.reviewing}</p>
                 <p className="text-xs text-gray-600">Reviewing</p>
@@ -270,7 +270,7 @@ export default function ApplicationManagement() {
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("shortlisted")}>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-purple-600">{stats.shortlisted}</p>
                 <p className="text-xs text-gray-600">Shortlisted</p>
@@ -278,7 +278,7 @@ export default function ApplicationManagement() {
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("interview")}>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-indigo-600">{stats.interview}</p>
                 <p className="text-xs text-gray-600">Interview</p>
@@ -286,7 +286,7 @@ export default function ApplicationManagement() {
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("offered")}>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">{stats.offered}</p>
                 <p className="text-xs text-gray-600">Offered</p>
@@ -294,7 +294,7 @@ export default function ApplicationManagement() {
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("hired")}>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-emerald-600">{stats.hired}</p>
                 <p className="text-xs text-gray-600">Hired</p>
@@ -302,7 +302,7 @@ export default function ApplicationManagement() {
             </CardContent>
           </Card>
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setStatusFilter("rejected")}>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
                 <p className="text-xs text-gray-600">Rejected</p>
@@ -320,7 +320,7 @@ export default function ApplicationManagement() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Search Candidates</label>
                 <div className="relative">
@@ -374,7 +374,7 @@ export default function ApplicationManagement() {
         {/* Bulk Actions */}
         {selectedApplications.length > 0 && (
           <Card className="mb-6 border-l-4 border-l-blue-500">
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Checkbox checked={true} onCheckedChange={handleSelectAll} />
@@ -421,29 +421,29 @@ export default function ApplicationManagement() {
             ) : (
               <div className="space-y-4">
                 {filteredApplications.map((application: any) => (
-                  <div key={application.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-4">
+                  <div key={application.id} className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start gap-2 sm:gap-4">
                       <Checkbox
                         checked={selectedApplications.includes(application.id)}
                         onCheckedChange={() => handleSelectApplication(application.id)}
                       />
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-semibold text-lg text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row items-start justify-between mb-2 gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base sm:text-lg text-gray-900 truncate">
                               {application.candidate?.fullName || "Anonymous Candidate"}
                             </h3>
-                            <p className="text-sm text-gray-600">Applied for: {application.job?.title}</p>
+                            <p className="text-xs sm:text-sm text-gray-600 truncate">Applied for: {application.job?.title}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end gap-2">
                             {getStatusBadge(application.status)}
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500">
                               {new Date(application.appliedAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-3">
                           {application.candidate?.email && (
                             <span className="flex items-center gap-1">
                               <Mail className="h-4 w-4" />
@@ -464,7 +464,7 @@ export default function ApplicationManagement() {
                           </div>
                         )}
 
-                        <div className="flex items-center gap-2 pt-3 border-t">
+                        <div className="flex flex-wrap items-center gap-2 pt-3 border-t">
                           {application.resumeUrl && (
                             <Button 
                               variant="outline" 

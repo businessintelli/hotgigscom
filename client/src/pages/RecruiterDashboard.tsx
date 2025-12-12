@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
+import { Menu, X } from "lucide-react";
 
 export default function RecruiterDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -14,6 +15,7 @@ export default function RecruiterDashboard() {
   const { data: dashboardData, isLoading } = trpc.recruiter.getDashboardStats.useQuery();
   const { data: profile } = trpc.recruiter.getProfile.useQuery();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'recruiter')) {
@@ -74,9 +76,10 @@ export default function RecruiterDashboard() {
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-400 rounded-lg flex items-center justify-center mr-3">
                   <span className="text-white font-bold text-lg">HG</span>
                 </div>
-                <span className="text-xl font-bold">HotGigs</span>
+                <span className="text-xl font-bold hidden sm:inline">HotGigs</span>
               </div>
-              <div className="ml-10 flex space-x-8">
+              {/* Desktop Navigation */}
+              <div className="hidden lg:flex ml-10 space-x-8">
                 <button onClick={() => setLocation('/recruiter/dashboard')} className="px-3 py-2 rounded-md text-sm font-medium bg-blue-700">📊 Dashboard</button>
                 <button onClick={() => setLocation('/recruiter/jobs/create')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">💼 Jobs</button>
                 <button onClick={() => setLocation('/recruiter/search-candidates')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🔍 Candidates</button>
@@ -84,26 +87,44 @@ export default function RecruiterDashboard() {
                 <button onClick={() => setLocation('/recruiter/customers')} className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🏢 Clients</button>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <NotificationBell />
-              <span className="text-sm">Welcome, {user?.name}!</span>
-              <Badge variant="secondary">Recruiter</Badge>
-              <Button variant="ghost" size="sm" onClick={() => logout()} className="text-blue-200 hover:text-white hover:bg-blue-500">Sign Out</Button>
+              <span className="text-sm hidden md:inline">Welcome, {user?.name}!</span>
+              <Badge variant="secondary" className="hidden sm:inline-flex">Recruiter</Badge>
+              <Button variant="ghost" size="sm" onClick={() => logout()} className="text-blue-200 hover:text-white hover:bg-blue-500 hidden sm:inline-flex">Sign Out</Button>
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2 rounded-md hover:bg-blue-500"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
             </div>
           </div>
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden pb-4 space-y-2">
+              <button onClick={() => { setLocation('/recruiter/dashboard'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium bg-blue-700">📊 Dashboard</button>
+              <button onClick={() => { setLocation('/recruiter/jobs/create'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">💼 Jobs</button>
+              <button onClick={() => { setLocation('/recruiter/search-candidates'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🔍 Candidates</button>
+              <button onClick={() => { setLocation('/recruiter/interview-playback'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🎥 AI Interviews</button>
+              <button onClick={() => { setLocation('/recruiter/customers'); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500">🏢 Clients</button>
+              <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-500 border-t border-blue-500 mt-2 pt-2">🚪 Sign Out</button>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-4 px-4 sm:py-6 sm:px-6 lg:px-8">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white mb-6">
-          <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name}! 👋</h1>
-          <p className="opacity-90">Here's what's happening with your recruitment activities today.</p>
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 sm:p-6 text-white mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">Welcome back, {user?.name}! 👋</h1>
+          <p className="opacity-90 text-sm sm:text-base">Here's what's happening with your recruitment activities today.</p>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6">
           {statCards.map((stat, index) => (
             <Card 
               key={index} 
@@ -133,7 +154,7 @@ export default function RecruiterDashboard() {
             <CardDescription>Streamline your recruitment workflow</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Button onClick={() => setLocation('/recruiter/ai-matching')} className="h-20 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
                 <div className="text-center">
                   <div className="text-lg font-semibold flex items-center justify-center">
