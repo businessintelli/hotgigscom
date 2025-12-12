@@ -26,6 +26,7 @@ import * as emailCampaignHelpers from './emailCampaignHelpers';
 import * as analyticsHelpers from './analyticsHelpers';
 import { resumeProfileRouter } from './resumeProfileRouter';
 import { onboardingRouter } from './onboardingRouter';
+import { profileCompletionRouter } from './profileCompletionRouter';
 import { createVideoMeeting } from './videoMeetingService';
 
 // Helper to generate random suffix for file keys
@@ -37,6 +38,7 @@ export const appRouter = router({
   system: systemRouter,
   resumeProfile: resumeProfileRouter,
   onboarding: onboardingRouter,
+  profileCompletion: profileCompletionRouter,
   
   user: router({
     createRecruiterProfile: protectedProcedure.mutation(async ({ ctx }) => {

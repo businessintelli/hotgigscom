@@ -52,6 +52,8 @@ import SignIn from "./pages/SignIn";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import RecruiterOnboarding from "./pages/RecruiterOnboarding";
+import CandidateOnboarding from "./pages/CandidateOnboarding";
 
 
 function Router() {
@@ -87,6 +89,8 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/verify-email" component={VerifyEmail} />
+      <Route path="/recruiter/onboarding" component={RecruiterOnboarding} />
+      <Route path="/candidate/onboarding" component={CandidateOnboarding} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />

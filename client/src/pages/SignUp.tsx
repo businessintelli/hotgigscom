@@ -34,11 +34,11 @@ export default function SignUp() {
       });
 
       if (result.success) {
-        // Redirect to appropriate dashboard
+        // Redirect to onboarding wizard based on role
         if (result.role === 'recruiter') {
-          setLocation('/recruiter/dashboard');
+          setLocation('/recruiter/onboarding');
         } else {
-          setLocation('/candidate-dashboard');
+          setLocation('/candidate/onboarding');
         }
       }
     } catch (err: any) {

@@ -35,6 +35,8 @@ export const recruiters = mysqlTable("recruiters", {
   companyName: varchar("companyName", { length: 255 }),
   phoneNumber: varchar("phoneNumber", { length: 50 }),
   bio: text("bio"),
+  profileCompleted: boolean("profileCompleted").default(false).notNull(),
+  profileCompletionStep: int("profileCompletionStep").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -76,6 +78,8 @@ export const candidates = mysqlTable("candidates", {
   expectedSalaryMax: int("expectedSalaryMax"),
   noticePeriod: varchar("noticePeriod", { length: 50 }), // 'immediate', '2-weeks', '1-month', '2-months', '3-months'
   willingToRelocate: boolean("willingToRelocate").default(false),
+  profileCompleted: boolean("profileCompleted").default(false).notNull(),
+  profileCompletionStep: int("profileCompletionStep").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -1420,3 +1420,24 @@
 - [x] Test password reset flow (all tests passing)
 - [x] Test token generation and expiry (all tests passing)
 - [x] All 39 authentication tests passing (11 enhancements + 12 core + 16 email/password)
+
+
+## Profile Completion Wizard (COMPLETED ✅)
+- [x] Design multi-step profile completion flow for recruiters (3 steps: company info, bio, completion)
+- [x] Design multi-step profile completion flow for candidates (4 steps: basic info, skills & experience, preferences, completion)
+- [x] Add profileCompleted boolean field to recruiters and candidates tables
+- [x] Add profileCompletionStep field to track current step
+- [x] Create backend API to check profile completion status (profileCompletion.getStatus)
+- [x] Create backend API to update profile completion progress (updateRecruiterStep, updateCandidateStep)
+- [x] Create backend API to skip onboarding (profileCompletion.skipOnboarding)
+- [x] Build RecruiterOnboarding wizard component with steps (company info, bio, completion)
+- [x] Build CandidateOnboarding wizard component with steps (basic info, skills & experience, preferences, completion)
+- [x] Add progress indicator to show completion percentage
+- [x] Implement step navigation (next, previous, skip)
+- [x] Add validation for required fields in each step (company name for recruiters, title & skills for candidates)
+- [x] Redirect new users to onboarding wizard after sign-up
+- [x] Allow users to skip onboarding and complete later ("Skip for now" button)
+- [x] Add routes for onboarding pages (/recruiter/onboarding, /candidate/onboarding)
+- [x] Update SignUp.tsx to redirect to onboarding instead of dashboard
+- [x] Create profileCompletionRouter with tRPC procedures
+- [x] Add profileCompletion router to appRouter
