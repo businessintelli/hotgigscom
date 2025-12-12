@@ -1148,7 +1148,7 @@ export const appRouter = router({
     // Report Generation - Fraud detection report
     generateFraudReport: protectedProcedure
       .input(z.object({ interviewId: z.number() }))
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         const html = await generateFraudDetectionReport(input.interviewId);
         return { html };
       }),
@@ -1156,7 +1156,7 @@ export const appRouter = router({
     // Report Generation - Interview evaluation report
     generateEvaluationReport: protectedProcedure
       .input(z.object({ interviewId: z.number() }))
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         const html = await generateInterviewEvaluationReport(input.interviewId);
         return { html };
       }),

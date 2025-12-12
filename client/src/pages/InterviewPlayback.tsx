@@ -32,9 +32,9 @@ export default function InterviewPlayback() {
   // Fetch all completed AI interviews
   const { data: interviews, isLoading } = trpc.interview.listByRecruiter.useQuery();
   
-  // Report generation queries
-  const generateFraudReportQuery = trpc.interview.generateFraudReport.useQuery;
-  const generateEvaluationReportQuery = trpc.interview.generateEvaluationReport.useQuery;
+  // Report generation mutations
+  const generateFraudReportMutation = trpc.interview.generateFraudReport.useMutation();
+  const generateEvaluationReportMutation = trpc.interview.generateEvaluationReport.useMutation();
   
   // Handle report download
   const handleDownloadReport = async (interviewId: number, reportType: 'fraud' | 'evaluation') => {
@@ -44,11 +44,11 @@ export default function InterviewPlayback() {
       let reportHtml: string;
       
       if (reportType === 'fraud') {
-        const { data } = await generateFraudReportQuery({ interviewId });
-        reportHtml = data?.html || '';
+        const result = await generateFraudReportMutation.mutateAsync({ interviewId });
+        reportHtml = result?.html || '';
       } else {
-        const { data } = await generateEvaluationReportQuery({ interviewId });
-        reportHtml = data?.html || '';
+        const result = await generateEvaluationReportMutation.mutateAsync({ interviewId });
+        reportHtml = result?.html || '';
       }
       
       if (!reportHtml) {
@@ -67,9 +67,11 @@ export default function InterviewPlayback() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
+      toast.dismiss();
       toast.success(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report downloaded!`);
     } catch (error) {
       console.error('Report download error:', error);
+      toast.dismiss();
       toast.error('Failed to download report');
     }
   };

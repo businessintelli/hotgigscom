@@ -67,7 +67,7 @@ function generateFraudHTML(data: FraudReportData): string {
           event.severity === 'high' ? '#991b1b' : 
           event.severity === 'medium' ? '#92400e' : '#166534'
         };">
-          ${event.severity.toUpperCase()}
+          ${event.severity ? event.severity.toUpperCase() : 'UNKNOWN'}
         </span>
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
@@ -220,11 +220,11 @@ function generateFraudHTML(data: FraudReportData): string {
         </div>
         <div class="info-item">
           <label>Interview Date</label>
-          <value>${new Date(interview.scheduledAt).toLocaleDateString()}</value>
+          <value>${interview.interview.scheduledAt ? new Date(interview.interview.scheduledAt).toLocaleDateString() : 'N/A'}</value>
         </div>
         <div class="info-item">
           <label>Interview Status</label>
-          <value>${interview.status.toUpperCase()}</value>
+          <value>${interview.interview.status ? interview.interview.status.toUpperCase() : 'N/A'}</value>
         </div>
       </div>
     </div>

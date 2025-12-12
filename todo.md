@@ -790,3 +790,6 @@
 - [x] Add reschedule mutation to interview router
 - [x] Fix TypeScript errors in getInterviewById to include joined data
 - [x] Update reportGenerator and routers to use correct interview data structure
+
+## Bug Fixes - Current Session
+- [x] Fix React Hooks error in fraud report generation (Invalid hook call when downloading report)
