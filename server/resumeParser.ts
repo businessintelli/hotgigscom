@@ -286,7 +286,12 @@ Extract and return a JSON object with comprehensive structured data including pe
       }
     });
 
-    const content = response.choices[0].message.content;
+    // Check if response has choices
+    if (!response.choices || response.choices.length === 0) {
+      throw new Error('Failed to parse resume: No response from AI');
+    }
+    
+    const content = response.choices[0]?.message?.content;
     if (!content) {
       throw new Error("No content in LLM response");
     }

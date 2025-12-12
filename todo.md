@@ -1043,3 +1043,11 @@
 - [x] Test /my-applications page loads without errors
 - [x] Test notification bell component works correctly
 - [x] Verify all candidate pages work with mock candidate user
+
+## Resume Parsing Demo (Current Focus)
+- [x] Fix resume parser to handle PDF and DOCX files correctly
+- [x] Test parsing with KanishkGautam_Mulosoft.DOCX
+- [x] Test parsing with ChandanResumeRPADev.pdf
+- [x] Capture parsed results for both resumes
+- [x] Document extracted data (personal info, skills, experience, education)
+- [x] Show editable review screen for both resumes
