@@ -3,8 +3,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Briefcase, DollarSign, Clock, Building2, Target, Grid3x3, List } from "lucide-react";
-import { useState } from "react";
+import { Search, MapPin, Briefcase, DollarSign, Clock, Building2, Target, Grid3x3, List, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RoleSelectionDialog } from "@/components/RoleSelectionDialog";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { APP_TITLE, getLoginUrl } from "@/const";
@@ -12,6 +14,22 @@ import { APP_TITLE, getLoginUrl } from "@/const";
 export default function PublicHome() {
   const [, setLocation] = useLocation();
   const [keyword, setKeyword] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
+
+  useEffect(() => {
+    // Check for error in URL query parameters
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    if (error) {
+      setErrorMessage(decodeURIComponent(error));
+      // Clear the error from URL after 10 seconds
+      setTimeout(() => {
+        window.history.replaceState({}, '', window.location.pathname);
+        setErrorMessage(null);
+      }, 10000);
+    }
+  }, []);
   const [location, setLocationFilter] = useState("");
   const [jobType, setJobType] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("");
@@ -51,13 +69,26 @@ export default function PublicHome() {
               <Button variant="outline" onClick={() => window.location.href = getLoginUrl()}>
                 Sign In
               </Button>
-              <Button onClick={() => window.location.href = getLoginUrl()}>
+              <Button onClick={() => setShowRoleDialog(true)}>
                 Sign Up
               </Button>
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Error Alert */}
+      {errorMessage && (
+        <div className="container mx-auto px-4 pt-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Authentication Error</AlertTitle>
+            <AlertDescription>
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
 
       {/* Hero Section with Search */}
       <section className="py-16 px-4">
@@ -321,6 +352,12 @@ export default function PublicHome() {
           </div>
         </div>
       </footer>
+
+      {/* Role Selection Dialog */}
+      <RoleSelectionDialog 
+        open={showRoleDialog} 
+        onOpenChange={setShowRoleDialog}
+      />
     </div>
   );
 }

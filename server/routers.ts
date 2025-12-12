@@ -37,24 +37,31 @@ export const appRouter = router({
   
   user: router({
     createRecruiterProfile: protectedProcedure.mutation(async ({ ctx }) => {
+      console.log("[Profile] Creating recruiter profile for user", ctx.user.id);
       const existingRecruiter = await db.getRecruiterByUserId(ctx.user.id);
       if (existingRecruiter) {
+        console.log("[Profile] Recruiter profile already exists", existingRecruiter.id);
         throw new Error("Recruiter profile already exists");
       }
+      console.log("[Profile] Inserting recruiter into database");
       await db.createRecruiter({
         userId: ctx.user.id,
         companyName: null,
         phoneNumber: null,
         bio: null,
       });
+      console.log("[Profile] Recruiter profile created successfully");
       return { success: true };
     }),
     
     createCandidateProfile: protectedProcedure.mutation(async ({ ctx }) => {
+      console.log("[Profile] Creating candidate profile for user", ctx.user.id);
       const existingCandidate = await db.getCandidateByUserId(ctx.user.id);
       if (existingCandidate) {
+        console.log("[Profile] Candidate profile already exists", existingCandidate.id);
         throw new Error("Candidate profile already exists");
       }
+      console.log("[Profile] Inserting candidate into database");
       await db.createCandidate({
         userId: ctx.user.id,
         title: null,
@@ -65,6 +72,7 @@ export const appRouter = router({
         experience: null,
         education: null,
       });
+      console.log("[Profile] Candidate profile created successfully");
       return { success: true };
     }),
   }),

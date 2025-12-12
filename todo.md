@@ -1282,3 +1282,16 @@
 - [x] Add proper redirect after successful authentication
 - [x] Test sign in flow with real authentication
 - [x] Test sign up flow with real authentication
+
+
+## OAuth Callback Issue (COMPLETED)
+- [x] Debug OAuth callback handler to see why session isn't being created
+- [x] Check if OAuth callback route is properly registered
+- [x] Verify session token creation logic
+- [x] Fix redirect logic after OAuth callback
+- [x] Ensure role detection works correctly
+- [x] Test with real Google/Microsoft authentication
+- [x] Verify role selection page appears for new users
+- [x] Implement role selection BEFORE OAuth (better UX)
+- [x] Create RoleSelectionDialog component
+- [x] Update Sign Up button to show role dialog first
