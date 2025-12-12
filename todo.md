@@ -1181,3 +1181,16 @@
 - [x] Build bulk resume upload for recruiters with ZIP support
 - [x] Add video display in recruiter application review
 - [ ] Test all features end-to-end and create checkpoint
+
+
+## Critical Pending Tasks (Current Focus - 12/12/2024)
+- [x] Verify PDF/DOCX resume parsing works end-to-end with real files
+- [x] Remove mock authentication bypass from context.ts
+- [x] Implement proper OAuth callback with role-based profile creation
+- [x] Add role-based redirects after login (recruiter/candidate/admin dashboards)
+- [ ] Integrate email notifications for interview scheduling
+- [ ] Integrate email notifications for application status updates
+- [ ] Implement saved job deadline reminder background job
+- [ ] Test complete end-to-end workflow (job creation → application → interview → review)
+- [ ] Migrate interview video storage from base64 to S3
+- [ ] Add video upload progress indicators
