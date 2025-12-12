@@ -375,3 +375,55 @@ export async function deleteTaskTemplate(id: number) {
   
   await db.delete(taskTemplates).where(eq(taskTemplates.id, id));
 }
+
+// Missing helper functions for onboardingRouter
+
+export async function getTasksByProcessId(processId: number) {
+  return await getTasksByProcess(processId);
+}
+
+export async function createTask(data: InsertOnboardingTask) {
+  return await createOnboardingTask(data);
+}
+
+export async function updateTask(id: number, data: Partial<InsertOnboardingTask>) {
+  return await updateOnboardingTask(id, data);
+}
+
+export async function getTaskById(id: number) {
+  return await getOnboardingTaskById(id);
+}
+
+export async function getAssignmentsByTaskId(taskId: number) {
+  return await getTaskAssignments(taskId);
+}
+
+export async function getAssignmentsByRecruiterId(recruiterId: number) {
+  return await getRecruiterTasks(recruiterId);
+}
+
+export async function createTaskAssignment(data: InsertTaskAssignment) {
+  return await assignTaskToRecruiter(data);
+}
+
+export async function updateTaskAssignment(id: number, data: Partial<InsertTaskAssignment>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(taskAssignments)
+    .set(data)
+    .where(eq(taskAssignments.id, id));
+}
+
+export async function getRecruiterById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [recruiter] = await db
+    .select()
+    .from(recruiters)
+    .where(eq(recruiters.id, id));
+  
+  return recruiter;
+}

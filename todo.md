@@ -1235,3 +1235,17 @@
 - [ ] Add dashboard indicators for pending/overdue tasks
 - [ ] Test complete onboarding workflow end-to-end
 - [ ] Test complete offboarding workflow end-to-end
+
+
+## Complete Onboarding/Offboarding System (Current Focus)
+- [ ] Build tRPC router for onboarding/offboarding operations
+- [ ] Create Active Associates page with employee list view
+- [ ] Build onboarding initiation UI with task templates
+- [ ] Build offboarding initiation UI
+- [ ] Build task assignment interface for multi-recruiter assignments
+- [ ] Build task tracking and completion interface
+- [ ] Add automated email reminders for pending tasks
+- [ ] Test authentication and sign in as recruiter
+- [ ] Test candidate search filters with real authentication
+- [ ] Test application management features
+- [ ] Test bulk resume upload functionality
