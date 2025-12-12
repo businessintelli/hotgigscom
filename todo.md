@@ -1115,3 +1115,13 @@
 - [ ] Test resume upload with PDF file
 - [ ] Test resume upload with DOCX file
 - [ ] Verify save functionality works after editing
+
+## PDF Parsing Backend Fix (COMPLETED)
+- [x] Investigate PDF parsing library issue with pdf-parse v2.4.5
+- [x] Update resumeParser.ts to use new pdf-parse API (PDFParse class with getText())
+- [x] Fix LLM integration for resume parsing (simplified JSON format instead of strict schema)
+- [x] Test PDF resume upload and parsing end-to-end
+- [x] Test DOCX resume upload and parsing end-to-end
+- [x] Verify review screen displays all extracted fields correctly
+- [x] Verify save functionality updates candidate profile in database
+- [x] Both PDF and DOCX formats working flawlessly with AI extraction

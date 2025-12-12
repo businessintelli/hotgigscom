@@ -1,16 +1,15 @@
 import mammoth from 'mammoth';
 import { invokeLLM } from './_core/llm';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+import { PDFParse } from 'pdf-parse';
 
 /**
  * Extract text from PDF buffer
  */
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  const data = await pdfParse(buffer);
-  return data.text;
+  const parser = new PDFParse({ data: buffer });
+  const result = await parser.getText(); // getText() calls load() internally
+  await parser.destroy();
+  return result.text;
 }
 
 /**
@@ -180,113 +179,39 @@ Return ONLY the JSON object, no other text.`
  * Parse resume text using AI for advanced structured extraction
  */
 export async function parseResumeWithAI(resumeText: string): Promise<ParsedResume> {
-  const prompt = `You are an expert resume parser. Extract structured information from the following resume text.
+  const prompt = `Extract structured information from the following resume text and return it as a JSON object.
 
 Resume Text:
 ${resumeText}
 
-Extract and return a JSON object with comprehensive structured data including personal info, skills, experience, education, certifications, languages, and projects.`;
+Return a JSON object with this structure:
+{
+  "personalInfo": {"name": "", "email": "", "phone": "", "location": "", "linkedin": "", "github": ""},
+  "summary": "",
+  "skills": [],
+  "experience": [{"title": "", "company": "", "location": "", "startDate": "", "endDate": "", "description": "", "duration": ""}],
+  "education": [{"degree": "", "institution": "", "location": "", "graduationDate": "", "gpa": "", "fieldOfStudy": ""}],
+  "certifications": [],
+  "languages": [],
+  "projects": [{"name": "", "description": "", "technologies": [], "url": ""}]
+}`;
 
   try {
+    console.log('Calling LLM with resume text length:', resumeText.length);
     const response = await invokeLLM({
       messages: [
         { role: "system", content: "You are an expert resume parser that extracts structured data from resumes. Always return valid JSON." },
         { role: "user", content: prompt }
       ],
       response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "resume_data",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              personalInfo: {
-                type: "object",
-                properties: {
-                  name: { type: ["string", "null"] },
-                  email: { type: ["string", "null"] },
-                  phone: { type: ["string", "null"] },
-                  location: { type: ["string", "null"] },
-                  linkedin: { type: ["string", "null"] },
-                  github: { type: ["string", "null"] }
-                },
-                required: [],
-                additionalProperties: false
-              },
-              summary: { type: ["string", "null"] },
-              skills: {
-                type: "array",
-                items: { type: "string" }
-              },
-              experience: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    title: { type: ["string", "null"] },
-                    company: { type: ["string", "null"] },
-                    location: { type: ["string", "null"] },
-                    startDate: { type: ["string", "null"] },
-                    endDate: { type: ["string", "null"] },
-                    description: { type: ["string", "null"] },
-                    duration: { type: ["string", "null"] }
-                  },
-                  required: [],
-                  additionalProperties: false
-                }
-              },
-              education: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    degree: { type: ["string", "null"] },
-                    institution: { type: ["string", "null"] },
-                    location: { type: ["string", "null"] },
-                    graduationDate: { type: ["string", "null"] },
-                    gpa: { type: ["string", "null"] },
-                    fieldOfStudy: { type: ["string", "null"] }
-                  },
-                  required: [],
-                  additionalProperties: false
-                }
-              },
-              certifications: {
-                type: "array",
-                items: { type: "string" }
-              },
-              languages: {
-                type: "array",
-                items: { type: "string" }
-              },
-              projects: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    name: { type: ["string", "null"] },
-                    description: { type: ["string", "null"] },
-                    technologies: {
-                      type: "array",
-                      items: { type: "string" }
-                    },
-                    url: { type: ["string", "null"] }
-                  },
-                  required: [],
-                  additionalProperties: false
-                }
-              }
-            },
-            required: ["personalInfo", "skills", "experience", "education", "certifications", "languages", "projects"],
-            additionalProperties: false
-          }
-        }
+        type: "json_object"
       }
     });
 
     // Check if response has choices
+    console.log('LLM Response:', JSON.stringify(response, null, 2));
     if (!response.choices || response.choices.length === 0) {
+      console.error('Invalid LLM response structure:', response);
       throw new Error('Failed to parse resume: No response from AI');
     }
     
@@ -307,9 +232,11 @@ Extract and return a JSON object with comprehensive structured data including pe
       ...parsedData,
       metadata
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error parsing resume with AI:", error);
-    throw new Error("Failed to parse resume");
+    console.error("Error stack:", error.stack);
+    console.error("Error message:", error.message);
+    throw error; // Re-throw the original error instead of wrapping it
   }
 }
 
