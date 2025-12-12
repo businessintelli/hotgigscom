@@ -1178,6 +1178,6 @@
 - [x] Build video recording interface with preview and management
 - [x] Implement resume selection during job application
 - [x] Integrate video recording into candidate dashboard
-- [ ] Build bulk resume upload for recruiters with ZIP support
-- [ ] Add video display in recruiter application review
+- [x] Build bulk resume upload for recruiters with ZIP support
+- [x] Add video display in recruiter application review
 - [ ] Test all features end-to-end and create checkpoint

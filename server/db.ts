@@ -594,12 +594,14 @@ export async function getAllApplications() {
     .from(applications)
     .leftJoin(candidates, eq(applications.candidateId, candidates.id))
     .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .leftJoin(videoIntroductions, eq(applications.videoIntroductionId, videoIntroductions.id))
     .orderBy(desc(applications.submittedAt));
   
   return results.map((row: any) => ({
     ...row.applications,
     candidate: row.candidates,
     job: row.jobs,
+    videoIntroduction: row.videoIntroductions,
   }));
 }
 

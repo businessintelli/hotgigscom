@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send } from "lucide-react";
+import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -34,6 +34,9 @@ export default function ApplicationManagement() {
   const [resumeViewerOpen, setResumeViewerOpen] = useState(false);
   const [selectedResumeUrl, setSelectedResumeUrl] = useState("");
   const [selectedResumeFilename, setSelectedResumeFilename] = useState("");
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
+  const [selectedVideoDuration, setSelectedVideoDuration] = useState(0);
 
   const utils = trpc.useUtils();
 
@@ -479,6 +482,20 @@ export default function ApplicationManagement() {
                               View Resume
                             </Button>
                           )}
+                          {application.videoIntroduction && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedVideoUrl(application.videoIntroduction.videoUrl);
+                                setSelectedVideoDuration(application.videoIntroduction.duration);
+                                setVideoDialogOpen(true);
+                              }}
+                            >
+                              <Video className="h-4 w-4 mr-1" />
+                              Watch Video
+                            </Button>
+                          )}
                           <Button variant="outline" size="sm">
                             <MessageSquare className="h-4 w-4 mr-1" />
                             Message
@@ -681,6 +698,33 @@ export default function ApplicationManagement() {
         open={resumeViewerOpen}
         onClose={() => setResumeViewerOpen(false)}
       />
+
+      {/* Video Introduction Dialog */}
+      <Dialog open={videoDialogOpen} onOpenChange={setVideoDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Candidate Video Introduction</DialogTitle>
+            <DialogDescription>
+              Duration: {Math.floor(selectedVideoDuration / 60)}:{(selectedVideoDuration % 60).toString().padStart(2, '0')} minutes
+            </DialogDescription>
+          </DialogHeader>
+          <div className="aspect-video bg-black rounded-lg overflow-hidden">
+            <video
+              src={selectedVideoUrl}
+              controls
+              className="w-full h-full"
+              controlsList="nodownload"
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVideoDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
