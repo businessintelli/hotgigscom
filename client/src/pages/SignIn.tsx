@@ -8,6 +8,7 @@ import { useState } from "react";
 import { APP_TITLE } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -18,6 +19,18 @@ export default function SignIn() {
   
   const [, setLocation] = useLocation();
   const loginMutation = trpc.auth.login.useMutation();
+  const clearSessionMutation = trpc.auth.clearSession.useMutation();
+
+  const handleClearSession = async () => {
+    try {
+      await clearSessionMutation.mutateAsync();
+      toast.success('Session cleared successfully. You can now sign in.');
+      // Reload page to clear any cached state
+      window.location.reload();
+    } catch (err: any) {
+      toast.error('Failed to clear session');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +147,18 @@ export default function SignIn() {
               <a href="/signup" className="text-blue-600 hover:underline">
                 Sign Up
               </a>
+            </div>
+            
+            {/* Clear Session Button */}
+            <div className="text-center pt-2 border-t">
+              <button
+                type="button"
+                onClick={handleClearSession}
+                disabled={clearSessionMutation.isPending}
+                className="text-xs text-gray-500 hover:text-gray-700 underline"
+              >
+                {clearSessionMutation.isPending ? "Clearing..." : "Having trouble signing in? Clear session"}
+              </button>
             </div>
           </form>
         </CardContent>

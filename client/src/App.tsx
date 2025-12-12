@@ -54,6 +54,7 @@ import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import RecruiterOnboarding from "./pages/RecruiterOnboarding";
 import CandidateOnboarding from "./pages/CandidateOnboarding";
+import { SessionExpiryWarning } from "@/components/SessionExpiryWarning";
 
 
 function Router() {
@@ -122,6 +123,7 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
+          <SessionExpiryWarning />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

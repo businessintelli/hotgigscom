@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
+import { SessionInfo } from "@/components/SessionInfo";
 import { Menu, X } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -126,6 +127,11 @@ export default function RecruiterDashboard() {
             role="recruiter"
           />
         )}
+        
+        {/* Session Info */}
+        <div className="mt-4">
+          <SessionInfo />
+        </div>
         
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 sm:p-6 text-white mb-4 sm:mb-6">

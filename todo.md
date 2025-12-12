@@ -1499,3 +1499,21 @@
 - [x] Email/password sessions now work correctly even with old OAuth cookies present
 - [x] Invalid OAuth cookies are automatically cleared when detected
 - [x] Restarted server to apply authentication context fixes
+
+
+## Session Management Improvements (COMPLETED ✅)
+- [x] Add "Clear Session" button to sign-in page
+- [x] Add API endpoint to clear session cookies (auth.clearSession)
+- [x] Add API endpoint to extend session (auth.extendSession)
+- [x] Update auth.me to include session metadata (expiry time, remember me status)
+- [x] Update login endpoint to store session metadata in cookie
+- [x] Create SessionExpiryWarning component with toast notifications
+- [x] Show warning 5 minutes before session expires
+- [x] Add "Extend Session" button in expiry warning toast
+- [x] Create SessionInfo component for dashboards
+- [x] Display session expiry time with countdown
+- [x] Show "Remember Me" status indicator
+- [x] Add SessionInfo to RecruiterDashboard
+- [x] Add SessionInfo to CandidateDashboard
+- [x] Add SessionExpiryWarning to App.tsx
+- [x] Install date-fns for date formatting

@@ -83,11 +83,60 @@ export const appRouter = router({
   }),
   
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(({ ctx }) => {
+      if (!ctx.user) return null;
+      
+      // Try to extract session metadata from cookie
+      const sessionCookie = ctx.req.cookies?.[COOKIE_NAME];
+      let sessionExpiry: Date | null = null;
+      let rememberMe = false;
+      
+      if (sessionCookie) {
+        try {
+          const sessionData = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+          if (sessionData.expiry) {
+            sessionExpiry = new Date(sessionData.expiry);
+          }
+          if (sessionData.rememberMe !== undefined) {
+            rememberMe = sessionData.rememberMe;
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+      
+      return {
+        ...ctx.user,
+        sessionExpiry,
+        rememberMe,
+      };
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
+    }),
+    
+    clearSession: publicProcedure.mutation(({ ctx }) => {
+      // Clear session cookie completely
+      ctx.res.clearCookie(COOKIE_NAME, { path: '/' });
+      return { success: true } as const;
+    }),
+    
+    extendSession: protectedProcedure.mutation(({ ctx }) => {
+      // Extend session by 30 days
+      const maxAge = 30 * 24 * 60 * 60 * 1000;
+      const expiry = new Date(Date.now() + maxAge);
+      const sessionData = JSON.stringify({ 
+        userId: ctx.user.id, 
+        email: ctx.user.email,
+        expiry: expiry.toISOString(),
+        rememberMe: true
+      });
+      const encodedSession = Buffer.from(sessionData).toString('base64');
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge });
+      return { success: true, newExpiry: expiry } as const;
     }),
     
     signup: publicProcedure
@@ -223,11 +272,16 @@ export const appRouter = router({
         });
         
         // Create session with appropriate duration
-        const sessionData = JSON.stringify({ userId: user.id, email: user.email });
+        const maxAge = input.rememberMe ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000);
+        const expiry = new Date(Date.now() + maxAge);
+        const sessionData = JSON.stringify({ 
+          userId: user.id, 
+          email: user.email,
+          expiry: expiry.toISOString(),
+          rememberMe: input.rememberMe || false
+        });
         const encodedSession = Buffer.from(sessionData).toString('base64');
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        // Remember me: 30 days, otherwise 1 day
-        const maxAge = input.rememberMe ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000);
         ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge });
         
         // Determine role

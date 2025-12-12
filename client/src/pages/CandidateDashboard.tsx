@@ -15,6 +15,7 @@ import CandidateOnboarding from "@/components/CandidateOnboarding";
 import VideoIntroduction from "@/components/VideoIntroduction";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
+import { SessionInfo } from "@/components/SessionInfo";
 
 export default function CandidateDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -199,6 +200,11 @@ export default function CandidateDashboard() {
             role="candidate"
           />
         )}
+        
+        {/* Session Info */}
+        <div className="mt-4">
+          <SessionInfo />
+        </div>
         
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
