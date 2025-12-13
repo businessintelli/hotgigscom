@@ -35,7 +35,7 @@ export default function SignUp() {
 
       if (result.success) {
         // Redirect to onboarding wizard based on role
-        if (result.role === 'recruiter') {
+        if (selectedRole === 'recruiter') {
           setLocation('/recruiter/onboarding');
         } else {
           setLocation('/candidate/onboarding');

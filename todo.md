@@ -1517,3 +1517,37 @@
 - [x] Add SessionInfo to CandidateDashboard
 - [x] Add SessionExpiryWarning to App.tsx
 - [x] Install date-fns for date formatting
+
+
+## Authentication Module Rewrite (IN PROGRESS)
+- [ ] Investigate login redirect issue
+- [ ] Design new authentication architecture
+- [ ] Create unified authentication service
+- [ ] Implement JWT-based session management
+- [ ] Add proper role-based access control (RBAC)
+- [ ] Implement automatic redirect after login based on role
+- [ ] Add middleware for protected routes
+- [ ] Create authentication tests
+- [ ] Migrate existing users
+- [ ] Test complete authentication flows
+
+
+## Authentication Module Rewrite (COMPLETED ✅)
+- [x] Investigate login redirect issue (role not being returned correctly)
+- [x] Root cause: Role determination logic was inconsistent between signup and login
+- [x] Design new authentication architecture with unified session management
+- [x] Create unified authService module (server/authService.ts)
+- [x] Implement sign-up with automatic profile creation (recruiter/candidate)
+- [x] Implement sign-in with intelligent role detection from profiles
+- [x] Implement session encoding/decoding with expiry validation
+- [x] Implement session extension functionality
+- [x] Update context.ts to use new authService for session validation
+- [x] Update signup endpoint to use authService.signUp
+- [x] Update login endpoint to use authService.signIn
+- [x] Fix SignUp.tsx to use selectedRole for redirect
+- [x] Write comprehensive tests for authService (12 tests)
+- [x] All tests passing: session management, sign-up, sign-in, role detection
+- [x] Test duplicate email rejection
+- [x] Test password validation
+- [x] Test remember me functionality
+- [x] Test session expiry

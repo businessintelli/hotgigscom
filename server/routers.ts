@@ -9,6 +9,7 @@ import { executeCode } from "./codeExecutor";
 import { z } from "zod";
 import * as db from "./db";
 import { hashPassword, comparePassword, generateSessionToken, isValidEmail, isValidPassword, generateVerificationToken, generateTokenExpiry } from "./auth";
+import * as authService from "./authService";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
@@ -147,94 +148,23 @@ export const appRouter = router({
         role: z.enum(['recruiter', 'candidate']),
       }))
       .mutation(async ({ input, ctx }) => {
-        // Validate email format
-        if (!isValidEmail(input.email)) {
-          throw new Error('Invalid email format');
-        }
+        // Use new auth service for cleaner, more reliable signup
+        const baseUrl = `${ctx.req.protocol}://${ctx.req.get('host')}`;
+        const result = await authService.signUp(input, baseUrl);
         
-        // Validate password strength
-        if (!isValidPassword(input.password)) {
-          throw new Error('Password must be at least 6 characters and contain both letters and numbers');
-        }
-        
-        // Check if user already exists
-        const existingUser = await db.getUserByEmail(input.email);
-        if (existingUser) {
-          throw new Error('Email already registered');
-        }
-        
-        // Hash password
-        const passwordHash = await hashPassword(input.password);
-        
-        // Generate verification token
-        const verificationToken = generateVerificationToken();
-        const verificationTokenExpiry = generateTokenExpiry(24); // 24 hours
-        
-        // Create user
-        await db.upsertUser({
-          openId: null,
-          name: input.name,
-          email: input.email,
-          passwordHash,
-          loginMethod: 'password',
-          lastSignedIn: new Date(),
-          emailVerified: false,
-          verificationToken,
-          verificationTokenExpiry,
+        // Create session with role information
+        const sessionData = authService.encodeSession({
+          userId: result.user.id,
+          email: result.user.email,
+          role: input.role,
+          expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          rememberMe: false,
         });
         
-        const user = await db.getUserByEmail(input.email);
-        if (!user) {
-          throw new Error('Failed to create user');
-        }
-        
-        // Create role-specific profile
-        if (input.role === 'recruiter') {
-          await db.createRecruiter({
-            userId: user.id,
-            companyName: null,
-            phoneNumber: null,
-            bio: null,
-          });
-        } else {
-          await db.createCandidate({
-            userId: user.id,
-            title: null,
-            phoneNumber: null,
-            location: null,
-            bio: null,
-            skills: null,
-            experience: null,
-            education: null,
-          });
-        }
-        
-        // Create session token
-        const sessionToken = generateSessionToken();
-        
-        // Store session in database (you may want to create a sessions table)
-        // For now, we'll use a simple approach with cookies
-        
-        // Set cookie
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        ctx.res.cookie(COOKIE_NAME, sessionData, { ...cookieOptions, maxAge: ONE_YEAR_MS });
         
-        // Store session mapping (email -> token) in memory or database
-        // For simplicity, we'll encode user info in the token
-        const sessionData = JSON.stringify({ userId: user.id, email: user.email });
-        const encodedSession = Buffer.from(sessionData).toString('base64');
-        ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-        
-        // Send verification email
-        const baseUrl = `${ctx.req.protocol}://${ctx.req.get('host')}`;
-        await sendVerificationEmail(user.email!, user.name || 'User', verificationToken, baseUrl);
-        
-        return { 
-          success: true, 
-          user: { id: user.id, email: user.email, name: user.name },
-          role: input.role,
-          message: 'Account created! Please check your email to verify your account.'
-        };
+        return result;
       }),
       
     login: publicProcedure
@@ -244,58 +174,19 @@ export const appRouter = router({
         rememberMe: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        // Find user by email
-        const user = await db.getUserByEmail(input.email);
-        if (!user) {
-          throw new Error('Invalid email or password');
-        }
+        // Use new auth service for cleaner, more reliable login
+        const result = await authService.signIn(input);
         
-        // Check if user has a password (not OAuth user)
-        if (!user.passwordHash) {
-          throw new Error('This account uses social login. Please sign in with Google, Microsoft, or Apple.');
-        }
-        
-        // Verify password
-        const isValid = await comparePassword(input.password, user.passwordHash);
-        if (!isValid) {
-          throw new Error('Invalid email or password');
-        }
-        
-        // Update last signed in
-        await db.upsertUser({
-          openId: user.openId,
-          name: user.name,
-          email: user.email,
-          passwordHash: user.passwordHash,
-          loginMethod: user.loginMethod,
-          lastSignedIn: new Date(),
-        });
-        
-        // Create session with appropriate duration
+        // Set session cookie with role information
+        const encodedSession = authService.encodeSession(result.sessionData);
         const maxAge = input.rememberMe ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000);
-        const expiry = new Date(Date.now() + maxAge);
-        const sessionData = JSON.stringify({ 
-          userId: user.id, 
-          email: user.email,
-          expiry: expiry.toISOString(),
-          rememberMe: input.rememberMe || false
-        });
-        const encodedSession = Buffer.from(sessionData).toString('base64');
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge });
         
-        // Determine role
-        const recruiter = await db.getRecruiterByUserId(user.id);
-        const candidate = await db.getCandidateByUserId(user.id);
-        
-        let role: 'recruiter' | 'candidate' | null = null;
-        if (recruiter) role = 'recruiter';
-        else if (candidate) role = 'candidate';
-        
         return { 
           success: true, 
-          user: { id: user.id, email: user.email, name: user.name },
-          role
+          user: result.user,
+          role: result.user.role
         };
       }),
       
