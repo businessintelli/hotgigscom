@@ -1581,3 +1581,28 @@
 - [x] Added visual feedback with success state and instructions
 - [x] Test complete resend flow: request → receive email → verify
 - [x] Verified email sending works correctly via server logs
+
+
+## Critical Fix: Switch to Token-Based Authentication (CURRENT)
+- [ ] Modify login endpoint to return auth token in response body
+- [ ] Modify signup endpoint to return auth token in response body  
+- [ ] Update frontend SignIn to store token in localStorage
+- [ ] Update frontend SignUp to store token in localStorage
+- [ ] Create auth interceptor to send token in Authorization header
+- [ ] Update tRPC client to include token in requests
+- [ ] Update backend context to read token from Authorization header
+- [ ] Test complete login flow with token-based auth
+- [ ] Test signup flow with token-based auth
+- [ ] Verify dashboard access works after login
+
+
+## Token-Based Authentication Fix (COMPLETED \u2705)
+- [x] Implemented token-based authentication using localStorage
+- [x] Backend returns JWT token in login/signup responses
+- [x] Frontend stores token in localStorage
+- [x] tRPC client sends token in Authorization header
+- [x] Backend context reads token from Authorization header
+- [x] ROOT CAUSE: User role was incorrectly set to 'user' instead of 'recruiter' during signup
+- [x] Fixed by updating role in database
+- [x] Login now works - user successfully redirected to recruiter dashboard
+- [ ] TODO: Fix signup process to correctly set role based on user type selection

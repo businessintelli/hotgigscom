@@ -13,6 +13,9 @@ import { Menu, X } from "lucide-react";
 
 export default function RecruiterDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
+  
+  // Debug logging
+  console.log('[RecruiterDashboard] Auth state:', { user, authLoading, hasToken: !!localStorage.getItem('auth_token') });
   const [, setLocation] = useLocation();
   const { data: dashboardData, isLoading } = trpc.recruiter.getDashboardStats.useQuery();
   const { data: profile } = trpc.recruiter.getProfile.useQuery();
@@ -21,7 +24,13 @@ export default function RecruiterDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && (!user || user.role !== 'recruiter')) {
+    // Don't redirect if we have a token - wait for auth to resolve
+    const hasToken = localStorage.getItem('auth_token');
+    if (!authLoading && !hasToken && !user) {
+      // No token and no user - redirect to login
+      setLocation('/');
+    } else if (!authLoading && user && user.role !== 'recruiter') {
+      // User exists but wrong role - redirect to home
       setLocation('/');
     }
   }, [authLoading, user, setLocation]);

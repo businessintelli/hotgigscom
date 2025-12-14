@@ -15,12 +15,26 @@ export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   let user: User | null = null;
-  const sessionCookie = opts.req.cookies?.[COOKIE_NAME];
+  
+  // Try to get token from Authorization header first (for localStorage-based auth)
+  const authHeader = opts.req.headers.authorization;
+  let sessionToken: string | undefined;
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    sessionToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+    console.log('[Auth] Using token from Authorization header');
+  } else {
+    // Fallback to cookie-based auth
+    sessionToken = opts.req.cookies?.[COOKIE_NAME];
+    if (sessionToken) {
+      console.log('[Auth] Using token from cookie');
+    }
+  }
 
-  if (sessionCookie) {
+  if (sessionToken) {
     // Try email/password session first using new authService
     try {
-      const sessionData = authService.decodeSession(sessionCookie);
+      const sessionData = authService.decodeSession(sessionToken);
       if (sessionData) {
         // Validate session and get user
         const authUser = await authService.getUserFromSession(sessionData);

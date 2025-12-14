@@ -16,6 +16,9 @@ export function useAuth(options?: UseAuthOptions) {
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    // Force refetch if we have a token but no user data
+    enabled: true,
+    staleTime: 0, // Always consider data stale to force refetch
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({

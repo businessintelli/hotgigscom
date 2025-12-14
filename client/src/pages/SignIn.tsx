@@ -48,9 +48,11 @@ export default function SignIn() {
       console.log('Login success:', result.success);
       console.log('User role:', result.role);
 
-      if (result.success) {
-        // Use window.location.href for full page reload to ensure cookie is set
-        // This prevents the "Please login" error that occurs when using client-side navigation
+      if (result.success && result.token) {
+        // Store token in localStorage for subsequent requests
+        localStorage.setItem('auth_token', result.token);
+        
+        // Use window.location.href for full page reload to ensure state is fresh
         if (result.role === 'recruiter') {
           console.log('Redirecting to recruiter dashboard');
           window.location.href = '/recruiter/dashboard';

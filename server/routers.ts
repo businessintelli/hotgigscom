@@ -85,16 +85,28 @@ export const appRouter = router({
   
   auth: router({
     me: publicProcedure.query(({ ctx }) => {
+      console.log('[auth.me] Called, user:', ctx.user ? 'EXISTS' : 'NULL');
       if (!ctx.user) return null;
       
-      // Try to extract session metadata from cookie
-      const sessionCookie = ctx.req.cookies?.[COOKIE_NAME];
+      // Try to extract session metadata from Authorization header or cookie
+      const authHeader = ctx.req.headers.authorization;
+      let sessionToken: string | undefined;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        sessionToken = authHeader.substring(7);
+        console.log('[auth.me] Using token from Authorization header');
+      } else {
+        sessionToken = ctx.req.cookies?.[COOKIE_NAME];
+        console.log('[auth.me] Using token from cookie');
+      }
+      
       let sessionExpiry: Date | null = null;
       let rememberMe = false;
       
-      if (sessionCookie) {
+      if (sessionToken) {
         try {
-          const sessionData = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
+          const sessionData = JSON.parse(Buffer.from(sessionToken, 'base64').toString());
+          console.log('[auth.me] Session data parsed successfully');
           if (sessionData.expiry) {
             sessionExpiry = new Date(sessionData.expiry);
           }
@@ -102,15 +114,17 @@ export const appRouter = router({
             rememberMe = sessionData.rememberMe;
           }
         } catch (e) {
-          // Ignore parsing errors
+          console.error('[auth.me] Error parsing session data:', e);
         }
       }
       
-      return {
+      const result = {
         ...ctx.user,
         sessionExpiry,
         rememberMe,
       };
+      console.log('[auth.me] Returning user:', result.email, 'role:', result.role);
+      return result;
     }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -152,8 +166,8 @@ export const appRouter = router({
         const baseUrl = `${ctx.req.protocol}://${ctx.req.get('host')}`;
         const result = await authService.signUp(input, baseUrl);
         
-        // Create session with role information
-        const sessionData = authService.encodeSession({
+        // Create session token with role information
+        const token = authService.encodeSession({
           userId: result.user.id,
           email: result.user.email,
           role: input.role,
@@ -161,10 +175,11 @@ export const appRouter = router({
           rememberMe: false,
         });
         
+        // Also set cookie as fallback
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionData, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
         
-        return result;
+        return { ...result, token }; // Return token for localStorage storage
       }),
       
     login: publicProcedure
@@ -177,16 +192,19 @@ export const appRouter = router({
         // Use new auth service for cleaner, more reliable login
         const result = await authService.signIn(input);
         
-        // Set session cookie with role information
-        const encodedSession = authService.encodeSession(result.sessionData);
+        // Encode session as token for localStorage-based auth
+        const token = authService.encodeSession(result.sessionData);
+        
+        // Also set cookie as fallback for environments that support it
         const maxAge = input.rememberMe ? (30 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000);
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, encodedSession, { ...cookieOptions, maxAge });
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge });
         
         return { 
           success: true, 
           user: result.user,
-          role: result.user.role
+          role: result.user.role,
+          token // Return token for localStorage storage
         };
       }),
       
