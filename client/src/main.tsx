@@ -20,7 +20,15 @@ queryClient.getQueryCache().subscribe(event => {
     const error = event.query.state.error;
     // The redirect check is now inside redirectToLoginIfUnauthorized
     redirectToLoginIfUnauthorized(error);
-    console.error("[API Query Error]", error);
+    
+    // Don't log authentication errors on public pages (home, signin, signup, etc.)
+    const publicPaths = ['/', '/signin', '/signup', '/about', '/jobs', '/forgot-password', '/reset-password', '/verify-email'];
+    const isPublicPage = publicPaths.some(path => window.location.pathname === path || window.location.pathname.startsWith('/jobs/'));
+    const isAuthError = error instanceof TRPCClientError && error.message?.includes('Please login');
+    
+    if (!isPublicPage || !isAuthError) {
+      console.error("[API Query Error]", error);
+    }
   }
 });
 
@@ -28,7 +36,15 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
-    console.error("[API Mutation Error]", error);
+    
+    // Don't log authentication errors on public pages
+    const publicPaths = ['/', '/signin', '/signup', '/about', '/jobs', '/forgot-password', '/reset-password', '/verify-email'];
+    const isPublicPage = publicPaths.some(path => window.location.pathname === path || window.location.pathname.startsWith('/jobs/'));
+    const isAuthError = error instanceof TRPCClientError && error.message?.includes('Please login');
+    
+    if (!isPublicPage || !isAuthError) {
+      console.error("[API Mutation Error]", error);
+    }
   }
 });
 

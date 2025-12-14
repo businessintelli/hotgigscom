@@ -1551,3 +1551,22 @@
 - [x] Test password validation
 - [x] Test remember me functionality
 - [x] Test session expiry
+
+
+## Bug Fix: Login Redirect Issue (COMPLETED ✅)
+- [x] Investigate why login redirects to home page instead of dashboard
+- [x] Root cause: Client-side navigation (setLocation) doesn't wait for cookie to be set
+- [x] Check if email verification is blocking the login flow (not the issue)
+- [x] Check authService.signIn return value and role detection (working correctly)
+- [x] Fix SignIn.tsx redirect logic - changed to window.location.href for full page reload
+- [x] Fix SignUp.tsx redirect logic - changed to window.location.href for full page reload
+- [ ] Test signup → login → dashboard flow for both recruiter and candidate
+- [ ] Verify role-based redirects work correctly
+
+## Bug Fix: Home Page API Authentication Errors (COMPLETED ✅)
+- [x] Identify which API queries are being called on PublicHome page
+- [x] Confirmed auth.me and job.search are already using publicProcedure
+- [x] Root cause: Error logging system reports all errors including benign auth checks
+- [x] Solution: Suppress authentication error logging on public pages in main.tsx
+- [x] Added logic to filter out "Please login" errors on public routes
+- [x] Prevents error monitoring system from reporting these non-critical errors

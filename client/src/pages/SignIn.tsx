@@ -44,18 +44,30 @@ export default function SignIn() {
         rememberMe,
       });
 
+      console.log('Login result:', result);
+      console.log('Login success:', result.success);
+      console.log('User role:', result.role);
+
       if (result.success) {
-        // Redirect to appropriate dashboard
+        // Use window.location.href for full page reload to ensure cookie is set
+        // This prevents the "Please login" error that occurs when using client-side navigation
         if (result.role === 'recruiter') {
-          setLocation('/recruiter/dashboard');
+          console.log('Redirecting to recruiter dashboard');
+          window.location.href = '/recruiter/dashboard';
         } else if (result.role === 'candidate') {
-          setLocation('/candidate-dashboard');
+          console.log('Redirecting to candidate dashboard');
+          window.location.href = '/candidate-dashboard';
         } else {
+          console.log('No role found, redirecting to role selection');
           // No role assigned yet - redirect to role selection
-          setLocation('/select-role');
+          window.location.href = '/select-role';
         }
+      } else {
+        console.log('Login was not successful');
+        setError('Login failed. Please try again.');
       }
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message || 'Sign in failed. Please try again.');
     } finally {
       setLoading(false);

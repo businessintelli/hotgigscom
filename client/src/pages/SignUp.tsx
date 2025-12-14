@@ -34,11 +34,11 @@ export default function SignUp() {
       });
 
       if (result.success) {
-        // Redirect to onboarding wizard based on role
+        // Use window.location.href for full page reload to ensure cookie is set
         if (selectedRole === 'recruiter') {
-          setLocation('/recruiter/onboarding');
+          window.location.href = '/recruiter/onboarding';
         } else {
-          setLocation('/candidate/onboarding');
+          window.location.href = '/candidate/onboarding';
         }
       }
     } catch (err: any) {
