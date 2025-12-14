@@ -1570,3 +1570,14 @@
 - [x] Solution: Suppress authentication error logging on public pages in main.tsx
 - [x] Added logic to filter out "Please login" errors on public routes
 - [x] Prevents error monitoring system from reporting these non-critical errors
+
+
+## Feature: Email Verification Resend (COMPLETED ✅)
+- [x] Add resendVerification endpoint to auth router (backend) - already existed
+- [x] Create ResendVerification page component with email input
+- [x] Add route for /resend-verification in App.tsx
+- [x] Show resend link on SignIn page when login fails due to unverified email
+- [x] Add success/error messages with toast notifications
+- [x] Added visual feedback with success state and instructions
+- [x] Test complete resend flow: request → receive email → verify
+- [x] Verified email sending works correctly via server logs

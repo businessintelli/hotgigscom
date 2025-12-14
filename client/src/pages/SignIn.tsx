@@ -68,7 +68,22 @@ export default function SignIn() {
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'Sign in failed. Please try again.');
+      const errorMessage = err.message || 'Sign in failed. Please try again.';
+      setError(errorMessage);
+      
+      // Check if error is due to unverified email
+      if (errorMessage.toLowerCase().includes('verify') || errorMessage.toLowerCase().includes('verification')) {
+        toast.error(
+          <div className="space-y-2">
+            <p className="font-semibold">Email Not Verified</p>
+            <p className="text-sm">Please verify your email before signing in.</p>
+            <a href="/resend-verification" className="text-sm underline hover:text-blue-700">
+              Resend verification email
+            </a>
+          </div>,
+          { duration: 8000 }
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -139,8 +154,15 @@ export default function SignIn() {
 
             {/* Error Message */}
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                {error}
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm space-y-2">
+                <p>{error}</p>
+                {(error.toLowerCase().includes('verify') || error.toLowerCase().includes('verification')) && (
+                  <p className="text-xs">
+                    <a href="/resend-verification" className="underline hover:text-red-700 font-medium">
+                      Click here to resend verification email
+                    </a>
+                  </p>
+                )}
               </div>
             )}
 
