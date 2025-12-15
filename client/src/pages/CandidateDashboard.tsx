@@ -551,10 +551,10 @@ function CandidateDashboardContent() {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => setLocation("/resume-upload")}
+                  onClick={() => setLocation("/candidate/my-resumes")}
                 >
                   <FileText className="mr-2 h-4 w-4" />
-                  Upload with AI Parsing
+                  My Resumes
                 </Button>
                 <Button
                   variant="outline"

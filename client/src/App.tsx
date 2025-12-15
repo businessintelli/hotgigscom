@@ -39,7 +39,8 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import JobDetails from "./pages/JobDetails";
 import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
-import MyResumes from "./pages/MyResumes";
+import MyResumes from "./pages/MyResumesNew";
+import ResumeDetail from "./pages/ResumeDetail";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -112,6 +113,8 @@ function Router() {
       <Route path="/my-applications" component={MyApplications} />
       <Route path="/saved-jobs" component={SavedJobs} />
       <Route path="/my-resumes" component={MyResumes} />
+      <Route path="/candidate/my-resumes" component={MyResumes} />
+      <Route path="/candidate/resume/:id" component={ResumeDetail} />
       <Route path="/jobs" component={JobBrowser} />
       <Route path={"/jobs/search"} component={AdvancedJobSearch} />
       <Route path={"/jobs/:id"} component={JobDetails} />

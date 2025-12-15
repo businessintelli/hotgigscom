@@ -98,6 +98,37 @@ export const resumeProfileRouter = router({
       return { success: true };
     }),
   
+  updateResumeProfileData: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      parsedData: z.string(), // JSON string of ParsedResume
+    }))
+    .mutation(async ({ input }) => {
+      const { id, parsedData } = input;
+      
+      // Recalculate scores based on updated data
+      let scores = null;
+      try {
+        const parsed = JSON.parse(parsedData);
+        scores = calculateResumeScores(parsed);
+      } catch (error) {
+        console.error('Failed to parse resume data:', error);
+      }
+      
+      // Update resume profile with new data and scores
+      await db.updateResumeProfile(id, {
+        parsedData,
+        domainMatchScore: scores?.domainMatchScore,
+        skillMatchScore: scores?.skillMatchScore,
+        experienceScore: scores?.experienceScore,
+        overallScore: scores?.overallScore,
+        primaryDomain: scores?.primaryDomain,
+        totalExperienceYears: scores?.totalExperienceYears,
+      });
+      
+      return { success: true };
+    }),
+  
   deleteResumeProfile: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
