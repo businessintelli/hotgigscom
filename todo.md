@@ -2234,3 +2234,10 @@
 - [x] Add export functionality (CSV, PDF)
 - [x] Add charts and visualizations
 
+
+## Candidate Dashboard Sidebar Fix - Dec 15
+- [x] Fix candidate sidebar to show correct menu items
+- [x] Add My Resume, Browse Jobs, Saved Jobs, Calendar menu items
+- [x] Add AI Career Coach, Recommendations, Career Resources menu items
+- [x] Remove Associates from candidate sidebar
+

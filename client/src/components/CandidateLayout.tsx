@@ -38,7 +38,8 @@ const sidebarItems = [
   { icon: Search, label: "Browse Jobs", path: "/jobs" },
   { icon: Briefcase, label: "My Applications", path: "/my-applications" },
   { icon: Heart, label: "Saved Jobs", path: "/saved-jobs" },
-  { icon: Users, label: "Associates", path: "/candidate/associates" },
+  { icon: CalendarDays, label: "Calendar", path: "/candidate/calendar" },
+  { icon: MessageSquare, label: "AI Career Coach", path: "/candidate/career-coach" },
   { icon: Star, label: "Recommendations", path: "/recommendations" },
   { icon: BookOpen, label: "Career Resources", path: "/resources" },
 ];
