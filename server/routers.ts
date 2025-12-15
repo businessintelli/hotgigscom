@@ -404,6 +404,16 @@ export const appRouter = router({
       };
     }),
     
+    getJobs: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getJobsByRecruiter(ctx.user.id);
+    }),
+    
+    getSubmissions: protectedProcedure.query(async ({ ctx }) => {
+      // For now, return empty array since submissions tracking is not yet implemented in DB
+      // This will be populated when submission tracking feature is added
+      return [];
+    }),
+    
     searchCandidates: protectedProcedure
       .input(z.object({
         keyword: z.string().optional(),

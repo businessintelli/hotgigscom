@@ -15,6 +15,8 @@ import AdvancedJobSearch from "./pages/AdvancedJobSearch";
 import CreateJob from "./pages/CreateJob";
 import AIMatchingDashboard from "./pages/AIMatchingDashboard";
 import ApplicationManagement from "@/pages/ApplicationManagement";
+import JobManagement from "@/pages/JobManagement";
+import SubmissionManagement from "@/pages/SubmissionManagement";
 import InterviewManagement from "@/pages/InterviewManagement";
 import InterviewPlayback from "@/pages/InterviewPlayback";
 import InterviewCalendar from "@/pages/InterviewCalendar";
@@ -69,6 +71,8 @@ function Router() {
       <Route path="/recruiter/analytics" component={RecruiterAnalytics} />
       <Route path="/recruiter/create-job" component={CreateJob} />
       <Route path="/recruiter/jobs/create" component={CreateJob} />
+      <Route path="/recruiter/jobs" component={JobManagement} />
+      <Route path="/recruiter/submissions" component={SubmissionManagement} />
       <Route path="/recruiter/ai-matching" component={AIMatchingDashboard} />
       <Route path="/recruiter/applications" component={ApplicationManagement} />
       <Route path="/recruiter/interviews" component={InterviewManagement} />
