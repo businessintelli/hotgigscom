@@ -2012,3 +2012,21 @@
 - [x] Integrate widget into candidate dashboard overview
 - [x] Test skill-based matching algorithm
 - [x] Save checkpoint
+
+
+## Application Status Email Notifications (COMPLETED ✅)
+- [x] Create email templates for each application status
+  - [x] Application Received confirmation
+  - [x] Application Under Review
+  - [x] Interview Scheduled
+  - [x] Interview Completed
+  - [x] Offer Extended
+  - [x] Application Rejected (with encouragement)
+- [x] Build sendApplicationStatusNotification helper function
+- [x] Add personalized next steps content to each email
+- [x] Include interview prep links in interview-related emails
+- [x] Trigger emails automatically when status changes
+- [x] Create getStatusNotificationMessage for in-app notifications
+- [x] Update updateStatus mutation to use enhanced templates
+- [x] Test email notifications
+- [x] Save checkpoint

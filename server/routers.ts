@@ -1061,47 +1061,49 @@ export const appRouter = router({
         id: z.number(),
         status: z.enum(["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]),
         notes: z.string().optional(),
+        feedback: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, feedback, ...data } = input;
+        
+        // Get old status before update
+        const application = await db.getApplicationById(id);
+        const oldStatus = application?.status || "pending";
+        
         await db.updateApplication(id, data);
         
-        // Send email notification and in-app notification to candidate
+        // Send enhanced email notification and in-app notification to candidate
         try {
-          const applications = await db.getApplicationsByJob(0); // Get application details
-          const application = applications.find(app => app.id === id);
-          if (application) {
-            const candidate = await db.getCandidateById(application.candidateId);
-            const job = await db.getJobById(application.jobId);
-            if (candidate && job) {
-              const user = await db.getUserById(candidate.userId);
-              if (user?.email) {
-                // Send email
-                await sendApplicationStatusUpdate({
-                  candidateEmail: user.email,
-                  candidateName: user.name || "Candidate",
-                  jobTitle: job.title,
-                  companyName: job.companyName || "Company",
-                  oldStatus: application.status || "pending",
-                  newStatus: input.status,
-                });
-                
-                // Create in-app notification
-                await notificationHelpers.createNotification({
-                  userId: candidate.userId,
-                  type: 'status_change',
-                  title: 'Application Status Updated',
-                  message: `Your application for ${job.title} has been updated to: ${input.status}`,
-                  isRead: false,
-                  relatedEntityType: 'application',
-                  relatedEntityId: id,
-                  actionUrl: '/my-applications',
-                });
-              }
-            }
+          const { sendApplicationStatusNotification, getStatusNotificationMessage } = await import('./applicationStatusNotifier');
+          
+          // Send enhanced email with personalized content
+          await sendApplicationStatusNotification({
+            applicationId: id,
+            oldStatus,
+            newStatus: input.status,
+            feedback,
+          });
+          
+          // Get application details for in-app notification
+          const candidate = application ? await db.getCandidateById(application.candidateId) : null;
+          const job = application ? await db.getJobById(application.jobId) : null;
+          
+          if (candidate && job) {
+            // Create enhanced in-app notification
+            const { title, message } = getStatusNotificationMessage(input.status, job.title);
+            await notificationHelpers.createNotification({
+              userId: candidate.userId,
+              type: 'status_change',
+              title,
+              message,
+              isRead: false,
+              relatedEntityType: 'application',
+              relatedEntityId: id,
+              actionUrl: '/candidate-dashboard',
+            });
           }
         } catch (error) {
-          console.error("Failed to send application status email:", error);
+          console.error("Failed to send application status notification:", error);
         }
         
         return { success: true };
