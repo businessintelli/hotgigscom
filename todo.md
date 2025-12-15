@@ -2267,3 +2267,12 @@
 - [x] Add CandidateLayout to Recommendations page
 - [x] Add CandidateLayout to Career Resources page
 
+
+## Context-Aware AI Assistants - Dec 15
+- [x] Create backend API for candidate AI Career Coach with data context
+- [x] Create backend API for recruiter AI Assistant with data context
+- [x] Build Candidate AI Career Coach page with application/job context
+- [x] Build Recruiter AI Assistant page with pipeline/candidate context
+- [x] Add quick action buttons for common questions
+- [x] Test AI responses with real user data
+

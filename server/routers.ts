@@ -26,6 +26,7 @@ import * as candidateSearchHelpers from './candidateSearchHelpers';
 import * as emailCampaignHelpers from './emailCampaignHelpers';
 import * as analyticsHelpers from './analyticsHelpers';
 import * as recruiterReportsHelpers from './recruiterReportsHelpers';
+import { candidateCareerCoach, recruiterAssistant } from './services/aiAssistant';
 import { resumeProfileRouter } from './resumeProfileRouter';
 import { onboardingRouter } from './onboardingRouter';
 import { profileCompletionRouter } from './profileCompletionRouter';
@@ -408,6 +409,24 @@ export const appRouter = router({
   }),
 
   recruiter: router({
+    // AI Assistant endpoint
+    aiAssistant: protectedProcedure
+      .input(z.object({
+        message: z.string(),
+        conversationHistory: z.array(z.object({
+          role: z.enum(['user', 'assistant']),
+          content: z.string(),
+        })).optional().default([]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const response = await recruiterAssistant(
+          ctx.user.id,
+          input.message,
+          input.conversationHistory
+        );
+        return { response };
+      }),
+
     getProfile: protectedProcedure.query(async ({ ctx }) => {
       return await db.getRecruiterByUserId(ctx.user.id);
     }),
@@ -621,6 +640,24 @@ export const appRouter = router({
   }),
 
   candidate: router({
+    // AI Career Coach endpoint
+    aiCareerCoach: protectedProcedure
+      .input(z.object({
+        message: z.string(),
+        conversationHistory: z.array(z.object({
+          role: z.enum(['user', 'assistant']),
+          content: z.string(),
+        })).optional().default([]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const response = await candidateCareerCoach(
+          ctx.user.id,
+          input.message,
+          input.conversationHistory
+        );
+        return { response };
+      }),
+
     getProfile: protectedProcedure.query(async ({ ctx }) => {
       return await db.getCandidateByUserId(ctx.user.id);
     }),
