@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AdminLayout from "@/components/AdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { 
@@ -32,7 +33,7 @@ export default function SystemHealth() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <AdminLayout title="System Health">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -41,7 +42,7 @@ export default function SystemHealth() {
             ))}
           </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -52,7 +53,8 @@ export default function SystemHealth() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AdminLayout title="System Health">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -240,6 +242,7 @@ export default function SystemHealth() {
         <Activity className="w-4 h-4 inline mr-1 animate-pulse" />
         Auto-refreshing every 10 seconds
       </div>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

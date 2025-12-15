@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,16 +51,17 @@ export default function EmailProviderSettings() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-4xl py-8">
+      <AdminLayout title="Email Settings">
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">Loading...</div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="container max-w-4xl py-8">
+    <AdminLayout title="Email Settings">
+      <div className="max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Settings className="h-8 w-8" />
@@ -158,6 +160,7 @@ export default function EmailProviderSettings() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

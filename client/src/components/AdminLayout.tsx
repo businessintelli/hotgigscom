@@ -26,7 +26,8 @@ import {
   LayoutDashboard,
   Briefcase,
   FileText,
-  Bell
+  Bell,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_TITLE } from "@/const";
@@ -40,6 +41,7 @@ interface AdminLayoutProps {
 const sidebarItems = [
   { title: "Dashboard", href: "/admin/dashboard", icon: Home },
   { title: "Users", href: "/admin/users", icon: Users },
+  { title: "Reports", href: "/admin/reports", icon: BarChart3 },
   { title: "System Health", href: "/admin/health", icon: Activity },
   { title: "Analytics", href: "/admin/analytics", icon: TrendingUp },
   { title: "Email Settings", href: "/admin/email-settings", icon: Mail },

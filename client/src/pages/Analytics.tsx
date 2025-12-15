@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -38,7 +39,7 @@ export default function Analytics() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <AdminLayout title="Analytics">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -47,14 +48,15 @@ export default function Analytics() {
             ))}
           </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AdminLayout title="Analytics">
+      <div className="space-y-6">
       <Button 
-        onClick={() => setLocation('/recruiter/dashboard')}
+        onClick={() => setLocation('/admin/dashboard')}
         variant="ghost"
         className="mb-4"
       >
@@ -334,7 +336,8 @@ export default function Analytics() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
 

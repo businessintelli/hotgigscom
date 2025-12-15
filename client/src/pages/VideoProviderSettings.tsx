@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "../lib/trpc";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -39,16 +40,19 @@ export default function VideoProviderSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
+      <AdminLayout title="Video Settings">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </AdminLayout>
     );
   }
 
   const currentProvider = selectedProvider || config?.provider || "none";
 
   return (
-    <div className="container max-w-4xl py-8">
+    <AdminLayout title="Video Settings">
+      <div className="max-w-4xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Video Provider Settings</h1>
         <p className="text-muted-foreground">
@@ -169,6 +173,7 @@ export default function VideoProviderSettings() {
           </Alert>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

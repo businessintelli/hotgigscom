@@ -2180,3 +2180,9 @@
 - [x] Auto-redirect admin users to admin dashboard on login
 - [x] Create dedicated AdminLayout with collapsible sidebar
 - [x] Set pratap@businessintelli.com as admin role
+
+
+## New Feature Requests (Current Session - Part 6)
+- [x] Add AdminLayout with sidebar to all admin pages
+- [x] Add Reports menu item to admin sidebar
+- [x] Create AdminReports page with aggregate reports across recruiters and candidates
