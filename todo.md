@@ -1809,8 +1809,8 @@
 - [x] Build resume detail view for recruiters (same layout as candidate view)
 - [x] Add getResumeProfileById endpoint for recruiters
 - [x] Display full resume details with scores, domains, skills breakdown
-- [ ] Add intro video section (pending: need to pass video data from application context)
-- [ ] Test complete flow and save checkpoint
+- [x] Add intro video section with video player
+- [x] Test complete flow and save checkpoint
 
 
 ## Video Introduction Integration for Recruiter Review (COMPLETED ✅)
@@ -1820,4 +1820,26 @@
 - [x] Add video player section at top of CandidateResumeView
 - [x] Display video duration and play button
 - [x] Implement video dialog with autoplay
+- [x] Test complete flow and save checkpoint
+
+
+## Candidate Comparison and Smart Filtering (IN PROGRESS 🔄)
+- [x] Create database schema for recruiter feedback (notes, rating, feedback date)
+- [x] Add applicationFeedback table with recruiterId, applicationId, notes, rating, createdAt
+- [x] Build smart filtering UI with score threshold sliders/inputs
+- [x] Add filters for domain score, skill score, experience score, overall score
+- [x] Implement filtering logic to show only candidates meeting score thresholds
+- [ ] Create candidate comparison page /recruiter/compare-candidates
+- [ ] Allow selecting up to 5 candidates from application list
+- [ ] Display side-by-side comparison with scores, skills, experience
+- [ ] Add recruiter feedback form to application cards
+- [ ] Create backend endpoints for saving/retrieving feedback
+- [ ] Display existing feedback on applications
 - [ ] Test complete flow and save checkpoint
+
+## Candidate Dashboard UI Fixes (IN PROGRESS 🔄)
+- [ ] Add profile icon/avatar to candidate dashboard header
+- [ ] Create dropdown menu with profile options (My Profile, Settings, Logout)
+- [ ] Add "Recommended Jobs" card to quick actions section
+- [ ] Implement job recommendation algorithm based on candidate skills
+- [ ] Test candidate dashboard and save checkpoint

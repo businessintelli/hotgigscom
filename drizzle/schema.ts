@@ -822,3 +822,19 @@ export const taskTemplates = mysqlTable("taskTemplates", {
 
 export type TaskTemplate = typeof taskTemplates.$inferSelect;
 export type InsertTaskTemplate = typeof taskTemplates.$inferInsert;
+
+/**
+ * Application feedback table - private notes and ratings from recruiters
+ */
+export const applicationFeedback = mysqlTable("applicationFeedback", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  rating: int("rating"), // 1-5 stars
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ApplicationFeedback = typeof applicationFeedback.$inferSelect;
+export type InsertApplicationFeedback = typeof applicationFeedback.$inferInsert;

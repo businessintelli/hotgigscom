@@ -21,7 +21,8 @@ import {
   onboardingTasks, InsertOnboardingTask,
   taskAssignments, InsertTaskAssignment,
   taskReminders, InsertTaskReminder,
-  taskTemplates, InsertTaskTemplate
+  taskTemplates, InsertTaskTemplate,
+  applicationFeedback, InsertApplicationFeedback
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1252,4 +1253,48 @@ export async function deleteVideoIntroduction(id: number) {
   if (!db) throw new Error("Database not available");
   
   await db.delete(videoIntroductions).where(eq(videoIntroductions.id, id));
+}
+
+
+// Application Feedback Functions
+export async function createApplicationFeedback(data: InsertApplicationFeedback) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(applicationFeedback).values(data);
+}
+
+export async function getApplicationFeedback(applicationId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db
+    .select()
+    .from(applicationFeedback)
+    .leftJoin(recruiters, eq(applicationFeedback.recruiterId, recruiters.id))
+    .leftJoin(users, eq(recruiters.userId, users.id))
+    .where(eq(applicationFeedback.applicationId, applicationId))
+    .orderBy(desc(applicationFeedback.createdAt));
+  
+  return result.map((row: any) => ({
+    ...row.applicationFeedback,
+    recruiter: {
+      ...row.recruiters,
+      user: row.users,
+    },
+  }));
+}
+
+export async function updateApplicationFeedback(id: number, data: Partial<InsertApplicationFeedback>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(applicationFeedback).set(data).where(eq(applicationFeedback.id, id));
+}
+
+export async function deleteApplicationFeedback(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(applicationFeedback).where(eq(applicationFeedback.id, id));
 }

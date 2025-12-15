@@ -37,6 +37,12 @@ export default function ApplicationManagement() {
   const [videoDialogOpen, setVideoDialogOpen] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
   const [selectedVideoDuration, setSelectedVideoDuration] = useState(0);
+  
+  // Smart filtering state
+  const [minOverallScore, setMinOverallScore] = useState(0);
+  const [minDomainScore, setMinDomainScore] = useState(0);
+  const [minSkillScore, setMinSkillScore] = useState(0);
+  const [minExperienceScore, setMinExperienceScore] = useState(0);
 
   const utils = trpc.useUtils();
 
@@ -115,7 +121,14 @@ export default function ApplicationManagement() {
       app.candidate?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.candidate?.email?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    return matchesStatus && matchesJob && matchesSearch;
+    // Smart score filtering
+    const matchesOverallScore = !app.resumeProfile || (app.resumeProfile.overallScore || 0) >= minOverallScore;
+    const matchesDomainScore = !app.resumeProfile || (app.resumeProfile.domainMatchScore || 0) >= minDomainScore;
+    const matchesSkillScore = !app.resumeProfile || (app.resumeProfile.skillMatchScore || 0) >= minSkillScore;
+    const matchesExperienceScore = !app.resumeProfile || (app.resumeProfile.experienceScore || 0) >= minExperienceScore;
+    
+    return matchesStatus && matchesJob && matchesSearch && 
+           matchesOverallScore && matchesDomainScore && matchesSkillScore && matchesExperienceScore;
   });
 
   const handleSelectAll = () => {
@@ -369,6 +382,72 @@ export default function ApplicationManagement() {
                     <SelectItem value="rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              
+              {/* Smart Score Filters */}
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-semibold mb-3">AI Score Filters</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">Min Overall Score: {minOverallScore}%</label>
+                    <Input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={minOverallScore}
+                      onChange={(e) => setMinOverallScore(parseInt(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">Min Domain Match: {minDomainScore}%</label>
+                    <Input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={minDomainScore}
+                      onChange={(e) => setMinDomainScore(parseInt(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">Min Skill Match: {minSkillScore}%</label>
+                    <Input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={minSkillScore}
+                      onChange={(e) => setMinSkillScore(parseInt(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">Min Experience: {minExperienceScore}%</label>
+                    <Input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={minExperienceScore}
+                      onChange={(e) => setMinExperienceScore(parseInt(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                  {(minOverallScore > 0 || minDomainScore > 0 || minSkillScore > 0 || minExperienceScore > 0) && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        setMinOverallScore(0);
+                        setMinDomainScore(0);
+                        setMinSkillScore(0);
+                        setMinExperienceScore(0);
+                      }}
+                    >
+                      Clear Score Filters
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
