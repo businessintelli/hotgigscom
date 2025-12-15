@@ -18,6 +18,18 @@ export const resumeProfileRouter = router({
       return await db.getResumeProfilesByCandidate(input.candidateId);
     }),
   
+  getResumeProfileById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return await db.getResumeProfileById(input.id);
+    }),
+  
+  getVideoIntroductionById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return await db.getVideoIntroductionById(input.id);
+    }),
+  
   createResumeProfile: protectedProcedure
     .input(z.object({
       candidateId: z.number(),

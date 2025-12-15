@@ -619,6 +619,7 @@ export async function getAllApplications() {
     .leftJoin(candidates, eq(applications.candidateId, candidates.id))
     .leftJoin(jobs, eq(applications.jobId, jobs.id))
     .leftJoin(videoIntroductions, eq(applications.videoIntroductionId, videoIntroductions.id))
+    .leftJoin(resumeProfiles, eq(applications.resumeProfileId, resumeProfiles.id))
     .orderBy(desc(applications.submittedAt));
   
   return results.map((row: any) => ({
@@ -626,6 +627,7 @@ export async function getAllApplications() {
     candidate: row.candidates,
     job: row.jobs,
     videoIntroduction: row.videoIntroductions,
+    resumeProfile: row.resumeProfiles,
   }));
 }
 

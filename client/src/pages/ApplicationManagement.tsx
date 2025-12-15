@@ -467,8 +467,102 @@ export default function ApplicationManagement() {
                           </div>
                         )}
 
+                        {/* Resume Statistics */}
+                        {application.resumeProfile && (
+                          <div className="mb-3 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="text-sm font-semibold text-gray-900">Resume Analysis</h4>
+                              <Badge variant="secondary" className="text-xs">
+                                Overall: {application.resumeProfile.overallScore || 0}%
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-gray-600">Domain Match</span>
+                                  <span className="font-medium">{application.resumeProfile.domainMatchScore || 0}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-500 h-2 rounded-full transition-all"
+                                    style={{ width: `${application.resumeProfile.domainMatchScore || 0}%` }}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-gray-600">Skill Match</span>
+                                  <span className="font-medium">{application.resumeProfile.skillMatchScore || 0}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-green-500 h-2 rounded-full transition-all"
+                                    style={{ width: `${application.resumeProfile.skillMatchScore || 0}%` }}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-gray-600">Experience</span>
+                                  <span className="font-medium">{application.resumeProfile.experienceScore || 0}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-purple-500 h-2 rounded-full transition-all"
+                                    style={{ width: `${application.resumeProfile.experienceScore || 0}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Top Domains and Skills */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {application.resumeProfile.topDomains && application.resumeProfile.topDomains.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-medium text-gray-700 mb-2">Top Domains</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {application.resumeProfile.topDomains.slice(0, 3).map((domain: any, idx: number) => (
+                                      <Badge key={idx} variant="outline" className="text-xs">
+                                        {domain.name} {domain.percentage}%
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {application.resumeProfile.topSkills && application.resumeProfile.topSkills.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-medium text-gray-700 mb-2">Top Skills</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {application.resumeProfile.topSkills.slice(0, 3).map((skill: any, idx: number) => (
+                                      <Badge key={idx} variant="outline" className="text-xs">
+                                        {skill.name} {skill.percentage}%
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex flex-wrap items-center gap-2 pt-3 border-t">
-                          {application.resumeUrl && (
+                          {application.resumeProfileId ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                const videoParam = application.videoIntroductionId ? `?videoId=${application.videoIntroductionId}` : '';
+                                setLocation(`/recruiter/candidate-resume/${application.resumeProfileId}${videoParam}`);
+                              }}
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              View Resume Details
+                            </Button>
+                          ) : application.resumeUrl && (
                             <Button 
                               variant="outline" 
                               size="sm"

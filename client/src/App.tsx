@@ -41,6 +41,7 @@ import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
 import MyResumes from "./pages/MyResumesNew";
 import ResumeDetail from "./pages/ResumeDetail";
+import CandidateResumeView from "./pages/CandidateResumeView";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -91,6 +92,7 @@ function Router() {
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/recruiter/active-associates" component={ActiveAssociates} />
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
+      <Route path="/recruiter/candidate-resume/:id" component={CandidateResumeView} />
       <Route path="/select-role" component={SelectRole} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />
