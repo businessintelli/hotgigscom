@@ -364,6 +364,8 @@ export function calculateResumeScores(parsedData: ParsedResume) {
   const experienceScore = calculateExperienceScore(parsedData);
   const overallScore = calculateOverallScore(domainMatchScore, skillMatchScore, experienceScore);
   const totalExperienceYears = calculateTotalExperience(parsedData.experience);
+  const topDomains = calculateTopDomains(parsedData);
+  const topSkills = calculateTopSkills(parsedData);
 
   return {
     primaryDomain,
@@ -372,5 +374,85 @@ export function calculateResumeScores(parsedData: ParsedResume) {
     experienceScore,
     overallScore,
     totalExperienceYears,
+    topDomains,
+    topSkills,
   };
+}
+
+
+/**
+ * Calculate top 5 domains with match percentages based on resume content
+ */
+export function calculateTopDomains(parsedData: any): Array<{domain: string, percentage: number}> {
+  const domainScores: Record<string, number> = {};
+  
+  // Combine all text content for analysis
+  const allText = [
+    parsedData.summary || '',
+    parsedData.skills?.join(' ') || '',
+    ...(parsedData.experience || []).map((exp: any) => `${exp.title} ${exp.description}`),
+    parsedData.personalInfo?.title || ''
+  ].join(' ').toLowerCase();
+  
+  // Calculate match score for each domain
+  for (const [domain, keywords] of Object.entries(DOMAIN_KEYWORDS)) {
+    let matchCount = 0;
+    for (const keyword of keywords) {
+      if (allText.includes(keyword.toLowerCase())) {
+        matchCount++;
+      }
+    }
+    // Calculate percentage based on keyword matches
+    domainScores[domain] = Math.min(100, Math.round((matchCount / keywords.length) * 100));
+  }
+  
+  // Sort by score and return top 5
+  return Object.entries(domainScores)
+    .sort(([, a], [, b]: [string, number]) => b - a)
+    .slice(0, 5)
+    .map(([domain, percentage]) => ({ domain, percentage }));
+}
+
+/**
+ * Calculate top 5 skills with match percentages based on frequency and relevance
+ */
+export function calculateTopSkills(parsedData: any): Array<{skill: string, percentage: number}> {
+  const skills = parsedData.skills || [];
+  
+  if (skills.length === 0) {
+    return [];
+  }
+  
+  // Count skill mentions in experience descriptions
+  const skillMentions: Record<string, number> = {};
+  const experienceText = (parsedData.experience || [])
+    .map((exp: any) => exp.description || '')
+    .join(' ')
+    .toLowerCase();
+  
+  for (const skill of skills) {
+    const skillLower = skill.toLowerCase();
+    // Count mentions in experience (more mentions = higher relevance)
+    const mentions = (experienceText.match(new RegExp(skillLower, 'gi')) || []).length;
+    skillMentions[skill] = mentions;
+  }
+  
+  // Calculate percentages based on mentions and experience
+  const maxMentions = Math.max(...Object.values(skillMentions), 1);
+  const totalExperience = parsedData.experience?.length || 1;
+  
+  const skillScores = skills.map((skill: string) => {
+    const mentions = skillMentions[skill] || 0;
+    // Weighted score: 70% from mentions, 30% base score for being listed
+    const mentionScore = (mentions / maxMentions) * 70;
+    const baseScore = 30;
+    const percentage = Math.min(100, Math.round(mentionScore + baseScore));
+    
+    return { skill, percentage };
+  });
+  
+  // Sort by percentage and return top 5
+  return skillScores
+    .sort((a: {skill: string, percentage: number}, b: {skill: string, percentage: number}) => b.percentage - a.percentage)
+    .slice(0, 5);
 }

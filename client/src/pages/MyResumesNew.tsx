@@ -401,6 +401,58 @@ export default function MyResumesNew() {
                           <Progress value={profile.experienceScore || 0} className="h-2" />
                         </div>
                       </div>
+
+                      {/* Top Domains & Skills */}
+                      <div className="mt-6 pt-6 border-t space-y-4">
+                        {/* Top Domains */}
+                        {(() => {
+                          if (!profile.topDomains || typeof profile.topDomains !== 'string') return null;
+                          try {
+                            const domains = JSON.parse(profile.topDomains) as Array<{domain: string, percentage: number}>;
+                            if (domains.length === 0) return null;
+                            return (
+                              <div key="domains-list">
+                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                  <Target className="w-4 h-4" />
+                                  Top Domains
+                                </h4>
+                                <div className="space-y-2">
+                                  {domains.map((item) => (
+                                    <div key={item.domain} className="flex items-center gap-2">
+                                      <Badge variant="outline" className="text-xs">{item.percentage}%</Badge>
+                                      <span className="text-sm text-muted-foreground">{item.domain}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          } catch { return null; }
+                        })()}
+
+                        {/* Top Skills */}
+                        {(() => {
+                          if (!profile.topSkills || typeof profile.topSkills !== 'string') return null;
+                          try {
+                            const skills = JSON.parse(profile.topSkills) as Array<{skill: string, percentage: number}>;
+                            if (skills.length === 0) return null;
+                            return (
+                              <div key="skills-list">
+                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                  <TrendingUp className="w-4 h-4" />
+                                  Top Skills
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {skills.map((item) => (
+                                    <Badge key={item.skill} variant="secondary" className="text-xs">
+                                      {item.skill} ({item.percentage}%)
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          } catch { return null; }
+                        })()}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

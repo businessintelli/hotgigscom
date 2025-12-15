@@ -106,6 +106,8 @@ export const resumeProfiles = mysqlTable("resumeProfiles", {
   primaryDomain: varchar("primaryDomain", { length: 100 }), // e.g., "Software Development", "Data Science"
   totalExperienceYears: int("totalExperienceYears").default(0),
   isDefault: boolean("isDefault").default(false).notNull(),
+  topDomains: json("topDomains"), // Top 5 domains with percentages [{domain: string, percentage: number}]
+  topSkills: json("topSkills"), // Top 5 skills with percentages [{skill: string, percentage: number}]
   uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

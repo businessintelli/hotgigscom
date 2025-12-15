@@ -1784,3 +1784,16 @@
 - [x] Fix MyResumesNew back button to use /candidate-dashboard instead of /candidate/dashboard
 - [x] ResumeDetail back button already uses correct path /candidate/my-resumes
 - [x] All navigation paths now work correctly
+
+
+## Add Top Domains and Skills Breakdown (COMPLETED ✅)
+- [x] Update resume ranking algorithm to calculate top 5 domains with percentages
+- [x] Update resume ranking algorithm to calculate top 5 skills with percentages
+- [x] Add topDomains and topSkills JSON fields to database schema
+- [x] Store top domains/skills data when resume is uploaded or updated
+- [x] Display top 5 domains with percentages in My Resumes list view
+- [x] Display top 5 skills with percentages in My Resumes list view
+- [x] Add visual indicators (badges) for top domains/skills
+- [x] Updated calculateResumeScores to return topDomains and topSkills
+- [x] Updated createResumeProfile and updateResumeProfileData endpoints
+- [ ] Test complete functionality and save checkpoint

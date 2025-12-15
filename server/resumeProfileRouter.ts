@@ -3,7 +3,7 @@ import { router, protectedProcedure } from "./_core/trpc";
 import * as db from "./db";
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
-import { calculateResumeScores } from "./resumeRanking";
+import { calculateResumeScores, calculateTopDomains, calculateTopSkills } from "./resumeRanking";
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -55,9 +55,11 @@ export const resumeProfileRouter = router({
         const resumeText = await extractResumeText(buffer, mimeType);
         parsedData = await parseResumeWithAI(resumeText);
         
-        // Calculate ranking scores
+        // Calculate ranking scores and top domains/skills
         if (parsedData) {
           scores = calculateResumeScores(parsedData);
+          scores.topDomains = calculateTopDomains(parsedData);
+          scores.topSkills = calculateTopSkills(parsedData);
         }
       } catch (error) {
         console.error('Resume parsing failed:', error);
@@ -80,6 +82,8 @@ export const resumeProfileRouter = router({
         overallScore: scores?.overallScore || 0,
         primaryDomain: scores?.primaryDomain || null,
         totalExperienceYears: scores?.totalExperienceYears || 0,
+        topDomains: scores?.topDomains ? JSON.stringify(scores.topDomains) : null,
+        topSkills: scores?.topSkills ? JSON.stringify(scores.topSkills) : null,
         isDefault,
         uploadedAt: new Date(),
       });
@@ -124,6 +128,8 @@ export const resumeProfileRouter = router({
         overallScore: scores?.overallScore,
         primaryDomain: scores?.primaryDomain,
         totalExperienceYears: scores?.totalExperienceYears,
+        topDomains: scores?.topDomains ? JSON.stringify(scores.topDomains) : null,
+        topSkills: scores?.topSkills ? JSON.stringify(scores.topSkills) : null,
       });
       
       return { success: true };
