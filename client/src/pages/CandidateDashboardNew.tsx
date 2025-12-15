@@ -337,35 +337,8 @@ function DashboardOverview({ stats, applications, interviews }: any) {
         </Card>
       </div>
 
-      {/* Upcoming Interviews */}
-      {upcomingInterviews.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Interviews</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {upcomingInterviews.map((interview: any) => (
-                <div key={interview.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Calendar className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{interview.job?.title}</h4>
-                      <p className="text-sm text-gray-600">{interview.job?.company}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(interview.scheduledAt).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge>{interview.type}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Upcoming Interviews Widget */}
+      <UpcomingInterviewsWidget />
 
       {/* Recent Applications */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -835,6 +808,216 @@ function ResumesView({ candidateId }: any) {
           <Button onClick={() => setLocation("/candidate/resumes")}>
             Go to My Resumes
           </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Upcoming Interviews Widget Component
+function UpcomingInterviewsWidget() {
+  const [, setLocation] = useLocation();
+  const { data: upcomingInterviews, isLoading } = trpc.interview.getUpcoming.useQuery();
+  
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-purple-600" />
+            Upcoming Interviews
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            <div className="h-24 bg-purple-100 rounded-lg"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (!upcomingInterviews || upcomingInterviews.length === 0) {
+    return null; // Don't show widget if no upcoming interviews
+  }
+  
+  const nextInterview = upcomingInterviews[0];
+  const isUrgent = nextInterview.countdown.isWithinHour;
+  const isToday = nextInterview.countdown.isToday;
+  const isTomorrow = nextInterview.countdown.isTomorrow;
+  
+  return (
+    <Card className={cn(
+      "border-2 transition-all",
+      isUrgent ? "bg-gradient-to-r from-red-50 to-orange-50 border-red-300 animate-pulse" :
+      isToday ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300" :
+      "bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200"
+    )}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className={cn(
+              "h-5 w-5",
+              isUrgent ? "text-red-600" : isToday ? "text-amber-600" : "text-purple-600"
+            )} />
+            {isUrgent ? "🚨 Interview Starting Soon!" :
+             isToday ? "📅 Interview Today" :
+             isTomorrow ? "📅 Interview Tomorrow" :
+             "Upcoming Interviews"}
+          </CardTitle>
+          {upcomingInterviews.length > 1 && (
+            <Badge variant="secondary">{upcomingInterviews.length} scheduled</Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Next Interview - Featured */}
+          <div className={cn(
+            "p-4 rounded-xl border-2",
+            isUrgent ? "bg-white border-red-200" :
+            isToday ? "bg-white border-amber-200" :
+            "bg-white border-purple-100"
+          )}>
+            {/* Countdown Timer */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "h-14 w-14 rounded-full flex items-center justify-center",
+                  isUrgent ? "bg-red-100" : isToday ? "bg-amber-100" : "bg-purple-100"
+                )}>
+                  <Clock className={cn(
+                    "h-7 w-7",
+                    isUrgent ? "text-red-600" : isToday ? "text-amber-600" : "text-purple-600"
+                  )} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Time until interview</p>
+                  <div className="flex items-baseline gap-1">
+                    {nextInterview.countdown.days > 0 && (
+                      <>
+                        <span className="text-2xl font-bold text-gray-900">{nextInterview.countdown.days}</span>
+                        <span className="text-sm text-gray-500 mr-2">days</span>
+                      </>
+                    )}
+                    <span className={cn(
+                      "text-2xl font-bold",
+                      isUrgent ? "text-red-600" : isToday ? "text-amber-600" : "text-gray-900"
+                    )}>
+                      {nextInterview.countdown.hours}
+                    </span>
+                    <span className="text-sm text-gray-500">hrs</span>
+                    <span className={cn(
+                      "text-2xl font-bold",
+                      isUrgent ? "text-red-600" : isToday ? "text-amber-600" : "text-gray-900"
+                    )}>
+                      {nextInterview.countdown.minutes}
+                    </span>
+                    <span className="text-sm text-gray-500">min</span>
+                  </div>
+                </div>
+              </div>
+              <Badge className={cn(
+                isUrgent ? "bg-red-100 text-red-700" :
+                isToday ? "bg-amber-100 text-amber-700" :
+                "bg-purple-100 text-purple-700"
+              )}>
+                {nextInterview.type}
+              </Badge>
+            </div>
+            
+            {/* Interview Details */}
+            <div className="space-y-2 mb-4">
+              <h3 className="font-semibold text-lg">{nextInterview.jobTitle}</h3>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Building className="h-4 w-4" />
+                <span>{nextInterview.companyName}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Calendar className="h-4 w-4" />
+                <span>
+                  {new Date(nextInterview.scheduledAt).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                  })} at {new Date(nextInterview.scheduledAt).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Clock className="h-4 w-4" />
+                <span>{nextInterview.duration} minutes</span>
+              </div>
+              {nextInterview.location && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="h-4 w-4" />
+                  <span>{nextInterview.location}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {nextInterview.meetingLink && (
+                <Button
+                  className={cn(
+                    "flex-1",
+                    isUrgent ? "bg-red-600 hover:bg-red-700" :
+                    isToday ? "bg-amber-600 hover:bg-amber-700" :
+                    "bg-purple-600 hover:bg-purple-700"
+                  )}
+                  onClick={() => window.open(nextInterview.meetingLink!, '_blank')}
+                >
+                  {isUrgent ? "🚀 Join Now" : "Join Interview"}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setLocation("/interview-prep")}
+              >
+                📚 Prepare
+              </Button>
+            </div>
+          </div>
+          
+          {/* Other Upcoming Interviews */}
+          {upcomingInterviews.length > 1 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Also scheduled:</p>
+              {upcomingInterviews.slice(1).map((interview: any) => (
+                <div
+                  key={interview.id}
+                  className="flex items-center justify-between p-3 bg-white rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setLocation(`/candidate-dashboard?view=calendar`)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Calendar className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{interview.jobTitle}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(interview.scheduledAt).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        })} at {new Date(interview.scheduledAt).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">
+                    {interview.countdown.days > 0 ? `${interview.countdown.days}d` : `${interview.countdown.hours}h`}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

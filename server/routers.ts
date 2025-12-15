@@ -1415,6 +1415,56 @@ export const appRouter = router({
       return await db.getInterviewsByCandidateId(candidate.id);
     }),
     
+    // Get upcoming interviews for candidate (for dashboard widget)
+    getUpcoming: protectedProcedure.query(async ({ ctx }) => {
+      const candidate = await db.getCandidateByUserId(ctx.user.id);
+      if (!candidate) return [];
+      
+      const allInterviews = await db.getInterviewsByCandidateId(candidate.id);
+      const now = new Date();
+      
+      // Filter to only scheduled interviews in the future
+      const upcomingInterviews = allInterviews
+        .filter(interview => {
+          const scheduledAt = new Date(interview.interview.scheduledAt);
+          return interview.interview.status === 'scheduled' && scheduledAt > now;
+        })
+        .sort((a, b) => {
+          return new Date(a.interview.scheduledAt).getTime() - new Date(b.interview.scheduledAt).getTime();
+        })
+        .slice(0, 3) // Get next 3 upcoming interviews
+        .map(interview => {
+          const scheduledAt = new Date(interview.interview.scheduledAt);
+          const msUntilInterview = scheduledAt.getTime() - now.getTime();
+          const hoursUntil = Math.floor(msUntilInterview / (1000 * 60 * 60));
+          const minutesUntil = Math.floor((msUntilInterview % (1000 * 60 * 60)) / (1000 * 60));
+          const daysUntil = Math.floor(hoursUntil / 24);
+          
+          return {
+            id: interview.interview.id,
+            scheduledAt: interview.interview.scheduledAt,
+            duration: interview.interview.duration,
+            type: interview.interview.type,
+            status: interview.interview.status,
+            meetingLink: interview.interview.meetingLink || interview.interview.videoJoinUrl,
+            location: interview.interview.location,
+            jobTitle: interview.job?.title || 'Position',
+            companyName: interview.job?.companyName || 'Company',
+            countdown: {
+              days: daysUntil,
+              hours: hoursUntil % 24,
+              minutes: minutesUntil,
+              totalHours: hoursUntil,
+              isToday: daysUntil === 0,
+              isTomorrow: daysUntil === 1,
+              isWithinHour: hoursUntil < 1,
+            },
+          };
+        });
+      
+      return upcomingInterviews;
+    }),
+    
     // Get interview by ID
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))

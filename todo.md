@@ -2044,3 +2044,18 @@
 - [x] Create getUpcomingInterviewsForCandidate helper
 - [x] Test reminder email sending
 - [x] Save checkpoint
+
+
+## Upcoming Interview Widget (COMPLETED ✅)
+- [x] Create API endpoint to get candidate's upcoming interviews (interview.getUpcoming)
+- [x] Build UpcomingInterviewsWidget component with countdown timer
+- [x] Display interview details (date, time, type, company, duration)
+- [x] Add "Join Interview" button for video interviews
+- [x] Add location display for in-person interviews
+- [x] Include interview preparation quick links ("Prepare" button)
+- [x] Add countdown timer showing days/hours/minutes until interview
+- [x] Color-coded urgency (red for <1hr, amber for today, purple for future)
+- [x] Show multiple upcoming interviews with "Also scheduled" section
+- [x] Integrate widget into candidate dashboard overview
+- [x] Test widget display and functionality
+- [x] Save checkpoint
