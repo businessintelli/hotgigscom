@@ -9,7 +9,7 @@ import PublicHome from "./pages/PublicHome";
 import AboutUs from "./pages/AboutUs";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import RecruiterAnalytics from "./pages/RecruiterAnalytics";
-import CandidateDashboard from "./pages/CandidateDashboard";
+import CandidateDashboard from "./pages/CandidateDashboardNew";
 import JobBrowser from "./pages/JobBrowser";
 import AdvancedJobSearch from "./pages/AdvancedJobSearch";
 import CreateJob from "./pages/CreateJob";

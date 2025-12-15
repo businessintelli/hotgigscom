@@ -1925,3 +1925,19 @@
 - [x] Show recent feedback, status changes, and interviews in popover
 - [x] Display timestamps for each activity
 - [x] Test all enhancements and save checkpoint
+
+
+## Candidate Dashboard Redesign (COMPLETED ✅)
+- [x] Create collapsible vertical sidebar navigation
+- [x] Add dashboard menu items (Dashboard, Calendar, My Applications, Action Items, Notifications, Jobs, My Resumes)
+- [x] Remove resume upload section from dashboard
+- [x] Remove profile section from dashboard (moved to My Resumes)
+- [x] Build calendar view component for interviews and events
+- [x] Show scheduled interviews in calendar with date, time, location
+- [x] Add application pipeline visualization organized by status
+- [x] Create action items section (accept/reschedule interview, offer actions)
+- [x] Implement notifications center placeholder
+- [x] Add dashboard stats (applications, interviews, offers, profile views)
+- [x] Redesign jobs list with recommended jobs filter
+- [x] Add advanced job filters (location, experience, job type)
+- [x] Test complete dashboard and save checkpoint
