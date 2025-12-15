@@ -49,6 +49,7 @@ import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import CandidateCareerCoach from "./pages/CandidateCareerCoach";
+import CandidateCalendar from "./pages/CandidateCalendar";
 import RecruiterAIAssistant from "./pages/RecruiterAIAssistant";
 import AdminReports from "./pages/AdminReports";
 import AdminEnvironment from "./pages/AdminEnvironment";
@@ -159,6 +160,7 @@ function Router() {
       <Route path="/candidate/resume/:id" component={ResumeDetail} />
       <Route path="/candidate/video-intro" component={VideoIntroductionPage} />
       <Route path="/candidate/career-coach" component={CandidateCareerCoach} />
+      <Route path="/candidate/calendar" component={CandidateCalendar} />
       <Route path="/candidate/associates" component={CandidateAssociates} />
       <Route path="/recruiter/ai-assistant" component={RecruiterAIAssistant} />
       <Route path="/recruiter/email-analytics" component={EmailCampaignAnalytics} />

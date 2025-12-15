@@ -2283,3 +2283,6 @@
 - [x] Fix stuck issue after answering questions
 - [x] Update sidebar navigation to link to dedicated pages
 - [x] Remove floating popup components from dashboards
+
+## Bug Fixes
+- [x] Fix candidate calendar navigation - created dedicated CandidateCalendar page at /candidate/calendar
