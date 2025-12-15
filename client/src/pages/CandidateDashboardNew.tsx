@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
+import { AddToCalendarButton } from "@/components/AddToCalendarButton";
 import { NotificationBell } from "@/components/NotificationBell";
 import { OrionChatbot } from "@/components/OrionChatbot";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -980,6 +981,19 @@ function UpcomingInterviewsWidget() {
               >
                 📚 Prepare
               </Button>
+              <AddToCalendarButton
+                interview={{
+                  jobTitle: nextInterview.jobTitle,
+                  companyName: nextInterview.companyName,
+                  scheduledAt: nextInterview.scheduledAt,
+                  duration: nextInterview.duration,
+                  type: nextInterview.type,
+                  meetingLink: nextInterview.meetingLink,
+                  location: nextInterview.location,
+                }}
+                variant="outline"
+                size="default"
+              />
             </div>
           </div>
           

@@ -2059,3 +2059,18 @@
 - [x] Integrate widget into candidate dashboard overview
 - [x] Test widget display and functionality
 - [x] Save checkpoint
+
+
+## Add to Calendar Feature (COMPLETED ✅)
+- [x] Create ICS file generation utility (calendarUtils.ts)
+- [x] Generate proper iCalendar format with VEVENT and VALARM
+- [x] Include interview details (title, description, location/link)
+- [x] Add AddToCalendarButton component with dropdown menu
+- [x] Add "Add to Calendar" button to UpcomingInterviewsWidget
+- [x] Support Google Calendar URL generation
+- [x] Support Outlook Calendar URL generation
+- [x] Support Yahoo Calendar URL generation
+- [x] Support .ics file download for Apple/other calendars
+- [x] Create dropdown menu with calendar provider options
+- [x] Test ICS file download
+- [x] Save checkpoint
