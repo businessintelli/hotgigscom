@@ -77,6 +77,7 @@ import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
 import VideoIntroduction from "@/components/VideoIntroduction";
 import { NotificationBell } from "@/components/NotificationBell";
+import { AIAssistantChat } from "@/components/AIAssistantChat";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 
 export default function CandidateDashboard() {
@@ -90,11 +91,13 @@ export default function CandidateDashboard() {
 // Sidebar navigation items for candidates
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/candidate-dashboard", badge: null },
+  { icon: FileText, label: "My Resume", path: "/my-resume", badge: null },
   { icon: Search, label: "Browse Jobs", path: "/jobs", badge: null },
   { icon: Briefcase, label: "My Applications", path: "/my-applications", badge: null },
   { icon: Heart, label: "Saved Jobs", path: "/saved-jobs", badge: null },
   { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
   { icon: Video, label: "AI Interview", path: "/ai-interview", badge: null },
+  { icon: MessageSquare, label: "AI Career Coach", path: null, badge: null, isCareerCoach: true },
   { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
   { icon: BookOpen, label: "Career Resources", path: "/resources", badge: null },
 ];
@@ -112,6 +115,7 @@ function CandidateDashboardContent() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [sortBy, setSortBy] = useState<SortOption>('date_desc');
+  const [showCareerCoach, setShowCareerCoach] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -368,6 +372,8 @@ function CandidateDashboardContent() {
                         onClick={() => {
                           if (item.isCalendar) {
                             setShowCalendar(true);
+                          } else if ((item as any).isCareerCoach) {
+                            setShowCareerCoach(true);
                           } else if (item.path) {
                             setLocation(item.path);
                           }
@@ -424,6 +430,8 @@ function CandidateDashboardContent() {
                       onClick={() => {
                         if (item.isCalendar) {
                           setShowCalendar(true);
+                        } else if ((item as any).isCareerCoach) {
+                          setShowCareerCoach(true);
                         } else if (item.path) {
                           setLocation(item.path);
                         }
@@ -739,6 +747,14 @@ function CandidateDashboardContent() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
+                      onClick={() => setLocation("/my-resume")}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      My Resume
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
                       onClick={() => setShowProfileSettings(true)}
                     >
                       <User className="mr-2 h-4 w-4" />
@@ -768,6 +784,38 @@ function CandidateDashboardContent() {
                       <Heart className="mr-2 h-4 w-4" />
                       Saved Jobs
                     </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setShowCalendar(true)}
+                    >
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      Calendar View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setLocation("/recommendations")}
+                    >
+                      <Star className="mr-2 h-4 w-4" />
+                      Recommendations
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setLocation("/resources")}
+                    >
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Career Resources
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setShowCareerCoach(true)}
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      AI Career Coach
+                    </Button>
                   </CardContent>
                 </Card>
 
@@ -780,7 +828,11 @@ function CandidateDashboardContent() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button variant="secondary" className="w-full">
+                    <Button 
+                      variant="secondary" 
+                      className="w-full"
+                      onClick={() => setShowCareerCoach(true)}
+                    >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Chat with Orion
                     </Button>
@@ -939,79 +991,205 @@ function CandidateDashboardContent() {
 
       {/* Calendar Dialog */}
       <Dialog open={showCalendar} onOpenChange={setShowCalendar}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
+              <CalendarDays className="h-5 w-5 text-emerald-600" />
               Interview Calendar
             </DialogTitle>
-            <DialogDescription>View your scheduled interviews</DialogDescription>
+            <DialogDescription>View and manage your scheduled interviews</DialogDescription>
           </DialogHeader>
           
-          <div className="mt-4">
-            {/* Calendar Navigation */}
-            <div className="flex items-center justify-between mb-4">
-              <Button variant="outline" size="sm" onClick={() => setCalendarDate(subMonths(calendarDate, 1))}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h3 className="text-lg font-semibold">
-                {format(calendarDate, 'MMMM yyyy')}
-              </h3>
-              <Button variant="outline" size="sm" onClick={() => setCalendarDate(addMonths(calendarDate, 1))}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          <div className="mt-4 flex gap-6">
+            {/* Calendar Section */}
+            <div className="flex-1">
+              {/* Calendar Navigation */}
+              <div className="flex items-center justify-between mb-4">
+                <Button variant="outline" size="sm" onClick={() => setCalendarDate(subMonths(calendarDate, 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">
+                    {format(calendarDate, 'MMMM yyyy')}
+                  </h3>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setCalendarDate(new Date())}
+                    className="text-xs text-emerald-600 hover:text-emerald-700"
+                  >
+                    Today
+                  </Button>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setCalendarDate(addMonths(calendarDate, 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                    {day}
+                  </div>
+                ))}
+                
+                {/* Empty cells for days before the first of the month */}
+                {Array.from({ length: calendarDays[0]?.getDay() || 0 }).map((_, i) => (
+                  <div key={`empty-${i}`} className="h-20 bg-gray-50 rounded-lg" />
+                ))}
+                
+                {calendarDays.map((day) => {
+                  const dateKey = format(day, 'yyyy-MM-dd');
+                  const dayInterviews = interviewsByDate[dateKey] || [];
+                  const hasInterviews = dayInterviews.length > 0;
+                  
+                  return (
+                    <div
+                      key={dateKey}
+                      className={`h-20 p-1 border rounded-lg transition-all hover:shadow-md cursor-pointer ${
+                        isToday(day) ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-200' : 'border-gray-200 hover:border-emerald-300'
+                      } ${!isSameMonth(day, calendarDate) ? 'opacity-50' : ''}`}
+                    >
+                      <div className={`text-sm font-medium ${
+                        isToday(day) ? 'text-emerald-600 bg-emerald-100 w-6 h-6 rounded-full flex items-center justify-center' : 'text-gray-700'
+                      }`}>
+                        {format(day, 'd')}
+                      </div>
+                      {hasInterviews && (
+                        <div className="mt-1 space-y-0.5">
+                          {dayInterviews.slice(0, 2).map((interview: any) => (
+                            <div
+                              key={interview.id}
+                              className={`text-xs px-1 py-0.5 rounded truncate ${
+                                interview.type === 'ai-interview' 
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : interview.type === 'video'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-emerald-100 text-emerald-700'
+                              }`}
+                              title={interview.job?.title}
+                            >
+                              {format(new Date(interview.scheduledAt), 'h:mm a')}
+                            </div>
+                          ))}
+                          {dayInterviews.length > 2 && (
+                            <div className="text-xs text-gray-500 font-medium">
+                              +{dayInterviews.length - 2} more
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
-                  {day}
-                </div>
-              ))}
-              
-              {/* Empty cells for days before the first of the month */}
-              {Array.from({ length: calendarDays[0]?.getDay() || 0 }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-24 bg-gray-50 rounded-lg" />
-              ))}
-              
-              {calendarDays.map((day) => {
-                const dateKey = format(day, 'yyyy-MM-dd');
-                const dayInterviews = interviewsByDate[dateKey] || [];
-                const hasInterviews = dayInterviews.length > 0;
-                
-                return (
-                  <div
-                    key={dateKey}
-                    className={`h-24 p-1 border rounded-lg ${
-                      isToday(day) ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'
-                    } ${!isSameMonth(day, calendarDate) ? 'opacity-50' : ''}`}
-                  >
-                    <div className={`text-sm font-medium ${isToday(day) ? 'text-emerald-600' : 'text-gray-700'}`}>
-                      {format(day, 'd')}
-                    </div>
-                    {hasInterviews && (
-                      <div className="mt-1 space-y-1">
-                        {dayInterviews.slice(0, 2).map((interview: any) => (
-                          <div
-                            key={interview.id}
-                            className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded truncate"
-                            title={interview.job?.title}
-                          >
-                            {format(new Date(interview.scheduledAt), 'h:mm a')}
-                          </div>
-                        ))}
-                        {dayInterviews.length > 2 && (
-                          <div className="text-xs text-gray-500">
-                            +{dayInterviews.length - 2} more
-                          </div>
-                        )}
+            {/* Upcoming Interviews Sidebar */}
+            <div className="w-72 border-l pl-6">
+              <h4 className="font-semibold text-gray-900 mb-4">Upcoming Interviews</h4>
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="space-y-3">
+                  {(interviews || []).filter((i: any) => new Date(i.scheduledAt) >= new Date()).slice(0, 10).map((interview: any) => (
+                    <div key={interview.id} className="p-3 border rounded-lg hover:shadow-md transition-all">
+                      <div className="flex items-start justify-between mb-2">
+                        <Badge variant="outline" className={`text-xs ${
+                          interview.type === 'ai-interview' 
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : interview.type === 'video'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}>
+                          {interview.type === 'ai-interview' ? 'AI Interview' : interview.type === 'video' ? 'Video' : 'In-Person'}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {formatDistanceToNow(new Date(interview.scheduledAt), { addSuffix: true })}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                      <p className="font-medium text-sm text-gray-900 truncate">{interview.job?.title || 'Interview'}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {format(new Date(interview.scheduledAt), 'EEE, MMM d • h:mm a')}
+                      </p>
+                      {interview.meetingLink && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full mt-2 text-xs"
+                          onClick={() => window.open(interview.meetingLink, '_blank')}
+                        >
+                          <Video className="h-3 w-3 mr-1" />
+                          Join Meeting
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {(!interviews || interviews.filter((i: any) => new Date(i.scheduledAt) >= new Date()).length === 0) && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Calendar className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">No upcoming interviews</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
             </div>
+          </div>
+
+          {/* Legend */}
+          <div className="mt-4 pt-4 border-t flex items-center gap-6 text-xs text-gray-500">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-purple-100 border border-purple-200" />
+              <span>AI Interview</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-blue-100 border border-blue-200" />
+              <span>Video Call</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200" />
+              <span>In-Person</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Career Coach Dialog */}
+      <Dialog open={showCareerCoach} onOpenChange={setShowCareerCoach}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full flex items-center justify-center">
+                <MessageSquare className="h-4 w-4 text-white" />
+              </div>
+              AI Career Coach - Orion
+            </DialogTitle>
+            <DialogDescription>
+              Get personalized career advice, resume tips, and interview preparation help
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            <AIAssistantChat
+              systemPrompt={`You are Orion, an AI Career Coach for HotGigs. You help candidates with:
+- Resume writing and optimization tips
+- Interview preparation and common questions
+- Career path guidance and skill development
+- Job search strategies
+- Salary negotiation advice
+- Professional networking tips
+
+The candidate's name is ${candidate?.fullName || 'there'}.
+${candidate?.skills ? `Their skills include: ${candidate.skills}` : ''}
+${candidate?.experience ? `They have ${candidate.experience} years of experience.` : ''}
+
+Be friendly, encouraging, and provide actionable advice. Keep responses concise but helpful.`}
+              placeholder="Ask me anything about your career..."
+              suggestedPrompts={[
+                "How can I improve my resume?",
+                "What questions should I prepare for interviews?",
+                "How do I negotiate a better salary?",
+                "What skills should I learn next?"
+              ]}
+            />
           </div>
         </DialogContent>
       </Dialog>

@@ -34,6 +34,7 @@ import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail'
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
 import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
 import { sendEmail } from './emailService';
+import { invokeLLM } from './_core/llm';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -46,6 +47,26 @@ export const appRouter = router({
   onboarding: onboardingRouter,
   profileCompletion: profileCompletionRouter,
   panelPublic: panelPublicRouter,
+  
+  // AI Chat router for career coach and recruiting assistant
+  ai: router({
+    chat: protectedProcedure
+      .input(z.object({
+        messages: z.array(z.object({
+          role: z.enum(['system', 'user', 'assistant']),
+          content: z.string(),
+        })),
+        systemPrompt: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const messages = input.systemPrompt 
+          ? [{ role: 'system' as const, content: input.systemPrompt }, ...input.messages]
+          : input.messages;
+        
+        const response = await invokeLLM({ messages });
+        return response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+      }),
+  }),
   
   user: router({
     createRecruiterProfile: protectedProcedure.mutation(async ({ ctx }) => {

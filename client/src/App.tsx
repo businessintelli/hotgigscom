@@ -69,6 +69,8 @@ import PanelDecline from "./pages/PanelDecline";
 import PanelReschedule from "./pages/PanelReschedule";
 import PanelFeedback from "./pages/PanelFeedback";
 import PanelistDashboard from "./pages/PanelistDashboard";
+import Recommendations from "./pages/Recommendations";
+import CareerResources from "./pages/CareerResources";
 
 
 function Router() {
@@ -142,6 +144,9 @@ function Router() {
       <Route path={"/jobs/:id"} component={JobDetails} />
       <Route path={"/apply/:id"} component={JobApplication} />
       <Route path="/ai-interview" component={AIInterviewPage} />
+      <Route path="/recommendations" component={Recommendations} />
+      <Route path="/resources" component={CareerResources} />
+      <Route path="/my-resume" component={MyResumes} />
       <Route path="/coding-interview" component={CodingInterviewPage} />
       <Route path="/resume-upload" component={ResumeUploadReview} />
       <Route path={"/404"} component={NotFound} />

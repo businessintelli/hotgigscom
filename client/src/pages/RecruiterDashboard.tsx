@@ -37,7 +37,25 @@ import {
 import { toast } from "sonner";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
+import { AIAssistantChat } from "@/components/AIAssistantChat";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { 
   LayoutDashboard, 
   Briefcase, 
@@ -74,7 +92,10 @@ import {
   XCircle,
   MoreHorizontal,
   Command,
-  Keyboard
+  Keyboard,
+  GripVertical,
+  MessageSquare,
+  Bot
 } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -82,6 +103,118 @@ export default function RecruiterDashboard() {
     <EmailVerificationGuard>
       <RecruiterDashboardContent />
     </EmailVerificationGuard>
+  );
+}
+
+// Sortable Job Item Component
+interface SortableJobItemProps {
+  job: any;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+  onClick: () => void;
+  isOwner: boolean;
+  dragEnabled: boolean;
+}
+
+function SortableJobItem({ job, isSelected, onToggleSelect, onClick, isOwner, dragEnabled }: SortableJobItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: job.id, disabled: !dragEnabled });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer ${
+        isSelected ? 'border-blue-400 bg-blue-50' : 'hover:border-blue-200'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      {dragEnabled && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+        >
+          <GripVertical className="h-4 w-4 text-gray-400" />
+        </div>
+      )}
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={onToggleSelect}
+        onClick={(e) => e.stopPropagation()}
+      />
+      <div
+        className="flex-1 min-w-0 flex items-center justify-between"
+        onClick={onClick}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-semibold text-gray-900 truncate">{job.title}</h4>
+            {isOwner && (
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                Mine
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-4 text-sm text-gray-500">
+            {job.companyName && (
+              <span className="flex items-center gap-1">
+                <Building2 className="h-3.5 w-3.5" />
+                {job.companyName}
+              </span>
+            )}
+            {job.location && (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                {job.location}
+              </span>
+            )}
+            {(job.salaryMin || job.salaryMax) && (
+              <span className="flex items-center gap-1 hidden md:flex">
+                <DollarSign className="h-3.5 w-3.5" />
+                {job.salaryMin && job.salaryMax
+                  ? `$${(job.salaryMin / 1000).toFixed(0)}k - $${(job.salaryMax / 1000).toFixed(0)}k`
+                  : job.salaryMin
+                    ? `From $${(job.salaryMin / 1000).toFixed(0)}k`
+                    : `Up to $${(job.salaryMax / 1000).toFixed(0)}k`}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            Posted {new Date(job.createdAt).toLocaleDateString()}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 ml-4">
+          <Badge
+            variant="outline"
+            className={`${
+              job.status === 'active'
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : job.status === 'closed'
+                  ? 'bg-gray-50 text-gray-600 border-gray-200'
+                  : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+            }`}
+          >
+            {job.status}
+          </Badge>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Eye className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -98,6 +231,7 @@ const sidebarItems = [
   { icon: Calendar, label: "Interviews", path: "/recruiter/interviews", badge: null },
   { icon: Video, label: "AI Interviews", path: "/recruiter/interview-playback", badge: null },
   { icon: Target, label: "AI Matching", path: "/recruiter/ai-matching", badge: null },
+  { icon: Bot, label: "AI Assistant", path: null, badge: null, isAIBot: true },
   { icon: Building2, label: "Clients", path: "/recruiter/customers", badge: null },
   { icon: Upload, label: "Bulk Upload", path: "/recruiter/bulk-upload", badge: null },
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/campaigns", badge: null },
@@ -151,6 +285,25 @@ function RecruiterDashboardContent() {
   // Export state
   const [exporting, setExporting] = useState(false);
   
+  // AI Bot state
+  const [showAIBot, setShowAIBot] = useState(false);
+  
+  // Drag and drop state for job reordering
+  const [jobOrder, setJobOrder] = useState<number[]>([]);
+  const [dragEnabled, setDragEnabled] = useState(false);
+  
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
   // Bulk action mutations
   const bulkCloseMutation = trpc.job.bulkClose.useMutation();
   const bulkArchiveMutation = trpc.job.bulkArchive.useMutation();
@@ -200,6 +353,13 @@ function RecruiterDashboardContent() {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [searchDialogOpen]);
+  
+  // Initialize job order for drag and drop - must be before early return
+  useEffect(() => {
+    if (allJobs && allJobs.length > 0 && jobOrder.length === 0) {
+      setJobOrder(allJobs.map((job: any) => job.id));
+    }
+  }, [allJobs, jobOrder.length]);
   
   // Toggle job selection
   const toggleJobSelection = (jobId: number) => {
@@ -387,6 +547,27 @@ function RecruiterDashboardContent() {
     }
   };
 
+  // Drag and drop handler
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = jobOrder.indexOf(Number(active.id));
+      const newIndex = jobOrder.indexOf(Number(over.id));
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(jobOrder, oldIndex, newIndex);
+        setJobOrder(newOrder);
+        toast.success('Job order updated');
+      }
+    }
+  };
+
+ // Get ordered jobs based on drag order or sorted order
+  const orderedJobs = dragEnabled && jobOrder.length > 0
+    ? jobOrder.map(id => sortedJobs.find((job: any) => job.id === id)).filter(Boolean)
+    : sortedJobs;
+
   const statCards = [
     { title: 'Active Jobs', value: stats.activeJobs, change: '+2 this week', icon: Briefcase, color: 'bg-blue-500', link: '/recruiter/jobs' },
     { title: 'Total Applications', value: stats.totalApplications, change: '+23 this week', icon: FileText, color: 'bg-green-500', link: '/recruiter/applications' },
@@ -446,6 +627,8 @@ function RecruiterDashboardContent() {
                         onClick={() => {
                           if ((item as any).isCalendar) {
                             setShowCalendar(true);
+                          } else if ((item as any).isAIBot) {
+                            setShowAIBot(true);
                           } else if (item.path) {
                             setLocation(item.path);
                           }
@@ -528,6 +711,8 @@ function RecruiterDashboardContent() {
                             onClick={() => {
                               if ((item as any).isCalendar) {
                                 setShowCalendar(true);
+                              } else if ((item as any).isAIBot) {
+                                setShowAIBot(true);
                               } else if (item.path) {
                                 setLocation(item.path);
                               }
@@ -849,109 +1034,75 @@ function RecruiterDashboardContent() {
                       }
                     </span>
                   </div>
-                  <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border text-xs">⌘K</kbd>
-                      Search
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border text-xs">⌘N</kbd>
-                      New Job
-                    </span>
+                  <div className="hidden sm:flex items-center gap-4">
+                    <Button
+                      variant={dragEnabled ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        setDragEnabled(!dragEnabled);
+                        if (!dragEnabled) {
+                          setJobOrder(sortedJobs.map((job: any) => job.id));
+                        }
+                      }}
+                      className="h-7 text-xs"
+                    >
+                      <GripVertical className="h-3 w-3 mr-1" />
+                      {dragEnabled ? 'Done Reordering' : 'Reorder'}
+                    </Button>
+                    <div className="flex items-center gap-4 text-xs text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border text-xs">⌘K</kbd>
+                        Search
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border text-xs">⌘N</kbd>
+                        New Job
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Jobs List */}
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {sortedJobs.length > 0 ? sortedJobs.slice(0, 10).map((job: any) => (
-                    <div 
-                      key={job.id} 
-                      className={`flex items-center gap-3 p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer ${
-                        selectedJobs.has(job.id) ? 'border-blue-400 bg-blue-50' : 'hover:border-blue-200'
-                      }`}
-                    >
-                      <Checkbox 
-                        checked={selectedJobs.has(job.id)}
-                        onCheckedChange={() => toggleJobSelection(job.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div 
-                        className="flex-1 min-w-0 flex items-center justify-between"
-                        onClick={() => setLocation(`/jobs/${job.id}`)}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-gray-900 truncate">{job.title}</h4>
-                            {job.recruiterId === user?.id && (
-                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                Mine
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            {job.companyName && (
-                              <span className="flex items-center gap-1">
-                                <Building2 className="h-3.5 w-3.5" />
-                                {job.companyName}
-                              </span>
-                            )}
-                            {job.location && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5" />
-                                {job.location}
-                              </span>
-                            )}
-                            {(job.salaryMin || job.salaryMax) && (
-                              <span className="flex items-center gap-1 hidden md:flex">
-                                <DollarSign className="h-3.5 w-3.5" />
-                                {job.salaryMin && job.salaryMax 
-                                  ? `$${(job.salaryMin/1000).toFixed(0)}k - $${(job.salaryMax/1000).toFixed(0)}k`
-                                  : job.salaryMin 
-                                    ? `From $${(job.salaryMin/1000).toFixed(0)}k`
-                                    : `Up to $${(job.salaryMax/1000).toFixed(0)}k`
-                                }
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-400 mt-1">
-                            Posted {new Date(job.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 ml-4">
-                          <Badge 
-                            variant="outline" 
-                            className={`${
-                              job.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' :
-                              job.status === 'closed' ? 'bg-gray-50 text-gray-600 border-gray-200' :
-                              'bg-yellow-50 text-yellow-700 border-yellow-200'
-                            }`}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={orderedJobs.map((job: any) => job.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {orderedJobs.length > 0 ? orderedJobs.slice(0, 10).map((job: any) => (
+                        <SortableJobItem
+                          key={job.id}
+                          job={job}
+                          isSelected={selectedJobs.has(job.id)}
+                          onToggleSelect={() => toggleJobSelection(job.id)}
+                          onClick={() => setLocation(`/jobs/${job.id}`)}
+                          isOwner={job.recruiterId === user?.id}
+                          dragEnabled={dragEnabled}
+                        />
+                      )) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                          <p>No jobs found matching your criteria</p>
+                          <Button 
+                            variant="link" 
+                            onClick={() => {
+                              setJobsFilter("all");
+                              setJobsStatus("all");
+                              setJobsSearch("");
+                              setJobsDateFilter("all");
+                            }}
                           >
-                            {job.status}
-                          </Badge>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Eye className="h-4 w-4" />
+                            Clear filters
                           </Button>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  )) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p>No jobs found matching your criteria</p>
-                      <Button 
-                        variant="link" 
-                        onClick={() => {
-                          setJobsFilter("all");
-                          setJobsStatus("all");
-                          setJobsSearch("");
-                          setJobsDateFilter("all");
-                        }}
-                      >
-                        Clear filters
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                  </SortableContext>
+                </DndContext>
 
                 {filteredJobs.length > 10 && (
                   <div className="mt-4 text-center">
@@ -1300,6 +1451,50 @@ function RecruiterDashboardContent() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Assistant Dialog */}
+      <Dialog open={showAIBot} onOpenChange={setShowAIBot}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                <Bot className="h-4 w-4 text-white" />
+              </div>
+              AI Recruiting Assistant
+            </DialogTitle>
+            <DialogDescription>
+              Get help with job descriptions, candidate screening, and recruitment strategies
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            <AIAssistantChat
+              systemPrompt={`You are an AI Recruiting Assistant for HotGigs. You help recruiters with:
+- Writing compelling job descriptions
+- Screening candidate profiles and resumes
+- Interview question suggestions
+- Recruitment strategy advice
+- Salary benchmarking insights
+- Diversity and inclusion best practices
+- Employer branding tips
+
+The recruiter is from ${profile?.companyName || 'a company'}.
+They currently have ${dashboardData?.stats?.activeJobs || 0} active job postings.
+They have received ${dashboardData?.stats?.totalApplications || 0} total applications.
+
+Be professional, data-driven, and provide actionable advice. Focus on efficiency and quality of hire.`}
+              placeholder="Ask me about job descriptions, candidates, or recruitment strategies..."
+              suggestedPrompts={[
+                "Write a job description for a Senior Developer",
+                "What interview questions should I ask?",
+                "How can I improve my employer brand?",
+                "Tips for reducing time-to-hire"
+              ]}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
     </>
   );
 }

@@ -2091,3 +2091,54 @@
 - [x] Add job sorting options (date, applications, status) for both roles
 - [x] Create job templates system for recruiters
 - [x] Add CSV/Excel export functionality for recruiters
+
+
+## Dashboard Features (Dec 15 - Batch 2)
+- [ ] Interview email notifications for candidates before interviews
+- [ ] Interview email notifications for panelists before interviews
+- [ ] Drag-and-drop job reordering for recruiters
+- [ ] Batch status updates for applications
+- [ ] Enhanced calendar view for recruiter dashboard
+- [ ] Enhanced calendar view for candidate dashboard
+
+
+## Bug Fixes (Dec 15 - Session 2)
+- [ ] Add Resume menu to candidate dashboard sidebar
+- [ ] Add Resume menu to candidate dashboard quick links
+- [ ] Fix AI Career Coach functionality for candidates
+- [ ] Add AI Bot to recruiter dashboard
+
+
+## Candidate Dashboard Fixes (Dec 15 - Session 2)
+- [ ] Create Recommendations page for candidates
+- [ ] Create Career Resources page for candidates
+- [ ] Add Resume menu to candidate dashboard sidebar
+- [ ] Add Resume to quick links section
+- [ ] Fix AI Career Coach functionality
+
+
+## Candidate Dashboard Fixes (Dec 15 - Session 2)
+- [x] Add Resume menu to candidate sidebar
+- [x] Add Resume to candidate quick links
+- [x] Create Recommendations page for candidates
+- [x] Create Career Resources page for candidates
+- [x] Fix AI Career Coach functionality
+- [x] Add AI Assistant to recruiter dashboard
+
+## Recruiter Dashboard Enhancements (Dec 15 - Session 2)
+- [x] Job creation date filter (Last 7 days, Last 30 days, Last 90 days)
+- [x] Bulk job actions (Close, Archive, Duplicate)
+- [x] Keyboard shortcuts (Cmd/Ctrl+K for search, Cmd/Ctrl+N for new job)
+- [x] Calendar view for interviews
+- [x] Job sorting options (date, applications)
+- [x] Job templates system
+- [x] CSV/Excel export functionality
+- [x] Drag-and-drop job reordering
+- [x] AI Assistant chat bot
+
+## Dashboard Features (Dec 15 - Session 2)
+- [x] Interview email notifications service (candidate reminders)
+- [x] Collapsible left sidebar for recruiter dashboard
+- [x] Profile icon with dropdown menu for settings
+- [x] Move profile completion and session info under profile dropdown
+- [x] Jobs panel with comprehensive filters
