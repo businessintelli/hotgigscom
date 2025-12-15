@@ -1778,3 +1778,9 @@
 - [x] Integrate AI parsing into all upload flows (AI parsing already used in resumeProfileRouter)
 - [x] All resume uploads now use AI parsing automatically
 - [x] Test complete resume management system and save checkpoint
+
+
+## Fix Resume Pages Navigation (COMPLETED ✅)
+- [x] Fix MyResumesNew back button to use /candidate-dashboard instead of /candidate/dashboard
+- [x] ResumeDetail back button already uses correct path /candidate/my-resumes
+- [x] All navigation paths now work correctly

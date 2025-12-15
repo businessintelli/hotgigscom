@@ -184,7 +184,7 @@ export default function MyResumesNew() {
     <div className="container mx-auto py-8">
       <div className="max-w-6xl mx-auto">
         <Button 
-          onClick={() => setLocation('/candidate/dashboard')}
+          onClick={() => setLocation('/candidate-dashboard')}
           variant="ghost"
           className="mb-4"
         >
