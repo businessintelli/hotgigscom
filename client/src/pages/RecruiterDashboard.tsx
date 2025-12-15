@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { EmailVerificationGuard } from "@/components/EmailVerificationGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,14 @@ import { SessionInfo } from "@/components/SessionInfo";
 import { Menu, X } from "lucide-react";
 
 export default function RecruiterDashboard() {
+  return (
+    <EmailVerificationGuard>
+      <RecruiterDashboardContent />
+    </EmailVerificationGuard>
+  );
+}
+
+function RecruiterDashboardContent() {
   const { user, loading: authLoading, logout } = useAuth();
   
   // Debug logging

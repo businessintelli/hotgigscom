@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { EmailVerificationGuard } from "@/components/EmailVerificationGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,14 @@ import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { SessionInfo } from "@/components/SessionInfo";
 
 export default function CandidateDashboard() {
+  return (
+    <EmailVerificationGuard>
+      <CandidateDashboardContent />
+    </EmailVerificationGuard>
+  );
+}
+
+function CandidateDashboardContent() {
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [isEditingProfile, setIsEditingProfile] = useState(false);

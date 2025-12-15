@@ -122,8 +122,9 @@ export const appRouter = router({
         ...ctx.user,
         sessionExpiry,
         rememberMe,
+        emailVerified: ctx.user.emailVerified ?? false,
       };
-      console.log('[auth.me] Returning user:', result.email, 'role:', result.role);
+      console.log('[auth.me] Returning user:', result.email, 'role:', result.role, 'emailVerified:', result.emailVerified);
       return result;
     }),
     logout: publicProcedure.mutation(({ ctx }) => {

@@ -53,6 +53,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResendVerification from "./pages/ResendVerification";
+import VerificationRequired from "./pages/auth/VerificationRequired";
 import RecruiterOnboarding from "./pages/RecruiterOnboarding";
 import CandidateOnboarding from "./pages/CandidateOnboarding";
 import { SessionExpiryWarning } from "@/components/SessionExpiryWarning";
@@ -92,6 +93,7 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/resend-verification" component={ResendVerification} />
+      <Route path="/verification-required" component={VerificationRequired} />
       <Route path="/recruiter/onboarding" component={RecruiterOnboarding} />
       <Route path="/candidate/onboarding" component={CandidateOnboarding} />
       <Route path="/admin/dashboard" component={AdminDashboard} />

@@ -1620,3 +1620,16 @@
 - [x] Verify new users immediately access correct onboarding after signup
 - [x] Confirmed recruiter redirects to /recruiter/onboarding
 - [x] Confirmed candidate redirects to /candidate/onboarding
+
+
+## Email Verification Enforcement (COMPLETED ✅)
+- [x] Add email verification check to dashboard routes
+- [x] Create verification reminder page with resend button
+- [x] Update authentication middleware to block unverified users (EmailVerificationGuard component)
+- [x] Add emailVerified field to auth.me response
+- [x] Created VerificationRequired page with resend functionality
+- [x] Wrapped RecruiterDashboard and CandidateDashboard with EmailVerificationGuard
+- [x] Added /verification-required route to App.tsx
+- [x] Created database helper functions (updateUserById, updateUserByEmail, deleteUserById)
+- [x] Wrote comprehensive email verification tests
+- [ ] Fix test database connection issues (tests failing due to getUserById returning undefined)
