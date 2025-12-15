@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { trpc } from "@/lib/trpc";
 import { Loader2, Search, Plus, Calendar, Video, Phone, MapPin, Clock, Edit, Trash2, CheckCircle, XCircle, Play, Users, ChevronDown, ChevronUp } from "lucide-react";
 import InterviewPanelSection from "@/components/InterviewPanelSection";
+import { PanelFeedbackSummary } from "@/components/PanelFeedbackSummary";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -340,6 +341,13 @@ export default function InterviewManagement() {
                               <p className="text-sm text-gray-600 mt-2">
                                 <strong>Notes:</strong> {interview.notes}
                               </p>
+                            )}
+                            
+                            {/* Panel Feedback Summary */}
+                            {interview.status === "completed" && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                <PanelFeedbackSummary interviewId={interview.id} compact={true} />
+                              </div>
                             )}
                             
                             {/* Panel Toggle Button */}

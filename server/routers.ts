@@ -1925,6 +1925,74 @@ export const appRouter = router({
         
         return !!existing;
       }),
+    
+    // Aggregated feedback summary for interview cards
+    getPanelistFeedbackSummary: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const { panelistFeedback, interviewPanelists } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) return null;
+        
+        // Get all feedback for this interview
+        const allFeedback = await database
+          .select({
+            technicalScore: panelistFeedback.technicalScore,
+            communicationScore: panelistFeedback.communicationScore,
+            problemSolvingScore: panelistFeedback.problemSolvingScore,
+            cultureFitScore: panelistFeedback.cultureFitScore,
+            overallScore: panelistFeedback.overallScore,
+            recommendation: panelistFeedback.recommendation,
+            panelistName: interviewPanelists.name,
+            panelistEmail: interviewPanelists.email,
+          })
+          .from(panelistFeedback)
+          .innerJoin(interviewPanelists, eq(panelistFeedback.panelistId, interviewPanelists.id))
+          .where(eq(panelistFeedback.interviewId, input.interviewId));
+        
+        if (allFeedback.length === 0) return null;
+        
+        // Calculate averages
+        const avgTechnical = allFeedback.reduce((sum, f) => sum + (f.technicalScore || 0), 0) / allFeedback.length;
+        const avgCommunication = allFeedback.reduce((sum, f) => sum + (f.communicationScore || 0), 0) / allFeedback.length;
+        const avgProblemSolving = allFeedback.reduce((sum, f) => sum + (f.problemSolvingScore || 0), 0) / allFeedback.length;
+        const avgCultureFit = allFeedback.reduce((sum, f) => sum + (f.cultureFitScore || 0), 0) / allFeedback.length;
+        const avgOverall = allFeedback.reduce((sum, f) => sum + (f.overallScore || 0), 0) / allFeedback.length;
+        
+        // Count recommendations
+        const recommendations = {
+          strongHire: allFeedback.filter(f => f.recommendation === 'strong_hire').length,
+          hire: allFeedback.filter(f => f.recommendation === 'hire').length,
+          noHire: allFeedback.filter(f => f.recommendation === 'no_hire').length,
+          strongNoHire: allFeedback.filter(f => f.recommendation === 'strong_no_hire').length,
+        };
+        
+        // Determine consensus
+        const positiveCount = recommendations.strongHire + recommendations.hire;
+        const negativeCount = recommendations.noHire + recommendations.strongNoHire;
+        let consensus: 'positive' | 'negative' | 'mixed' = 'mixed';
+        if (positiveCount > 0 && negativeCount === 0) consensus = 'positive';
+        else if (negativeCount > 0 && positiveCount === 0) consensus = 'negative';
+        
+        return {
+          totalResponses: allFeedback.length,
+          averages: {
+            technical: Math.round(avgTechnical * 10) / 10,
+            communication: Math.round(avgCommunication * 10) / 10,
+            problemSolving: Math.round(avgProblemSolving * 10) / 10,
+            cultureFit: Math.round(avgCultureFit * 10) / 10,
+            overall: Math.round(avgOverall * 10) / 10,
+          },
+          recommendations,
+          consensus,
+          panelists: allFeedback.map(f => ({
+            name: f.panelistName || f.panelistEmail,
+            recommendation: f.recommendation,
+            overallScore: f.overallScore,
+          })),
+        };
+      }),
   }),
   
   coding: router({
