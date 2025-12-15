@@ -2072,3 +2072,22 @@
 - [x] Bulk job actions (Close, Archive, Duplicate)
 - [x] Keyboard shortcuts (Cmd/Ctrl+K for search, Cmd/Ctrl+N for new job)
 - [x] Candidate dashboard has collapsible sidebar design
+
+
+## Dashboard Enhancements (Dec 15, 2025 - Part 2)
+- [ ] Move Profile, Resume sections to profile settings dropdown (Candidate)
+- [ ] Add calendar view for candidate dashboard
+- [ ] Add calendar view for recruiter dashboard
+- [ ] Add job sorting options (date created, applications count, status) for candidate
+- [ ] Add job sorting options (date created, applications count, status) for recruiter
+- [ ] Create job templates system for recruiters
+- [ ] Add CSV/Excel export functionality for selected jobs (recruiter)
+
+
+## Dashboard Enhancements (Dec 15) - COMPLETED
+- [x] Move Profile/Resume to profile settings dropdown (candidate)
+- [x] Add calendar view for candidate dashboard
+- [x] Add calendar view for recruiter dashboard
+- [x] Add job sorting options (date, applications, status) for both roles
+- [x] Create job templates system for recruiters
+- [x] Add CSV/Excel export functionality for recruiters

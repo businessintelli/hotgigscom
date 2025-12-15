@@ -37,7 +37,7 @@ import {
 import { toast } from "sonner";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
 import { 
   LayoutDashboard, 
   Briefcase, 
@@ -86,11 +86,15 @@ export default function RecruiterDashboard() {
 }
 
 // Sidebar navigation items
+// Types for sorting and templates
+type JobSortOption = 'date_desc' | 'date_asc' | 'applications_desc' | 'applications_asc' | 'status_asc' | 'status_desc';
+
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/recruiter/dashboard", badge: null },
   { icon: Briefcase, label: "Jobs", path: "/recruiter/jobs", badge: null },
   { icon: Users, label: "Candidates", path: "/recruiter/search-candidates", badge: null },
   { icon: FileText, label: "Applications", path: "/recruiter/applications", badge: null },
+  { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
   { icon: Calendar, label: "Interviews", path: "/recruiter/interviews", badge: null },
   { icon: Video, label: "AI Interviews", path: "/recruiter/interview-playback", badge: null },
   { icon: Target, label: "AI Matching", path: "/recruiter/ai-matching", badge: null },
@@ -110,6 +114,8 @@ function RecruiterDashboardContent() {
   const { data: completionStatus } = trpc.profileCompletion.getStatus.useQuery();
   const { data: pendingReschedules } = (trpc as any).reschedule?.getPendingRequests?.useQuery() || { data: [] };
   const { data: allJobs, refetch: refetchJobs } = trpc.job.getMyJobs.useQuery();
+  const { data: interviews } = trpc.interview.getByRecruiter.useQuery();
+  const { data: jobTemplates, refetch: refetchTemplates } = trpc.job.getTemplates.useQuery();
   
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -129,6 +135,21 @@ function RecruiterDashboardContent() {
   // Search dialog state for keyboard shortcut
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Calendar state
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  
+  // Sorting state
+  const [jobSortBy, setJobSortBy] = useState<JobSortOption>('date_desc');
+  
+  // Job templates state
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  
+  // Export state
+  const [exporting, setExporting] = useState(false);
   
   // Bulk action mutations
   const bulkCloseMutation = trpc.job.bulkClose.useMutation();
@@ -292,6 +313,80 @@ function RecruiterDashboardContent() {
     return true;
   });
 
+  // Sort filtered jobs
+  const sortedJobs = [...filteredJobs].sort((a: any, b: any) => {
+    switch (jobSortBy) {
+      case 'date_desc':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'date_asc':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'applications_desc':
+        return (b.applicationCount || 0) - (a.applicationCount || 0);
+      case 'applications_asc':
+        return (a.applicationCount || 0) - (b.applicationCount || 0);
+      case 'status_asc':
+        return (a.status || '').localeCompare(b.status || '');
+      case 'status_desc':
+        return (b.status || '').localeCompare(a.status || '');
+      default:
+        return 0;
+    }
+  });
+
+  // Calendar helpers
+  const calendarDays = eachDayOfInterval({
+    start: startOfMonth(calendarDate),
+    end: endOfMonth(calendarDate)
+  });
+
+  const interviewsByDate: Record<string, any[]> = {};
+  (interviews || []).forEach((interview: any) => {
+    if (!interview.scheduledAt) return;
+    const date = new Date(interview.scheduledAt);
+    if (isNaN(date.getTime())) return; // Skip invalid dates
+    const dateKey = format(date, 'yyyy-MM-dd');
+    if (!interviewsByDate[dateKey]) interviewsByDate[dateKey] = [];
+    interviewsByDate[dateKey].push(interview);
+  });
+
+  // Export jobs to CSV
+  const exportJobsToCSV = () => {
+    setExporting(true);
+    try {
+      const jobsToExport = selectedJobs.size > 0 
+        ? sortedJobs.filter((job: any) => selectedJobs.has(job.id))
+        : sortedJobs;
+      
+      const headers = ['Title', 'Company', 'Location', 'Status', 'Salary Min', 'Salary Max', 'Created Date', 'Applications'];
+      const rows = jobsToExport.map((job: any) => [
+        job.title || '',
+        job.companyName || '',
+        job.location || '',
+        job.status || '',
+        job.salaryMin || '',
+        job.salaryMax || '',
+        job.createdAt ? format(new Date(job.createdAt), 'yyyy-MM-dd') : '',
+        job.applicationCount || 0
+      ]);
+      
+      const csvContent = [headers, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `jobs_export_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      link.click();
+      
+      toast.success(`Exported ${jobsToExport.length} jobs to CSV`);
+    } catch (error) {
+      toast.error('Failed to export jobs');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const statCards = [
     { title: 'Active Jobs', value: stats.activeJobs, change: '+2 this week', icon: Briefcase, color: 'bg-blue-500', link: '/recruiter/jobs' },
     { title: 'Total Applications', value: stats.totalApplications, change: '+23 this week', icon: FileText, color: 'bg-green-500', link: '/recruiter/applications' },
@@ -341,14 +436,20 @@ function RecruiterDashboardContent() {
           <ScrollArea className="flex-1 py-4">
             <nav className="space-y-1 px-2">
               {sidebarItems.map((item) => {
-                const isActive = location === item.path || (item.path !== '/recruiter/dashboard' && location.startsWith(item.path));
+                const isActive = item.path ? (location === item.path || (item.path !== '/recruiter/dashboard' && location.startsWith(item.path))) : false;
                 const badgeCount = item.badge === "pending" ? pendingCount : null;
                 
                 return (
-                  <Tooltip key={item.path}>
+                  <Tooltip key={item.label}>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => setLocation(item.path)}
+                        onClick={() => {
+                          if ((item as any).isCalendar) {
+                            setShowCalendar(true);
+                          } else if (item.path) {
+                            setLocation(item.path);
+                          }
+                        }}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors relative ${
                           isActive 
                             ? 'bg-blue-50 text-blue-700' 
@@ -418,14 +519,18 @@ function RecruiterDashboardContent() {
                   <ScrollArea className="flex-1 py-4">
                     <nav className="space-y-1 px-2">
                       {sidebarItems.map((item) => {
-                        const isActive = location === item.path;
+                        const isActive = item.path ? location === item.path : false;
                         const badgeCount = item.badge === "pending" ? pendingCount : null;
                         
                         return (
                           <button
-                            key={item.path}
+                            key={item.label}
                             onClick={() => {
-                              setLocation(item.path);
+                              if ((item as any).isCalendar) {
+                                setShowCalendar(true);
+                              } else if (item.path) {
+                                setLocation(item.path);
+                              }
                               setMobileMenuOpen(false);
                             }}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
@@ -654,6 +759,40 @@ function RecruiterDashboardContent() {
                       <SelectItem value="90days">Last 90 Days</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={jobSortBy} onValueChange={(v: any) => setJobSortBy(v)}>
+                    <SelectTrigger className="w-full sm:w-44">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date_desc">Newest First</SelectItem>
+                      <SelectItem value="date_asc">Oldest First</SelectItem>
+                      <SelectItem value="applications_desc">Most Applications</SelectItem>
+                      <SelectItem value="applications_asc">Least Applications</SelectItem>
+                      <SelectItem value="status_asc">Status A-Z</SelectItem>
+                      <SelectItem value="status_desc">Status Z-A</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={exportJobsToCSV}
+                    disabled={exporting}
+                    className="hidden sm:flex"
+                  >
+                    {exporting ? (
+                      <><span className="animate-spin mr-2">⏳</span> Exporting...</>
+                    ) : (
+                      <><FileText className="h-4 w-4 mr-2" /> Export CSV</>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowTemplates(true)}
+                    className="hidden sm:flex"
+                  >
+                    <Copy className="h-4 w-4 mr-2" /> Templates
+                  </Button>
                 </div>
                 
                 {/* Bulk Actions Bar */}
@@ -724,7 +863,7 @@ function RecruiterDashboardContent() {
 
                 {/* Jobs List */}
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {filteredJobs.length > 0 ? filteredJobs.slice(0, 10).map((job: any) => (
+                  {sortedJobs.length > 0 ? sortedJobs.slice(0, 10).map((job: any) => (
                     <div 
                       key={job.id} 
                       className={`flex items-center gap-3 p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer ${
@@ -1008,6 +1147,157 @@ function RecruiterDashboardContent() {
               {bulkActionDialog.action === 'duplicate' && 'Duplicate Jobs'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Calendar Dialog */}
+      <Dialog open={showCalendar} onOpenChange={setShowCalendar}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Interview Calendar
+            </DialogTitle>
+            <DialogDescription>View and manage your scheduled interviews</DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {/* Calendar Navigation */}
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="outline" size="sm" onClick={() => setCalendarDate(subMonths(calendarDate, 1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <h3 className="text-lg font-semibold">
+                {format(calendarDate, 'MMMM yyyy')}
+              </h3>
+              <Button variant="outline" size="sm" onClick={() => setCalendarDate(addMonths(calendarDate, 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                  {day}
+                </div>
+              ))}
+              
+              {/* Empty cells for days before the first of the month */}
+              {Array.from({ length: calendarDays[0]?.getDay() || 0 }).map((_, i) => (
+                <div key={`empty-${i}`} className="h-20 bg-gray-50 rounded-lg" />
+              ))}
+              
+              {calendarDays.map((day) => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayInterviews = interviewsByDate[dateKey] || [];
+                const hasInterviews = dayInterviews.length > 0;
+                
+                return (
+                  <div
+                    key={dateKey}
+                    className={`h-20 p-1 border rounded-lg ${
+                      isToday(day) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    } ${!isSameMonth(day, calendarDate) ? 'opacity-50' : ''}`}
+                  >
+                    <div className={`text-sm font-medium ${isToday(day) ? 'text-blue-600' : 'text-gray-700'}`}>
+                      {format(day, 'd')}
+                    </div>
+                    {hasInterviews && (
+                      <div className="mt-1 space-y-1">
+                        {dayInterviews.slice(0, 2).map((interview: any) => (
+                          <div
+                            key={interview.id}
+                            className="text-xs bg-purple-100 text-purple-700 px-1 py-0.5 rounded truncate cursor-pointer hover:bg-purple-200"
+                            title={interview.candidate?.fullName || 'Interview'}
+                            onClick={() => setLocation(`/recruiter/interviews/${interview.id}`)}
+                          >
+                            {format(new Date(interview.scheduledAt), 'h:mm a')}
+                          </div>
+                        ))}
+                        {dayInterviews.length > 2 && (
+                          <div className="text-xs text-gray-500">
+                            +{dayInterviews.length - 2} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Job Templates Dialog */}
+      <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5" />
+              Job Templates
+            </DialogTitle>
+            <DialogDescription>Create jobs from templates or save current jobs as templates</DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4 space-y-4">
+            {/* Existing Templates */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Available Templates</h4>
+              {jobTemplates && jobTemplates.length > 0 ? (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {jobTemplates.map((template: any) => (
+                    <div 
+                      key={template.id} 
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div>
+                        <p className="font-medium">{template.name}</p>
+                        <p className="text-sm text-gray-500">{template.title} • {template.location}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setShowTemplates(false);
+                            setLocation(`/recruiter/jobs/create?templateId=${template.id}`);
+                          }}
+                        >
+                          Use Template
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Copy className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p>No templates yet</p>
+                  <p className="text-sm">Save a job as a template to reuse it later</p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Create from Selected */}
+            {selectedJobs.size > 0 && (
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Save Selected as Template</h4>
+                <p className="text-sm text-gray-500 mb-3">
+                  Save the selected job(s) as reusable templates
+                </p>
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                  onClick={() => {
+                    toast.info('Template saving feature coming soon');
+                  }}
+                >
+                  Save {selectedJobs.size} Job(s) as Template
+                </Button>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>

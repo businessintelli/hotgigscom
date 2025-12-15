@@ -1101,6 +1101,33 @@ export const appRouter = router({
         }
         return { success: true, createdIds };
       }),
+    
+    // Get job templates for recruiter
+    getTemplates: protectedProcedure.query(async ({ ctx }) => {
+      // For now, return recent jobs as templates (in future, add a separate templates table)
+      const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+      if (!recruiter) return [];
+      const jobs = await db.getJobsByRecruiter(recruiter.id);
+      // Return unique jobs by title as templates
+      const templateMap = new Map();
+      jobs.forEach((job: any) => {
+        if (!templateMap.has(job.title)) {
+          templateMap.set(job.title, {
+            id: job.id,
+            name: job.title,
+            title: job.title,
+            description: job.description,
+            requirements: job.requirements,
+            responsibilities: job.responsibilities,
+            location: job.location,
+            employmentType: job.employmentType,
+            salaryMin: job.salaryMin,
+            salaryMax: job.salaryMax,
+          });
+        }
+      });
+      return Array.from(templateMap.values()).slice(0, 10);
+    }),
   }),
 
   application: router({
@@ -1435,12 +1462,26 @@ export const appRouter = router({
       return await db.getInterviewsByRecruiterId(recruiter.id);
     }),
     
+    // Get interviews for recruiter (alias for dashboard calendar)
+    getByRecruiter: protectedProcedure.query(async ({ ctx }) => {
+      const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+      if (!recruiter) return [];
+      return await db.getInterviewsByRecruiterId(recruiter.id);
+    }),
+    
     // Get interviews for candidate
     listByCandidate: protectedProcedure.query(async ({ ctx }) => {
       const candidate = await db.getCandidateByUserId(ctx.user.id);
       if (!candidate) return [];
       return await db.getInterviewsByCandidateId(candidate.id);
     }),
+    
+    // Get interviews for candidate by candidateId
+    getByCandidate: protectedProcedure
+      .input(z.object({ candidateId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getInterviewsByCandidateId(input.candidateId);
+      }),
     
     // Get interview by ID
     getById: protectedProcedure

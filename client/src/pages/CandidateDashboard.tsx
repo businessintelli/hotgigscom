@@ -17,12 +17,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { 
   Briefcase, 
@@ -48,17 +63,21 @@ import {
   Calendar,
   Star,
   BookOpen,
-  Bell
+  Bell,
+  ArrowUpDown,
+  CalendarDays,
+  ChevronDown,
+  X
 } from "lucide-react";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
 import VideoIntroduction from "@/components/VideoIntroduction";
 import { NotificationBell } from "@/components/NotificationBell";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 
 export default function CandidateDashboard() {
   return (
@@ -74,21 +93,26 @@ const sidebarItems = [
   { icon: Search, label: "Browse Jobs", path: "/jobs", badge: null },
   { icon: Briefcase, label: "My Applications", path: "/my-applications", badge: null },
   { icon: Heart, label: "Saved Jobs", path: "/saved-jobs", badge: null },
-  { icon: FileText, label: "My Resumes", path: "/candidate/my-resumes", badge: null },
+  { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
   { icon: Video, label: "AI Interview", path: "/ai-interview", badge: null },
-  { icon: Calendar, label: "Interviews", path: "/my-interviews", badge: null },
   { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
   { icon: BookOpen, label: "Career Resources", path: "/resources", badge: null },
 ];
+
+type SortOption = 'date_desc' | 'date_asc' | 'match_desc' | 'match_asc' | 'salary_desc' | 'salary_asc';
 
 function CandidateDashboardContent() {
   const { user, loading: authLoading, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [location] = useLocation();
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [sortBy, setSortBy] = useState<SortOption>('date_desc');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch candidate profile
@@ -108,12 +132,18 @@ function CandidateDashboardContent() {
 
   // Fetch AI-powered recommended jobs
   const { data: recommendedJobs } = trpc.candidate.getRecommendedJobs.useQuery(
-    { candidateId: candidate?.id || 0, limit: 3 },
+    { candidateId: candidate?.id || 0, limit: 6 },
     { enabled: !!candidate?.id }
   );
 
   // Fetch video introduction
   const { data: videoIntroduction, refetch: refetchVideo } = trpc.resumeProfile.getVideoIntroduction.useQuery(
+    { candidateId: candidate?.id || 0 },
+    { enabled: !!candidate?.id }
+  );
+
+  // Fetch interviews for calendar
+  const { data: interviews } = trpc.interview.getByCandidate.useQuery(
     { candidateId: candidate?.id || 0 },
     { enabled: !!candidate?.id }
   );
@@ -224,6 +254,50 @@ function CandidateDashboardContent() {
     }
   }, [authLoading, user, setLocation]);
 
+  // Sort recommended jobs
+  const sortedJobs = useMemo(() => {
+    if (!recommendedJobs) return [];
+    const jobs = [...recommendedJobs];
+    
+    switch (sortBy) {
+      case 'date_desc':
+        return jobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      case 'date_asc':
+        return jobs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      case 'match_desc':
+        return jobs.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+      case 'match_asc':
+        return jobs.sort((a, b) => (a.matchScore || 0) - (b.matchScore || 0));
+      case 'salary_desc':
+        return jobs.sort((a, b) => (b.salaryMax || 0) - (a.salaryMax || 0));
+      case 'salary_asc':
+        return jobs.sort((a, b) => (a.salaryMin || 0) - (b.salaryMin || 0));
+      default:
+        return jobs;
+    }
+  }, [recommendedJobs, sortBy]);
+
+  // Calendar helpers
+  const calendarDays = useMemo(() => {
+    const start = startOfMonth(calendarDate);
+    const end = endOfMonth(calendarDate);
+    return eachDayOfInterval({ start, end });
+  }, [calendarDate]);
+
+  const interviewsByDate = useMemo(() => {
+    if (!interviews) return {};
+    const map: Record<string, any[]> = {};
+    interviews.forEach((interview: any) => {
+      if (!interview.scheduledAt) return;
+      const date = new Date(interview.scheduledAt);
+      if (isNaN(date.getTime())) return; // Skip invalid dates
+      const dateKey = format(date, 'yyyy-MM-dd');
+      if (!map[dateKey]) map[dateKey] = [];
+      map[dateKey].push(interview);
+    });
+    return map;
+  }, [interviews]);
+
   if (authLoading || candidateLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -286,12 +360,18 @@ function CandidateDashboardContent() {
           <ScrollArea className="flex-1 py-4">
             <nav className="px-2 space-y-1">
               {sidebarItems.map((item) => {
-                const isActive = location === item.path;
+                const isActive = item.path ? location === item.path : false;
                 return (
-                  <Tooltip key={item.path} delayDuration={0}>
+                  <Tooltip key={item.label} delayDuration={0}>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => setLocation(item.path)}
+                        onClick={() => {
+                          if (item.isCalendar) {
+                            setShowCalendar(true);
+                          } else if (item.path) {
+                            setLocation(item.path);
+                          }
+                        }}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
                           isActive 
                             ? 'bg-emerald-50 text-emerald-700 font-medium' 
@@ -337,12 +417,16 @@ function CandidateDashboardContent() {
             <ScrollArea className="flex-1 py-4">
               <nav className="px-2 space-y-1">
                 {sidebarItems.map((item) => {
-                  const isActive = location === item.path;
+                  const isActive = item.path ? location === item.path : false;
                   return (
                     <button
-                      key={item.path}
+                      key={item.label}
                       onClick={() => {
-                        setLocation(item.path);
+                        if (item.isCalendar) {
+                          setShowCalendar(true);
+                        } else if (item.path) {
+                          setLocation(item.path);
+                        }
                         setMobileMenuOpen(false);
                       }}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
@@ -435,7 +519,7 @@ function CandidateDashboardContent() {
                         variant="link" 
                         size="sm" 
                         className="mt-2 p-0 h-auto text-emerald-600"
-                        onClick={() => setLocation('/candidate/onboarding')}
+                        onClick={() => setShowProfileSettings(true)}
                       >
                         Complete Profile →
                       </Button>
@@ -462,13 +546,13 @@ function CandidateDashboardContent() {
                   )}
 
                   <DropdownMenuLabel className="text-xs text-gray-500 uppercase tracking-wider">Account</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => setLocation('/candidate/onboarding')} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => setShowProfileSettings(true)} className="cursor-pointer">
                     <User className="h-4 w-4 mr-2" />
-                    Edit Profile
+                    Profile & Resume
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLocation('/candidate/my-resumes')} className="cursor-pointer">
-                    <FileText className="h-4 w-4 mr-2" />
-                    My Resumes
+                  <DropdownMenuItem onClick={() => setShowCalendar(true)} className="cursor-pointer">
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    Calendar
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => toast.info('Settings coming soon')} className="cursor-pointer">
                     <Settings className="h-4 w-4 mr-2" />
@@ -515,227 +599,37 @@ function CandidateDashboardContent() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Main Content Column */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Profile Section */}
+                {/* Recommended Jobs with Sorting */}
                 <Card>
                   <CardHeader>
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle>Your Profile</CardTitle>
-                        <CardDescription>Manage your professional information</CardDescription>
+                        <CardTitle className="flex items-center gap-2">
+                          <Star className="h-5 w-5 text-yellow-500" />
+                          Recommended Jobs
+                        </CardTitle>
+                        <CardDescription>Jobs matching your profile</CardDescription>
                       </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsEditingProfile(!isEditingProfile)}
-                      >
-                        {isEditingProfile ? "Cancel" : "Edit Profile"}
-                      </Button>
+                      <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                        <SelectTrigger className="w-[180px]">
+                          <ArrowUpDown className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="date_desc">Newest First</SelectItem>
+                          <SelectItem value="date_asc">Oldest First</SelectItem>
+                          <SelectItem value="match_desc">Highest Match</SelectItem>
+                          <SelectItem value="match_asc">Lowest Match</SelectItem>
+                          <SelectItem value="salary_desc">Highest Salary</SelectItem>
+                          <SelectItem value="salary_asc">Lowest Salary</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {isEditingProfile ? (
-                      <>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="fullName">Full Name</Label>
-                            <Input
-                              id="fullName"
-                              value={profileForm.fullName}
-                              onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              value={profileForm.email}
-                              onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="phone">Phone</Label>
-                            <Input
-                              id="phone"
-                              value={profileForm.phone}
-                              onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="location">Location</Label>
-                            <Input
-                              id="location"
-                              value={profileForm.location}
-                              onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="skills">Skills (comma-separated)</Label>
-                          <Input
-                            id="skills"
-                            placeholder="e.g., JavaScript, React, Node.js"
-                            value={profileForm.skills}
-                            onChange={(e) => setProfileForm({ ...profileForm, skills: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="experience">Years of Experience</Label>
-                          <Input
-                            id="experience"
-                            type="number"
-                            value={profileForm.experience}
-                            onChange={(e) => setProfileForm({ ...profileForm, experience: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="bio">Bio</Label>
-                          <Textarea
-                            id="bio"
-                            placeholder="Tell us about yourself..."
-                            value={profileForm.bio}
-                            onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                            rows={4}
-                          />
-                        </div>
-                        <Button
-                          onClick={handleUpdateProfile}
-                          disabled={updateProfileMutation.isPending}
-                          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-                        >
-                          {updateProfileMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Saving...
-                            </>
-                          ) : (
-                            "Save Changes"
-                          )}
-                        </Button>
-                      </>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-600">Name:</span>
-                          <span className="text-sm">{candidate?.fullName || "Not set"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-600">Email:</span>
-                          <span className="text-sm">{candidate?.email || "Not set"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-600">Phone:</span>
-                          <span className="text-sm">{candidate?.phone || "Not set"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-600">Location:</span>
-                          <span className="text-sm">{candidate?.location || "Not set"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-600">Experience:</span>
-                          <span className="text-sm">{candidate?.experienceYears || 0} years</span>
-                        </div>
-                        {candidate?.skills && (
-                          <div>
-                            <span className="text-sm font-medium text-gray-600">Skills:</span>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {candidate.skills.split(",").map((skill: string, index: number) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full"
-                                >
-                                  {skill.trim()}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Resume Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Resume</CardTitle>
-                    <CardDescription>Upload and manage your resume</CardDescription>
-                  </CardHeader>
                   <CardContent>
-                    {candidate?.resumeUrl ? (
+                    {sortedJobs && sortedJobs.length > 0 ? (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-8 w-8 text-emerald-600" />
-                            <div>
-                              <p className="font-medium">Resume uploaded</p>
-                              <p className="text-sm text-gray-600">
-                                Last updated: {new Date(candidate.updatedAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" asChild>
-                              <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
-                                View
-                              </a>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => fileInputRef.current?.click()}
-                            >
-                              Replace
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-emerald-500 transition-colors"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-sm font-medium mb-1">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-600">PDF, DOC, or DOCX (max 5MB)</p>
-                      </div>
-                    )}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Video Introduction */}
-                {candidate?.id && (
-                  <VideoIntroduction
-                    candidateId={candidate.id}
-                    existingVideo={videoIntroduction ? {
-                      id: videoIntroduction.id,
-                      videoUrl: videoIntroduction.videoUrl,
-                      duration: videoIntroduction.duration,
-                      uploadedAt: videoIntroduction.createdAt
-                    } : null}
-                    onUploadSuccess={() => refetchVideo()}
-                  />
-                )}
-
-                {/* Recommended Jobs */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Star className="h-5 w-5 text-yellow-500" />
-                      Recommended Jobs
-                    </CardTitle>
-                    <CardDescription>Jobs matching your profile</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {recommendedJobs && recommendedJobs.length > 0 ? (
-                      <div className="space-y-4">
-                        {recommendedJobs.map((job: any) => (
+                        {sortedJobs.map((job: any) => (
                           <div
                             key={job.id}
                             className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
@@ -780,10 +674,62 @@ function CandidateDashboardContent() {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Video Introduction */}
+                {candidate?.id && (
+                  <VideoIntroduction
+                    candidateId={candidate.id}
+                    existingVideo={videoIntroduction ? {
+                      id: videoIntroduction.id,
+                      videoUrl: videoIntroduction.videoUrl,
+                      duration: videoIntroduction.duration,
+                      uploadedAt: videoIntroduction.createdAt
+                    } : null}
+                    onUploadSuccess={() => refetchVideo()}
+                  />
+                )}
               </div>
 
               {/* Sidebar Column */}
               <div className="space-y-6">
+                {/* Upcoming Interviews */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-blue-500" />
+                      Upcoming Interviews
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {interviews && interviews.length > 0 ? (
+                      <div className="space-y-3">
+                        {interviews.slice(0, 3).map((interview: any) => (
+                          <div key={interview.id} className="p-3 bg-gray-50 rounded-lg">
+                            <p className="font-medium text-sm">{interview.job?.title || 'Interview'}</p>
+                            <p className="text-xs text-gray-500">
+                              {format(new Date(interview.scheduledAt), 'MMM d, yyyy h:mm a')}
+                            </p>
+                            <Badge variant="outline" className="mt-2 text-xs">
+                              {interview.type}
+                            </Badge>
+                          </div>
+                        ))}
+                        <Button 
+                          variant="link" 
+                          className="w-full text-emerald-600"
+                          onClick={() => setShowCalendar(true)}
+                        >
+                          View Calendar →
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        No upcoming interviews
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Quick Actions */}
                 <Card>
                   <CardHeader>
@@ -793,18 +739,10 @@ function CandidateDashboardContent() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => setShowProfileSettings(true)}
                     >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Quick Upload Resume
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => setLocation("/candidate/my-resumes")}
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      My Resumes
+                      <User className="mr-2 h-4 w-4" />
+                      Edit Profile
                     </Button>
                     <Button
                       variant="outline"
@@ -853,6 +791,230 @@ function CandidateDashboardContent() {
           </main>
         </div>
       </div>
+
+      {/* Profile Settings Dialog */}
+      <Dialog open={showProfileSettings} onOpenChange={setShowProfileSettings}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Profile & Resume Settings</DialogTitle>
+            <DialogDescription>Manage your profile information and resume</DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="profile" className="mt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="resume">Resume</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="profile" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    value={profileForm.fullName}
+                    onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    value={profileForm.location}
+                    onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="skills">Skills (comma-separated)</Label>
+                <Input
+                  id="skills"
+                  placeholder="e.g., JavaScript, React, Node.js"
+                  value={profileForm.skills}
+                  onChange={(e) => setProfileForm({ ...profileForm, skills: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="experience">Years of Experience</Label>
+                <Input
+                  id="experience"
+                  type="number"
+                  value={profileForm.experience}
+                  onChange={(e) => setProfileForm({ ...profileForm, experience: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  placeholder="Tell us about yourself..."
+                  value={profileForm.bio}
+                  onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                  rows={4}
+                />
+              </div>
+              <Button
+                onClick={handleUpdateProfile}
+                disabled={updateProfileMutation.isPending}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              >
+                {updateProfileMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="resume" className="space-y-4 mt-4">
+              {candidate?.resumeUrl ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-8 w-8 text-emerald-600" />
+                      <div>
+                        <p className="font-medium">Resume uploaded</p>
+                        <p className="text-sm text-gray-600">
+                          Last updated: {new Date(candidate.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
+                          View
+                        </a>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Replace
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-emerald-500 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-sm font-medium mb-1">Click to upload or drag and drop</p>
+                  <p className="text-xs text-gray-600">PDF, DOC, or DOCX (max 5MB)</p>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Calendar Dialog */}
+      <Dialog open={showCalendar} onOpenChange={setShowCalendar}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Interview Calendar
+            </DialogTitle>
+            <DialogDescription>View your scheduled interviews</DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {/* Calendar Navigation */}
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="outline" size="sm" onClick={() => setCalendarDate(subMonths(calendarDate, 1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <h3 className="text-lg font-semibold">
+                {format(calendarDate, 'MMMM yyyy')}
+              </h3>
+              <Button variant="outline" size="sm" onClick={() => setCalendarDate(addMonths(calendarDate, 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                  {day}
+                </div>
+              ))}
+              
+              {/* Empty cells for days before the first of the month */}
+              {Array.from({ length: calendarDays[0]?.getDay() || 0 }).map((_, i) => (
+                <div key={`empty-${i}`} className="h-24 bg-gray-50 rounded-lg" />
+              ))}
+              
+              {calendarDays.map((day) => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayInterviews = interviewsByDate[dateKey] || [];
+                const hasInterviews = dayInterviews.length > 0;
+                
+                return (
+                  <div
+                    key={dateKey}
+                    className={`h-24 p-1 border rounded-lg ${
+                      isToday(day) ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'
+                    } ${!isSameMonth(day, calendarDate) ? 'opacity-50' : ''}`}
+                  >
+                    <div className={`text-sm font-medium ${isToday(day) ? 'text-emerald-600' : 'text-gray-700'}`}>
+                      {format(day, 'd')}
+                    </div>
+                    {hasInterviews && (
+                      <div className="mt-1 space-y-1">
+                        {dayInterviews.slice(0, 2).map((interview: any) => (
+                          <div
+                            key={interview.id}
+                            className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded truncate"
+                            title={interview.job?.title}
+                          >
+                            {format(new Date(interview.scheduledAt), 'h:mm a')}
+                          </div>
+                        ))}
+                        {dayInterviews.length > 2 && (
+                          <div className="text-xs text-gray-500">
+                            +{dayInterviews.length - 2} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
