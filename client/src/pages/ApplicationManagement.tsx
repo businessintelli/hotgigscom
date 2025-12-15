@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ResumeViewer } from "@/components/ResumeViewer";
+import SkillMatrixDisplay from "@/components/SkillMatrixDisplay";
 
 export default function ApplicationManagement() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -625,6 +626,13 @@ export default function ApplicationManagement() {
                                 </div>
                               )}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Skill Matrix Display */}
+                        {application.skillRatings && application.skillRatings.length > 0 && (
+                          <div className="mb-3">
+                            <SkillMatrixDisplay ratings={application.skillRatings} compact />
                           </div>
                         )}
 

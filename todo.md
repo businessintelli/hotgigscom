@@ -1940,3 +1940,65 @@
 - [x] Integrate compact summary into InterviewManagement interview cards (for completed interviews)
 - [x] Test aggregation with multiple panelist feedback
 - [x] Save checkpoint
+
+
+## Reschedule Request Notifications (IN PROGRESS 🔄)
+- [ ] Create reschedule_requests table in database schema
+- [ ] Add API endpoint for panelists to submit reschedule requests
+- [ ] Create notification when panelist requests reschedule
+- [ ] Build recruiter notification/alert UI for reschedule requests
+- [ ] Implement workflow to propose alternative times
+- [ ] Send updated invitation emails with new times
+
+## Panelist Reminder Emails (IN PROGRESS 🔄)
+- [ ] Add reminder tracking fields to interview_panel_members table
+- [ ] Create panelist reminder email templates (24h and 1h)
+- [ ] Build service to check for upcoming panelist interviews
+- [ ] Send 24-hour reminder with meeting link and prep tips
+- [ ] Send 1-hour reminder with quick checklist
+- [ ] Add API endpoint to trigger reminder processing
+
+## Feedback Export to PDF (IN PROGRESS 🔄)
+- [ ] Create PDF template for panel feedback report
+- [ ] Include all panelist scores and recommendations
+- [ ] Add interview details and candidate info
+- [ ] Generate downloadable PDF file
+- [ ] Add export button to InterviewManagement page
+
+## Skill Matrix System (IN PROGRESS 🔄)
+- [ ] Create job_skill_requirements table (job_id, skill_name, is_mandatory)
+- [ ] Create candidate_skill_ratings table (application_id, skill_name, rating 1-5, years_experience, last_used_year)
+- [ ] Add skill matrix builder UI to job creation form
+- [ ] Build skill matrix form for candidates during application
+- [ ] Validate mandatory skills are filled before submission
+- [ ] Display skill matrix in application review for recruiters
+- [ ] Include skill matrix in customer submission package (with resume and video)
+
+
+## Reschedule Request Notifications (Current Session)
+- [x] Create reschedule_requests database table
+- [x] Add API endpoints for creating and managing reschedule requests
+- [x] Create notification system for recruiters when panelists request reschedule
+- [x] Build workflow for proposing alternative times
+
+## Panelist Reminder Emails (Current Session)
+- [x] Add reminder tracking columns to interview_panelists table
+- [x] Create email templates for 24h and 1h reminders
+- [x] Implement reminder service to send automated emails
+- [x] Include meeting links and preparation tips in emails
+
+## Feedback Export to PDF (Current Session)
+- [x] Create PDF generator service for panel feedback
+- [x] Add API endpoint to export feedback as PDF
+- [x] Format PDF with all panelist scores and comments
+
+## Skill Matrix System (Current Session)
+- [x] Create job_skill_requirements table for recruiter-defined skills
+- [x] Create candidate_skill_ratings table for candidate responses
+- [x] Build SkillMatrixBuilder component for job creation
+- [x] Build SkillMatrixForm component for candidate applications
+- [x] Build SkillMatrixDisplay component for viewing ratings
+- [x] Add skill matrix to job creation flow
+- [x] Add skill matrix form to job application flow
+- [x] Display skill matrix in application management view
+- [x] Include skill matrix in customer submission/sharing

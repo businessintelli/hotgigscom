@@ -25,6 +25,7 @@ import {
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import SkillMatrixBuilder, { SkillRequirement } from "@/components/SkillMatrixBuilder";
 
 export default function CreateJob() {
   const { user } = useAuth();
@@ -62,6 +63,9 @@ export default function CreateJob() {
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Skill matrix state
+  const [skillRequirements, setSkillRequirements] = useState<SkillRequirement[]>([]);
+
   // Fetch recruiter profile
   const { data: recruiter } = trpc.recruiter.getProfile.useQuery(
     undefined,
@@ -74,8 +78,21 @@ export default function CreateJob() {
   });
 
   // Create job mutation
+  const setSkillRequirementsMutation = trpc.skillMatrix.setJobSkillRequirements.useMutation();
+  
   const createJobMutation = trpc.job.create.useMutation({
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      // Save skill requirements if any
+      if (skillRequirements.length > 0 && data?.id) {
+        try {
+          await setSkillRequirementsMutation.mutateAsync({
+            jobId: data.id,
+            skills: skillRequirements,
+          });
+        } catch (error) {
+          console.error('Failed to save skill requirements:', error);
+        }
+      }
       toast.success("Job posted successfully!");
       setLocation("/recruiter/dashboard");
     },
@@ -408,6 +425,15 @@ Format the output as JSON with keys: title, description, responsibilities, requi
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                {/* Skill Matrix Section */}
+                <div className="mt-6">
+                  <SkillMatrixBuilder
+                    skills={skillRequirements}
+                    onChange={setSkillRequirements}
+                    maxSkills={10}
+                  />
                 </div>
 
                 <div className="flex gap-2 pt-4">

@@ -10,6 +10,7 @@ import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { ResumePreviewModal } from "@/components/ResumePreviewModal";
+import SkillMatrixForm, { SkillRating, validateSkillMatrix } from "@/components/SkillMatrixForm";
 
 export default function JobApplication() {
   const { user } = useAuth();
@@ -28,6 +29,8 @@ export default function JobApplication() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [selectedResumeProfileId, setSelectedResumeProfileId] = useState<number | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
+  const [skillRatings, setSkillRatings] = useState<SkillRating[]>([]);
+  const [showSkillValidation, setShowSkillValidation] = useState(false);
   
   // Upload resume mutation
   const uploadResumeMutation = trpc.candidate.uploadResume.useMutation();
@@ -95,9 +98,29 @@ export default function JobApplication() {
     { enabled: !!candidate?.id }
   );
 
+  // Fetch job skill requirements
+  const { data: skillRequirements = [] } = trpc.skillMatrix.getJobSkillRequirements.useQuery(
+    { jobId },
+    { enabled: jobId > 0 }
+  );
+
+  // Submit skill ratings mutation
+  const submitSkillRatingsMutation = trpc.skillMatrix.submitSkillRatings.useMutation();
+
   // Submit application mutation
   const submitApplicationMutation = trpc.application.submit.useMutation({
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      // Submit skill ratings if any
+      if (skillRatings.length > 0 && data?.id) {
+        try {
+          await submitSkillRatingsMutation.mutateAsync({
+            applicationId: data.id,
+            ratings: skillRatings,
+          });
+        } catch (error) {
+          console.error('Failed to save skill ratings:', error);
+        }
+      }
       setIsSubmitting(false);
       setIsSubmitted(true);
       toast.success("Application submitted successfully!");
@@ -149,6 +172,16 @@ export default function JobApplication() {
     if (useCustomResume && !customResumeFile) {
       toast.error("Please select a resume file");
       return;
+    }
+
+    // Validate skill matrix if required
+    if (skillRequirements.length > 0) {
+      const isValid = validateSkillMatrix(skillRequirements, skillRatings);
+      if (!isValid) {
+        setShowSkillValidation(true);
+        toast.error("Please complete all required skills in the skill matrix");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -516,6 +549,16 @@ export default function JobApplication() {
                     )}
                   </div>
                 </div>
+
+                {/* Skill Matrix */}
+                {skillRequirements.length > 0 && (
+                  <SkillMatrixForm
+                    skillRequirements={skillRequirements}
+                    ratings={skillRatings}
+                    onChange={setSkillRatings}
+                    showValidation={showSkillValidation}
+                  />
+                )}
 
                 {/* Cover Letter */}
                 <div>

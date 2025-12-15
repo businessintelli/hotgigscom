@@ -877,6 +877,8 @@ export const interviewPanelists = mysqlTable("interview_panelists", {
   invitedAt: timestamp("invitedAt").defaultNow().notNull(),
   respondedAt: timestamp("respondedAt"),
   attendedAt: timestamp("attendedAt"),
+  reminder24hSent: boolean("reminder24hSent").default(false).notNull(),
+  reminder1hSent: boolean("reminder1hSent").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -954,3 +956,57 @@ export const panelActionTokens = mysqlTable("panel_action_tokens", {
 
 export type PanelActionToken = typeof panelActionTokens.$inferSelect;
 export type InsertPanelActionToken = typeof panelActionTokens.$inferInsert;
+
+
+/**
+ * Reschedule requests from panel members
+ */
+export const rescheduleRequests = mysqlTable("reschedule_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  panelistId: int("panelistId").notNull().references(() => interviewPanelists.id),
+  requestedBy: int("requestedBy").references(() => users.id), // null for non-registered panelists
+  reason: text("reason"),
+  preferredDates: text("preferredDates"), // JSON array of preferred date/time slots
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "resolved"]).default("pending").notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+  resolvedBy: int("resolvedBy").references(() => users.id),
+  newInterviewTime: timestamp("newInterviewTime"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RescheduleRequest = typeof rescheduleRequests.$inferSelect;
+export type InsertRescheduleRequest = typeof rescheduleRequests.$inferInsert;
+
+/**
+ * Job skill requirements - mandatory skills for job applications
+ */
+export const jobSkillRequirements = mysqlTable("job_skill_requirements", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  skillName: varchar("skillName", { length: 255 }).notNull(),
+  isMandatory: boolean("isMandatory").default(true).notNull(),
+  orderIndex: int("orderIndex").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type JobSkillRequirement = typeof jobSkillRequirements.$inferSelect;
+export type InsertJobSkillRequirement = typeof jobSkillRequirements.$inferInsert;
+
+/**
+ * Candidate skill ratings - skill matrix submitted with job applications
+ */
+export const candidateSkillRatings = mysqlTable("candidate_skill_ratings", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  skillRequirementId: int("skillRequirementId").notNull().references(() => jobSkillRequirements.id),
+  skillName: varchar("skillName", { length: 255 }).notNull(),
+  rating: int("rating").notNull(), // 1-5 scale
+  yearsExperience: int("yearsExperience").notNull(), // years of experience
+  lastUsedYear: int("lastUsedYear").notNull(), // e.g., 2024, 2023
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CandidateSkillRating = typeof candidateSkillRatings.$inferSelect;
+export type InsertCandidateSkillRating = typeof candidateSkillRatings.$inferInsert;

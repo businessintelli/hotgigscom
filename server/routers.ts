@@ -1014,11 +1014,11 @@ export const appRouter = router({
         isPublic: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        await db.createJob({
+        const result = await db.createJob({
           ...input,
           postedBy: ctx.user.id,
         });
-        return { success: true };
+        return { success: true, id: result.insertId };
       }),
     
     update: protectedProcedure
@@ -1064,7 +1064,8 @@ export const appRouter = router({
         videoIntroductionId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        await db.createApplication(input);
+        const appResult = await db.createApplication(input);
+        const applicationId = appResult.insertId;
         
         // Create notification for recruiter about new application
         try {
@@ -1089,7 +1090,7 @@ export const appRouter = router({
           console.error('Failed to create notification:', error);
         }
         
-        return { success: true };
+        return { success: true, id: applicationId };
       }),
     
     getByJob: protectedProcedure
@@ -1938,11 +1939,11 @@ export const appRouter = router({
         // Get all feedback for this interview
         const allFeedback = await database
           .select({
-            technicalScore: panelistFeedback.technicalScore,
-            communicationScore: panelistFeedback.communicationScore,
-            problemSolvingScore: panelistFeedback.problemSolvingScore,
-            cultureFitScore: panelistFeedback.cultureFitScore,
-            overallScore: panelistFeedback.overallScore,
+            technicalScore: panelistFeedback.technicalSkills,
+            communicationScore: panelistFeedback.communicationSkills,
+            problemSolvingScore: panelistFeedback.problemSolving,
+            cultureFitScore: panelistFeedback.cultureFit,
+            overallScore: panelistFeedback.overallRating,
             recommendation: panelistFeedback.recommendation,
             panelistName: interviewPanelists.name,
             panelistEmail: interviewPanelists.email,
@@ -3141,6 +3142,192 @@ export const appRouter = router({
         const startDate = input.startDate ? new Date(input.startDate) : undefined;
         const endDate = input.endDate ? new Date(input.endDate) : undefined;
         return await analyticsHelpers.getRecruiterPerformance(input.recruiterId, startDate, endDate);
+      }),
+  }),
+
+  // Reschedule Requests Router
+  reschedule: router({
+    // Submit a reschedule request (panelist)
+    submitRequest: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        panelistId: z.number(),
+        reason: z.string(),
+        preferredDates: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createRescheduleRequest({
+          interviewId: input.interviewId,
+          panelistId: input.panelistId,
+          requestedBy: ctx.user.id,
+          reason: input.reason,
+          preferredDates: input.preferredDates ? JSON.stringify(input.preferredDates) : null,
+          status: 'pending',
+        });
+
+        // Get interview details for notification
+        const interview = await db.getInterviewById(input.interviewId);
+        if (interview) {
+          const job = await db.getJobById(interview.interview.jobId);
+          // Notify the recruiter who posted the job
+          if (job) {
+            await db.createNotification({
+              userId: job.postedBy,
+              type: 'reschedule_request',
+              title: 'Reschedule Request',
+              message: `A panelist has requested to reschedule the interview for ${job.title}. Reason: ${input.reason}`,
+              relatedEntityType: 'interview',
+              relatedEntityId: input.interviewId,
+              actionUrl: `/recruiter/interviews?highlight=${input.interviewId}`,
+            });
+          }
+        }
+
+        return { success: true };
+      }),
+
+    // Get pending reschedule requests for recruiter
+    getPendingRequests: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getPendingRescheduleRequests(ctx.user.id);
+      }),
+
+    // Get reschedule requests for a specific interview
+    getByInterview: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getRescheduleRequestsByInterview(input.interviewId);
+      }),
+
+    // Resolve a reschedule request (recruiter)
+    resolveRequest: protectedProcedure
+      .input(z.object({
+        requestId: z.number(),
+        status: z.enum(['approved', 'rejected', 'resolved']),
+        newInterviewTime: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateRescheduleRequest(input.requestId, {
+          status: input.status,
+          resolvedAt: new Date(),
+          resolvedBy: ctx.user.id,
+          newInterviewTime: input.newInterviewTime ? new Date(input.newInterviewTime) : null,
+        });
+
+        // If approved with new time, update the interview
+        if (input.status === 'approved' && input.newInterviewTime) {
+          // Get the request to find the interview
+          const requests = await db.getRescheduleRequestsByInterview(0); // We need to get by request ID
+          // For now, we'll handle this in the UI by also calling updateInterview
+        }
+
+        return { success: true };
+      }),
+  }),
+
+  // Panelist Reminders Router
+  panelistReminders: router({
+    // Process all pending reminders (called by cron job or manually)
+    processReminders: protectedProcedure
+      .mutation(async () => {
+        const { processPanelistReminders } = await import('./services/panelistReminderService');
+        return await processPanelistReminders();
+      }),
+
+    // Get upcoming interviews for panelists (for dashboard)
+    getUpcomingForPanelist: protectedProcedure
+      .query(async ({ ctx }) => {
+        const { interviewPanelists, interviews, applications, jobs, candidates, users } = await import("../drizzle/schema");
+        const { eq, and, gte } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) return [];
+
+        const now = new Date();
+        const result = await database
+          .select()
+          .from(interviewPanelists)
+          .leftJoin(interviews, eq(interviewPanelists.interviewId, interviews.id))
+          .leftJoin(applications, eq(interviews.applicationId, applications.id))
+          .leftJoin(jobs, eq(applications.jobId, jobs.id))
+          .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+          .leftJoin(users, eq(candidates.userId, users.id))
+          .where(
+            and(
+              eq(interviewPanelists.email, ctx.user.email || ''),
+              eq(interviewPanelists.status, 'accepted'),
+              gte(interviews.scheduledAt, now)
+            )
+          );
+
+        return result.map((row: any) => ({
+          panelist: row.interview_panelists,
+          interview: row.interviews,
+          job: row.jobs,
+          candidate: {
+            ...row.candidates,
+            user: row.users,
+          },
+        }));
+      }),
+  }),
+
+  // Feedback PDF Export Router
+  feedbackExport: router({
+    // Generate PDF report for interview feedback
+    generatePDF: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { generateFeedbackPDFReport } = await import('./feedbackPDFGenerator');
+        const pdfUrl = await generateFeedbackPDFReport(input.interviewId);
+        return { pdfUrl };
+      }),
+  }),
+
+  // Skill Matrix Router
+  skillMatrix: router({
+    // Create/update skill requirements for a job
+    setJobSkillRequirements: protectedProcedure
+      .input(z.object({
+        jobId: z.number(),
+        skills: z.array(z.object({
+          skillName: z.string(),
+          isMandatory: z.boolean(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        await db.createJobSkillRequirements(input.jobId, input.skills);
+        return { success: true };
+      }),
+
+    // Get skill requirements for a job
+    getJobSkillRequirements: publicProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getJobSkillRequirements(input.jobId);
+      }),
+
+    // Submit candidate skill ratings with application
+    submitSkillRatings: protectedProcedure
+      .input(z.object({
+        applicationId: z.number(),
+        ratings: z.array(z.object({
+          skillRequirementId: z.number(),
+          skillName: z.string(),
+          rating: z.number().min(1).max(5),
+          yearsExperience: z.number().min(0),
+          lastUsedYear: z.number().min(1990).max(2030),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        await db.createCandidateSkillRatings(input.applicationId, input.ratings);
+        return { success: true };
+      }),
+
+    // Get candidate skill ratings for an application
+    getCandidateSkillRatings: protectedProcedure
+      .input(z.object({ applicationId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCandidateSkillRatings(input.applicationId);
       }),
   }),
 });

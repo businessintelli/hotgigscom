@@ -22,7 +22,11 @@ import {
   taskAssignments, InsertTaskAssignment,
   taskReminders, InsertTaskReminder,
   taskTemplates, InsertTaskTemplate,
-  applicationFeedback, InsertApplicationFeedback
+  applicationFeedback, InsertApplicationFeedback,
+  rescheduleRequests, InsertRescheduleRequest,
+  jobSkillRequirements, InsertJobSkillRequirement,
+  candidateSkillRatings, InsertCandidateSkillRating,
+  interviewPanelists, panelistFeedback, notifications
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -457,7 +461,9 @@ export async function createJob(job: InsertJob) {
   if (!db) throw new Error("Database not available");
   
   const result = await db.insert(jobs).values(job);
-  return result;
+  // Return the inserted ID for skill matrix linking
+  const insertId = (result as any)[0]?.insertId || (result as any).insertId;
+  return { insertId };
 }
 
 export async function getJobById(id: number) {
@@ -600,7 +606,9 @@ export async function createApplication(application: InsertApplication) {
   if (!db) throw new Error("Database not available");
   
   const result = await db.insert(applications).values(application);
-  return result;
+  // Return the inserted ID for skill ratings linking
+  const insertId = (result as any)[0]?.insertId || (result as any).insertId;
+  return { insertId };
 }
 
 export async function getApplicationsByJob(jobId: number) {
@@ -1297,4 +1305,242 @@ export async function deleteApplicationFeedback(id: number) {
   if (!db) throw new Error("Database not available");
   
   await db.delete(applicationFeedback).where(eq(applicationFeedback.id, id));
+}
+
+
+// Reschedule Request Functions
+export async function createRescheduleRequest(data: InsertRescheduleRequest) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(rescheduleRequests).values(data);
+  return result;
+}
+
+export async function getRescheduleRequestsByInterview(interviewId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(rescheduleRequests)
+    .leftJoin(interviewPanelists, eq(rescheduleRequests.panelistId, interviewPanelists.id))
+    .where(eq(rescheduleRequests.interviewId, interviewId))
+    .orderBy(desc(rescheduleRequests.createdAt));
+  
+  return result.map((row: any) => ({
+    ...row.reschedule_requests,
+    panelist: row.interview_panelists,
+  }));
+}
+
+export async function getPendingRescheduleRequests(recruiterId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all pending reschedule requests for interviews created by this recruiter
+  const result = await db
+    .select()
+    .from(rescheduleRequests)
+    .leftJoin(interviews, eq(rescheduleRequests.interviewId, interviews.id))
+    .leftJoin(interviewPanelists, eq(rescheduleRequests.panelistId, interviewPanelists.id))
+    .leftJoin(applications, eq(interviews.applicationId, applications.id))
+    .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .where(
+      and(
+        eq(rescheduleRequests.status, 'pending'),
+        eq(jobs.postedBy, recruiterId)
+      )
+    )
+    .orderBy(desc(rescheduleRequests.createdAt));
+  
+  return result.map((row: any) => ({
+    ...row.reschedule_requests,
+    interview: row.interviews,
+    panelist: row.interview_panelists,
+    job: row.jobs,
+    candidate: {
+      ...row.candidates,
+      user: row.users,
+    },
+  }));
+}
+
+export async function updateRescheduleRequest(id: number, data: Partial<InsertRescheduleRequest>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(rescheduleRequests).set(data).where(eq(rescheduleRequests.id, id));
+}
+
+// Job Skill Requirements Functions
+export async function createJobSkillRequirements(jobId: number, skills: { skillName: string; isMandatory: boolean }[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete existing requirements for this job
+  await db.delete(jobSkillRequirements).where(eq(jobSkillRequirements.jobId, jobId));
+  
+  // Insert new requirements
+  if (skills.length > 0) {
+    const values = skills.map((skill, index) => ({
+      jobId,
+      skillName: skill.skillName,
+      isMandatory: skill.isMandatory,
+      orderIndex: index,
+    }));
+    await db.insert(jobSkillRequirements).values(values);
+  }
+}
+
+export async function getJobSkillRequirements(jobId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(jobSkillRequirements)
+    .where(eq(jobSkillRequirements.jobId, jobId))
+    .orderBy(jobSkillRequirements.orderIndex);
+  
+  return result;
+}
+
+// Candidate Skill Ratings Functions
+export async function createCandidateSkillRatings(applicationId: number, ratings: { skillRequirementId: number; skillName: string; rating: number; yearsExperience: number; lastUsedYear: number }[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete existing ratings for this application
+  await db.delete(candidateSkillRatings).where(eq(candidateSkillRatings.applicationId, applicationId));
+  
+  // Insert new ratings
+  if (ratings.length > 0) {
+    const values = ratings.map(rating => ({
+      applicationId,
+      skillRequirementId: rating.skillRequirementId,
+      skillName: rating.skillName,
+      rating: rating.rating,
+      yearsExperience: rating.yearsExperience,
+      lastUsedYear: rating.lastUsedYear,
+    }));
+    await db.insert(candidateSkillRatings).values(values);
+  }
+}
+
+export async function getCandidateSkillRatings(applicationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(candidateSkillRatings)
+    .leftJoin(jobSkillRequirements, eq(candidateSkillRatings.skillRequirementId, jobSkillRequirements.id))
+    .where(eq(candidateSkillRatings.applicationId, applicationId));
+  
+  return result.map((row: any) => ({
+    ...row.candidate_skill_ratings,
+    requirement: row.job_skill_requirements,
+  }));
+}
+
+// Panelist Reminder Functions
+export async function getPanelistsNeedingReminders() {
+  const db = await getDb();
+  if (!db) return { reminder24h: [], reminder1h: [] };
+  
+  const now = new Date();
+  const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const in23h = new Date(now.getTime() + 23 * 60 * 60 * 1000);
+  const in1h = new Date(now.getTime() + 60 * 60 * 1000);
+  const in30m = new Date(now.getTime() + 30 * 60 * 1000);
+  
+  // Get panelists needing 24h reminder
+  const reminder24hResult = await db
+    .select()
+    .from(interviewPanelists)
+    .leftJoin(interviews, eq(interviewPanelists.interviewId, interviews.id))
+    .leftJoin(applications, eq(interviews.applicationId, applications.id))
+    .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .where(
+      and(
+        eq(interviewPanelists.status, 'accepted'),
+        sql`${interviewPanelists}.reminder24hSent = false`,
+        gte(interviews.scheduledAt, in23h),
+        lte(interviews.scheduledAt, in24h)
+      )
+    );
+  
+  // Get panelists needing 1h reminder
+  const reminder1hResult = await db
+    .select()
+    .from(interviewPanelists)
+    .leftJoin(interviews, eq(interviewPanelists.interviewId, interviews.id))
+    .leftJoin(applications, eq(interviews.applicationId, applications.id))
+    .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .where(
+      and(
+        eq(interviewPanelists.status, 'accepted'),
+        sql`${interviewPanelists}.reminder1hSent = false`,
+        gte(interviews.scheduledAt, in30m),
+        lte(interviews.scheduledAt, in1h)
+      )
+    );
+  
+  const mapResult = (rows: any[]) => rows.map((row: any) => ({
+    panelist: row.interview_panelists,
+    interview: row.interviews,
+    job: row.jobs,
+    candidate: {
+      ...row.candidates,
+      user: row.users,
+    },
+  }));
+  
+  return {
+    reminder24h: mapResult(reminder24hResult),
+    reminder1h: mapResult(reminder1hResult),
+  };
+}
+
+export async function markPanelistReminderSent(panelistId: number, reminderType: '24h' | '1h') {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const updateData = reminderType === '24h' 
+    ? { reminder24hSent: true } 
+    : { reminder1hSent: true };
+  
+  await db.update(interviewPanelists).set(updateData as any).where(eq(interviewPanelists.id, panelistId));
+}
+
+// Create notification helper
+export async function createNotification(data: { userId: number; type: string; title: string; message: string; relatedEntityType?: string; relatedEntityId?: number; actionUrl?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(notifications).values(data);
+}
+
+// Get panelist feedback for an interview
+export async function getPanelistFeedbackForInterview(interviewId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select()
+    .from(panelistFeedback)
+    .leftJoin(interviewPanelists, eq(panelistFeedback.panelistId, interviewPanelists.id))
+    .where(eq(panelistFeedback.interviewId, interviewId));
+  
+  return result.map((row: any) => ({
+    ...row.panelist_feedback,
+    panelist: row.interview_panelists,
+  }));
 }
