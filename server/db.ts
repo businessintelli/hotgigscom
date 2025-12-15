@@ -22,9 +22,7 @@ import {
   taskAssignments, InsertTaskAssignment,
   taskReminders, InsertTaskReminder,
   taskTemplates, InsertTaskTemplate,
-  applicationFeedback, InsertApplicationFeedback,
-  interviewPrepQuestions, InsertInterviewPrepQuestion,
-  companyProfiles, InsertCompanyProfile
+  applicationFeedback, InsertApplicationFeedback
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -625,25 +623,13 @@ export async function getAllApplications() {
     .leftJoin(resumeProfiles, eq(applications.resumeProfileId, resumeProfiles.id))
     .orderBy(desc(applications.submittedAt));
   
-  // Fetch feedback and interviews for all applications
-  const applicationsWithData = await Promise.all(
-    results.map(async (row: any) => {
-      const feedback = await getApplicationFeedback(row.applications.id);
-      const candidateInterviews = row.candidates ? await getInterviewsByCandidateId(row.candidates.id) : [];
-      
-      return {
-        ...row.applications,
-        candidate: row.candidates,
-        job: row.jobs,
-        videoIntroduction: row.videoIntroductions,
-        resumeProfile: row.resumeProfiles,
-        feedback: feedback || [],
-        interviews: candidateInterviews || [],
-      };
-    })
-  );
-  
-  return applicationsWithData;
+  return results.map((row: any) => ({
+    ...row.applications,
+    candidate: row.candidates,
+    job: row.jobs,
+    videoIntroduction: row.videoIntroductions,
+    resumeProfile: row.resumeProfiles,
+  }));
 }
 
 export async function getApplicationsByCandidate(candidateId: number) {
@@ -651,14 +637,6 @@ export async function getApplicationsByCandidate(candidateId: number) {
   if (!db) return [];
   
   return await db.select().from(applications).where(eq(applications.candidateId, candidateId)).orderBy(desc(applications.submittedAt));
-}
-
-export async function getApplicationById(id: number) {
-  const db = await getDb();
-  if (!db) return undefined;
-  
-  const results = await db.select().from(applications).where(eq(applications.id, id)).limit(1);
-  return results[0];
 }
 
 export async function updateApplication(id: number, data: Partial<InsertApplication>) {
@@ -1319,36 +1297,4 @@ export async function deleteApplicationFeedback(id: number) {
   if (!db) throw new Error("Database not available");
   
   await db.delete(applicationFeedback).where(eq(applicationFeedback.id, id));
-}
-
-
-// ==================== Interview Prep Functions ====================
-
-export async function getInterviewPrepQuestionsByRole(role: string, limit: number = 10) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db
-    .select()
-    .from(interviewPrepQuestions)
-    .where(eq(interviewPrepQuestions.role, role))
-    .limit(limit);
-}
-
-export async function getCompanyProfileByName(companyName: string) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db
-    .select()
-    .from(companyProfiles)
-    .where(eq(companyProfiles.companyName, companyName))
-    .limit(1);
-  return result[0] || null;
-}
-
-export async function getAllCompanyProfiles() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db
-    .select()
-    .from(companyProfiles);
 }

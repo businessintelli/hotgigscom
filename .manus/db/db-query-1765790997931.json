@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `interview_panelists` (\n  `id` int(11) NOT NULL AUTO_INCREMENT,\n  `interviewId` int(11) NOT NULL,\n  `userId` int(11) NOT NULL,\n  `email` varchar(255) NOT NULL,\n  `name` varchar(255) DEFAULT NULL,\n  `role` varchar(100) DEFAULT NULL,\n  `status` enum('invited','accepted','declined','attended') NOT NULL DEFAULT 'invited',\n  `invitedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `respondedAt` timestamp NULL DEFAULT NULL,\n  `attendedAt` timestamp NULL DEFAULT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `interviewId` (`interviewId`),\n  KEY `userId` (`userId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `interview_panelists` (\n  `id` int(11) NOT NULL AUTO_INCREMENT,\n  `interviewId` int(11) NOT NULL,\n  `userId` int(11) NOT NULL,\n  `email` varchar(255) NOT NULL,\n  `name` varchar(255) DEFAULT NULL,\n  `role` varchar(100) DEFAULT NULL,\n  `status` enum('invited','accepted','declined','attended') NOT NULL DEFAULT 'invited',\n  `invitedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `respondedAt` timestamp NULL DEFAULT NULL,\n  `attendedAt` timestamp NULL DEFAULT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `interviewId` (`interviewId`),\n  KEY `userId` (`userId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1650
+}

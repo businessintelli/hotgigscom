@@ -1,0 +1,35 @@
+{
+  "query": "SHOW CREATE TABLE interview_feedback;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SHOW CREATE TABLE interview_feedback;",
+  "rows": [
+    {
+      "Table": "interview_feedback",
+      "Create Table": "CREATE TABLE `interview_feedback` ("
+    }
+  ],
+  "messages": [
+    "  `id` int(11) NOT NULL AUTO_INCREMENT,",
+    "  `interviewId` int(11) NOT NULL,",
+    "  `candidateId` int(11) NOT NULL,",
+    "  `overallRating` int(11) NOT NULL,",
+    "  `interviewerRating` int(11) DEFAULT NULL,",
+    "  `processRating` int(11) DEFAULT NULL,",
+    "  `communicationRating` int(11) DEFAULT NULL,",
+    "  `positiveAspects` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `areasForImprovement` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `additionalComments` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `wouldRecommend` tinyint(1) DEFAULT NULL,",
+    "  `isAnonymous` tinyint(1) NOT NULL DEFAULT '0',",
+    "  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,",
+    "  KEY `fk_1` (`interviewId`),",
+    "  KEY `fk_2` (`candidateId`),",
+    "  CONSTRAINT `fk_1` FOREIGN KEY (`interviewId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`interviews` (`id`),",
+    "  CONSTRAINT `fk_2` FOREIGN KEY (`candidateId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`candidates` (`id`)",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+  ],
+  "stdout": "Table\tCreate Table\ninterview_feedback\tCREATE TABLE `interview_feedback` (\n  `id` int(11) NOT NULL AUTO_INCREMENT,\n  `interviewId` int(11) NOT NULL,\n  `candidateId` int(11) NOT NULL,\n  `overallRating` int(11) NOT NULL,\n  `interviewerRating` int(11) DEFAULT NULL,\n  `processRating` int(11) DEFAULT NULL,\n  `communicationRating` int(11) DEFAULT NULL,\n  `positiveAspects` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `areasForImprovement` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `additionalComments` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `wouldRecommend` tinyint(1) DEFAULT NULL,\n  `isAnonymous` tinyint(1) NOT NULL DEFAULT '0',\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  KEY `fk_1` (`interviewId`),\n  KEY `fk_2` (`candidateId`),\n  CONSTRAINT `fk_1` FOREIGN KEY (`interviewId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`interviews` (`id`),\n  CONSTRAINT `fk_2` FOREIGN KEY (`candidateId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`candidates` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci\n",
+  "stderr": "",
+  "execution_time_ms": 1539
+}

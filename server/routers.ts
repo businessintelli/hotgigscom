@@ -81,82 +81,6 @@ export const appRouter = router({
       console.log("[Profile] Candidate profile created successfully");
       return { success: true };
     }),
-    
-    // Get notification preferences
-    getNotificationPreferences: protectedProcedure.query(async ({ ctx }) => {
-      const { notificationPreferences } = await import("../drizzle/schema");
-      const { eq } = await import("drizzle-orm");
-      const database = await db.getDb();
-      if (!database) throw new Error("Database not available");
-      
-      const [prefs] = await database
-        .select()
-        .from(notificationPreferences)
-        .where(eq(notificationPreferences.userId, ctx.user.id));
-      
-      // Return defaults if no preferences exist
-      if (!prefs) {
-        return {
-          statusUpdatesEnabled: true,
-          statusUpdatesFrequency: "immediate" as const,
-          interviewRemindersEnabled: true,
-          interviewReminder24h: true,
-          interviewReminder1h: true,
-          jobRecommendationsEnabled: true,
-          jobRecommendationsFrequency: "weekly" as const,
-          marketingEmailsEnabled: false,
-          weeklyDigestEnabled: true,
-          messageNotificationsEnabled: true,
-        };
-      }
-      
-      return prefs;
-    }),
-    
-    // Update notification preferences
-    updateNotificationPreferences: protectedProcedure
-      .input(z.object({
-        statusUpdatesEnabled: z.boolean().optional(),
-        statusUpdatesFrequency: z.enum(["immediate", "daily", "weekly"]).optional(),
-        interviewRemindersEnabled: z.boolean().optional(),
-        interviewReminder24h: z.boolean().optional(),
-        interviewReminder1h: z.boolean().optional(),
-        jobRecommendationsEnabled: z.boolean().optional(),
-        jobRecommendationsFrequency: z.enum(["immediate", "daily", "weekly"]).optional(),
-        marketingEmailsEnabled: z.boolean().optional(),
-        weeklyDigestEnabled: z.boolean().optional(),
-        messageNotificationsEnabled: z.boolean().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const { notificationPreferences } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
-        const database = await db.getDb();
-        if (!database) throw new Error("Database not available");
-        
-        // Check if preferences exist
-        const [existing] = await database
-          .select()
-          .from(notificationPreferences)
-          .where(eq(notificationPreferences.userId, ctx.user.id));
-        
-        if (existing) {
-          // Update existing preferences
-          await database
-            .update(notificationPreferences)
-            .set(input)
-            .where(eq(notificationPreferences.userId, ctx.user.id));
-        } else {
-          // Create new preferences
-          await database
-            .insert(notificationPreferences)
-            .values({
-              userId: ctx.user.id,
-              ...input,
-            });
-        }
-        
-        return { success: true };
-      }),
   }),
   
   auth: router({
@@ -463,26 +387,10 @@ export const appRouter = router({
         companyName: z.string().optional(),
         phoneNumber: z.string().optional(),
         bio: z.string().optional(),
-        emailDigestFrequency: z.enum(['never', 'daily', 'weekly']).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
         await db.updateRecruiter(id, data);
-        return { success: true };
-      }),
-    
-    updateDigestPreferences: protectedProcedure
-      .input(z.object({
-        frequency: z.enum(['never', 'daily', 'weekly']),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
-        if (!recruiter) throw new Error('Recruiter profile not found');
-        
-        await db.updateRecruiter(recruiter.id, {
-          emailDigestFrequency: input.frequency,
-        });
-        
         return { success: true };
       }),
     
@@ -841,18 +749,7 @@ export const appRouter = router({
         limit: z.number().optional().default(10)
       }))
       .query(async ({ input }) => {
-        const { getMatchingJobsForCandidate } = await import('./jobMatching');
-        return await getMatchingJobsForCandidate(input.candidateId, input.limit);
-      }),
-    
-    getSkillBasedJobs: protectedProcedure
-      .input(z.object({ 
-        candidateId: z.number(),
-        limit: z.number().optional().default(10)
-      }))
-      .query(async ({ input }) => {
-        const { getSkillBasedJobs } = await import('./skillBasedMatching');
-        return await getSkillBasedJobs(input.candidateId, input.limit);
+        return await db.getRecommendedJobsForCandidate(input.candidateId, input.limit);
       }),
     
     saveJob: protectedProcedure
@@ -984,6 +881,85 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await db.createCustomerContact(input);
+        return { success: true };
+      }),
+  }),
+
+  // Recruiter notification preferences (separate router for clarity)
+  recruiterPrefs: router({
+    getNotificationPreferences: protectedProcedure.query(async ({ ctx }) => {
+      const { recruiterNotificationPreferences } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const database = await db.getDb();
+      if (!database) return null;
+      
+      const [prefs] = await database
+        .select()
+        .from(recruiterNotificationPreferences)
+        .where(eq(recruiterNotificationPreferences.userId, ctx.user.id));
+      
+      // Return defaults if no preferences exist
+      if (!prefs) {
+        return {
+          newApplications: true,
+          applicationStatusChanges: true,
+          applicationFrequency: 'immediate' as const,
+          interviewScheduled: true,
+          interviewReminders: true,
+          interviewCompleted: true,
+          panelistResponses: true,
+          candidateFeedback: true,
+          panelistFeedbackSubmitted: true,
+          weeklyDigest: true,
+          systemUpdates: false,
+          marketingEmails: false,
+        };
+      }
+      
+      return prefs;
+    }),
+    
+    updateNotificationPreferences: protectedProcedure
+      .input(z.object({
+        newApplications: z.boolean().optional(),
+        applicationStatusChanges: z.boolean().optional(),
+        applicationFrequency: z.enum(['immediate', 'daily', 'weekly']).optional(),
+        interviewScheduled: z.boolean().optional(),
+        interviewReminders: z.boolean().optional(),
+        interviewCompleted: z.boolean().optional(),
+        panelistResponses: z.boolean().optional(),
+        candidateFeedback: z.boolean().optional(),
+        panelistFeedbackSubmitted: z.boolean().optional(),
+        weeklyDigest: z.boolean().optional(),
+        systemUpdates: z.boolean().optional(),
+        marketingEmails: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { recruiterNotificationPreferences } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) return { success: false };
+        
+        // Check if preferences exist
+        const [existing] = await database
+          .select()
+          .from(recruiterNotificationPreferences)
+          .where(eq(recruiterNotificationPreferences.userId, ctx.user.id));
+        
+        if (existing) {
+          // Update existing
+          await database
+            .update(recruiterNotificationPreferences)
+            .set(input)
+            .where(eq(recruiterNotificationPreferences.userId, ctx.user.id));
+        } else {
+          // Create new
+          await database.insert(recruiterNotificationPreferences).values({
+            userId: ctx.user.id,
+            ...input,
+          });
+        }
+        
         return { success: true };
       }),
   }),
@@ -1137,49 +1113,47 @@ export const appRouter = router({
         id: z.number(),
         status: z.enum(["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]),
         notes: z.string().optional(),
-        feedback: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, feedback, ...data } = input;
-        
-        // Get old status before update
-        const application = await db.getApplicationById(id);
-        const oldStatus = application?.status || "pending";
-        
+        const { id, ...data } = input;
         await db.updateApplication(id, data);
         
-        // Send enhanced email notification and in-app notification to candidate
+        // Send email notification and in-app notification to candidate
         try {
-          const { sendApplicationStatusNotification, getStatusNotificationMessage } = await import('./applicationStatusNotifier');
-          
-          // Send enhanced email with personalized content
-          await sendApplicationStatusNotification({
-            applicationId: id,
-            oldStatus,
-            newStatus: input.status,
-            feedback,
-          });
-          
-          // Get application details for in-app notification
-          const candidate = application ? await db.getCandidateById(application.candidateId) : null;
-          const job = application ? await db.getJobById(application.jobId) : null;
-          
-          if (candidate && job) {
-            // Create enhanced in-app notification
-            const { title, message } = getStatusNotificationMessage(input.status, job.title);
-            await notificationHelpers.createNotification({
-              userId: candidate.userId,
-              type: 'status_change',
-              title,
-              message,
-              isRead: false,
-              relatedEntityType: 'application',
-              relatedEntityId: id,
-              actionUrl: '/candidate-dashboard',
-            });
+          const applications = await db.getApplicationsByJob(0); // Get application details
+          const application = applications.find(app => app.id === id);
+          if (application) {
+            const candidate = await db.getCandidateById(application.candidateId);
+            const job = await db.getJobById(application.jobId);
+            if (candidate && job) {
+              const user = await db.getUserById(candidate.userId);
+              if (user?.email) {
+                // Send email
+                await sendApplicationStatusUpdate({
+                  candidateEmail: user.email,
+                  candidateName: user.name || "Candidate",
+                  jobTitle: job.title,
+                  companyName: job.companyName || "Company",
+                  oldStatus: application.status || "pending",
+                  newStatus: input.status,
+                });
+                
+                // Create in-app notification
+                await notificationHelpers.createNotification({
+                  userId: candidate.userId,
+                  type: 'status_change',
+                  title: 'Application Status Updated',
+                  message: `Your application for ${job.title} has been updated to: ${input.status}`,
+                  isRead: false,
+                  relatedEntityType: 'application',
+                  relatedEntityId: id,
+                  actionUrl: '/my-applications',
+                });
+              }
+            }
           }
         } catch (error) {
-          console.error("Failed to send application status notification:", error);
+          console.error("Failed to send application status email:", error);
         }
         
         return { success: true };
@@ -1314,83 +1288,6 @@ export const appRouter = router({
         
         return { questions };
       }),
-    
-    // Feedback endpoints
-    createFeedback: protectedProcedure
-      .input(z.object({
-        applicationId: z.number(),
-        rating: z.number().min(1).max(5).optional(),
-        notes: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
-        if (!recruiter) {
-          throw new Error("Recruiter profile not found");
-        }
-        
-        await db.createApplicationFeedback({
-          applicationId: input.applicationId,
-          recruiterId: recruiter.id,
-          rating: input.rating,
-          notes: input.notes,
-        });
-        
-        // Create notification for other recruiters
-        try {
-          const application = await db.getApplicationById(input.applicationId);
-          if (application) {
-            const job = await db.getJobById(application.jobId);
-            const candidate = await db.getCandidateById(application.candidateId);
-            
-            if (job && candidate) {
-              const jobOwnerRecruiter = await db.getRecruiterByUserId(job.postedBy);
-              
-              // Notify job owner if they're not the one who added feedback
-              if (jobOwnerRecruiter && jobOwnerRecruiter.id !== recruiter.id) {
-                await notificationHelpers.createNotification({
-                  userId: job.postedBy,
-                  type: 'application_feedback',
-                  title: 'New Feedback on Application',
-                  message: `${recruiter.companyName} added feedback for ${candidate.fullName}'s application to ${job.title}`,
-                  relatedEntityType: 'application',
-                  relatedEntityId: input.applicationId,
-                  actionUrl: `/recruiter/applications`,
-                });
-              }
-            }
-          }
-        } catch (error) {
-          console.error('[Feedback] Failed to create notification:', error);
-          // Don't fail the feedback creation if notification fails
-        }
-        
-        return { success: true };
-      }),
-    
-    getFeedback: protectedProcedure
-      .input(z.object({ applicationId: z.number() }))
-      .query(async ({ input }) => {
-        return await db.getApplicationFeedback(input.applicationId);
-      }),
-    
-    updateFeedback: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        rating: z.number().min(1).max(5).optional(),
-        notes: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        await db.updateApplicationFeedback(id, data);
-        return { success: true };
-      }),
-    
-    deleteFeedback: protectedProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteApplicationFeedback(input.id);
-        return { success: true };
-      }),
   }),
   
   interview: router({
@@ -1489,56 +1386,6 @@ export const appRouter = router({
       const candidate = await db.getCandidateByUserId(ctx.user.id);
       if (!candidate) return [];
       return await db.getInterviewsByCandidateId(candidate.id);
-    }),
-    
-    // Get upcoming interviews for candidate (for dashboard widget)
-    getUpcoming: protectedProcedure.query(async ({ ctx }) => {
-      const candidate = await db.getCandidateByUserId(ctx.user.id);
-      if (!candidate) return [];
-      
-      const allInterviews = await db.getInterviewsByCandidateId(candidate.id);
-      const now = new Date();
-      
-      // Filter to only scheduled interviews in the future
-      const upcomingInterviews = allInterviews
-        .filter(interview => {
-          const scheduledAt = new Date(interview.interview.scheduledAt);
-          return interview.interview.status === 'scheduled' && scheduledAt > now;
-        })
-        .sort((a, b) => {
-          return new Date(a.interview.scheduledAt).getTime() - new Date(b.interview.scheduledAt).getTime();
-        })
-        .slice(0, 3) // Get next 3 upcoming interviews
-        .map(interview => {
-          const scheduledAt = new Date(interview.interview.scheduledAt);
-          const msUntilInterview = scheduledAt.getTime() - now.getTime();
-          const hoursUntil = Math.floor(msUntilInterview / (1000 * 60 * 60));
-          const minutesUntil = Math.floor((msUntilInterview % (1000 * 60 * 60)) / (1000 * 60));
-          const daysUntil = Math.floor(hoursUntil / 24);
-          
-          return {
-            id: interview.interview.id,
-            scheduledAt: interview.interview.scheduledAt,
-            duration: interview.interview.duration,
-            type: interview.interview.type,
-            status: interview.interview.status,
-            meetingLink: interview.interview.meetingLink || interview.interview.videoJoinUrl,
-            location: interview.interview.location,
-            jobTitle: interview.job?.title || 'Position',
-            companyName: interview.job?.companyName || 'Company',
-            countdown: {
-              days: daysUntil,
-              hours: hoursUntil % 24,
-              minutes: minutesUntil,
-              totalHours: hoursUntil,
-              isToday: daysUntil === 0,
-              isTomorrow: daysUntil === 1,
-              isWithinHour: hoursUntil < 1,
-            },
-          };
-        });
-      
-      return upcomingInterviews;
     }),
     
     // Get interview by ID
@@ -1807,271 +1654,6 @@ export const appRouter = router({
         };
       }),
     
-    // Submit interview feedback from candidate
-    submitFeedback: protectedProcedure
-      .input(z.object({
-        interviewId: z.number(),
-        overallRating: z.number().min(1).max(5),
-        interviewerRating: z.number().min(1).max(5).optional(),
-        processRating: z.number().min(1).max(5).optional(),
-        communicationRating: z.number().min(1).max(5).optional(),
-        positiveAspects: z.string().optional(),
-        areasForImprovement: z.string().optional(),
-        additionalComments: z.string().optional(),
-        wouldRecommend: z.boolean().optional(),
-        isAnonymous: z.boolean().default(false),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const { interviewFeedback } = await import("../drizzle/schema");
-        const { eq, and } = await import("drizzle-orm");
-        const database = await db.getDb();
-        if (!database) throw new Error("Database not available");
-        
-        const candidate = await db.getCandidateByUserId(ctx.user.id);
-        if (!candidate) throw new Error("Candidate profile not found");
-        
-        // Check if feedback already exists
-        const [existing] = await database
-          .select()
-          .from(interviewFeedback)
-          .where(and(
-            eq(interviewFeedback.interviewId, input.interviewId),
-            eq(interviewFeedback.candidateId, candidate.id)
-          ));
-        
-        if (existing) {
-          throw new Error("Feedback already submitted for this interview");
-        }
-        
-        // Insert feedback
-        await database.insert(interviewFeedback).values({
-          interviewId: input.interviewId,
-          candidateId: candidate.id,
-          overallRating: input.overallRating,
-          interviewerRating: input.interviewerRating,
-          processRating: input.processRating,
-          communicationRating: input.communicationRating,
-          positiveAspects: input.positiveAspects,
-          areasForImprovement: input.areasForImprovement,
-          additionalComments: input.additionalComments,
-          wouldRecommend: input.wouldRecommend,
-          isAnonymous: input.isAnonymous,
-        });
-        
-        return { success: true };
-      }),
-    
-    // Get feedback for an interview (for recruiters)
-    getFeedback: protectedProcedure
-      .input(z.object({ interviewId: z.number() }))
-      .query(async ({ input }) => {
-        const { interviewFeedback } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
-        const database = await db.getDb();
-        if (!database) return null;
-        
-        const [feedback] = await database
-          .select()
-          .from(interviewFeedback)
-          .where(eq(interviewFeedback.interviewId, input.interviewId));
-        
-        return feedback || null;
-      }),
-    
-    // Check if candidate has submitted feedback
-    hasFeedback: protectedProcedure
-      .input(z.object({ interviewId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        const { interviewFeedback } = await import("../drizzle/schema");
-        const { eq, and } = await import("drizzle-orm");
-        const database = await db.getDb();
-        if (!database) return false;
-        
-        const candidate = await db.getCandidateByUserId(ctx.user.id);
-        if (!candidate) return false;
-        
-        const [existing] = await database
-          .select()
-          .from(interviewFeedback)
-          .where(and(
-            eq(interviewFeedback.interviewId, input.interviewId),
-            eq(interviewFeedback.candidateId, candidate.id)
-          ));
-        
-        return !!existing;
-      }),
-    
-    // Get completed interviews awaiting feedback
-    getAwaitingFeedback: protectedProcedure.query(async ({ ctx }) => {
-      const { interviewFeedback, interviews, jobs } = await import("../drizzle/schema");
-      const { eq, and, notInArray, sql } = await import("drizzle-orm");
-      const database = await db.getDb();
-      if (!database) return [];
-      
-      const candidate = await db.getCandidateByUserId(ctx.user.id);
-      if (!candidate) return [];
-      
-      // Get IDs of interviews that already have feedback
-      const feedbackInterviewIds = await database
-        .select({ interviewId: interviewFeedback.interviewId })
-        .from(interviewFeedback)
-        .where(eq(interviewFeedback.candidateId, candidate.id));
-      
-      const excludeIds = feedbackInterviewIds.map(f => f.interviewId);
-      
-      // Get completed interviews without feedback
-      const completedInterviews = await database
-        .select({
-          id: interviews.id,
-          scheduledAt: interviews.scheduledAt,
-          type: interviews.type,
-          jobId: interviews.jobId,
-          jobTitle: jobs.title,
-          companyName: jobs.companyName,
-        })
-        .from(interviews)
-        .leftJoin(jobs, eq(interviews.jobId, jobs.id))
-        .where(and(
-          eq(interviews.candidateId, candidate.id),
-          eq(interviews.status, 'completed'),
-          excludeIds.length > 0 ? notInArray(interviews.id, excludeIds) : sql`1=1`
-        ))
-        .limit(5);
-      
-      return completedInterviews;
-    }),
-    
-    // Get feedback analytics for recruiter
-    getFeedbackAnalytics: protectedProcedure.query(async ({ ctx }) => {
-      const { interviewFeedback, interviews, jobs } = await import("../drizzle/schema");
-      const { eq, sql, desc, and, gte } = await import("drizzle-orm");
-      const database = await db.getDb();
-      if (!database) return null;
-      
-      const recruiter = await db.getRecruiterByUserId(ctx.user.id);
-      if (!recruiter) return null;
-      
-      // Get all feedback for interviews related to recruiter's jobs
-      const recruiterJobIds = await database
-        .select({ id: jobs.id })
-        .from(jobs)
-        .where(eq(jobs.postedBy, ctx.user.id));
-      
-      const jobIds = recruiterJobIds.map(j => j.id);
-      if (jobIds.length === 0) {
-        return {
-          totalFeedback: 0,
-          averageOverall: 0,
-          averageInterviewer: 0,
-          averageProcess: 0,
-          averageCommunication: 0,
-          recommendRate: 0,
-          recentFeedback: [],
-          monthlyTrend: [],
-        };
-      }
-      
-      // Get all feedback with interview and job info
-      const allFeedback = await database
-        .select({
-          id: interviewFeedback.id,
-          overallRating: interviewFeedback.overallRating,
-          interviewerRating: interviewFeedback.interviewerRating,
-          processRating: interviewFeedback.processRating,
-          communicationRating: interviewFeedback.communicationRating,
-          wouldRecommend: interviewFeedback.wouldRecommend,
-          positiveAspects: interviewFeedback.positiveAspects,
-          areasForImprovement: interviewFeedback.areasForImprovement,
-          isAnonymous: interviewFeedback.isAnonymous,
-          createdAt: interviewFeedback.createdAt,
-          jobTitle: jobs.title,
-          companyName: jobs.companyName,
-        })
-        .from(interviewFeedback)
-        .innerJoin(interviews, eq(interviewFeedback.interviewId, interviews.id))
-        .innerJoin(jobs, eq(interviews.jobId, jobs.id))
-        .where(eq(jobs.postedBy, ctx.user.id))
-        .orderBy(desc(interviewFeedback.createdAt));
-      
-      if (allFeedback.length === 0) {
-        return {
-          totalFeedback: 0,
-          averageOverall: 0,
-          averageInterviewer: 0,
-          averageProcess: 0,
-          averageCommunication: 0,
-          recommendRate: 0,
-          recentFeedback: [],
-          monthlyTrend: [],
-        };
-      }
-      
-      // Calculate averages
-      const totalFeedback = allFeedback.length;
-      const avgOverall = allFeedback.reduce((sum, f) => sum + f.overallRating, 0) / totalFeedback;
-      const interviewerRatings = allFeedback.filter(f => f.interviewerRating != null);
-      const processRatings = allFeedback.filter(f => f.processRating != null);
-      const communicationRatings = allFeedback.filter(f => f.communicationRating != null);
-      const recommendResponses = allFeedback.filter(f => f.wouldRecommend != null);
-      
-      const avgInterviewer = interviewerRatings.length > 0
-        ? interviewerRatings.reduce((sum, f) => sum + (f.interviewerRating || 0), 0) / interviewerRatings.length
-        : 0;
-      const avgProcess = processRatings.length > 0
-        ? processRatings.reduce((sum, f) => sum + (f.processRating || 0), 0) / processRatings.length
-        : 0;
-      const avgCommunication = communicationRatings.length > 0
-        ? communicationRatings.reduce((sum, f) => sum + (f.communicationRating || 0), 0) / communicationRatings.length
-        : 0;
-      const recommendRate = recommendResponses.length > 0
-        ? (recommendResponses.filter(f => f.wouldRecommend === true).length / recommendResponses.length) * 100
-        : 0;
-      
-      // Get monthly trend (last 6 months)
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      
-      const monthlyData: { [key: string]: { count: number; total: number } } = {};
-      allFeedback.forEach(f => {
-        const date = new Date(f.createdAt);
-        if (date >= sixMonthsAgo) {
-          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-          if (!monthlyData[monthKey]) {
-            monthlyData[monthKey] = { count: 0, total: 0 };
-          }
-          monthlyData[monthKey].count++;
-          monthlyData[monthKey].total += f.overallRating;
-        }
-      });
-      
-      const monthlyTrend = Object.entries(monthlyData)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([month, data]) => ({
-          month,
-          averageRating: data.total / data.count,
-          count: data.count,
-        }));
-      
-      return {
-        totalFeedback,
-        averageOverall: Math.round(avgOverall * 10) / 10,
-        averageInterviewer: Math.round(avgInterviewer * 10) / 10,
-        averageProcess: Math.round(avgProcess * 10) / 10,
-        averageCommunication: Math.round(avgCommunication * 10) / 10,
-        recommendRate: Math.round(recommendRate),
-        recentFeedback: allFeedback.slice(0, 5).map(f => ({
-          id: f.id,
-          overallRating: f.overallRating,
-          positiveAspects: f.positiveAspects,
-          areasForImprovement: f.areasForImprovement,
-          isAnonymous: f.isAnonymous,
-          createdAt: f.createdAt,
-          jobTitle: f.jobTitle,
-        })),
-        monthlyTrend,
-      };
-    }),
-    
     // Fraud Detection - Log event
     logFraudEvent: protectedProcedure
       .input(z.object({
@@ -2123,6 +1705,184 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const html = await generateInterviewEvaluationReport(input.interviewId);
         return { html };
+      }),
+    
+    // Panel Member Management
+    invitePanelist: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        email: z.string().email(),
+        name: z.string().optional(),
+        role: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { interviewPanelists, users } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        // Find or create user for the panelist
+        const [existingUser] = await database
+          .select()
+          .from(users)
+          .where(eq(users.email, input.email));
+        
+        const userId = existingUser?.id || ctx.user.id; // Use inviter's ID if no user found
+        
+        // Check if already invited
+        const [existing] = await database
+          .select()
+          .from(interviewPanelists)
+          .where(eq(interviewPanelists.interviewId, input.interviewId));
+        
+        if (existing && existing.email === input.email) {
+          throw new Error("This person is already invited to this interview");
+        }
+        
+        // Create panelist invitation
+        await database.insert(interviewPanelists).values({
+          interviewId: input.interviewId,
+          userId,
+          email: input.email,
+          name: input.name || null,
+          role: input.role || null,
+          status: 'invited',
+        });
+        
+        // TODO: Send invitation email
+        
+        return { success: true };
+      }),
+    
+    getPanelists: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const { interviewPanelists } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) return [];
+        
+        const panelists = await database
+          .select()
+          .from(interviewPanelists)
+          .where(eq(interviewPanelists.interviewId, input.interviewId));
+        
+        return panelists;
+      }),
+    
+    updatePanelistStatus: protectedProcedure
+      .input(z.object({
+        panelistId: z.number(),
+        status: z.enum(['invited', 'accepted', 'declined', 'attended']),
+      }))
+      .mutation(async ({ input }) => {
+        const { interviewPanelists } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        await database
+          .update(interviewPanelists)
+          .set({
+            status: input.status,
+            respondedAt: input.status !== 'invited' ? new Date() : null,
+            attendedAt: input.status === 'attended' ? new Date() : null,
+          })
+          .where(eq(interviewPanelists.id, input.panelistId));
+        
+        return { success: true };
+      }),
+    
+    removePanelist: protectedProcedure
+      .input(z.object({ panelistId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { interviewPanelists } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        await database
+          .delete(interviewPanelists)
+          .where(eq(interviewPanelists.id, input.panelistId));
+        
+        return { success: true };
+      }),
+    
+    // Panel Member Feedback
+    submitPanelistFeedback: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        panelistId: z.number(),
+        overallRating: z.number().min(1).max(5),
+        technicalSkills: z.number().min(1).max(5).optional(),
+        communicationSkills: z.number().min(1).max(5).optional(),
+        problemSolving: z.number().min(1).max(5).optional(),
+        cultureFit: z.number().min(1).max(5).optional(),
+        strengths: z.string().optional(),
+        weaknesses: z.string().optional(),
+        notes: z.string().optional(),
+        recommendation: z.enum(['strong_hire', 'hire', 'no_hire', 'strong_no_hire']).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { panelistFeedback } = await import("../drizzle/schema");
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        await database.insert(panelistFeedback).values({
+          interviewId: input.interviewId,
+          panelistId: input.panelistId,
+          userId: ctx.user.id,
+          overallRating: input.overallRating,
+          technicalSkills: input.technicalSkills || null,
+          communicationSkills: input.communicationSkills || null,
+          problemSolving: input.problemSolving || null,
+          cultureFit: input.cultureFit || null,
+          strengths: input.strengths || null,
+          weaknesses: input.weaknesses || null,
+          notes: input.notes || null,
+          recommendation: input.recommendation || null,
+        });
+        
+        return { success: true };
+      }),
+    
+    getPanelistFeedback: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const { panelistFeedback, interviewPanelists } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) return [];
+        
+        const feedback = await database
+          .select({
+            feedback: panelistFeedback,
+            panelist: interviewPanelists,
+          })
+          .from(panelistFeedback)
+          .innerJoin(interviewPanelists, eq(panelistFeedback.panelistId, interviewPanelists.id))
+          .where(eq(panelistFeedback.interviewId, input.interviewId));
+        
+        return feedback;
+      }),
+    
+    hasPanelistFeedback: protectedProcedure
+      .input(z.object({ interviewId: z.number(), panelistId: z.number() }))
+      .query(async ({ input }) => {
+        const { panelistFeedback } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) return false;
+        
+        const [existing] = await database
+          .select()
+          .from(panelistFeedback)
+          .where(and(
+            eq(panelistFeedback.interviewId, input.interviewId),
+            eq(panelistFeedback.panelistId, input.panelistId)
+          ));
+        
+        return !!existing;
       }),
   }),
   
@@ -3272,54 +3032,6 @@ export const appRouter = router({
         const startDate = input.startDate ? new Date(input.startDate) : undefined;
         const endDate = input.endDate ? new Date(input.endDate) : undefined;
         return await analyticsHelpers.getRecruiterPerformance(input.recruiterId, startDate, endDate);
-      }),
-  }),
-
-  // AI Assistant (Orion)
-  ai: router({
-    chat: protectedProcedure
-      .input(z.object({
-        messages: z.array(z.object({
-          role: z.enum(["system", "user", "assistant"]),
-          content: z.string(),
-        })),
-      }))
-      .mutation(async ({ input }) => {
-        const { invokeLLM } = await import("./_core/llm");
-        
-        // Add system message for Orion's personality
-        const systemMessage = {
-          role: "system" as const,
-          content: "You are Orion, an AI career assistant for HotGigs recruitment platform. You help candidates with resume optimization, interview preparation, career advice, job search strategies, and salary negotiation. Be friendly, professional, and provide actionable advice. Keep responses concise and helpful.",
-        };
-
-        const response = await invokeLLM({
-          messages: [systemMessage, ...input.messages],
-        });
-
-        const content = response.choices[0].message.content;
-        const messageText = typeof content === 'string' ? content : "I'm sorry, I couldn't generate a response.";
-        
-        return {
-          message: messageText,
-        };
-      }),
-    
-    getInterviewPrepQuestions: protectedProcedure
-      .input(z.object({ role: z.string(), limit: z.number().optional().default(10) }))
-      .query(async ({ input }) => {
-        return await db.getInterviewPrepQuestionsByRole(input.role, input.limit);
-      }),
-    
-    getCompanyProfile: protectedProcedure
-      .input(z.object({ companyName: z.string() }))
-      .query(async ({ input }) => {
-        return await db.getCompanyProfileByName(input.companyName);
-      }),
-    
-    getAllCompanyProfiles: protectedProcedure
-      .query(async () => {
-        return await db.getAllCompanyProfiles();
       }),
   }),
 });

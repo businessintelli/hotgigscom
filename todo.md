@@ -1823,306 +1823,47 @@
 - [x] Test complete flow and save checkpoint
 
 
-## Candidate Comparison and Smart Filtering (COMPLETED ✅)
+## Candidate Comparison and Smart Filtering (IN PROGRESS 🔄)
 - [x] Create database schema for recruiter feedback (notes, rating, feedback date)
 - [x] Add applicationFeedback table with recruiterId, applicationId, notes, rating, createdAt
 - [x] Build smart filtering UI with score threshold sliders/inputs
 - [x] Add filters for domain score, skill score, experience score, overall score
 - [x] Implement filtering logic to show only candidates meeting score thresholds
-- [x] Create candidate comparison page /recruiter/compare-candidates
-- [x] Allow selecting up to 5 candidates from application list
-- [x] Display side-by-side comparison with scores, skills, experience
-- [x] Add recruiter feedback form to application cards
-- [x] Create backend endpoints for feedback (create, get, update, delete)
-- [x] Display "Add Feedback" button on application cards
-- [x] Fix candidate dashboard - add profile icon in header
-- [x] Fix candidate dashboard - add dropdown menu with navigation items
-- [x] Add "Recommended Jobs" button to candidate quick actions
-- [x] Test all features and save checkpoint
+- [ ] Create candidate comparison page /recruiter/compare-candidates
+- [ ] Allow selecting up to 5 candidates from application list
+- [ ] Display side-by-side comparison with scores, skills, experience
+- [ ] Add recruiter feedback form to application cards
+- [ ] Create backend endpoints for saving/retrieving feedback
+- [ ] Display existing feedback on applications
+- [ ] Test complete flow and save checkpoint
+
+## Candidate Dashboard UI Fixes (IN PROGRESS 🔄)
+- [ ] Add profile icon/avatar to candidate dashboard header
+- [ ] Create dropdown menu with profile options (My Profile, Settings, Logout)
+- [ ] Add "Recommended Jobs" card to quick actions section
+- [ ] Implement job recommendation algorithm based on candidate skills
+- [ ] Test candidate dashboard and save checkpoint
 
 
-## Feedback Display and Export Enhancements (COMPLETED ✅)
-- [x] Update getAllApplications to include feedback data with recruiter info
-- [x] Display existing feedback on application cards (show all team feedback)
-- [x] Show feedback author name, rating, notes, and timestamp
-- [x] Add visual feedback indicator (amber-colored section with count)
-- [x] Create PDF export functionality for candidate comparison page
-- [x] Add "Export to PDF" button on comparison page (uses browser print)
-- [x] Generate formatted PDF with candidate comparison table
-- [x] Implement feedback notification system
-- [x] Create notification when recruiter adds feedback to application
-- [x] Notify job owner recruiter when team members add feedback
-- [x] Test all features and save checkpoint
-
-
-## Feedback Analytics, Bulk Actions, Templates & Interview Integration (COMPLETED ✅)
-- [x] Create feedback analytics dashboard page
-- [x] Calculate average ratings per candidate
-- [x] Show team consensus metrics (agreement percentage)
-- [x] Display top-rated candidates list
-- [x] Add visual charts for feedback distribution
-- [x] Implement bulk feedback modal
-- [x] Allow selecting multiple candidates for bulk feedback
-- [x] Add bulk feedback form with rating and notes
-- [x] Apply same feedback to all selected candidates
-- [x] Create feedback templates (hardcoded in frontend for MVP)
-- [x] Add predefined feedback templates (10 templates: positive, neutral, negative)
-- [x] Show template dropdown in feedback dialog
-- [x] Allow one-click template insertion
-- [x] Fetch interview feedback for applications
-- [x] Display interview feedback alongside application feedback
-- [x] Show interview scores and evaluator comments
-- [x] Add visual separator between application and interview feedback
-- [x] Test all features and save checkpoint
-
-
-## Email Digest System (COMPLETED ✅)
-- [x] Create email digest preferences in recruiter settings
-- [x] Add digest frequency options (daily, weekly, never)
-- [x] Create email template for recruiter digest
-- [x] Include new applications count in digest
-- [x] Include top-rated candidates (4+ stars) in digest
-- [x] Include upcoming interviews in digest
-- [x] Create backend logic to generate and send digests
-- [x] Add settings page for recruiters to configure preferences
-- [x] Add API endpoints for updating digest preferences
-- [ ] Create scheduled job to send digests (requires cron setup)
-- [ ] Test digest email generation and delivery
-
-## Candidate Pipeline Kanban Board (COMPLETED ✅)
-- [x] Create pipeline stages (Applied, Screening, Interview, Offer, Hired, Rejected)
-- [x] Build kanban board UI with columns for each stage
-- [x] Implement drag-and-drop functionality between stages
-- [x] Update application status when card is moved
-- [x] Add candidate card with key info (name, score, applied date, skills)
-- [x] Show candidate count per stage
-- [x] Add filters for job position
-- [x] Create pipeline analytics (conversion rates per stage)
-- [x] Test drag-and-drop and status updates
-
-## Automated Interview Scheduling (IN PROGRESS 🔄)
-- [ ] Create recruiter availability calendar settings
-- [ ] Add time slot configuration (duration, buffer time)
-- [ ] Build candidate-facing booking page
-- [ ] Show available time slots to candidates
-- [ ] Allow candidates to select and confirm slots
-- [ ] Send confirmation emails to both parties
-- [ ] Add calendar invite attachments (ICS format)
-- [ ] Implement cancellation and rescheduling
-- [ ] Add Google Calendar integration (optional)
-- [ ] Test complete scheduling flow
-
-
-## Pipeline Enhancements (COMPLETED ✅)
-- [x] Add "Schedule Interview" button to candidate cards in pipeline
-- [x] Create interview scheduling modal with date and time selection
-- [x] Allow recruiters to pick date and time for interviews
-- [x] Send interview invitation to candidate after scheduling
-- [x] Create pipeline automation rules system
-- [x] Add workflow rules (auto-move based on score thresholds)
-- [x] Build UI for creating and managing automation rules
-- [x] Add activity timeline to candidate cards
-- [x] Show recent feedback, status changes, and interviews in popover
-- [x] Display timestamps for each activity
-- [x] Test all enhancements and save checkpoint
-
-
-## Candidate Dashboard Redesign (COMPLETED ✅)
-- [x] Create collapsible vertical sidebar navigation
-- [x] Add dashboard menu items (Dashboard, Calendar, My Applications, Action Items, Notifications, Jobs, My Resumes)
-- [x] Remove resume upload section from dashboard
-- [x] Remove profile section from dashboard (moved to My Resumes)
-- [x] Build calendar view component for interviews and events
-- [x] Show scheduled interviews in calendar with date, time, location
-- [x] Add application pipeline visualization organized by status
-- [x] Create action items section (accept/reschedule interview, offer actions)
-- [x] Implement notifications center placeholder
-- [x] Add dashboard stats (applications, interviews, offers, profile views)
-- [x] Redesign jobs list with recommended jobs filter
-- [x] Add advanced job filters (location, experience, job type)
-- [x] Test complete dashboard and save checkpoint
-
-
-## Dashboard Enhancements - Interview Prep & Jobs (COMPLETED ✅)
-- [x] Add interview preparation section to Action Items
-- [x] Show company research and insights for upcoming interviews
-- [x] Display common interview questions based on job role
-- [x] Add AI-powered mock interview practice button
-- [x] Create mock interview preparation cards with gradient design
-- [x] Add jobs list section to dashboard overview (Browse Jobs card)
-- [x] Show 6 latest jobs with view details button
-- [x] Create matching jobs view (Recommended for You card)
-- [x] Calculate and display AI match percentage for each job (70-100%)
-- [x] Add quick apply button to matching jobs
-- [x] Test all features and save checkpoint
-
-
-## Missing Features - Orion Chatbot & Profile Pages (COMPLETED ✅)
-- [x] Find existing Orion chatbot component (AIChatBox)
-- [x] Create AI chat router endpoint with Orion personality
-- [x] Build OrionChatbot floating button component
-- [x] Add Orion chatbot to candidate dashboard
-- [x] Add Orion chatbot to recruiter dashboard
-- [x] Create /candidate/profile page with full form fields
-- [x] Create /candidate/settings page with preferences
-- [x] Update sidebar menu to link Profile to /candidate/profile
-- [x] Update sidebar menu to link Settings to /candidate/settings
-- [x] Test all features and save checkpoint
-
-
-## Real AI Job Matching & Quick Apply (COMPLETED ✅)
-- [x] Create AI job matching algorithm based on resume profile
-- [x] Calculate skill match percentage (candidate skills vs job requirements)
-- [x] Calculate domain match percentage (candidate domains vs job domains)
-- [x] Calculate experience match score (years of experience vs job requirements)
-- [x] Create overall match score combining all factors (50% skills, 30% domains, 20% experience)
-- [x] Update getRecommendedJobs endpoint to use real AI scoring
-- [x] Replace mock match percentages in dashboard with real scores
-- [x] Create interview_prep_questions database table
-- [x] Create company_profiles database table
-- [x] Seed database with 21 role-specific interview questions
-- [x] Seed database with 5 company profiles (Google, Amazon, Microsoft, Meta, Apple)
-- [x] Create API endpoints for interview prep data (getInterviewPrepQuestions, getCompanyProfile)
-- [x] Implement quick-apply workflow with default resume selection
-- [x] Add confirmation dialog showing resume and cover letter preview
-- [x] Create one-click apply mutation with auto-generated cover letter
-- [x] Test all features and save checkpoint
-
-
-## Interview Prep Section Enhancement (COMPLETED ✅)
-- [x] Update CandidateDashboardNew to fetch real interview questions from database
-- [x] Display role-specific questions based on candidate's profile/applications
-- [x] Add company research section with real company profiles
-- [x] Replace placeholder questions with actual database content
-- [x] Create CompanyResearchSection component with tRPC query
-- [x] Create InterviewQuestionsSection component with tRPC query
-- [x] Test interview prep section with real data
-- [x] Save checkpoint
-
-
-## Skill-Based Job Recommendations Widget (COMPLETED ✅)
-- [x] Create backend API endpoint for skill-based job matching
-- [x] Extract candidate's top 5 skills from resume profile
-- [x] Calculate skill match percentage for each job
-- [x] Sort jobs by skill match score
-- [x] Build SkillBasedJobsWidget UI component
-- [x] Display jobs with skill match percentage badges
-- [x] Show matched skills as badges under each job
-- [x] Add "View All" link to browse more jobs
-- [x] Integrate widget into candidate dashboard overview
-- [x] Test skill-based matching algorithm
-- [x] Save checkpoint
-
-
-## Application Status Email Notifications (COMPLETED ✅)
-- [x] Create email templates for each application status
-  - [x] Application Received confirmation
-  - [x] Application Under Review
-  - [x] Interview Scheduled
-  - [x] Interview Completed
-  - [x] Offer Extended
-  - [x] Application Rejected (with encouragement)
-- [x] Build sendApplicationStatusNotification helper function
-- [x] Add personalized next steps content to each email
-- [x] Include interview prep links in interview-related emails
-- [x] Trigger emails automatically when status changes
-- [x] Create getStatusNotificationMessage for in-app notifications
-- [x] Update updateStatus mutation to use enhanced templates
-- [x] Test email notifications
-- [x] Save checkpoint
-
-
-## Interview Reminder Emails (COMPLETED ✅)
-- [x] Create 24-hour reminder email template with preparation checklist
-- [x] Create 1-hour reminder email template with quick tips
-- [x] Build sendInterviewReminder helper function
-- [x] Create API endpoint to process pending reminders
-- [x] Implement reminder scheduling logic with time windows
-- [x] Add reminder24hSent and reminder1hSent flags to interviews table
-- [x] Include meeting links and location in reminders
-- [x] Add interview prep resources links
-- [x] Create getUpcomingInterviewsForCandidate helper
-- [x] Test reminder email sending
-- [x] Save checkpoint
-
-
-## Upcoming Interview Widget (COMPLETED ✅)
-- [x] Create API endpoint to get candidate's upcoming interviews (interview.getUpcoming)
-- [x] Build UpcomingInterviewsWidget component with countdown timer
-- [x] Display interview details (date, time, type, company, duration)
-- [x] Add "Join Interview" button for video interviews
-- [x] Add location display for in-person interviews
-- [x] Include interview preparation quick links ("Prepare" button)
-- [x] Add countdown timer showing days/hours/minutes until interview
-- [x] Color-coded urgency (red for <1hr, amber for today, purple for future)
-- [x] Show multiple upcoming interviews with "Also scheduled" section
-- [x] Integrate widget into candidate dashboard overview
-- [x] Test widget display and functionality
-- [x] Save checkpoint
-
-
-## Add to Calendar Feature (COMPLETED ✅)
-- [x] Create ICS file generation utility (calendarUtils.ts)
-- [x] Generate proper iCalendar format with VEVENT and VALARM
-- [x] Include interview details (title, description, location/link)
-- [x] Add AddToCalendarButton component with dropdown menu
-- [x] Add "Add to Calendar" button to UpcomingInterviewsWidget
-- [x] Support Google Calendar URL generation
-- [x] Support Outlook Calendar URL generation
-- [x] Support Yahoo Calendar URL generation
-- [x] Support .ics file download for Apple/other calendars
-- [x] Create dropdown menu with calendar provider options
-- [x] Test ICS file download
-- [x] Save checkpoint
-
-
-## Calendar View Enhancement (COMPLETED ✅)
-- [x] Add AddToCalendarButton to interview cards in CalendarView
-- [x] Add "Join Meeting" button for interviews with meeting links
-- [x] Ensure consistent styling with UpcomingInterviewsWidget
-- [x] Test calendar button functionality in Calendar View
-
-## Notification Preferences Page (COMPLETED ✅)
-- [x] Create notification_preferences table in database schema
-- [x] Add API endpoints for getting/updating preferences (user.getNotificationPreferences, user.updateNotificationPreferences)
-- [x] Build NotificationPreferences settings page UI with beautiful card layout
-- [x] Add toggles for status updates, interview reminders, job recommendations
-- [x] Add frequency options (immediate, daily, weekly)
-- [x] Add toggles for messages, weekly digest, and marketing emails
-- [x] Add "Advanced Settings" button in CandidateSettings linking to full preferences page
-- [x] Integrate with candidate settings navigation
-- [x] Test preferences saving and loading
-- [x] Save checkpoint
-
-
-## Interview Feedback Form (COMPLETED ✅)
-- [x] Create interview_feedback table in database schema
-- [x] Add API endpoints for submitting and retrieving feedback
-  - [x] interview.submitFeedback - Submit feedback with ratings
-  - [x] interview.getFeedback - Get feedback for an interview
-  - [x] interview.hasFeedback - Check if feedback exists
-  - [x] interview.getAwaitingFeedback - Get completed interviews needing feedback
-- [x] Build InterviewFeedbackForm component with star ratings
-- [x] Add feedback categories (interviewer, process, communication)
-- [x] Create FeedbackPromptWidget for dashboard
-- [x] Add anonymous submission option
-- [x] Add "Would you recommend" thumbs up/down
-- [x] Create InterviewFeedbackDialog wrapper
-- [x] Integrate widget into candidate dashboard
-- [x] Test feedback submission and display
-- [x] Save checkpoint
-
-
-## Feedback Analytics Dashboard (COMPLETED ✅)
-- [x] Create API endpoint for aggregate feedback statistics (interview.getFeedbackAnalytics)
-- [x] Calculate average ratings by category (overall, interviewer, process, communication)
-- [x] Get feedback trends over time (last 6 months)
-- [x] Extract recent feedback with positive aspects and improvements
-- [x] Build FeedbackAnalyticsWidget component with beautiful UI
-- [x] Display average ratings with progress bars and icons
-- [x] Show recommendation rate percentage with stat cards
-- [x] Add monthly trend bar chart visualization
-- [x] Display recent feedback snippets with star ratings
-- [x] Integrate widget into recruiter dashboard
-- [x] Test analytics display
+## Recruiter Notification Preferences & Panel Feedback (COMPLETED ✅)
+- [x] Verify existing interview panel member functionality (was not implemented)
+- [x] Verify existing panel feedback submission system (was not implemented)
+- [x] Create recruiter_notification_preferences table
+- [x] Create interview_panelists table
+- [x] Create panelist_feedback table
+- [x] Add API endpoints for recruiter notification preferences (recruiterPrefs router)
+- [x] Build RecruiterNotificationPreferences settings page
+- [x] Add toggles for new applications, interview confirmations, feedback submissions
+- [x] Implement full panel member system:
+  - [x] interview.invitePanelist - Invite panel members by email
+  - [x] interview.getPanelists - List panel members for interview
+  - [x] interview.updatePanelistStatus - Update invitation status
+  - [x] interview.removePanelist - Remove panel member
+  - [x] interview.submitPanelistFeedback - Submit feedback after interview
+  - [x] interview.getPanelistFeedback - Get all feedback for interview
+  - [x] interview.hasPanelistFeedback - Check if panelist submitted feedback
+- [x] Create InvitePanelistDialog component
+- [x] Create InterviewPanelSection component
+- [x] Create PanelFeedbackForm component with star ratings and recommendations
+- [x] Test all functionality
 - [x] Save checkpoint

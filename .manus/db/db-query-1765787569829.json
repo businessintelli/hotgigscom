@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE interviews ADD COLUMN reminder24hSent BOOLEAN NOT NULL DEFAULT FALSE, ADD COLUMN reminder1hSent BOOLEAN NOT NULL DEFAULT FALSE;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE interviews ADD COLUMN reminder24hSent BOOLEAN NOT NULL DEFAULT FALSE, ADD COLUMN reminder1hSent BOOLEAN NOT NULL DEFAULT FALSE;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 2144
-}

@@ -9,9 +9,7 @@ import { useEffect, useState } from "react";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
-import { FeedbackAnalyticsWidget } from "@/components/FeedbackAnalyticsWidget";
 import { SessionInfo } from "@/components/SessionInfo";
-import { OrionChatbot } from "@/components/OrionChatbot";
 import { Menu, X } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -315,9 +313,6 @@ function RecruiterDashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Candidate Feedback Analytics */}
-        <FeedbackAnalyticsWidget />
-
         {/* Recent Jobs */}
         <Card>
           <CardHeader>
@@ -350,7 +345,6 @@ function RecruiterDashboardContent() {
         </Card>
       </div>
     </div>
-    <OrionChatbot />
     </>
   );
 }

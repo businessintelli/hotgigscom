@@ -8,8 +8,9 @@ import Home from "./pages/Home";
 import PublicHome from "./pages/PublicHome";
 import AboutUs from "./pages/AboutUs";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
+import RecruiterNotificationPreferences from "./pages/RecruiterNotificationPreferences";
 import RecruiterAnalytics from "./pages/RecruiterAnalytics";
-import CandidateDashboard from "./pages/CandidateDashboardNew";
+import CandidateDashboard from "./pages/CandidateDashboard";
 import JobBrowser from "./pages/JobBrowser";
 import AdvancedJobSearch from "./pages/AdvancedJobSearch";
 import CreateJob from "./pages/CreateJob";
@@ -42,15 +43,7 @@ import SavedJobs from "./pages/SavedJobs";
 import MyResumes from "./pages/MyResumesNew";
 import ResumeDetail from "./pages/ResumeDetail";
 import CandidateResumeView from "./pages/CandidateResumeView";
-import CandidateComparison from "./pages/CandidateComparison";
-import FeedbackAnalytics from "./pages/FeedbackAnalytics";
-import RecruiterSettings from "./pages/RecruiterSettings";
-import CandidatePipeline from "./pages/CandidatePipeline";
-import PipelineAutomation from "./pages/PipelineAutomation";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
-import CandidateProfile from "./pages/CandidateProfile";
-import CandidateSettings from "./pages/CandidateSettings";
-import NotificationPreferences from "./pages/NotificationPreferences";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/UserManagement";
@@ -100,12 +93,8 @@ function Router() {
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/recruiter/active-associates" component={ActiveAssociates} />
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
+      <Route path="/recruiter/notification-preferences" component={RecruiterNotificationPreferences} />
       <Route path="/recruiter/candidate-resume/:id" component={CandidateResumeView} />
-          <Route path="/recruiter/compare-candidates" component={CandidateComparison} />
-          <Route path="/recruiter/feedback-analytics" component={FeedbackAnalytics} />
-          <Route path="/recruiter/settings" component={RecruiterSettings} />
-          <Route path="/recruiter/pipeline" component={CandidatePipeline} />
-          <Route path="/recruiter/pipeline-automation" component={PipelineAutomation} />
       <Route path="/select-role" component={SelectRole} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />
@@ -116,9 +105,6 @@ function Router() {
       <Route path="/verification-required" component={VerificationRequired} />
       <Route path="/recruiter/onboarding" component={RecruiterOnboarding} />
       <Route path="/candidate/onboarding" component={CandidateOnboarding} />
-      <Route path="/candidate/profile" component={CandidateProfile} />
-      <Route path="/candidate/settings" component={CandidateSettings} />
-      <Route path="/candidate/notification-preferences" component={NotificationPreferences} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />

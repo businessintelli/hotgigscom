@@ -37,8 +37,6 @@ export const recruiters = mysqlTable("recruiters", {
   bio: text("bio"),
   profileCompleted: boolean("profileCompleted").default(false).notNull(),
   profileCompletionStep: int("profileCompletionStep").default(0).notNull(),
-  emailDigestFrequency: mysqlEnum("emailDigestFrequency", ["never", "daily", "weekly"]).default("weekly"),
-  lastDigestSentAt: timestamp("lastDigestSentAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -253,8 +251,6 @@ export const interviews = mysqlTable("interviews", {
   videoStartUrl: text("videoStartUrl"),
   videoPassword: varchar("videoPassword", { length: 255 }),
   videoProvider: mysqlEnum("videoProvider", ["zoom", "teams", "none"]).default("none"),
-  reminder24hSent: boolean("reminder24hSent").default(false).notNull(),
-  reminder1hSent: boolean("reminder1hSent").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -845,132 +841,98 @@ export type InsertApplicationFeedback = typeof applicationFeedback.$inferInsert;
 
 
 /**
- * Feedback templates for quick feedback entry
- */
-export const feedbackTemplates = mysqlTable("feedbackTemplates", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  category: varchar("category", { length: 50 }).notNull(), // 'positive', 'neutral', 'negative'
-  rating: int("rating"), // Suggested rating (1-5)
-  notes: text("notes").notNull(),
-  isDefault: boolean("isDefault").default(true).notNull(), // System default or custom
-  createdBy: int("createdBy").references(() => users.id), // null for system templates
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type FeedbackTemplate = typeof feedbackTemplates.$inferSelect;
-export type InsertFeedbackTemplate = typeof feedbackTemplates.$inferInsert;
-
-
-/**
- * Interview prep questions database
- */
-export const interviewPrepQuestions = mysqlTable("interview_prep_questions", {
-  id: int("id").autoincrement().primaryKey(),
-  role: varchar("role", { length: 255 }).notNull(), // e.g., "Software Engineer", "Product Manager"
-  category: varchar("category", { length: 255 }).notNull(), // e.g., "Technical", "Behavioral", "System Design"
-  question: text("question").notNull(),
-  sampleAnswer: text("sampleAnswer"),
-  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).default("medium"),
-  tags: text("tags"), // JSON array of tags
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type InterviewPrepQuestion = typeof interviewPrepQuestions.$inferSelect;
-export type InsertInterviewPrepQuestion = typeof interviewPrepQuestions.$inferInsert;
-
-/**
- * Company profiles for interview prep
- */
-export const companyProfiles = mysqlTable("company_profiles", {
-  id: int("id").autoincrement().primaryKey(),
-  companyName: varchar("companyName", { length: 255 }).notNull().unique(),
-  industry: varchar("industry", { length: 255 }),
-  description: text("description"),
-  culture: text("culture"), // Company culture insights
-  interviewProcess: text("interviewProcess"), // Description of typical interview process
-  commonQuestions: text("commonQuestions"), // JSON array of common interview questions
-  tips: text("tips"), // Interview tips specific to this company
-  website: varchar("website", { length: 500 }),
-  logoUrl: varchar("logoUrl", { length: 500 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type CompanyProfile = typeof companyProfiles.$inferSelect;
-export type InsertCompanyProfile = typeof companyProfiles.$inferInsert;
-
-
-/**
- * Notification preferences for users
- * Controls email notification settings for candidates and recruiters
- */
-export const notificationPreferences = mysqlTable("notification_preferences", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id).unique(),
-  
-  // Application status notifications
-  statusUpdatesEnabled: boolean("statusUpdatesEnabled").default(true).notNull(),
-  statusUpdatesFrequency: mysqlEnum("statusUpdatesFrequency", ["immediate", "daily", "weekly"]).default("immediate").notNull(),
-  
-  // Interview reminder notifications
-  interviewRemindersEnabled: boolean("interviewRemindersEnabled").default(true).notNull(),
-  interviewReminder24h: boolean("interviewReminder24h").default(true).notNull(),
-  interviewReminder1h: boolean("interviewReminder1h").default(true).notNull(),
-  
-  // Job recommendation notifications
-  jobRecommendationsEnabled: boolean("jobRecommendationsEnabled").default(true).notNull(),
-  jobRecommendationsFrequency: mysqlEnum("jobRecommendationsFrequency", ["immediate", "daily", "weekly"]).default("weekly").notNull(),
-  
-  // Marketing and promotional emails
-  marketingEmailsEnabled: boolean("marketingEmailsEnabled").default(false).notNull(),
-  
-  // Weekly digest
-  weeklyDigestEnabled: boolean("weeklyDigestEnabled").default(true).notNull(),
-  
-  // New message notifications
-  messageNotificationsEnabled: boolean("messageNotificationsEnabled").default(true).notNull(),
-  
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type NotificationPreference = typeof notificationPreferences.$inferSelect;
-export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
-
-
-/**
- * Interview feedback from candidates
- * Captures candidate experience ratings after interviews
+ * Interview feedback from candidates (post-interview experience ratings)
  */
 export const interviewFeedback = mysqlTable("interview_feedback", {
   id: int("id").autoincrement().primaryKey(),
   interviewId: int("interviewId").notNull().references(() => interviews.id),
   candidateId: int("candidateId").notNull().references(() => candidates.id),
-  
-  // Overall rating (1-5 stars)
   overallRating: int("overallRating").notNull(),
-  
-  // Category ratings (1-5 stars each)
   interviewerRating: int("interviewerRating"),
   processRating: int("processRating"),
   communicationRating: int("communicationRating"),
-  
-  // Written feedback
   positiveAspects: text("positiveAspects"),
   areasForImprovement: text("areasForImprovement"),
   additionalComments: text("additionalComments"),
-  
-  // Would recommend
   wouldRecommend: boolean("wouldRecommend"),
-  
-  // Anonymous option
   isAnonymous: boolean("isAnonymous").default(false).notNull(),
-  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type InterviewFeedback = typeof interviewFeedback.$inferSelect;
 export type InsertInterviewFeedback = typeof interviewFeedback.$inferInsert;
+
+/**
+ * Interview panel members - additional interviewers invited to participate
+ */
+export const interviewPanelists = mysqlTable("interview_panelists", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  userId: int("userId").notNull().references(() => users.id),
+  email: varchar("email", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }),
+  role: varchar("role", { length: 100 }), // e.g., 'Technical Lead', 'HR Manager', 'Team Member'
+  status: mysqlEnum("status", ["invited", "accepted", "declined", "attended"]).default("invited").notNull(),
+  invitedAt: timestamp("invitedAt").defaultNow().notNull(),
+  respondedAt: timestamp("respondedAt"),
+  attendedAt: timestamp("attendedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InterviewPanelist = typeof interviewPanelists.$inferSelect;
+export type InsertInterviewPanelist = typeof interviewPanelists.$inferInsert;
+
+/**
+ * Panel member feedback - feedback submitted by interview panel members
+ */
+export const panelistFeedback = mysqlTable("panelist_feedback", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  panelistId: int("panelistId").notNull().references(() => interviewPanelists.id),
+  userId: int("userId").notNull().references(() => users.id),
+  overallRating: int("overallRating").notNull(), // 1-5
+  technicalSkills: int("technicalSkills"), // 1-5
+  communicationSkills: int("communicationSkills"), // 1-5
+  problemSolving: int("problemSolving"), // 1-5
+  cultureFit: int("cultureFit"), // 1-5
+  strengths: text("strengths"),
+  weaknesses: text("weaknesses"),
+  notes: text("notes"),
+  recommendation: mysqlEnum("recommendation", ["strong_hire", "hire", "no_hire", "strong_no_hire"]),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PanelistFeedback = typeof panelistFeedback.$inferSelect;
+export type InsertPanelistFeedback = typeof panelistFeedback.$inferInsert;
+
+/**
+ * Recruiter notification preferences
+ */
+export const recruiterNotificationPreferences = mysqlTable("recruiter_notification_preferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  // Application notifications
+  newApplications: boolean("newApplications").default(true).notNull(),
+  applicationStatusChanges: boolean("applicationStatusChanges").default(true).notNull(),
+  applicationFrequency: mysqlEnum("applicationFrequency", ["immediate", "daily", "weekly"]).default("immediate").notNull(),
+  // Interview notifications
+  interviewScheduled: boolean("interviewScheduled").default(true).notNull(),
+  interviewReminders: boolean("interviewReminders").default(true).notNull(),
+  interviewCompleted: boolean("interviewCompleted").default(true).notNull(),
+  panelistResponses: boolean("panelistResponses").default(true).notNull(),
+  // Feedback notifications
+  candidateFeedback: boolean("candidateFeedback").default(true).notNull(),
+  panelistFeedbackSubmitted: boolean("panelistFeedbackSubmitted").default(true).notNull(),
+  // Other notifications
+  weeklyDigest: boolean("weeklyDigest").default(true).notNull(),
+  systemUpdates: boolean("systemUpdates").default(false).notNull(),
+  marketingEmails: boolean("marketingEmails").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RecruiterNotificationPreferences = typeof recruiterNotificationPreferences.$inferSelect;
+export type InsertRecruiterNotificationPreferences = typeof recruiterNotificationPreferences.$inferInsert;
