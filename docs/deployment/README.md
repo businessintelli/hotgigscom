@@ -8,6 +8,7 @@ Choose your deployment target:
 
 | Environment | Guide | Best For |
 |-------------|-------|----------|
+| [Docker](./DOCKER-SETUP.md) | Local development, containerized | Quick start, consistent environments |
 | [Standalone Server](./STANDALONE-SETUP.md) | VPS, dedicated server, on-premises | Full control, cost-effective |
 | [AWS](./AWS-DEPLOYMENT.md) | Amazon Web Services | Enterprise, scalability |
 | [GCP](./GCP-DEPLOYMENT.md) | Google Cloud Platform | AI/ML integration, global reach |
