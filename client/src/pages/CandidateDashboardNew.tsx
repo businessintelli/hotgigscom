@@ -422,6 +422,29 @@ function CalendarView({ interviews }: any) {
                       </div>
                       <Badge>{interview.type}</Badge>
                     </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      {interview.meetingLink && (
+                        <Button
+                          size="sm"
+                          onClick={() => window.open(interview.meetingLink, '_blank')}
+                        >
+                          Join Meeting
+                        </Button>
+                      )}
+                      <AddToCalendarButton
+                        interview={{
+                          jobTitle: interview.job?.title || 'Interview',
+                          companyName: interview.job?.company || 'Company',
+                          scheduledAt: interview.scheduledAt,
+                          duration: interview.duration || 60,
+                          type: interview.type,
+                          meetingLink: interview.meetingLink,
+                          location: interview.location,
+                        }}
+                        variant="outline"
+                        size="sm"
+                      />
+                    </div>
                     {interview.notes && (
                       <p className="text-sm text-gray-600 mt-2">{interview.notes}</p>
                     )}

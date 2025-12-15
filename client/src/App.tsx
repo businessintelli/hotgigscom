@@ -50,6 +50,7 @@ import PipelineAutomation from "./pages/PipelineAutomation";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CandidateProfile from "./pages/CandidateProfile";
 import CandidateSettings from "./pages/CandidateSettings";
+import NotificationPreferences from "./pages/NotificationPreferences";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/UserManagement";
@@ -117,6 +118,7 @@ function Router() {
       <Route path="/candidate/onboarding" component={CandidateOnboarding} />
       <Route path="/candidate/profile" component={CandidateProfile} />
       <Route path="/candidate/settings" component={CandidateSettings} />
+      <Route path="/candidate/notification-preferences" component={NotificationPreferences} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />

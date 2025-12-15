@@ -81,6 +81,82 @@ export const appRouter = router({
       console.log("[Profile] Candidate profile created successfully");
       return { success: true };
     }),
+    
+    // Get notification preferences
+    getNotificationPreferences: protectedProcedure.query(async ({ ctx }) => {
+      const { notificationPreferences } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const database = await db.getDb();
+      if (!database) throw new Error("Database not available");
+      
+      const [prefs] = await database
+        .select()
+        .from(notificationPreferences)
+        .where(eq(notificationPreferences.userId, ctx.user.id));
+      
+      // Return defaults if no preferences exist
+      if (!prefs) {
+        return {
+          statusUpdatesEnabled: true,
+          statusUpdatesFrequency: "immediate" as const,
+          interviewRemindersEnabled: true,
+          interviewReminder24h: true,
+          interviewReminder1h: true,
+          jobRecommendationsEnabled: true,
+          jobRecommendationsFrequency: "weekly" as const,
+          marketingEmailsEnabled: false,
+          weeklyDigestEnabled: true,
+          messageNotificationsEnabled: true,
+        };
+      }
+      
+      return prefs;
+    }),
+    
+    // Update notification preferences
+    updateNotificationPreferences: protectedProcedure
+      .input(z.object({
+        statusUpdatesEnabled: z.boolean().optional(),
+        statusUpdatesFrequency: z.enum(["immediate", "daily", "weekly"]).optional(),
+        interviewRemindersEnabled: z.boolean().optional(),
+        interviewReminder24h: z.boolean().optional(),
+        interviewReminder1h: z.boolean().optional(),
+        jobRecommendationsEnabled: z.boolean().optional(),
+        jobRecommendationsFrequency: z.enum(["immediate", "daily", "weekly"]).optional(),
+        marketingEmailsEnabled: z.boolean().optional(),
+        weeklyDigestEnabled: z.boolean().optional(),
+        messageNotificationsEnabled: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { notificationPreferences } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        // Check if preferences exist
+        const [existing] = await database
+          .select()
+          .from(notificationPreferences)
+          .where(eq(notificationPreferences.userId, ctx.user.id));
+        
+        if (existing) {
+          // Update existing preferences
+          await database
+            .update(notificationPreferences)
+            .set(input)
+            .where(eq(notificationPreferences.userId, ctx.user.id));
+        } else {
+          // Create new preferences
+          await database
+            .insert(notificationPreferences)
+            .values({
+              userId: ctx.user.id,
+              ...input,
+            });
+        }
+        
+        return { success: true };
+      }),
   }),
   
   auth: router({

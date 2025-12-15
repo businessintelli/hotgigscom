@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Loader2, Bell, Shield, Eye, Mail, Globe } from "lucide-react";
 
 export default function CandidateSettings() {
+  const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { data: candidate, isLoading } = trpc.candidate.getByUserId.useQuery(
     { userId: user?.id || 0 },
@@ -92,11 +94,22 @@ export default function CandidateSettings() {
         {/* Notification Settings */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notification Preferences
-            </CardTitle>
-            <CardDescription>Choose what notifications you want to receive</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Notification Preferences
+                </CardTitle>
+                <CardDescription>Choose what notifications you want to receive</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation("/candidate/notification-preferences")}
+              >
+                Advanced Settings
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">

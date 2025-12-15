@@ -2074,3 +2074,22 @@
 - [x] Create dropdown menu with calendar provider options
 - [x] Test ICS file download
 - [x] Save checkpoint
+
+
+## Calendar View Enhancement (COMPLETED ✅)
+- [x] Add AddToCalendarButton to interview cards in CalendarView
+- [x] Add "Join Meeting" button for interviews with meeting links
+- [x] Ensure consistent styling with UpcomingInterviewsWidget
+- [x] Test calendar button functionality in Calendar View
+
+## Notification Preferences Page (COMPLETED ✅)
+- [x] Create notification_preferences table in database schema
+- [x] Add API endpoints for getting/updating preferences (user.getNotificationPreferences, user.updateNotificationPreferences)
+- [x] Build NotificationPreferences settings page UI with beautiful card layout
+- [x] Add toggles for status updates, interview reminders, job recommendations
+- [x] Add frequency options (immediate, daily, weekly)
+- [x] Add toggles for messages, weekly digest, and marketing emails
+- [x] Add "Advanced Settings" button in CandidateSettings linking to full preferences page
+- [x] Integrate with candidate settings navigation
+- [x] Test preferences saving and loading
+- [x] Save checkpoint

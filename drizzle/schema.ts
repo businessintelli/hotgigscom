@@ -900,3 +900,41 @@ export const companyProfiles = mysqlTable("company_profiles", {
 
 export type CompanyProfile = typeof companyProfiles.$inferSelect;
 export type InsertCompanyProfile = typeof companyProfiles.$inferInsert;
+
+
+/**
+ * Notification preferences for users
+ * Controls email notification settings for candidates and recruiters
+ */
+export const notificationPreferences = mysqlTable("notification_preferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id).unique(),
+  
+  // Application status notifications
+  statusUpdatesEnabled: boolean("statusUpdatesEnabled").default(true).notNull(),
+  statusUpdatesFrequency: mysqlEnum("statusUpdatesFrequency", ["immediate", "daily", "weekly"]).default("immediate").notNull(),
+  
+  // Interview reminder notifications
+  interviewRemindersEnabled: boolean("interviewRemindersEnabled").default(true).notNull(),
+  interviewReminder24h: boolean("interviewReminder24h").default(true).notNull(),
+  interviewReminder1h: boolean("interviewReminder1h").default(true).notNull(),
+  
+  // Job recommendation notifications
+  jobRecommendationsEnabled: boolean("jobRecommendationsEnabled").default(true).notNull(),
+  jobRecommendationsFrequency: mysqlEnum("jobRecommendationsFrequency", ["immediate", "daily", "weekly"]).default("weekly").notNull(),
+  
+  // Marketing and promotional emails
+  marketingEmailsEnabled: boolean("marketingEmailsEnabled").default(false).notNull(),
+  
+  // Weekly digest
+  weeklyDigestEnabled: boolean("weeklyDigestEnabled").default(true).notNull(),
+  
+  // New message notifications
+  messageNotificationsEnabled: boolean("messageNotificationsEnabled").default(true).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
