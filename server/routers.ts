@@ -1054,6 +1054,53 @@ export const appRouter = router({
         await db.deleteJob(input.id);
         return { success: true };
       }),
+    
+    bulkClose: protectedProcedure
+      .input(z.object({ jobIds: z.array(z.number()) }))
+      .mutation(async ({ input }) => {
+        for (const jobId of input.jobIds) {
+          await db.updateJob(jobId, { status: 'closed' });
+        }
+        return { success: true, count: input.jobIds.length };
+      }),
+    
+    bulkArchive: protectedProcedure
+      .input(z.object({ jobIds: z.array(z.number()) }))
+      .mutation(async ({ input }) => {
+        for (const jobId of input.jobIds) {
+          await db.updateJob(jobId, { status: 'closed', isPublic: false });
+        }
+        return { success: true, count: input.jobIds.length };
+      }),
+    
+    duplicate: protectedProcedure
+      .input(z.object({ jobIds: z.array(z.number()) }))
+      .mutation(async ({ ctx, input }) => {
+        const createdIds: number[] = [];
+        for (const jobId of input.jobIds) {
+          const job = await db.getJobById(jobId);
+          if (job) {
+            const result = await db.createJob({
+              title: `${job.title} (Copy)`,
+              description: job.description,
+              requirements: job.requirements,
+              responsibilities: job.responsibilities,
+              location: job.location,
+              employmentType: job.employmentType,
+              salaryMin: job.salaryMin,
+              salaryMax: job.salaryMax,
+              salaryCurrency: job.salaryCurrency,
+              customerId: job.customerId,
+              contactId: job.contactId,
+              status: 'draft',
+              isPublic: false,
+              postedBy: ctx.user.id,
+            });
+            createdIds.push(result.insertId);
+          }
+        }
+        return { success: true, createdIds };
+      }),
   }),
 
   application: router({

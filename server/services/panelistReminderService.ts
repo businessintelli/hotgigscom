@@ -13,6 +13,7 @@ import {
   candidates, 
   users 
 } from '../../drizzle/schema';
+import * as db from '../db';
 import { generate24HourReminderEmail, generate1HourReminderEmail } from '../emails/panelistReminderEmails';
 import { sendEmail } from '../emailService';
 

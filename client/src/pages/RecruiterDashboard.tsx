@@ -24,7 +24,17 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
 import { formatDistanceToNow } from "date-fns";
@@ -55,7 +65,16 @@ import {
   Sparkles,
   MapPin,
   DollarSign,
-  Eye
+  Eye,
+  CalendarDays,
+  CheckSquare,
+  Square,
+  Copy,
+  Archive,
+  XCircle,
+  MoreHorizontal,
+  Command,
+  Keyboard
 } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -90,7 +109,7 @@ function RecruiterDashboardContent() {
   const { data: profile } = trpc.recruiter.getProfile.useQuery();
   const { data: completionStatus } = trpc.profileCompletion.getStatus.useQuery();
   const { data: pendingReschedules } = (trpc as any).reschedule?.getPendingRequests?.useQuery() || { data: [] };
-  const { data: allJobs } = trpc.job.getMyJobs.useQuery();
+  const { data: allJobs, refetch: refetchJobs } = trpc.job.getMyJobs.useQuery();
   
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -100,6 +119,21 @@ function RecruiterDashboardContent() {
   const [jobsFilter, setJobsFilter] = useState<"all" | "mine" | "others">("all");
   const [jobsSearch, setJobsSearch] = useState("");
   const [jobsStatus, setJobsStatus] = useState<"all" | "active" | "closed" | "draft">("all");
+  const [jobsDateFilter, setJobsDateFilter] = useState<"all" | "7days" | "30days" | "90days">("all");
+  
+  // Bulk selection state
+  const [selectedJobs, setSelectedJobs] = useState<Set<number>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkActionDialog, setBulkActionDialog] = useState<{ open: boolean; action: string }>({ open: false, action: "" });
+  
+  // Search dialog state for keyboard shortcut
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Bulk action mutations
+  const bulkCloseMutation = trpc.job.bulkClose.useMutation();
+  const bulkArchiveMutation = trpc.job.bulkArchive.useMutation();
+  const duplicateJobMutation = trpc.job.duplicate.useMutation();
 
   useEffect(() => {
     const hasToken = localStorage.getItem('auth_token');
@@ -116,6 +150,91 @@ function RecruiterDashboardContent() {
     }
   }, [profile]);
 
+  // Keyboard shortcuts handler - must be before early returns
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + K for search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchDialogOpen(true);
+      }
+      // Cmd/Ctrl + N for new job
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        setLocation('/recruiter/jobs/create');
+      }
+      // Escape to close search dialog
+      if (e.key === 'Escape' && searchDialogOpen) {
+        setSearchDialogOpen(false);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [searchDialogOpen, setLocation]);
+  
+  // Focus search input when dialog opens
+  useEffect(() => {
+    if (searchDialogOpen && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [searchDialogOpen]);
+  
+  // Toggle job selection
+  const toggleJobSelection = (jobId: number) => {
+    const newSelected = new Set(selectedJobs);
+    if (newSelected.has(jobId)) {
+      newSelected.delete(jobId);
+    } else {
+      newSelected.add(jobId);
+    }
+    setSelectedJobs(newSelected);
+    setShowBulkActions(newSelected.size > 0);
+  };
+  
+  // Select all filtered jobs
+  const selectAllJobs = () => {
+    const allIds = filteredJobs.map((job: any) => job.id);
+    if (selectedJobs.size === allIds.length) {
+      setSelectedJobs(new Set());
+      setShowBulkActions(false);
+    } else {
+      setSelectedJobs(new Set(allIds));
+      setShowBulkActions(true);
+    }
+  };
+  
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedJobs(new Set());
+    setShowBulkActions(false);
+  };
+  
+  // Handle bulk actions
+  const handleBulkAction = async (action: string) => {
+    const jobIds = Array.from(selectedJobs);
+    setBulkActionDialog({ open: false, action: "" });
+    
+    try {
+      if (action === 'close') {
+        await bulkCloseMutation.mutateAsync({ jobIds });
+        toast.success(`${jobIds.length} jobs marked as closed`);
+      } else if (action === 'archive') {
+        await bulkArchiveMutation.mutateAsync({ jobIds });
+        toast.success(`${jobIds.length} jobs archived`);
+      } else if (action === 'duplicate') {
+        const result = await duplicateJobMutation.mutateAsync({ jobIds });
+        toast.success(`${result.createdIds.length} jobs duplicated`);
+      }
+      clearSelection();
+      // Refetch jobs
+      refetchJobs?.();
+    } catch (error) {
+      toast.error('Failed to perform bulk action');
+    }
+  };
+
+  // Early return for loading state - after all hooks
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -148,6 +267,17 @@ function RecruiterDashboardContent() {
     
     // Filter by status
     if (jobsStatus !== "all" && job.status !== jobsStatus) return false;
+    
+    // Filter by date
+    if (jobsDateFilter !== "all") {
+      const jobDate = new Date(job.createdAt);
+      const now = new Date();
+      const daysDiff = Math.floor((now.getTime() - jobDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (jobsDateFilter === "7days" && daysDiff > 7) return false;
+      if (jobsDateFilter === "30days" && daysDiff > 30) return false;
+      if (jobsDateFilter === "90days" && daysDiff > 90) return false;
+    }
     
     // Filter by search
     if (jobsSearch) {
@@ -480,12 +610,12 @@ function RecruiterDashboardContent() {
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-4 pb-4 border-b">
+                {/* Filters Row 1 */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-3">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="Search jobs..."
+                      placeholder="Search jobs... (⌘K)"
                       value={jobsSearch}
                       onChange={(e) => setJobsSearch(e.target.value)}
                       className="pl-9"
@@ -512,6 +642,84 @@ function RecruiterDashboardContent() {
                       <SelectItem value="draft">Draft</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={jobsDateFilter} onValueChange={(v: any) => setJobsDateFilter(v)}>
+                    <SelectTrigger className="w-full sm:w-40">
+                      <CalendarDays className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="7days">Last 7 Days</SelectItem>
+                      <SelectItem value="30days">Last 30 Days</SelectItem>
+                      <SelectItem value="90days">Last 90 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Bulk Actions Bar */}
+                {showBulkActions && (
+                  <div className="flex items-center gap-3 mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <span className="text-sm font-medium text-blue-700">
+                      {selectedJobs.size} job{selectedJobs.size > 1 ? 's' : ''} selected
+                    </span>
+                    <div className="flex-1" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setBulkActionDialog({ open: true, action: 'close' })}
+                      className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Close
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setBulkActionDialog({ open: true, action: 'archive' })}
+                      className="text-gray-600 border-gray-200 hover:bg-gray-50"
+                    >
+                      <Archive className="h-4 w-4 mr-1" />
+                      Archive
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setBulkActionDialog({ open: true, action: 'duplicate' })}
+                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Duplicate
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={clearSelection}>
+                      Clear
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Select All / Keyboard Hints */}
+                <div className="flex items-center justify-between mb-3 pb-3 border-b">
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={filteredJobs.length > 0 && selectedJobs.size === filteredJobs.length}
+                      onCheckedChange={selectAllJobs}
+                    />
+                    <span className="text-sm text-gray-500">
+                      {filteredJobs.length > 0 && selectedJobs.size === filteredJobs.length 
+                        ? 'Deselect all' 
+                        : `Select all (${filteredJobs.length})`
+                      }
+                    </span>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border text-xs">⌘K</kbd>
+                      Search
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border text-xs">⌘N</kbd>
+                      New Job
+                    </span>
+                  </div>
                 </div>
 
                 {/* Jobs List */}
@@ -519,61 +727,72 @@ function RecruiterDashboardContent() {
                   {filteredJobs.length > 0 ? filteredJobs.slice(0, 10).map((job: any) => (
                     <div 
                       key={job.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer hover:border-blue-200"
-                      onClick={() => setLocation(`/jobs/${job.id}`)}
+                      className={`flex items-center gap-3 p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer ${
+                        selectedJobs.has(job.id) ? 'border-blue-400 bg-blue-50' : 'hover:border-blue-200'
+                      }`}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-gray-900 truncate">{job.title}</h4>
-                          {job.recruiterId === user?.id && (
-                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                              Mine
-                            </Badge>
-                          )}
+                      <Checkbox 
+                        checked={selectedJobs.has(job.id)}
+                        onCheckedChange={() => toggleJobSelection(job.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div 
+                        className="flex-1 min-w-0 flex items-center justify-between"
+                        onClick={() => setLocation(`/jobs/${job.id}`)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-gray-900 truncate">{job.title}</h4>
+                            {job.recruiterId === user?.id && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                Mine
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            {job.companyName && (
+                              <span className="flex items-center gap-1">
+                                <Building2 className="h-3.5 w-3.5" />
+                                {job.companyName}
+                              </span>
+                            )}
+                            {job.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3.5 w-3.5" />
+                                {job.location}
+                              </span>
+                            )}
+                            {(job.salaryMin || job.salaryMax) && (
+                              <span className="flex items-center gap-1 hidden md:flex">
+                                <DollarSign className="h-3.5 w-3.5" />
+                                {job.salaryMin && job.salaryMax 
+                                  ? `$${(job.salaryMin/1000).toFixed(0)}k - $${(job.salaryMax/1000).toFixed(0)}k`
+                                  : job.salaryMin 
+                                    ? `From $${(job.salaryMin/1000).toFixed(0)}k`
+                                    : `Up to $${(job.salaryMax/1000).toFixed(0)}k`
+                                }
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Posted {new Date(job.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          {job.companyName && (
-                            <span className="flex items-center gap-1">
-                              <Building2 className="h-3.5 w-3.5" />
-                              {job.companyName}
-                            </span>
-                          )}
-                          {job.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5" />
-                              {job.location}
-                            </span>
-                          )}
-                          {(job.salaryMin || job.salaryMax) && (
-                            <span className="flex items-center gap-1 hidden md:flex">
-                              <DollarSign className="h-3.5 w-3.5" />
-                              {job.salaryMin && job.salaryMax 
-                                ? `$${(job.salaryMin/1000).toFixed(0)}k - $${(job.salaryMax/1000).toFixed(0)}k`
-                                : job.salaryMin 
-                                  ? `From $${(job.salaryMin/1000).toFixed(0)}k`
-                                  : `Up to $${(job.salaryMax/1000).toFixed(0)}k`
-                              }
-                            </span>
-                          )}
+                        <div className="flex items-center gap-3 ml-4">
+                          <Badge 
+                            variant="outline" 
+                            className={`${
+                              job.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' :
+                              job.status === 'closed' ? 'bg-gray-50 text-gray-600 border-gray-200' :
+                              'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            }`}
+                          >
+                            {job.status}
+                          </Badge>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">
-                          Posted {new Date(job.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 ml-4">
-                        <Badge 
-                          variant="outline" 
-                          className={`${
-                            job.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' :
-                            job.status === 'closed' ? 'bg-gray-50 text-gray-600 border-gray-200' :
-                            'bg-yellow-50 text-yellow-700 border-yellow-200'
-                          }`}
-                        >
-                          {job.status}
-                        </Badge>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Eye className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   )) : (
@@ -586,6 +805,7 @@ function RecruiterDashboardContent() {
                           setJobsFilter("all");
                           setJobsStatus("all");
                           setJobsSearch("");
+                          setJobsDateFilter("all");
                         }}
                       >
                         Clear filters
@@ -674,6 +894,122 @@ function RecruiterDashboardContent() {
           </main>
         </div>
       </div>
+      
+      {/* Search Dialog (Cmd+K) */}
+      <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Quick Search
+            </DialogTitle>
+            <DialogDescription>
+              Search for jobs, candidates, or navigate to any page
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              ref={searchInputRef}
+              placeholder="Type to search..."
+              value={jobsSearch}
+              onChange={(e) => setJobsSearch(e.target.value)}
+              className="text-lg"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setSearchDialogOpen(false);
+                }
+              }}
+            />
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-gray-500 uppercase tracking-wider">Quick Actions</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline" 
+                  className="justify-start"
+                  onClick={() => {
+                    setSearchDialogOpen(false);
+                    setLocation('/recruiter/jobs/create');
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Job
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="justify-start"
+                  onClick={() => {
+                    setSearchDialogOpen(false);
+                    setLocation('/recruiter/search-candidates');
+                  }}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Search Candidates
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="justify-start"
+                  onClick={() => {
+                    setSearchDialogOpen(false);
+                    setLocation('/recruiter/applications');
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  View Applications
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="justify-start"
+                  onClick={() => {
+                    setSearchDialogOpen(false);
+                    setLocation('/recruiter/interviews');
+                  }}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  View Interviews
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="text-xs text-gray-400">
+            Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border mx-1">Enter</kbd> to search or <kbd className="px-1.5 py-0.5 bg-gray-100 rounded border mx-1">Esc</kbd> to close
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Bulk Action Confirmation Dialog */}
+      <Dialog open={bulkActionDialog.open} onOpenChange={(open) => setBulkActionDialog({ ...bulkActionDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {bulkActionDialog.action === 'close' && 'Close Selected Jobs'}
+              {bulkActionDialog.action === 'archive' && 'Archive Selected Jobs'}
+              {bulkActionDialog.action === 'duplicate' && 'Duplicate Selected Jobs'}
+            </DialogTitle>
+            <DialogDescription>
+              {bulkActionDialog.action === 'close' && `Are you sure you want to close ${selectedJobs.size} job(s)? This will mark them as closed and they will no longer accept applications.`}
+              {bulkActionDialog.action === 'archive' && `Are you sure you want to archive ${selectedJobs.size} job(s)? Archived jobs will be hidden from the main view.`}
+              {bulkActionDialog.action === 'duplicate' && `This will create ${selectedJobs.size} new job(s) as copies of the selected jobs.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkActionDialog({ open: false, action: '' })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => handleBulkAction(bulkActionDialog.action)}
+              className={`${
+                bulkActionDialog.action === 'close' ? 'bg-orange-600 hover:bg-orange-700' :
+                bulkActionDialog.action === 'archive' ? 'bg-gray-600 hover:bg-gray-700' :
+                'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {bulkActionDialog.action === 'close' && 'Close Jobs'}
+              {bulkActionDialog.action === 'archive' && 'Archive Jobs'}
+              {bulkActionDialog.action === 'duplicate' && 'Duplicate Jobs'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -5,8 +5,51 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { trpc } from "@/lib/trpc";
-import { Briefcase, FileText, Eye, TrendingUp, Upload, Search, Users, MessageSquare, Loader2, Heart } from "lucide-react";
+import { 
+  Briefcase, 
+  FileText, 
+  Eye, 
+  TrendingUp, 
+  Upload, 
+  Search, 
+  Users, 
+  MessageSquare, 
+  Loader2, 
+  Heart,
+  LayoutDashboard,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  Clock,
+  Shield,
+  User,
+  Video,
+  Calendar,
+  Star,
+  BookOpen,
+  Bell
+} from "lucide-react";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { useState, useRef, useEffect } from "react";
@@ -15,8 +58,7 @@ import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
 import VideoIntroduction from "@/components/VideoIntroduction";
 import { NotificationBell } from "@/components/NotificationBell";
-import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
-import { SessionInfo } from "@/components/SessionInfo";
+import { formatDistanceToNow } from "date-fns";
 
 export default function CandidateDashboard() {
   return (
@@ -26,11 +68,27 @@ export default function CandidateDashboard() {
   );
 }
 
+// Sidebar navigation items for candidates
+const sidebarItems = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/candidate-dashboard", badge: null },
+  { icon: Search, label: "Browse Jobs", path: "/jobs", badge: null },
+  { icon: Briefcase, label: "My Applications", path: "/my-applications", badge: null },
+  { icon: Heart, label: "Saved Jobs", path: "/saved-jobs", badge: null },
+  { icon: FileText, label: "My Resumes", path: "/candidate/my-resumes", badge: null },
+  { icon: Video, label: "AI Interview", path: "/ai-interview", badge: null },
+  { icon: Calendar, label: "Interviews", path: "/my-interviews", badge: null },
+  { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
+  { icon: BookOpen, label: "Career Resources", path: "/resources", badge: null },
+];
+
 function CandidateDashboardContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const [location] = useLocation();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch candidate profile
@@ -93,7 +151,7 @@ function CandidateDashboardContent() {
   });
 
   // Initialize form when candidate data loads
-  useState(() => {
+  useEffect(() => {
     if (candidate) {
       setProfileForm({
         fullName: candidate.fullName || "",
@@ -105,26 +163,23 @@ function CandidateDashboardContent() {
         bio: candidate.bio || "",
       });
     }
-  });
+  }, [candidate]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     const validTypes = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
     if (!validTypes.includes(file.type)) {
       toast.error("Please upload a PDF or Word document");
       return;
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File size must be less than 5MB");
       return;
     }
 
-    // Convert file to base64
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
@@ -159,18 +214,39 @@ function CandidateDashboardContent() {
     }
   }, [candidate]);
 
+  // Redirect if not authenticated or not a candidate
+  useEffect(() => {
+    const hasToken = localStorage.getItem('auth_token');
+    if (!authLoading && !hasToken && !user) {
+      setLocation('/');
+    } else if (!authLoading && user && user.role !== 'candidate') {
+      setLocation('/');
+    }
+  }, [authLoading, user, setLocation]);
+
   if (authLoading || candidateLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <span className="text-white font-bold text-xl">HG</span>
+          </div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  if (!user) {
-    setLocation("/");
-    return null;
-  }
+  const profilePercentage = completionStatus?.percentage || 0;
+  const sessionExpiry = (user as any)?.sessionExpiry ? new Date((user as any).sessionExpiry) : null;
+  const rememberMe = (user as any)?.rememberMe;
+
+  const statCards = [
+    { title: 'Applications', value: stats?.totalApplications || 0, description: 'Total submitted', icon: Briefcase, color: 'bg-blue-500' },
+    { title: 'Interviews', value: stats?.interviews || 0, description: 'Scheduled', icon: Users, color: 'bg-green-500' },
+    { title: 'Profile Views', value: stats?.profileViews || 0, description: 'By recruiters', icon: Eye, color: 'bg-purple-500' },
+    { title: 'Resume Score', value: `${stats?.resumeScore || 0}%`, description: 'ATS compatibility', icon: TrendingUp, color: 'bg-orange-500' },
+  ];
 
   return (
     <>
@@ -179,429 +255,604 @@ function CandidateDashboardContent() {
         onComplete={() => setShowOnboarding(false)} 
       />
       
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm sm:text-base">
-              HG
-            </div>
-            <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              HotGigs
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <NotificationBell />
-            <span className="text-xs sm:text-sm text-gray-600 hidden md:inline">Welcome, {candidate?.fullName || user.name}</span>
-            <Button variant="outline" size="sm" onClick={() => setLocation("/")}>
-              Logout
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Desktop Sidebar */}
+        <aside 
+          className={`hidden lg:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
+            sidebarCollapsed ? 'w-16' : 'w-64'
+          }`}
+        >
+          {/* Sidebar Header */}
+          <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+            {!sidebarCollapsed && (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">HG</span>
+                </div>
+                <span className="font-bold text-gray-900">HotGigs</span>
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="h-8 w-8"
+            >
+              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
           </div>
-        </div>
-      </header>
 
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
-        {/* Profile Completion Banner */}
-        {completionStatus && completionStatus.percentage !== undefined && completionStatus.percentage < 100 && (
-          <ProfileCompletionBanner 
-            percentage={completionStatus.percentage} 
-            role="candidate"
-          />
-        )}
-        
-        {/* Session Info */}
-        <div className="mt-4">
-          <SessionInfo />
-        </div>
-        
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Applications</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalApplications || 0}</div>
-              <p className="text-xs text-muted-foreground">Total applications submitted</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Interviews</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.interviews || 0}</div>
-              <p className="text-xs text-muted-foreground">Interview invitations</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Profile Views</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.profileViews || 0}</div>
-              <p className="text-xs text-muted-foreground">Recruiters viewed your profile</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Resume Score</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.resumeScore || 0}%</div>
-              <p className="text-xs text-muted-foreground">ATS compatibility score</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Profile Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Your Profile</CardTitle>
-                    <CardDescription>Manage your professional information</CardDescription>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditingProfile(!isEditingProfile)}
-                  >
-                    {isEditingProfile ? "Cancel" : "Edit Profile"}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isEditingProfile ? (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name</Label>
-                        <Input
-                          id="fullName"
-                          value={profileForm.fullName}
-                          onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={profileForm.email}
-                          onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input
-                          id="phone"
-                          value={profileForm.phone}
-                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <Input
-                          id="location"
-                          value={profileForm.location}
-                          onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="skills">Skills (comma-separated)</Label>
-                      <Input
-                        id="skills"
-                        placeholder="e.g., JavaScript, React, Node.js"
-                        value={profileForm.skills}
-                        onChange={(e) => setProfileForm({ ...profileForm, skills: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="experience">Years of Experience</Label>
-                      <Input
-                        id="experience"
-                        type="number"
-                        value={profileForm.experience}
-                        onChange={(e) => setProfileForm({ ...profileForm, experience: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        placeholder="Tell us about yourself..."
-                        value={profileForm.bio}
-                        onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                        rows={4}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleUpdateProfile}
-                      disabled={updateProfileMutation.isPending}
-                      className="w-full"
-                    >
-                      {updateProfileMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save Changes"
-                      )}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-600">Name:</span>
-                      <span className="text-sm">{candidate?.fullName || "Not set"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-600">Email:</span>
-                      <span className="text-sm">{candidate?.email || "Not set"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-600">Phone:</span>
-                      <span className="text-sm">{candidate?.phone || "Not set"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-600">Location:</span>
-                      <span className="text-sm">{candidate?.location || "Not set"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-600">Experience:</span>
-                      <span className="text-sm">{candidate?.experienceYears || 0} years</span>
-                    </div>
-                    {candidate?.skills && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-600">Skills:</span>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {candidate.skills.split(",").map((skill: string, index: number) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
-                            >
-                              {skill.trim()}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {candidate?.bio && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-600">Bio:</span>
-                        <p className="text-sm mt-1 text-gray-700">{candidate.bio}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Resume Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Resume</CardTitle>
-                <CardDescription>Upload and manage your resume</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {candidate?.resumeUrl ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-8 w-8 text-blue-600" />
-                        <div>
-                          <p className="font-medium">Resume uploaded</p>
-                          <p className="text-sm text-gray-600">
-                            Last updated: {new Date(candidate.updatedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
-                            View
-                          </a>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          Replace
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-sm font-medium mb-1">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-600">PDF, DOC, or DOCX (max 5MB)</p>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Video Introduction */}
-            {candidate?.id && (
-              <VideoIntroduction
-                candidateId={candidate.id}
-                existingVideo={videoIntroduction ? {
-                  id: videoIntroduction.id,
-                  videoUrl: videoIntroduction.videoUrl,
-                  duration: videoIntroduction.duration,
-                  uploadedAt: videoIntroduction.createdAt
-                } : null}
-                onUploadSuccess={() => refetchVideo()}
-              />
-            )}
-
-            {/* Recommended Jobs */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recommended Jobs</CardTitle>
-                <CardDescription>Jobs matching your profile</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {recommendedJobs && recommendedJobs.length > 0 ? (
-                  <div className="space-y-4">
-                    {recommendedJobs.map((job: any) => (
-                      <div
-                        key={job.id}
-                        className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+          {/* Sidebar Navigation */}
+          <ScrollArea className="flex-1 py-4">
+            <nav className="px-2 space-y-1">
+              {sidebarItems.map((item) => {
+                const isActive = location === item.path;
+                return (
+                  <Tooltip key={item.path} delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setLocation(item.path)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                          isActive 
+                            ? 'bg-emerald-50 text-emerald-700 font-medium' 
+                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        } ${sidebarCollapsed ? 'justify-center' : ''}`}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1 cursor-pointer" onClick={() => setLocation(`/jobs/${job.id}`)}>
-                            <h3 className="font-semibold">{job.title}</h3>
-                            <p className="text-sm text-gray-600">{job.companyName || 'Company Not Specified'}</p>
+                        <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-emerald-600' : ''}`} />
+                        {!sidebarCollapsed && (
+                          <>
+                            <span className="flex-1 text-left text-sm">{item.label}</span>
+                            {item.badge && (
+                              <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700">
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    {sidebarCollapsed && (
+                      <TooltipContent side="right">
+                        <p>{item.label}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                );
+              })}
+            </nav>
+          </ScrollArea>
+        </aside>
+
+        {/* Mobile Sidebar */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="w-64 p-0">
+            <SheetHeader className="h-16 flex items-center px-4 border-b">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">HG</span>
+                </div>
+                <SheetTitle className="font-bold text-gray-900">HotGigs</SheetTitle>
+              </div>
+            </SheetHeader>
+            <ScrollArea className="flex-1 py-4">
+              <nav className="px-2 space-y-1">
+                {sidebarItems.map((item) => {
+                  const isActive = location === item.path;
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => {
+                        setLocation(item.path);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                        isActive 
+                          ? 'bg-emerald-50 text-emerald-700 font-medium' 
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      }`}
+                    >
+                      <item.icon className={`h-5 w-5 ${isActive ? 'text-emerald-600' : ''}`} />
+                      <span className="flex-1 text-left text-sm">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top Header */}
+          <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6">
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+
+            {/* Search Bar (Desktop) */}
+            <div className="hidden md:flex flex-1 max-w-md mx-4">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Search jobs, companies..." 
+                  className="pl-9 bg-gray-50 border-gray-200"
+                  onClick={() => setLocation('/jobs')}
+                />
+              </div>
+            </div>
+
+            {/* Right Side Actions */}
+            <div className="flex items-center gap-2 lg:gap-4">
+              <NotificationBell />
+              
+              {/* Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                    <Avatar className="h-8 w-8 border-2 border-emerald-200">
+                      <AvatarFallback className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-medium">
+                        {candidate?.fullName?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || 'C'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden sm:block text-left">
+                      <p className="text-sm font-medium text-gray-900">{candidate?.fullName || user?.name}</p>
+                      <p className="text-xs text-gray-500">Candidate</p>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  {/* Profile Header */}
+                  <div className="p-4 border-b">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12 border-2 border-emerald-200">
+                        <AvatarFallback className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-lg font-medium">
+                          {candidate?.fullName?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || 'C'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-gray-900">{candidate?.fullName || user?.name}</p>
+                        <p className="text-sm text-gray-500">{user?.email}</p>
+                        <Badge variant="secondary" className="mt-1 text-xs">Candidate</Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Profile Completion */}
+                  {profilePercentage < 100 && (
+                    <div className="p-4 border-b bg-emerald-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-emerald-900">Profile Completion</span>
+                        <span className="text-sm font-bold text-emerald-600">{profilePercentage}%</span>
+                      </div>
+                      <Progress value={profilePercentage} className="h-2" />
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        className="mt-2 p-0 h-auto text-emerald-600"
+                        onClick={() => setLocation('/candidate/onboarding')}
+                      >
+                        Complete Profile →
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Session Info */}
+                  {sessionExpiry && (
+                    <div className="p-4 border-b bg-gray-50">
+                      <div className="flex items-start gap-2">
+                        <Clock className="h-4 w-4 text-gray-500 mt-0.5" />
+                        <div className="text-xs text-gray-600">
+                          {rememberMe ? (
+                            <div className="flex items-center gap-1">
+                              <Shield className="h-3 w-3" />
+                              <span>Staying signed in • Expires {formatDistanceToNow(sessionExpiry, { addSuffix: true })}</span>
+                            </div>
+                          ) : (
+                            <span>Session expires {formatDistanceToNow(sessionExpiry, { addSuffix: true })}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <DropdownMenuLabel className="text-xs text-gray-500 uppercase tracking-wider">Account</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setLocation('/candidate/onboarding')} className="cursor-pointer">
+                    <User className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation('/candidate/my-resumes')} className="cursor-pointer">
+                    <FileText className="h-4 w-4 mr-2" />
+                    My Resumes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast.info('Settings coming soon')} className="cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-red-600 focus:text-red-600">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto p-4 lg:p-6">
+            {/* Welcome Section */}
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-6 text-white mb-6">
+              <h1 className="text-2xl font-bold mb-2">Welcome back, {candidate?.fullName || user?.name}! 👋</h1>
+              <p className="opacity-90">Track your job applications and discover new opportunities.</p>
+            </div>
+
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {statCards.map((stat, index) => (
+                <Card key={index} className="hover:shadow-lg transition-all hover:-translate-y-0.5">
+                  <CardContent className="p-4 lg:p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs lg:text-sm font-medium text-gray-600">{stat.title}</p>
+                        <p className="text-xl lg:text-2xl font-bold mt-1">{stat.value}</p>
+                        <p className="text-xs text-gray-500 mt-1 hidden sm:block">{stat.description}</p>
+                      </div>
+                      <div className={`w-10 h-10 lg:w-12 lg:h-12 ${stat.color} rounded-lg flex items-center justify-center text-white`}>
+                        <stat.icon className="h-5 w-5 lg:h-6 lg:w-6" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Content Column */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Profile Section */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle>Your Profile</CardTitle>
+                        <CardDescription>Manage your professional information</CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditingProfile(!isEditingProfile)}
+                      >
+                        {isEditingProfile ? "Cancel" : "Edit Profile"}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {isEditingProfile ? (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="fullName">Full Name</Label>
+                            <Input
+                              id="fullName"
+                              value={profileForm.fullName}
+                              onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                            />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                              {job.matchScore || 85}% Match
-                            </span>
-                            <DeadlineBadge deadline={job.applicationDeadline} />
-                            <BookmarkButton
-                              jobId={job.id}
-                              candidateId={candidate?.id}
-                              variant="ghost"
-                              size="sm"
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={profileForm.email}
+                              onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input
+                              id="phone"
+                              value={profileForm.phone}
+                              onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="location">Location</Label>
+                            <Input
+                              id="location"
+                              value={profileForm.location}
+                              onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
                             />
                           </div>
                         </div>
-                        <p className="text-sm text-gray-700 mb-2 cursor-pointer" onClick={() => setLocation(`/jobs/${job.id}`)}>{job.location}</p>
-                        <div className="flex gap-2 cursor-pointer" onClick={() => setLocation(`/jobs/${job.id}`)}>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
-                            {job.type}
-                          </span>
-                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
-                            ${job.salaryMin}-${job.salaryMax}
-                          </span>
+                        <div className="space-y-2">
+                          <Label htmlFor="skills">Skills (comma-separated)</Label>
+                          <Input
+                            id="skills"
+                            placeholder="e.g., JavaScript, React, Node.js"
+                            value={profileForm.skills}
+                            onChange={(e) => setProfileForm({ ...profileForm, skills: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="experience">Years of Experience</Label>
+                          <Input
+                            id="experience"
+                            type="number"
+                            value={profileForm.experience}
+                            onChange={(e) => setProfileForm({ ...profileForm, experience: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="bio">Bio</Label>
+                          <Textarea
+                            id="bio"
+                            placeholder="Tell us about yourself..."
+                            value={profileForm.bio}
+                            onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                            rows={4}
+                          />
+                        </div>
+                        <Button
+                          onClick={handleUpdateProfile}
+                          disabled={updateProfileMutation.isPending}
+                          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                        >
+                          {updateProfileMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            "Save Changes"
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-600">Name:</span>
+                          <span className="text-sm">{candidate?.fullName || "Not set"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-600">Email:</span>
+                          <span className="text-sm">{candidate?.email || "Not set"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-600">Phone:</span>
+                          <span className="text-sm">{candidate?.phone || "Not set"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-600">Location:</span>
+                          <span className="text-sm">{candidate?.location || "Not set"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-600">Experience:</span>
+                          <span className="text-sm">{candidate?.experienceYears || 0} years</span>
+                        </div>
+                        {candidate?.skills && (
+                          <div>
+                            <span className="text-sm font-medium text-gray-600">Skills:</span>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {candidate.skills.split(",").map((skill: string, index: number) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full"
+                                >
+                                  {skill.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Resume Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Resume</CardTitle>
+                    <CardDescription>Upload and manage your resume</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {candidate?.resumeUrl ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-8 w-8 text-emerald-600" />
+                            <div>
+                              <p className="font-medium">Resume uploaded</p>
+                              <p className="text-sm text-gray-600">
+                                Last updated: {new Date(candidate.updatedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
+                                View
+                              </a>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fileInputRef.current?.click()}
+                            >
+                              Replace
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-600 text-center py-8">
-                    No recommendations yet. Complete your profile to get personalized job matches!
-                  </p>
+                    ) : (
+                      <div
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-emerald-500 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-sm font-medium mb-1">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-600">PDF, DOC, or DOCX (max 5MB)</p>
+                      </div>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Video Introduction */}
+                {candidate?.id && (
+                  <VideoIntroduction
+                    candidateId={candidate.id}
+                    existingVideo={videoIntroduction ? {
+                      id: videoIntroduction.id,
+                      videoUrl: videoIntroduction.videoUrl,
+                      duration: videoIntroduction.duration,
+                      uploadedAt: videoIntroduction.createdAt
+                    } : null}
+                    onUploadSuccess={() => refetchVideo()}
+                  />
                 )}
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Quick Upload Resume
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => setLocation("/candidate/my-resumes")}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  My Resumes
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => setLocation("/jobs")}
-                >
-                  <Search className="mr-2 h-4 w-4" />
-                  Search Jobs
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => setLocation("/my-applications")}
-                >
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  My Applications
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => setLocation("/saved-jobs")}
-                >
-                  <Heart className="mr-2 h-4 w-4" />
-                  Saved Jobs
-                </Button>
-              </CardContent>
-            </Card>
+                {/* Recommended Jobs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Star className="h-5 w-5 text-yellow-500" />
+                      Recommended Jobs
+                    </CardTitle>
+                    <CardDescription>Jobs matching your profile</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {recommendedJobs && recommendedJobs.length > 0 ? (
+                      <div className="space-y-4">
+                        {recommendedJobs.map((job: any) => (
+                          <div
+                            key={job.id}
+                            className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => setLocation(`/jobs/${job.id}`)}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1">
+                                <h3 className="font-semibold">{job.title}</h3>
+                                <p className="text-sm text-gray-600">{job.companyName || 'Company Not Specified'}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                  {job.matchScore || 85}% Match
+                                </span>
+                                <DeadlineBadge deadline={job.applicationDeadline} />
+                                <BookmarkButton
+                                  jobId={job.id}
+                                  candidateId={candidate?.id}
+                                  variant="ghost"
+                                  size="sm"
+                                />
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-700 mb-2">{job.location}</p>
+                            <div className="flex gap-2">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                                {job.type}
+                              </span>
+                              {job.salaryMin && job.salaryMax && (
+                                <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                                  ${job.salaryMin.toLocaleString()}-${job.salaryMax.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600 text-center py-8">
+                        No recommendations yet. Complete your profile to get personalized job matches!
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
-            {/* AI Career Coach */}
-            <Card className="bg-gradient-to-br from-blue-600 to-purple-600 text-white">
-              <CardHeader>
-                <CardTitle>AI Career Coach</CardTitle>
-                <CardDescription className="text-blue-100">
-                  Get personalized career advice 24/7
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="secondary" className="w-full">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Chat with Orion
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+              {/* Sidebar Column */}
+              <div className="space-y-6">
+                {/* Quick Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Quick Upload Resume
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setLocation("/candidate/my-resumes")}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      My Resumes
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setLocation("/jobs")}
+                    >
+                      <Search className="mr-2 h-4 w-4" />
+                      Search Jobs
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setLocation("/my-applications")}
+                    >
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      My Applications
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setLocation("/saved-jobs")}
+                    >
+                      <Heart className="mr-2 h-4 w-4" />
+                      Saved Jobs
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* AI Career Coach */}
+                <Card className="bg-gradient-to-br from-emerald-600 to-teal-600 text-white">
+                  <CardHeader>
+                    <CardTitle>AI Career Coach</CardTitle>
+                    <CardDescription className="text-emerald-100">
+                      Get personalized career advice 24/7
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button variant="secondary" className="w-full">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Chat with Orion
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </main>
         </div>
       </div>
-    </div>
     </>
   );
 }

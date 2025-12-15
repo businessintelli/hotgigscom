@@ -2049,3 +2049,26 @@
 - [x] Status filter (Active, Closed, Draft)
 - [x] Search functionality for jobs
 - [x] Retain all existing dashboard functionality
+
+
+## Recruiter Dashboard Enhancements (In Progress)
+- [ ] Job creation date filter (last 7 days, 30 days, 90 days, all time)
+- [ ] Bulk job actions (select multiple, close, archive, duplicate)
+- [ ] Keyboard shortcuts (Cmd/Ctrl+K for search, Cmd/Ctrl+N for new job)
+- [ ] Verify and fix candidate dashboard design consistency
+
+
+## Recruiter Dashboard Enhancements (Dec 15, 2025)
+- [x] Collapsible left sidebar with all navigation items
+- [x] Profile icon with dropdown menu (settings, profile)
+- [x] Move profile completion panel under profile dropdown
+- [x] Move session info panel under profile dropdown
+- [x] Jobs panel showing all jobs
+- [x] Filter for jobs created by self (My Jobs)
+- [x] Filter for jobs created by others (Team Jobs)
+- [x] Status filter (Active, Closed, Draft)
+- [x] Search functionality for jobs
+- [x] Job creation date filter (Last 7 days, Last 30 days, Last 90 days)
+- [x] Bulk job actions (Close, Archive, Duplicate)
+- [x] Keyboard shortcuts (Cmd/Ctrl+K for search, Cmd/Ctrl+N for new job)
+- [x] Candidate dashboard has collapsible sidebar design

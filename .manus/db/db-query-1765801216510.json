@@ -1,0 +1,20 @@
+{
+  "query": "SELECT u.id, u.email, u.role FROM users u WHERE u.role = 'candidate' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SELECT u.id, u.email, u.role FROM users u WHERE u.role = 'candidate' LIMIT 5;",
+  "rows": [
+    {
+      "id": "570001",
+      "email": "pathmaker@gmail.com",
+      "role": "candidate"
+    },
+    {
+      "id": "600002",
+      "email": "demo@candidate.com",
+      "role": "candidate"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\n570001\tpathmaker@gmail.com\tcandidate\n600002\tdemo@candidate.com\tcandidate\n",
+  "stderr": "",
+  "execution_time_ms": 1540
+}
