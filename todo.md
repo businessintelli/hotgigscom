@@ -1653,3 +1653,14 @@
 - [x] Fixed issue where upsertUser was creating duplicate users for email/password accounts
 - [x] Cleaned up duplicate user records
 - [ ] User to test: Log out, log back in, and verify dashboard access works
+
+
+## Database Cleanup (COMPLETED ✅)
+- [x] Identify all tables with sample/test data
+- [x] Delete sample jobs, applications, interviews (0 remaining)
+- [x] Delete sample candidates and recruiters (preserved user's profiles)
+- [x] Delete sample customers, contacts, associates (0 remaining)
+- [x] Clean up test email campaigns and templates
+- [x] Preserve user account: bhimireddy@gmail.com
+- [x] Verify database is clean
+- [x] Final counts: 1 user, 1 recruiter, 1 candidate, all sample data removed
