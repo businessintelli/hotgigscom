@@ -17,11 +17,14 @@ import {
   Video,
   Download,
   Calendar,
-  BarChart3
+  BarChart3,
+  ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 export default function Analytics() {
+  const [, setLocation] = useLocation();
   const [timeRange, setTimeRange] = useState<string>("30");
   
   const { data: analytics, isLoading } = trpc.admin.getAnalytics.useQuery({
@@ -50,6 +53,14 @@ export default function Analytics() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Button 
+        onClick={() => setLocation('/recruiter/dashboard')}
+        variant="ghost"
+        className="mb-4"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </Button>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Calendar as CalendarIcon, Clock, MapPin, User, Video, Phone, Building, Bot, Mail } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, User, Video, Phone, Building, Bot, Mail, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 
 // Setup date-fns localizer for react-big-calendar
@@ -202,6 +202,14 @@ export default function InterviewCalendar() {
 
   return (
     <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
+      <Button 
+        onClick={() => setLocation('/recruiter/dashboard')}
+        variant="ghost"
+        className="mb-4"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </Button>
       <Card>
         <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-2xl">

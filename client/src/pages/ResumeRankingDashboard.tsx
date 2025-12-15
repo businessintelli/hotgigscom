@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Loader2, TrendingUp, Award, Briefcase, GraduationCap, Target, CheckCircle, Eye, Calendar, Download } from "lucide-react";
+import { Loader2, TrendingUp, Award, Briefcase, GraduationCap, Target, CheckCircle, Eye, Calendar, Download, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Progress } from "@/components/ui/progress";
@@ -133,6 +133,14 @@ export default function ResumeRankingDashboard() {
 
   return (
     <div className="container mx-auto py-8">
+      <Button 
+        onClick={() => setLocation('/recruiter/dashboard')}
+        variant="ghost"
+        className="mb-4"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </Button>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Resume Ranking Dashboard</h1>
         <p className="text-muted-foreground">
