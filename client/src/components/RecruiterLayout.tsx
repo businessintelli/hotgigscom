@@ -48,6 +48,7 @@ const sidebarItems = [
   { icon: Upload, label: "Bulk Upload", path: "/recruiter/bulk-upload" },
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/campaigns" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: FileText, label: "Reports", path: "/recruiter/reports" },
   { icon: RefreshCw, label: "Reschedule Requests", path: "/recruiter/reschedule-requests", hasBadge: true },
 ];
 

@@ -52,6 +52,7 @@ import AdminReports from "./pages/AdminReports";
 import AdminEnvironment from "./pages/AdminEnvironment";
 import AdminLogs from "./pages/AdminLogs";
 import AdminDatabase from "./pages/AdminDatabase";
+import RecruiterReports from "./pages/RecruiterReports";
 import UserManagement from "./pages/UserManagement";
 import SystemHealth from "./pages/SystemHealth";
 import Analytics from "./pages/Analytics";
@@ -98,6 +99,7 @@ function Router() {
       <Route path="/recruiter/applications" component={ApplicationManagement} />
       <Route path="/recruiter/interviews" component={InterviewManagement} />
       <Route path="/recruiter/reschedule-requests" component={RescheduleRequests} />
+      <Route path="/recruiter/reports" component={RecruiterReports} />
       <Route path="/reschedule/confirm" component={RescheduleConfirmation} />
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path="/recruiter/bulk-upload" component={BulkResumeUpload} />

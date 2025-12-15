@@ -25,6 +25,7 @@ import * as notificationHelpers from './notificationHelpers';
 import * as candidateSearchHelpers from './candidateSearchHelpers';
 import * as emailCampaignHelpers from './emailCampaignHelpers';
 import * as analyticsHelpers from './analyticsHelpers';
+import * as recruiterReportsHelpers from './recruiterReportsHelpers';
 import { resumeProfileRouter } from './resumeProfileRouter';
 import { onboardingRouter } from './onboardingRouter';
 import { profileCompletionRouter } from './profileCompletionRouter';
@@ -4287,6 +4288,85 @@ export const appRouter = router({
       .input(z.object({ applicationId: z.number() }))
       .query(async ({ input }) => {
         return await db.getCandidateSkillRatings(input.applicationId);
+      }),
+  }),
+
+  // Recruiter Reports router
+  reports: router({
+    // Dashboard summary
+    getDashboardSummary: protectedProcedure
+      .input(z.object({
+        period: z.enum(['today', 'yesterday', 'week', 'month', 'quarter', 'ytd', 'custom']).default('month'),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        return await recruiterReportsHelpers.getRecruiterDashboardSummary(recruiter.id, input.period);
+      }),
+
+    // Submissions report
+    getSubmissionsReport: protectedProcedure
+      .input(z.object({
+        period: z.enum(['today', 'yesterday', 'week', 'month', 'quarter', 'ytd', 'custom']).default('month'),
+        customStart: z.string().optional(),
+        customEnd: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        return await recruiterReportsHelpers.getSubmissionsReport(recruiter.id, input.period, input.customStart, input.customEnd);
+      }),
+
+    // Placements report
+    getPlacementsReport: protectedProcedure
+      .input(z.object({
+        period: z.enum(['today', 'yesterday', 'week', 'month', 'quarter', 'ytd', 'custom']).default('month'),
+        customStart: z.string().optional(),
+        customEnd: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        return await recruiterReportsHelpers.getPlacementsReport(recruiter.id, input.period, input.customStart, input.customEnd);
+      }),
+
+    // Pipeline report
+    getPipelineReport: protectedProcedure
+      .input(z.object({
+        period: z.enum(['today', 'yesterday', 'week', 'month', 'quarter', 'ytd', 'custom']).default('month'),
+        customStart: z.string().optional(),
+        customEnd: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        return await recruiterReportsHelpers.getPipelineReport(recruiter.id, input.period, input.customStart, input.customEnd);
+      }),
+
+    // Time-to-hire report
+    getTimeToHireReport: protectedProcedure
+      .input(z.object({
+        period: z.enum(['today', 'yesterday', 'week', 'month', 'quarter', 'ytd', 'custom']).default('month'),
+        customStart: z.string().optional(),
+        customEnd: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        return await recruiterReportsHelpers.getTimeToHireReport(recruiter.id, input.period, input.customStart, input.customEnd);
+      }),
+
+    // Job performance report
+    getJobPerformanceReport: protectedProcedure
+      .input(z.object({
+        period: z.enum(['today', 'yesterday', 'week', 'month', 'quarter', 'ytd', 'custom']).default('month'),
+        customStart: z.string().optional(),
+        customEnd: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        return await recruiterReportsHelpers.getJobPerformanceReport(recruiter.id, input.period, input.customStart, input.customEnd);
       }),
   }),
 });
