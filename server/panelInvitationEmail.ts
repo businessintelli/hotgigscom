@@ -15,6 +15,8 @@ interface PanelInvitationEmailData {
   notes?: string;
   acceptUrl?: string;
   declineUrl?: string;
+  rescheduleUrl?: string;
+  feedbackUrl?: string;
 }
 
 export async function sendPanelInvitationEmail(data: PanelInvitationEmailData): Promise<boolean> {
@@ -156,18 +158,30 @@ export async function sendPanelInvitationEmail(data: PanelInvitationEmailData): 
                     </p>
                     <table role="presentation" style="border-collapse: collapse;">
                       <tr>
-                        <td style="padding: 0 10px;">
-                          <a href="${data.acceptUrl || '#'}" style="display: inline-block; background-color: #22c55e; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 14px;">
-                            ✓ Accept Invitation
+                        <td style="padding: 0 8px;">
+                          <a href="${data.acceptUrl || '#'}" style="display: inline-block; background-color: #22c55e; color: white; text-decoration: none; padding: 14px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                            ✓ Accept
                           </a>
                         </td>
-                        <td style="padding: 0 10px;">
-                          <a href="${data.declineUrl || '#'}" style="display: inline-block; background-color: #ef4444; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                        <td style="padding: 0 8px;">
+                          <a href="${data.rescheduleUrl || '#'}" style="display: inline-block; background-color: #3b82f6; color: white; text-decoration: none; padding: 14px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                            🕐 Reschedule
+                          </a>
+                        </td>
+                        <td style="padding: 0 8px;">
+                          <a href="${data.declineUrl || '#'}" style="display: inline-block; background-color: #ef4444; color: white; text-decoration: none; padding: 14px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">
                             ✗ Decline
                           </a>
                         </td>
                       </tr>
                     </table>
+                    
+                    <p style="margin: 20px 0 0 0; color: #64748b; font-size: 13px;">
+                      After the interview, use this link to submit your feedback:
+                    </p>
+                    <a href="${data.feedbackUrl || '#'}" style="display: inline-block; margin-top: 10px; background-color: #8b5cf6; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                      📝 Submit Feedback (after interview)
+                    </a>
                   </td>
                 </tr>
               </table>

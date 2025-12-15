@@ -29,6 +29,7 @@ import { resumeProfileRouter } from './resumeProfileRouter';
 import { onboardingRouter } from './onboardingRouter';
 import { profileCompletionRouter } from './profileCompletionRouter';
 import { createVideoMeeting } from './videoMeetingService';
+import { panelPublicRouter } from './panelPublicRouter';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -40,6 +41,7 @@ export const appRouter = router({
   resumeProfile: resumeProfileRouter,
   onboarding: onboardingRouter,
   profileCompletion: profileCompletionRouter,
+  panelPublic: panelPublicRouter,
   
   user: router({
     createRecruiterProfile: protectedProcedure.mutation(async ({ ctx }) => {
@@ -1740,7 +1742,7 @@ export const appRouter = router({
         }
         
         // Create panelist invitation
-        await database.insert(interviewPanelists).values({
+        const [insertResult] = await database.insert(interviewPanelists).values({
           interviewId: input.interviewId,
           userId,
           email: input.email,
@@ -1748,6 +1750,14 @@ export const appRouter = router({
           role: input.role || null,
           status: 'invited',
         });
+        
+        const panelistId = insertResult.insertId;
+        
+        // Generate action tokens for email links
+        const { createPanelActionTokens, generateActionUrls } = await import("./panelTokenService");
+        const tokens = await createPanelActionTokens(panelistId, input.interviewId);
+        const baseUrl = process.env.VITE_APP_URL || 'https://hotgigs.manus.space';
+        const actionUrls = generateActionUrls(baseUrl, tokens);
         
         // Send invitation email
         try {
@@ -1771,6 +1781,10 @@ export const appRouter = router({
               meetingLink: interview.interview.meetingLink || undefined,
               location: interview.interview.location || undefined,
               notes: interview.interview.notes || undefined,
+              acceptUrl: actionUrls.acceptUrl,
+              declineUrl: actionUrls.declineUrl,
+              rescheduleUrl: actionUrls.rescheduleUrl,
+              feedbackUrl: actionUrls.feedbackUrl,
             });
           }
         } catch (emailError) {

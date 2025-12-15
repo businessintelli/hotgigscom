@@ -1879,3 +1879,50 @@
 - [x] Include interview details, meeting link, and expectations in email
 - [x] Test integration and email sending
 - [x] Save checkpoint
+
+
+## Token-Based Panel Member System (IN PROGRESS 🔄)
+- [ ] Create panel_action_tokens table for one-time use tokens
+- [ ] Generate unique tokens when inviting panelists
+- [ ] Build public API endpoints for token-based actions
+- [ ] Create /panel/accept/:token page - Accept invitation
+- [ ] Create /panel/decline/:token page - Decline invitation
+- [ ] Create /panel/reschedule/:token page - Request new date/time
+- [ ] Create /panel/feedback/:token page - Submit feedback without login
+- [ ] Invalidate tokens after use (one-time only)
+- [ ] Update panel invitation email with action links
+- [ ] Add "panelist" role to user roles enum
+- [ ] Create PanelistDashboard for registered panelists
+- [ ] Show upcoming interviews and pending feedback for panelists
+- [ ] Test all token-based flows
+- [ ] Save checkpoint
+
+
+## Token-Based Panel Member System (COMPLETED ✅)
+- [x] Create panel_action_tokens table for one-time use tokens
+- [x] Build token generation service (panelTokenService.ts)
+  - [x] generateToken() - Create secure random tokens
+  - [x] createPanelActionTokens() - Generate all 4 action tokens
+  - [x] validateAndUseToken() - Validate and mark token as used
+  - [x] generateActionUrls() - Create full URLs for email links
+- [x] Create public API router for token-based actions (panelPublicRouter.ts)
+  - [x] validateToken - Check if token is valid/expired/used
+  - [x] acceptInvitation - Accept interview invitation
+  - [x] declineInvitation - Decline interview invitation
+  - [x] requestReschedule - Request new date/time with message
+  - [x] submitFeedback - Submit full feedback form
+- [x] Build PanelAccept page for accepting invitations via email link
+- [x] Build PanelDecline page for declining invitations via email link
+- [x] Build PanelReschedule page for requesting new date/time
+- [x] Build PanelFeedback page for submitting feedback via email link
+  - [x] Star ratings for technical, communication, problem-solving, culture fit
+  - [x] Written feedback sections (strengths, weaknesses, notes)
+  - [x] Hiring recommendation (Strong Hire to Strong No Hire)
+- [x] Add panelist role to user role enum
+- [x] Create PanelistDashboard for registered panelists
+  - [x] Stats cards (upcoming, pending feedback, completed, total)
+  - [x] Tabs for upcoming/pending feedback/completed interviews
+  - [x] Interview cards with details and action buttons
+- [x] Update email templates with action links (accept/decline/reschedule/feedback)
+- [x] Integrate token generation into invitePanelist mutation
+- [x] Add routes for all panel pages in App.tsx

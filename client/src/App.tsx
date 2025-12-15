@@ -62,6 +62,11 @@ import VerificationRequired from "./pages/auth/VerificationRequired";
 import RecruiterOnboarding from "./pages/RecruiterOnboarding";
 import CandidateOnboarding from "./pages/CandidateOnboarding";
 import { SessionExpiryWarning } from "@/components/SessionExpiryWarning";
+import PanelAccept from "./pages/PanelAccept";
+import PanelDecline from "./pages/PanelDecline";
+import PanelReschedule from "./pages/PanelReschedule";
+import PanelFeedback from "./pages/PanelFeedback";
+import PanelistDashboard from "./pages/PanelistDashboard";
 
 
 function Router() {
@@ -105,6 +110,15 @@ function Router() {
       <Route path="/verification-required" component={VerificationRequired} />
       <Route path="/recruiter/onboarding" component={RecruiterOnboarding} />
       <Route path="/candidate/onboarding" component={CandidateOnboarding} />
+      
+      {/* Panel Member Routes (token-based, no auth required) */}
+      <Route path="/panel/accept/:token" component={PanelAccept} />
+      <Route path="/panel/decline/:token" component={PanelDecline} />
+      <Route path="/panel/reschedule/:token" component={PanelReschedule} />
+      <Route path="/panel/feedback/:token" component={PanelFeedback} />
+      
+      {/* Panelist Dashboard (for registered panelists) */}
+      <Route path="/panelist/dashboard" component={PanelistDashboard} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />

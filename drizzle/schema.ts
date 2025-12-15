@@ -10,7 +10,7 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }).unique(), // Made unique for custom auth
   passwordHash: varchar("passwordHash", { length: 255 }), // For custom auth
   loginMethod: varchar("loginMethod", { length: 64 }), // 'oauth' or 'password'
-  role: mysqlEnum("role", ["user", "admin", "recruiter", "candidate"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "recruiter", "candidate", "panelist"]).default("user").notNull(),
   // Email verification
   emailVerified: boolean("emailVerified").default(false).notNull(),
   verificationToken: varchar("verificationToken", { length: 255 }),
@@ -936,3 +936,21 @@ export const recruiterNotificationPreferences = mysqlTable("recruiter_notificati
 
 export type RecruiterNotificationPreferences = typeof recruiterNotificationPreferences.$inferSelect;
 export type InsertRecruiterNotificationPreferences = typeof recruiterNotificationPreferences.$inferInsert;
+
+
+/**
+ * Panel action tokens for one-time email-based actions (accept/decline/reschedule/feedback)
+ */
+export const panelActionTokens = mysqlTable("panel_action_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  panelistId: int("panelistId").notNull(),
+  interviewId: int("interviewId").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  actionType: mysqlEnum("actionType", ["accept", "decline", "reschedule", "feedback"]).notNull(),
+  usedAt: timestamp("usedAt"),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PanelActionToken = typeof panelActionTokens.$inferSelect;
+export type InsertPanelActionToken = typeof panelActionTokens.$inferInsert;
