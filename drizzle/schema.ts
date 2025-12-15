@@ -938,3 +938,39 @@ export const notificationPreferences = mysqlTable("notification_preferences", {
 
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+
+/**
+ * Interview feedback from candidates
+ * Captures candidate experience ratings after interviews
+ */
+export const interviewFeedback = mysqlTable("interview_feedback", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  
+  // Overall rating (1-5 stars)
+  overallRating: int("overallRating").notNull(),
+  
+  // Category ratings (1-5 stars each)
+  interviewerRating: int("interviewerRating"),
+  processRating: int("processRating"),
+  communicationRating: int("communicationRating"),
+  
+  // Written feedback
+  positiveAspects: text("positiveAspects"),
+  areasForImprovement: text("areasForImprovement"),
+  additionalComments: text("additionalComments"),
+  
+  // Would recommend
+  wouldRecommend: boolean("wouldRecommend"),
+  
+  // Anonymous option
+  isAnonymous: boolean("isAnonymous").default(false).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InterviewFeedback = typeof interviewFeedback.$inferSelect;
+export type InsertInterviewFeedback = typeof interviewFeedback.$inferInsert;

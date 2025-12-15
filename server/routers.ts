@@ -1807,6 +1807,140 @@ export const appRouter = router({
         };
       }),
     
+    // Submit interview feedback from candidate
+    submitFeedback: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        overallRating: z.number().min(1).max(5),
+        interviewerRating: z.number().min(1).max(5).optional(),
+        processRating: z.number().min(1).max(5).optional(),
+        communicationRating: z.number().min(1).max(5).optional(),
+        positiveAspects: z.string().optional(),
+        areasForImprovement: z.string().optional(),
+        additionalComments: z.string().optional(),
+        wouldRecommend: z.boolean().optional(),
+        isAnonymous: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { interviewFeedback } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+        if (!candidate) throw new Error("Candidate profile not found");
+        
+        // Check if feedback already exists
+        const [existing] = await database
+          .select()
+          .from(interviewFeedback)
+          .where(and(
+            eq(interviewFeedback.interviewId, input.interviewId),
+            eq(interviewFeedback.candidateId, candidate.id)
+          ));
+        
+        if (existing) {
+          throw new Error("Feedback already submitted for this interview");
+        }
+        
+        // Insert feedback
+        await database.insert(interviewFeedback).values({
+          interviewId: input.interviewId,
+          candidateId: candidate.id,
+          overallRating: input.overallRating,
+          interviewerRating: input.interviewerRating,
+          processRating: input.processRating,
+          communicationRating: input.communicationRating,
+          positiveAspects: input.positiveAspects,
+          areasForImprovement: input.areasForImprovement,
+          additionalComments: input.additionalComments,
+          wouldRecommend: input.wouldRecommend,
+          isAnonymous: input.isAnonymous,
+        });
+        
+        return { success: true };
+      }),
+    
+    // Get feedback for an interview (for recruiters)
+    getFeedback: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const { interviewFeedback } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) return null;
+        
+        const [feedback] = await database
+          .select()
+          .from(interviewFeedback)
+          .where(eq(interviewFeedback.interviewId, input.interviewId));
+        
+        return feedback || null;
+      }),
+    
+    // Check if candidate has submitted feedback
+    hasFeedback: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const { interviewFeedback } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const database = await db.getDb();
+        if (!database) return false;
+        
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+        if (!candidate) return false;
+        
+        const [existing] = await database
+          .select()
+          .from(interviewFeedback)
+          .where(and(
+            eq(interviewFeedback.interviewId, input.interviewId),
+            eq(interviewFeedback.candidateId, candidate.id)
+          ));
+        
+        return !!existing;
+      }),
+    
+    // Get completed interviews awaiting feedback
+    getAwaitingFeedback: protectedProcedure.query(async ({ ctx }) => {
+      const { interviewFeedback, interviews, jobs } = await import("../drizzle/schema");
+      const { eq, and, notInArray, sql } = await import("drizzle-orm");
+      const database = await db.getDb();
+      if (!database) return [];
+      
+      const candidate = await db.getCandidateByUserId(ctx.user.id);
+      if (!candidate) return [];
+      
+      // Get IDs of interviews that already have feedback
+      const feedbackInterviewIds = await database
+        .select({ interviewId: interviewFeedback.interviewId })
+        .from(interviewFeedback)
+        .where(eq(interviewFeedback.candidateId, candidate.id));
+      
+      const excludeIds = feedbackInterviewIds.map(f => f.interviewId);
+      
+      // Get completed interviews without feedback
+      const completedInterviews = await database
+        .select({
+          id: interviews.id,
+          scheduledAt: interviews.scheduledAt,
+          type: interviews.type,
+          jobId: interviews.jobId,
+          jobTitle: jobs.title,
+          companyName: jobs.companyName,
+        })
+        .from(interviews)
+        .leftJoin(jobs, eq(interviews.jobId, jobs.id))
+        .where(and(
+          eq(interviews.candidateId, candidate.id),
+          eq(interviews.status, 'completed'),
+          excludeIds.length > 0 ? notInArray(interviews.id, excludeIds) : sql`1=1`
+        ))
+        .limit(5);
+      
+      return completedInterviews;
+    }),
+    
     // Fraud Detection - Log event
     logFraudEvent: protectedProcedure
       .input(z.object({

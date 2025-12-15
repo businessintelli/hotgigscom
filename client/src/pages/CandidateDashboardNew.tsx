@@ -36,6 +36,7 @@ import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { AddToCalendarButton } from "@/components/AddToCalendarButton";
 import { NotificationBell } from "@/components/NotificationBell";
+import { FeedbackPromptWidget } from "@/components/FeedbackPromptWidget";
 import { OrionChatbot } from "@/components/OrionChatbot";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -337,6 +338,9 @@ function DashboardOverview({ stats, applications, interviews }: any) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Feedback Prompt Widget */}
+      <FeedbackPromptWidget />
 
       {/* Upcoming Interviews Widget */}
       <UpcomingInterviewsWidget />

@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS interview_feedback (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  interviewId INT NOT NULL,\n  candidateId INT NOT NULL,\n  overallRating INT NOT NULL,\n  interviewerRating INT,\n  processRating INT,\n  communicationRating INT,\n  positiveAspects TEXT,\n  areasForImprovement TEXT,\n  additionalComments TEXT,\n  wouldRecommend BOOLEAN,\n  isAnonymous BOOLEAN NOT NULL DEFAULT FALSE,\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (interviewId) REFERENCES interviews(id),\n  FOREIGN KEY (candidateId) REFERENCES candidates(id)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS interview_feedback (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  interviewId INT NOT NULL,\n  candidateId INT NOT NULL,\n  overallRating INT NOT NULL,\n  interviewerRating INT,\n  processRating INT,\n  communicationRating INT,\n  positiveAspects TEXT,\n  areasForImprovement TEXT,\n  additionalComments TEXT,\n  wouldRecommend BOOLEAN,\n  isAnonymous BOOLEAN NOT NULL DEFAULT FALSE,\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (interviewId) REFERENCES interviews(id),\n  FOREIGN KEY (candidateId) REFERENCES candidates(id)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1742
+}
