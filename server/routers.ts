@@ -1749,7 +1749,34 @@ export const appRouter = router({
           status: 'invited',
         });
         
-        // TODO: Send invitation email
+        // Send invitation email
+        try {
+          const { sendPanelInvitationEmail } = await import("./panelInvitationEmail");
+          const interview = await db.getInterviewById(input.interviewId);
+          if (interview) {
+            const job = await db.getJobById(interview.interview.jobId);
+            const candidate = await db.getCandidateById(interview.interview.candidateId);
+            const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+            
+            await sendPanelInvitationEmail({
+              panelistEmail: input.email,
+              panelistName: input.name,
+              recruiterName: recruiter?.companyName || ctx.user.name || 'Recruiter',
+              candidateName: candidate?.fullName || 'Candidate',
+              jobTitle: job?.title || 'Position',
+              companyName: job?.companyName || undefined,
+              interviewDate: new Date(interview.interview.scheduledAt),
+              interviewDuration: interview.interview.duration || 60,
+              interviewType: interview.interview.type || 'video',
+              meetingLink: interview.interview.meetingLink || undefined,
+              location: interview.interview.location || undefined,
+              notes: interview.interview.notes || undefined,
+            });
+          }
+        } catch (emailError) {
+          console.error('Failed to send panel invitation email:', emailError);
+          // Don't fail the invitation if email fails
+        }
         
         return { success: true };
       }),

@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Search, Plus, Calendar, Video, Phone, MapPin, Clock, Edit, Trash2, CheckCircle, XCircle, Play } from "lucide-react";
+import { Loader2, Search, Plus, Calendar, Video, Phone, MapPin, Clock, Edit, Trash2, CheckCircle, XCircle, Play, Users, ChevronDown, ChevronUp } from "lucide-react";
+import InterviewPanelSection from "@/components/InterviewPanelSection";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ export default function InterviewManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<any>(null);
+  const [expandedInterviewId, setExpandedInterviewId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     applicationId: 0,
     candidateId: 0,
@@ -339,6 +341,24 @@ export default function InterviewManagement() {
                                 <strong>Notes:</strong> {interview.notes}
                               </p>
                             )}
+                            
+                            {/* Panel Toggle Button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="mt-2 text-primary"
+                              onClick={() => setExpandedInterviewId(
+                                expandedInterviewId === interview.id ? null : interview.id
+                              )}
+                            >
+                              <Users className="h-4 w-4 mr-2" />
+                              Interview Panel
+                              {expandedInterviewId === interview.id ? (
+                                <ChevronUp className="h-4 w-4 ml-1" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 ml-1" />
+                              )}
+                            </Button>
                           </div>
                           <div className="flex gap-2">
                             {interview.status === "scheduled" && (
@@ -377,6 +397,13 @@ export default function InterviewManagement() {
                             </Button>
                           </div>
                         </div>
+                        
+                        {/* Expandable Panel Section */}
+                        {expandedInterviewId === interview.id && (
+                          <div className="mt-4 pt-4 border-t">
+                            <InterviewPanelSection interviewId={interview.id} canManage={true} />
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
