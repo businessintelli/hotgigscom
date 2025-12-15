@@ -18,7 +18,10 @@ import {
   User, 
   X,
   Check,
-  Minus
+  Minus,
+  Download,
+  FileSpreadsheet,
+  FileText
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +51,7 @@ export function SkillMatrixComparison({
 }: SkillMatrixComparisonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCandidates, setSelectedCandidates] = useState<number[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch skill requirements for the job
   const { data: skillRequirements } = (trpc as any).skillMatrix?.getJobRequirements?.useQuery(
@@ -152,6 +156,163 @@ export function SkillMatrixComparison({
     return calculateOverallScore(b) - calculateOverallScore(a);
   });
 
+  // Export to Excel (CSV format)
+  const exportToExcel = () => {
+    if (!skillRequirements || selectedCandidates.length === 0) return;
+    
+    setIsExporting(true);
+    try {
+      // Build CSV content
+      const headers = ['Skill', 'Required Rating', ...sortedSelectedCandidates.map(appId => {
+        const candidate = candidates.find(c => (c.applicationId || c.id) === appId);
+        return candidate?.name || 'Unknown';
+      })];
+      
+      const rows = skillRequirements.map((skill: any) => {
+        const row = [skill.skillName, skill.minimumRating];
+        sortedSelectedCandidates.forEach(appId => {
+          const rating = getSkillRating(appId, skill.skillName);
+          if (rating) {
+            row.push(`${rating.rating}/5 (${rating.yearsOfExperience}y exp, last: ${rating.lastUsedYear})`);
+          } else {
+            row.push('N/A');
+          }
+        });
+        return row;
+      });
+      
+      // Add overall scores row
+      const scoresRow = ['Overall Score', '-', ...sortedSelectedCandidates.map(appId => `${calculateOverallScore(appId)}%`)];
+      rows.push(scoresRow);
+      
+      const csvContent = [headers, ...rows]
+        .map(row => row.map(cell => `"${cell}"`).join(','))
+        .join('\n');
+      
+      // Download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `skill-matrix-comparison-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('Skill matrix exported to Excel (CSV)');
+    } catch (error) {
+      toast.error('Failed to export skill matrix');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export to PDF (HTML-based)
+  const exportToPDF = async () => {
+    if (!skillRequirements || selectedCandidates.length === 0) return;
+    
+    setIsExporting(true);
+    try {
+      // Build HTML content for PDF
+      const candidateHeaders = sortedSelectedCandidates.map((appId, index) => {
+        const candidate = candidates.find(c => (c.applicationId || c.id) === appId);
+        const score = calculateOverallScore(appId);
+        return `<th style="text-align: center; padding: 12px; background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+          ${index === 0 ? '⭐ ' : ''}${candidate?.name || 'Unknown'}<br/>
+          <span style="font-size: 12px; color: #7c3aed;">Score: ${score}%</span>
+        </th>`;
+      }).join('');
+      
+      const tableRows = skillRequirements.map((skill: any) => {
+        const cells = sortedSelectedCandidates.map(appId => {
+          const rating = getSkillRating(appId, skill.skillName);
+          if (rating) {
+            const meetsReq = rating.rating >= skill.minimumRating;
+            const color = rating.rating >= 4 ? '#22c55e' : rating.rating >= 3 ? '#eab308' : rating.rating >= 2 ? '#f97316' : '#ef4444';
+            return `<td style="text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="font-weight: 600; color: ${color};">${rating.rating}/5</span>
+                  <span style="color: ${meetsReq ? '#22c55e' : '#ef4444'};">${meetsReq ? '✓' : '✗'}</span>
+                </div>
+                <span style="font-size: 11px; color: #64748b;">${rating.yearsOfExperience}y exp | ${rating.lastUsedYear}</span>
+              </div>
+            </td>`;
+          }
+          return `<td style="text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; color: #94a3b8;">N/A</td>`;
+        }).join('');
+        
+        return `<tr>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">
+            <strong>${skill.skillName}</strong><br/>
+            <span style="font-size: 11px; color: #64748b;">Required: ${skill.minimumRating}/5</span>
+          </td>
+          ${cells}
+        </tr>`;
+      }).join('');
+      
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Skill Matrix Comparison</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; }
+            h1 { color: #1e293b; margin-bottom: 8px; }
+            .subtitle { color: #64748b; margin-bottom: 24px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #e2e8f0; }
+            .legend { margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 8px; }
+            .legend-item { display: inline-block; margin-right: 16px; }
+          </style>
+        </head>
+        <body>
+          <h1>Skill Matrix Comparison Report</h1>
+          <p class="subtitle">Generated on ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: left; padding: 12px; background: #f8fafc; border-bottom: 2px solid #e2e8f0;">Skill</th>
+                ${candidateHeaders}
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+          
+          <div class="legend">
+            <strong>Legend:</strong>
+            <span class="legend-item">⭐ Top Candidate</span>
+            <span class="legend-item">✓ Meets Requirement</span>
+            <span class="legend-item">✗ Below Requirement</span>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      // Open in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+        toast.success('PDF ready for printing');
+      } else {
+        toast.error('Please allow popups to export PDF');
+      }
+    } catch (error) {
+      toast.error('Failed to export skill matrix');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <>
       {trigger ? (
@@ -215,9 +376,41 @@ export function SkillMatrixComparison({
             {selectedCandidates.length > 0 && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">
-                    Skill Comparison Matrix
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium">
+                      Skill Comparison Matrix
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={exportToExcel}
+                        disabled={isExporting}
+                        className="text-green-600 border-green-300 hover:bg-green-50"
+                      >
+                        {isExporting ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <FileSpreadsheet className="h-4 w-4 mr-1" />
+                        )}
+                        Excel
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={exportToPDF}
+                        disabled={isExporting}
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        {isExporting ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <FileText className="h-4 w-4 mr-1" />
+                        )}
+                        PDF
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (

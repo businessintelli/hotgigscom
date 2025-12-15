@@ -30,6 +30,8 @@ import { onboardingRouter } from './onboardingRouter';
 import { profileCompletionRouter } from './profileCompletionRouter';
 import { createVideoMeeting } from './videoMeetingService';
 import { panelPublicRouter } from './panelPublicRouter';
+import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
+import { sendEmail } from './emailService';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -3178,8 +3180,41 @@ export const appRouter = router({
               message: `A panelist has requested to reschedule the interview for ${job.title}. Reason: ${input.reason}`,
               relatedEntityType: 'interview',
               relatedEntityId: input.interviewId,
-              actionUrl: `/recruiter/interviews?highlight=${input.interviewId}`,
+              actionUrl: `/recruiter/reschedule-requests`,
             });
+
+            // Send email notification to recruiter
+            try {
+              const recruiter = await db.getUserById(job.postedBy);
+              const candidate = interview.candidate;
+              const panelist = await db.getUserById(ctx.user.id);
+              
+              if (recruiter?.email) {
+                const scheduledDate = new Date(interview.interview.scheduledAt);
+                const emailData = generateRescheduleRequestEmail({
+                  recruiterName: recruiter.name || recruiter.email.split('@')[0],
+                  panelistName: panelist?.name || ctx.user.email?.split('@')[0] || 'Panel Member',
+                  panelistEmail: panelist?.email || ctx.user.email || '',
+                  candidateName: candidate?.fullName || 'Candidate',
+                  jobTitle: job.title,
+                  originalDate: scheduledDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+                  originalTime: scheduledDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                  reason: input.reason,
+                  preferredTimes: input.preferredDates || [],
+                  dashboardUrl: `${process.env.VITE_OAUTH_PORTAL_URL?.replace('/portal', '') || ''}/recruiter/reschedule-requests`,
+                });
+
+                await sendEmail({
+                  to: recruiter.email,
+                  subject: emailData.subject,
+                  html: emailData.html,
+                  text: emailData.text,
+                });
+              }
+            } catch (emailError) {
+              console.error('Failed to send reschedule request email:', emailError);
+              // Don't fail the request if email fails
+            }
           }
         }
 

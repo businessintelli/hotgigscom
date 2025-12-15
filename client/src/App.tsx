@@ -19,6 +19,7 @@ import ApplicationManagement from "@/pages/ApplicationManagement";
 import JobManagement from "@/pages/JobManagement";
 import SubmissionManagement from "@/pages/SubmissionManagement";
 import InterviewManagement from "@/pages/InterviewManagement";
+import RescheduleRequests from "@/pages/RescheduleRequests";
 import InterviewPlayback from "@/pages/InterviewPlayback";
 import InterviewCalendar from "@/pages/InterviewCalendar";
 import AIInterviewPage from "@/pages/AIInterviewPage";
@@ -84,6 +85,7 @@ function Router() {
       <Route path="/recruiter/ai-matching" component={AIMatchingDashboard} />
       <Route path="/recruiter/applications" component={ApplicationManagement} />
       <Route path="/recruiter/interviews" component={InterviewManagement} />
+      <Route path="/recruiter/reschedule-requests" component={RescheduleRequests} />
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path="/recruiter/bulk-upload" component={BulkResumeUpload} />
        <Route path="/recruiter/interview-calendar" component={InterviewCalendar} />
