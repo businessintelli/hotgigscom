@@ -2211,3 +2211,12 @@
 - [x] Integrate logging with API errors
 - [x] Add sample test logs to database
 
+
+## Live Logging & Retention Policy - Dec 15
+- [x] Integrate logging into authentication flows (login success/failure)
+- [x] Integrate logging into API error handling (tRPC middleware)
+- [x] Integrate logging into email services (send success/failure)
+- [x] Add log retention policy configuration to environment variables
+- [x] Implement auto-cleanup job for old logs
+- [x] Add retention settings to admin environment page
+

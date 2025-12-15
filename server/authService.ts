@@ -14,6 +14,7 @@ import * as db from "./db";
 import { updateUserById } from "./dbUpdate";
 import { generateVerificationToken, generateTokenExpiry } from "./auth";
 import { sendVerificationEmail } from "./authEmails";
+import logger from "./services/logger";
 
 export interface AuthUser {
   id: number;
@@ -51,6 +52,7 @@ export async function signUp(data: SignUpData, baseUrl: string): Promise<{ succe
   // Check if user already exists
   const existingUser = await db.getUserByEmail(data.email);
   if (existingUser) {
+    await logger.warn('auth', `Sign up attempt with existing email: ${data.email}`, { email: data.email });
     throw new Error('An account with this email already exists');
   }
 
@@ -104,6 +106,9 @@ export async function signUp(data: SignUpData, baseUrl: string): Promise<{ succe
   // Send verification email
   await sendVerificationEmail(data.email, data.name, verificationToken, baseUrl);
 
+  // Log successful signup
+  await logger.info('auth', `New user registered: ${data.email}`, { role: data.role, userId: createdUser.id }, createdUser.id);
+
   return {
     success: true,
     user: {
@@ -124,6 +129,7 @@ export async function signIn(data: SignInData): Promise<{ success: boolean; user
   // Find user by email
   const user = await db.getUserByEmail(data.email);
   if (!user) {
+    await logger.authFailure(data.email, 'User not found');
     throw new Error('Invalid email or password');
   }
 
@@ -135,6 +141,7 @@ export async function signIn(data: SignInData): Promise<{ success: boolean; user
   // Verify password
   const isValid = await comparePassword(data.password, user.passwordHash);
   if (!isValid) {
+    await logger.authFailure(data.email, 'Invalid password', undefined);
     throw new Error('Invalid email or password');
   }
 
@@ -169,6 +176,9 @@ export async function signIn(data: SignInData): Promise<{ success: boolean; user
     expiry: expiry.toISOString(),
     rememberMe: data.rememberMe || false,
   };
+
+  // Log successful login
+  await logger.authSuccess(user.id, user.email!);
 
   return {
     success: true,

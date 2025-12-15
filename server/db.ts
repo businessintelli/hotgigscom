@@ -1945,3 +1945,84 @@ export async function deleteOldLogs(daysToKeep: number = 30) {
       eq(applicationLogs.resolved, true)
     ));
 }
+
+
+// Log retention policy functions
+export async function getLogRetentionDays(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 30; // Default to 30 days
+  
+  const [setting] = await db
+    .select()
+    .from(environmentVariables)
+    .where(eq(environmentVariables.key, 'LOG_RETENTION_DAYS'))
+    .limit(1);
+  
+  if (setting) {
+    const days = parseInt(setting.currentValue, 10);
+    return isNaN(days) ? 30 : days;
+  }
+  
+  return 30; // Default
+}
+
+export async function setLogRetentionDays(days: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await db
+    .select()
+    .from(environmentVariables)
+    .where(eq(environmentVariables.key, 'LOG_RETENTION_DAYS'))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    await db.update(environmentVariables)
+      .set({
+        previousValue: existing[0].currentValue,
+        currentValue: days.toString(),
+        updatedAt: new Date()
+      })
+      .where(eq(environmentVariables.key, 'LOG_RETENTION_DAYS'));
+  } else {
+    await db.insert(environmentVariables).values({
+      key: 'LOG_RETENTION_DAYS',
+      currentValue: days.toString(),
+      previousValue: days.toString(),
+      description: 'Number of days to retain resolved logs before auto-cleanup',
+      category: 'System',
+      isEditable: true,
+      isSensitive: false
+    });
+  }
+}
+
+export async function cleanupOldLogs(): Promise<{ deletedCount: number }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const retentionDays = await getLogRetentionDays();
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+  
+  // Count logs to be deleted
+  const [countResult] = await db.select({ count: sql<number>`count(*)` })
+    .from(applicationLogs)
+    .where(and(
+      lte(applicationLogs.createdAt, cutoffDate),
+      eq(applicationLogs.resolved, true)
+    ));
+  
+  const deletedCount = countResult?.count || 0;
+  
+  // Delete old resolved logs
+  if (deletedCount > 0) {
+    await db.delete(applicationLogs)
+      .where(and(
+        lte(applicationLogs.createdAt, cutoffDate),
+        eq(applicationLogs.resolved, true)
+      ));
+  }
+  
+  return { deletedCount };
+}

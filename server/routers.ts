@@ -3237,6 +3237,35 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Log Retention Policy
+    getLogRetentionDays: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        const days = await db.getLogRetentionDays();
+        return { days };
+      }),
+
+    setLogRetentionDays: protectedProcedure
+      .input(z.object({ days: z.number().min(1).max(365) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        await db.setLogRetentionDays(input.days);
+        return { success: true, days: input.days };
+      }),
+
+    cleanupOldLogs: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        const result = await db.cleanupOldLogs();
+        return { success: true, deletedCount: result.deletedCount };
+      }),
+
     // Database Info
     getDatabaseInfo: protectedProcedure
       .query(async ({ ctx }) => {
@@ -3741,13 +3770,13 @@ export const appRouter = router({
     fillTemplate: protectedProcedure
       .input(z.object({
         templateId: z.string(),
-        variables: z.record(z.string()),
+        variables: z.record(z.string(), z.string()),
       }))
       .mutation(async ({ input }) => {
         const { getEmailTemplateById, fillEmailTemplate } = await import('./emails/recruitmentTemplates');
         const template = getEmailTemplateById(input.templateId);
         if (!template) throw new Error('Template not found');
-        return fillEmailTemplate(template, input.variables);
+        return fillEmailTemplate(template, input.variables as Record<string, string>);
       }),
   }),
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import React from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,6 +58,8 @@ export default function AdminLogs() {
   const [resolvedFilter, setResolvedFilter] = useState<string>("all");
   const [expandedLogs, setExpandedLogs] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(0);
+  const [retentionDays, setRetentionDays] = useState<number>(30);
+  const [showRetentionDialog, setShowRetentionDialog] = useState(false);
   const limit = 20;
 
   // Fetch logs
@@ -72,8 +75,24 @@ export default function AdminLogs() {
   // Fetch stats
   const statsQuery = trpc.admin.getLogStats.useQuery();
 
+  // Fetch retention policy
+  const retentionQuery = trpc.admin.getLogRetentionDays.useQuery();
+
+  // Update retention days when query loads
+  useEffect(() => {
+    if (retentionQuery.data?.days) {
+      setRetentionDays(retentionQuery.data.days);
+    }
+  }, [retentionQuery.data]);
+
   // Resolve log mutation
   const resolveLogMutation = trpc.admin.resolveLog.useMutation();
+
+  // Set retention days mutation
+  const setRetentionMutation = trpc.admin.setLogRetentionDays.useMutation();
+
+  // Cleanup old logs mutation
+  const cleanupMutation = trpc.admin.cleanupOldLogs.useMutation();
 
   const toggleExpand = (id: number) => {
     const newExpanded = new Set(expandedLogs);
@@ -98,6 +117,42 @@ export default function AdminLogs() {
       toast({
         title: "Error",
         description: "Failed to resolve log entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveRetention = async () => {
+    try {
+      await setRetentionMutation.mutateAsync({ days: retentionDays });
+      toast({
+        title: "Saved",
+        description: `Log retention policy set to ${retentionDays} days`,
+      });
+      setShowRetentionDialog(false);
+      retentionQuery.refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update retention policy",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCleanupLogs = async () => {
+    try {
+      const result = await cleanupMutation.mutateAsync();
+      toast({
+        title: "Cleanup Complete",
+        description: `Deleted ${result.deletedCount} old log entries`,
+      });
+      logsQuery.refetch();
+      statsQuery.refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cleanup old logs",
         variant: "destructive",
       });
     }
@@ -197,6 +252,77 @@ export default function AdminLogs() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Log Retention Policy */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-purple-600" />
+                  Log Retention Policy
+                </CardTitle>
+                <CardDescription>
+                  Configure how long resolved logs are retained before automatic cleanup
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Retention:</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={retentionDays}
+                    onChange={(e) => setRetentionDays(parseInt(e.target.value) || 30)}
+                    className="w-20 h-8"
+                  />
+                  <span className="text-sm text-gray-500">days</span>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleSaveRetention}
+                  disabled={setRetentionMutation.isPending}
+                >
+                  {setRetentionMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Cleanup Now
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cleanup Old Logs?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete all resolved logs older than {retentionDays} days.
+                        This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleCleanupLogs}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {cleanupMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : null}
+                        Delete Old Logs
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
 
         {/* Filters */}
         <Card>

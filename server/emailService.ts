@@ -4,6 +4,7 @@ import { ENV } from './_core/env';
 import { getDb } from './db';
 import { systemSettings } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
+import logger from './services/logger';
 
 /**
  * Multi-provider email service supporting SendGrid and Resend
@@ -147,18 +148,31 @@ async function sendViaMock(options: EmailOptions): Promise<void> {
  */
 export async function sendEmail(options: EmailOptions): Promise<void> {
   const provider = await getEmailProvider();
+  const toAddress = Array.isArray(options.to) ? options.to.join(', ') : options.to;
 
   console.log(`[Email Service] Using provider: ${provider}`);
 
-  switch (provider) {
-    case 'sendgrid':
-      return await sendViaSendGrid(options);
-    case 'resend':
-      return await sendViaResend(options);
-    case 'mock':
-      return await sendViaMock(options);
-    default:
-      throw new Error(`Unknown email provider: ${provider}`);
+  try {
+    switch (provider) {
+      case 'sendgrid':
+        await sendViaSendGrid(options);
+        break;
+      case 'resend':
+        await sendViaResend(options);
+        break;
+      case 'mock':
+        await sendViaMock(options);
+        break;
+      default:
+        throw new Error(`Unknown email provider: ${provider}`);
+    }
+    
+    // Log successful email send
+    await logger.emailSent(toAddress, options.subject, provider);
+  } catch (error: any) {
+    // Log email failure
+    await logger.emailFailed(toAddress, options.subject, error);
+    throw error;
   }
 }
 
