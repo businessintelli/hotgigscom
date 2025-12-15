@@ -27,6 +27,7 @@ import {
   LogOut,
   User,
   Settings,
+  MessageSquare,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -352,30 +353,38 @@ function DashboardOverview({ stats, applications, interviews }: any) {
       )}
 
       {/* Recent Applications */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Applications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentApplications.map((app: any) => (
-              <div key={app.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <h4 className="font-semibold">{app.job?.title}</h4>
-                  <p className="text-sm text-gray-600">{app.job?.company}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Applied {new Date(app.submittedAt).toLocaleDateString()}
-                  </p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Applications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentApplications.map((app: any) => (
+                <div key={app.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <h4 className="font-semibold">{app.job?.title}</h4>
+                    <p className="text-sm text-gray-600">{app.job?.company}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Applied {new Date(app.submittedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge variant={getStatusVariant(app.status)}>{app.status}</Badge>
                 </div>
-                <Badge variant={getStatusVariant(app.status)}>{app.status}</Badge>
-              </div>
-            ))}
-            {recentApplications.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No applications yet</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+              {recentApplications.length === 0 && (
+                <p className="text-center text-gray-500 py-8">No applications yet</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Matching Jobs */}
+        <MatchingJobsCard />
+      </div>
+
+      {/* Browse Jobs */}
+      <BrowseJobsCard />
     </div>
   );
 }
@@ -530,6 +539,78 @@ function ActionItems({ applications, interviews }: any) {
                     <Button size="sm" className="flex-1">Accept Offer</Button>
                     <Button size="sm" variant="outline" className="flex-1">Negotiate Salary</Button>
                     <Button size="sm" variant="destructive" className="flex-1">Decline</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Interview Preparation */}
+      {upcomingInterviews.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Interview Preparation
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {upcomingInterviews.map((interview: any) => (
+                <div key={interview.id} className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-lg">{interview.job?.title}</h4>
+                    <p className="text-gray-600">{interview.job?.company}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {new Date(interview.scheduledAt).toLocaleString()}
+                    </p>
+                  </div>
+
+                  {/* Company Research */}
+                  <div className="mb-4 p-3 bg-white rounded-lg">
+                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Building className="h-4 w-4" />
+                      Company Research
+                    </h5>
+                    <p className="text-sm text-gray-600">
+                      {interview.job?.company} is a leading company in the industry. Review their recent projects, company culture, and values before your interview.
+                    </p>
+                    <Button size="sm" variant="link" className="mt-2 p-0 h-auto">
+                      View Full Company Profile →
+                    </Button>
+                  </div>
+
+                  {/* Common Questions */}
+                  <div className="mb-4 p-3 bg-white rounded-lg">
+                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Common Interview Questions
+                    </h5>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Tell me about yourself and your experience</li>
+                      <li>• Why are you interested in this role?</li>
+                      <li>• What are your strengths and weaknesses?</li>
+                      <li>• Describe a challenging project you worked on</li>
+                    </ul>
+                    <Button size="sm" variant="link" className="mt-2 p-0 h-auto">
+                      View All Questions →
+                    </Button>
+                  </div>
+
+                  {/* AI Mock Interview */}
+                  <div className="p-3 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
+                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Star className="h-4 w-4" />
+                      AI-Powered Mock Interview
+                    </h5>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Practice with our AI interviewer to boost your confidence and get instant feedback on your answers.
+                    </p>
+                    <Button size="sm" className="w-full">
+                      Start Mock Interview
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -762,6 +843,105 @@ function ResumesView({ candidateId }: any) {
             Go to My Resumes
           </Button>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Matching Jobs Card Component
+function MatchingJobsCard() {
+  const { data: jobs } = trpc.job.list.useQuery();
+  const { user } = useAuth();
+  const { data: candidate } = trpc.candidate.getByUserId.useQuery(
+    { userId: user?.id || 0 },
+    { enabled: !!user?.id }
+  );
+
+  // Get candidate's skills for matching (mock implementation)
+  const matchingJobs = jobs?.slice(0, 5).map((job: any) => ({
+    ...job,
+    matchPercentage: Math.floor(Math.random() * 30) + 70, // Mock: 70-100%
+  })) || [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Star className="h-5 w-5 text-yellow-500" />
+          Recommended for You
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {matchingJobs.map((job: any) => (
+            <div key={job.id} className="p-3 border rounded-lg hover:border-primary transition-colors">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm">{job.title}</h4>
+                  <p className="text-xs text-gray-600">{job.company}</p>
+                </div>
+                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                  {job.matchPercentage}% Match
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                <MapPin className="h-3 w-3" />
+                {job.location}
+              </div>
+              <Button size="sm" className="w-full">Quick Apply</Button>
+            </div>
+          ))}
+          {matchingJobs.length === 0 && (
+            <p className="text-center text-gray-500 py-8">No matching jobs found</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Browse Jobs Card Component
+function BrowseJobsCard() {
+  const { data: jobs } = trpc.job.list.useQuery();
+  const [, setLocation] = useLocation();
+  const latestJobs = jobs?.slice(0, 6) || [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Browse Jobs</CardTitle>
+          <Button variant="link" onClick={() => setLocation("/jobs")}>
+            View All →
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {latestJobs.map((job: any) => (
+            <div key={job.id} className="p-4 border rounded-lg hover:border-primary transition-colors cursor-pointer"
+                 onClick={() => setLocation(`/jobs/${job.id}`)}>
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <h4 className="font-semibold">{job.title}</h4>
+                  <p className="text-sm text-gray-600">{job.company}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                <MapPin className="h-4 w-4" />
+                {job.location}
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                <DollarSign className="h-4 w-4" />
+                {job.salaryRange || "Competitive"}
+              </div>
+              <Button size="sm" className="w-full">View Details</Button>
+            </div>
+          ))}
+        </div>
+        {latestJobs.length === 0 && (
+          <p className="text-center text-gray-500 py-8">No jobs available</p>
+        )}
       </CardContent>
     </Card>
   );
