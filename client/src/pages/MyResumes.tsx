@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
+import CandidateLayout from '@/components/CandidateLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -148,16 +149,9 @@ export default function MyResumes() {
   const canAddMore = resumeProfiles.length < 5;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-5xl mx-auto">
-        <Button 
-          onClick={() => setLocation('/candidate/dashboard')}
-          variant="ghost"
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
+    <CandidateLayout title="My Resumes">
+      <div className="container mx-auto py-8">
+        <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -346,7 +340,8 @@ export default function MyResumes() {
             <p>• Supported formats: PDF and DOCX (max 10MB)</p>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </CandidateLayout>
   );
 }

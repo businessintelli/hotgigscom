@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { EmailVerificationGuard } from "@/components/EmailVerificationGuard";
+import CandidateLayout from "@/components/CandidateLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,36 +49,24 @@ function CandidateAssociatesContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
+      <CandidateLayout title="Associates">
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      </CandidateLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation("/candidate-dashboard")}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="h-6 w-6 text-blue-600" />
-              My Associates
-            </h1>
-            <p className="text-gray-500">Your placement history and current positions</p>
-          </div>
-        </div>
-      </div>
-
+    <CandidateLayout title="Associates">
       <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Users className="h-6 w-6 text-blue-600" />
+            My Associates
+          </h1>
+          <p className="text-gray-500">Your placement history and current positions</p>
+        </div>
         {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-4">
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
@@ -224,6 +213,6 @@ function CandidateAssociatesContent() {
           </Card>
         )}
       </div>
-    </div>
+    </CandidateLayout>
   );
 }

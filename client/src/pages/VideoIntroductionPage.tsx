@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { EmailVerificationGuard } from "@/components/EmailVerificationGuard";
+import CandidateLayout from "@/components/CandidateLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -204,33 +205,21 @@ function VideoIntroductionContent() {
 
   if (loadingVideo) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
+      <CandidateLayout title="Video Introduction">
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      </CandidateLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation("/candidate-dashboard")}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">Video Introduction</h1>
-            <p className="text-gray-500">Record a video to introduce yourself to recruiters</p>
-          </div>
-        </div>
-      </div>
-
+    <CandidateLayout title="Video Introduction">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold">Video Introduction</h1>
+          <p className="text-gray-500">Record a video to introduce yourself to recruiters</p>
+        </div>
         {/* Tips Card */}
         <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
           <CardHeader>
@@ -431,7 +420,7 @@ function VideoIntroductionContent() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </CandidateLayout>
   );
 }
 

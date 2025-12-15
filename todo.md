@@ -2169,3 +2169,8 @@
 ## New Feature Requests (Current Session - Part 3)
 - [x] Email Template Preview - Allow recruiters to preview filled templates before sending campaigns
 - [x] Remove Video Introduction from Dashboard - Video Introduction has its own page, remove from dashboard
+
+
+## New Feature Requests (Current Session - Part 4)
+- [x] Add collapsible left sidebar menu to all candidate pages
+- [x] Add collapsible left sidebar menu to all recruiter pages

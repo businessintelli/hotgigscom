@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import CandidateLayout from "@/components/CandidateLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,27 +35,20 @@ export default function MyApplications() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your applications...</p>
+      <CandidateLayout title="My Applications">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading your applications...</p>
+          </div>
         </div>
-      </div>
+      </CandidateLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <CandidateLayout title="My Applications">
       <div className="container max-w-6xl py-8">
-        <Button
-          variant="ghost"
-          onClick={() => setLocation("/candidate-dashboard")}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">My Applications</h1>
           <p className="text-gray-600">
@@ -210,6 +204,6 @@ export default function MyApplications() {
           </div>
         )}
       </div>
-    </div>
+    </CandidateLayout>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,31 +62,20 @@ export default function RecruiterAssociates() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation('/recruiter/dashboard')}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <UserCheck className="h-6 w-6 text-green-600" />
-                Associates
-              </h1>
-              <p className="text-gray-500 mt-1">
-                Candidates who have accepted offers and been onboarded
-              </p>
-            </div>
-          </div>
+    <RecruiterLayout title="Associates">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <UserCheck className="h-6 w-6 text-green-600" />
+            Associates
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Candidates who have accepted offers and been onboarded
+          </p>
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -127,12 +117,8 @@ export default function RecruiterAssociates() {
                 </div>
               </CardContent>
             </Card>
-          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -307,6 +293,6 @@ export default function RecruiterAssociates() {
           </div>
         )}
       </div>
-    </div>
+    </RecruiterLayout>
   );
 }
