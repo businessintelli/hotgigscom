@@ -81,6 +81,17 @@ function CandidateDashboardContent() {
   const { data: jobs } = trpc.job.list.useQuery();
   const savedJobs: any[] = []; // TODO: Implement saved jobs API
 
+  // Fetch interview prep data
+  const { data: interviewQuestions } = trpc.ai.getInterviewPrepQuestions.useQuery(
+    { role: candidate?.title || "Software Engineer", limit: 5 },
+    { enabled: !!candidate?.title }
+  );
+
+  const { data: companyProfiles } = trpc.ai.getCompanyProfile.useQuery(
+    { companyName: "Google" }, // Default to Google, will be dynamic based on interview
+    { enabled: true }
+  );
+
   const menuItems = [
     { id: "overview" as DashboardView, icon: LayoutDashboard, label: "Dashboard", badge: null },
     { id: "calendar" as DashboardView, icon: Calendar, label: "Calendar", badge: interviews?.filter((i: any) => new Date(i.scheduledAt) > new Date()).length || null },
@@ -233,7 +244,7 @@ function CandidateDashboardContent() {
           {currentView === "overview" && <DashboardOverview stats={stats} applications={applications} interviews={interviews} />}
           {currentView === "calendar" && <CalendarView interviews={interviews} />}
           {currentView === "applications" && <ApplicationsPipeline applications={applications} />}
-          {currentView === "actions" && <ActionItems applications={applications} interviews={interviews} />}
+          {currentView === "actions" && <ActionItems applications={applications} interviews={interviews} candidate={candidate} />}
           {currentView === "notifications" && <NotificationsView />}
           {currentView === "jobs" && <JobsList jobs={jobs} savedJobs={savedJobs} candidateId={candidate?.id} />}
           {currentView === "resumes" && <ResumesView candidateId={candidate?.id} />}
@@ -511,7 +522,7 @@ function ApplicationsPipeline({ applications }: any) {
 }
 
 // Action Items Component
-function ActionItems({ applications, interviews }: any) {
+function ActionItems({ applications, interviews, candidate }: any) {
   const pendingOffers = applications?.filter((a: any) => a.status === "offered") || [];
   const upcomingInterviews = interviews?.filter((i: any) => 
     i.status === "scheduled" && new Date(i.scheduledAt) > new Date()
@@ -573,35 +584,10 @@ function ActionItems({ applications, interviews }: any) {
                   </div>
 
                   {/* Company Research */}
-                  <div className="mb-4 p-3 bg-white rounded-lg">
-                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <Building className="h-4 w-4" />
-                      Company Research
-                    </h5>
-                    <p className="text-sm text-gray-600">
-                      {interview.job?.company} is a leading company in the industry. Review their recent projects, company culture, and values before your interview.
-                    </p>
-                    <Button size="sm" variant="link" className="mt-2 p-0 h-auto">
-                      View Full Company Profile →
-                    </Button>
-                  </div>
+                  <CompanyResearchSection companyName={interview.job?.company || ""} />
 
                   {/* Common Questions */}
-                  <div className="mb-4 p-3 bg-white rounded-lg">
-                    <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Common Interview Questions
-                    </h5>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• Tell me about yourself and your experience</li>
-                      <li>• Why are you interested in this role?</li>
-                      <li>• What are your strengths and weaknesses?</li>
-                      <li>• Describe a challenging project you worked on</li>
-                    </ul>
-                    <Button size="sm" variant="link" className="mt-2 p-0 h-auto">
-                      View All Questions →
-                    </Button>
-                  </div>
+                  <InterviewQuestionsSection role={interview.job?.title || candidate?.title || "Software Engineer"} />
 
                   {/* AI Mock Interview */}
                   <div className="p-3 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
@@ -1029,6 +1015,75 @@ function BrowseJobsCard() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// Company Research Section Component
+function CompanyResearchSection({ companyName }: { companyName: string }) {
+  const { data: companyProfile } = trpc.ai.getCompanyProfile.useQuery(
+    { companyName },
+    { enabled: !!companyName }
+  );
+
+  return (
+    <div className="mb-4 p-3 bg-white rounded-lg">
+      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+        <Building className="h-4 w-4" />
+        Company Research
+      </h5>
+      {companyProfile ? (
+        <>
+          <p className="text-sm text-gray-600 mb-2">
+            {companyProfile.description}
+          </p>
+          {companyProfile.culture && (
+            <p className="text-sm text-gray-600 mb-2">
+              <span className="font-medium">Culture:</span> {companyProfile.culture}
+            </p>
+          )}
+          {companyProfile.tips && (
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Interview Tips:</span> {companyProfile.tips}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="text-sm text-gray-600">
+          {companyName} is a leading company in the industry. Review their recent projects, company culture, and values before your interview.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Interview Questions Section Component
+function InterviewQuestionsSection({ role }: { role: string }) {
+  const { data: questions } = trpc.ai.getInterviewPrepQuestions.useQuery(
+    { role, limit: 4 },
+    { enabled: !!role }
+  );
+
+  return (
+    <div className="mb-4 p-3 bg-white rounded-lg">
+      <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+        <MessageSquare className="h-4 w-4" />
+        Common Interview Questions for {role}
+      </h5>
+      {questions && questions.length > 0 ? (
+        <ul className="text-sm text-gray-600 space-y-1">
+          {questions.map((q: any, idx: number) => (
+            <li key={idx}>• {q.question}</li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="text-sm text-gray-600 space-y-1">
+          <li>• Tell me about yourself and your experience</li>
+          <li>• Why are you interested in this role?</li>
+          <li>• What are your strengths and weaknesses?</li>
+          <li>• Describe a challenging project you worked on</li>
+        </ul>
+      )}
+    </div>
   );
 }
 

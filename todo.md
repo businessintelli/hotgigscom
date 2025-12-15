@@ -1987,3 +1987,14 @@
 - [x] Add confirmation dialog showing resume and cover letter preview
 - [x] Create one-click apply mutation with auto-generated cover letter
 - [x] Test all features and save checkpoint
+
+
+## Interview Prep Section Enhancement (COMPLETED ✅)
+- [x] Update CandidateDashboardNew to fetch real interview questions from database
+- [x] Display role-specific questions based on candidate's profile/applications
+- [x] Add company research section with real company profiles
+- [x] Replace placeholder questions with actual database content
+- [x] Create CompanyResearchSection component with tRPC query
+- [x] Create InterviewQuestionsSection component with tRPC query
+- [x] Test interview prep section with real data
+- [x] Save checkpoint
