@@ -2286,3 +2286,8 @@
 
 ## Bug Fixes
 - [x] Fix candidate calendar navigation - created dedicated CandidateCalendar page at /candidate/calendar
+
+## Recruiter & Candidate Improvements
+- [x] Fix recruiter interview playback page - add RecruiterLayout with sidebar
+- [x] Add interview rescheduling for candidates from calendar event details
+- [x] Add AI interview preparation tips for candidates in calendar event details

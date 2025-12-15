@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { Calendar, dateFnsLocalizer, View } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { format, parse, startOfWeek, getDay, addHours } from "date-fns";
+import { format, parse, startOfWeek, getDay, addHours, addDays } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -10,8 +10,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Calendar as CalendarIcon, Clock, MapPin, Video, Phone, Building, Bot, Briefcase, ExternalLink } from "lucide-react";
+import { 
+  Calendar as CalendarIcon, 
+  Clock, 
+  MapPin, 
+  Video, 
+  Phone, 
+  Building, 
+  Bot, 
+  Briefcase, 
+  ExternalLink,
+  RefreshCw,
+  Sparkles,
+  CheckCircle2,
+  Lightbulb,
+  MessageSquare,
+  FileText,
+  Target,
+  Loader2
+} from "lucide-react";
 
 // Setup date-fns localizer for react-big-calendar
 const locales = {
@@ -40,6 +63,7 @@ interface CalendarEvent {
     location?: string;
     meetingLink?: string;
     notes?: string;
+    jobDescription?: string;
   };
 }
 
@@ -72,6 +96,14 @@ export default function CandidateCalendar() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [view, setView] = useState<View>("month");
   const [date, setDate] = useState(new Date());
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [preferredDate1, setPreferredDate1] = useState("");
+  const [preferredDate2, setPreferredDate2] = useState("");
+  const [preferredDate3, setPreferredDate3] = useState("");
+  const [activeTab, setActiveTab] = useState("details");
+  const [preparationTips, setPreparationTips] = useState<string | null>(null);
+  const [loadingTips, setLoadingTips] = useState(false);
 
   // Fetch candidate profile
   const { data: candidate } = trpc.candidate.getByUserId.useQuery(
@@ -80,10 +112,38 @@ export default function CandidateCalendar() {
   );
 
   // Fetch interviews for the candidate
-  const { data: interviews, isLoading } = trpc.interview.getByCandidate.useQuery(
+  const { data: interviews, isLoading, refetch } = trpc.interview.getByCandidate.useQuery(
     { candidateId: candidate?.id || 0 },
     { enabled: !!candidate?.id }
   );
+
+  // Reschedule request mutation
+  const rescheduleRequestMutation = trpc.interview.requestRescheduleByCandidate.useMutation({
+    onSuccess: () => {
+      toast.success("Reschedule request submitted successfully!");
+      setShowRescheduleDialog(false);
+      setRescheduleReason("");
+      setPreferredDate1("");
+      setPreferredDate2("");
+      setPreferredDate3("");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to submit reschedule request");
+    }
+  });
+
+  // AI preparation tips mutation
+  const generateTipsMutation = trpc.ai.generateInterviewPreparationTips.useMutation({
+    onSuccess: (data) => {
+      setPreparationTips(data.tips);
+      setLoadingTips(false);
+    },
+    onError: (error) => {
+      toast.error("Failed to generate preparation tips");
+      setLoadingTips(false);
+    }
+  });
 
   // Transform interviews to calendar events
   const events: CalendarEvent[] = useMemo(() => {
@@ -102,12 +162,15 @@ export default function CandidateCalendar() {
         location: interview.location,
         meetingLink: interview.meetingLink,
         notes: interview.notes,
+        jobDescription: interview.job?.description,
       },
     }));
   }, [interviews]);
 
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
     setSelectedEvent(event);
+    setActiveTab("details");
+    setPreparationTips(null);
   }, []);
 
   const handleNavigate = useCallback((newDate: Date) => {
@@ -118,6 +181,33 @@ export default function CandidateCalendar() {
     setView(newView);
   }, []);
 
+  const handleRequestReschedule = () => {
+    if (!selectedEvent || !rescheduleReason.trim()) {
+      toast.error("Please provide a reason for rescheduling");
+      return;
+    }
+
+    const preferredDates = [preferredDate1, preferredDate2, preferredDate3].filter(d => d);
+    
+    rescheduleRequestMutation.mutate({
+      interviewId: selectedEvent.id,
+      reason: rescheduleReason,
+      preferredDates: preferredDates.length > 0 ? preferredDates : undefined
+    });
+  };
+
+  const handleGenerateTips = () => {
+    if (!selectedEvent) return;
+    
+    setLoadingTips(true);
+    generateTipsMutation.mutate({
+      jobTitle: selectedEvent.resource.jobTitle,
+      companyName: selectedEvent.resource.companyName,
+      interviewType: selectedEvent.resource.type,
+      jobDescription: selectedEvent.resource.jobDescription
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       scheduled: { label: "Scheduled", variant: "default" },
@@ -125,6 +215,7 @@ export default function CandidateCalendar() {
       cancelled: { label: "Cancelled", variant: "destructive" },
       "no-show": { label: "No Show", variant: "destructive" },
       "in-progress": { label: "In Progress", variant: "outline" },
+      "reschedule-requested": { label: "Reschedule Requested", variant: "outline" },
     };
     
     const config = statusConfig[status] || { label: status, variant: "outline" };
@@ -160,6 +251,14 @@ export default function CandidateCalendar() {
   const upcomingInterviews = events.filter(
     (e) => e.start > new Date() && e.resource.status === "scheduled"
   ).length;
+
+  // Check if interview can be rescheduled (only scheduled interviews, at least 24 hours before)
+  const canReschedule = (event: CalendarEvent) => {
+    const now = new Date();
+    const interviewTime = event.start;
+    const hoursUntilInterview = (interviewTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return event.resource.status === "scheduled" && hoursUntilInterview > 24;
+  };
 
   return (
     <CandidateLayout title="Interview Calendar">
@@ -264,7 +363,7 @@ export default function CandidateCalendar() {
 
         {/* Event Details Dialog */}
         <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 {selectedEvent && getTypeIcon(selectedEvent.resource.type)}
@@ -276,77 +375,230 @@ export default function CandidateCalendar() {
             </DialogHeader>
             
             {selectedEvent && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  {getStatusBadge(selectedEvent.resource.status)}
-                </div>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="details" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Details
+                  </TabsTrigger>
+                  <TabsTrigger value="preparation" className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    AI Prep Tips
+                  </TabsTrigger>
+                </TabsList>
 
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <Briefcase className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">{selectedEvent.resource.jobTitle}</p>
-                      <p className="text-sm text-muted-foreground">{selectedEvent.resource.companyName}</p>
+                <TabsContent value="details" className="space-y-4 mt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Status</span>
+                    {getStatusBadge(selectedEvent.resource.status)}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Briefcase className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">{selectedEvent.resource.jobTitle}</p>
+                        <p className="text-sm text-muted-foreground">{selectedEvent.resource.companyName}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-3">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{format(selectedEvent.start, "EEEE, MMMM d, yyyy")}</span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{format(selectedEvent.start, "h:mm a")} - {format(selectedEvent.end, "h:mm a")}</span>
-                  </div>
-
-                  {selectedEvent.resource.location && (
                     <div className="flex items-center gap-3">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEvent.resource.location}</span>
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      <span>{format(selectedEvent.start, "EEEE, MMMM d, yyyy")}</span>
                     </div>
-                  )}
 
-                  {selectedEvent.resource.meetingLink && (
                     <div className="flex items-center gap-3">
-                      <Video className="h-4 w-4 text-muted-foreground" />
-                      <a 
-                        href={selectedEvent.resource.meetingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-emerald-600 hover:underline flex items-center gap-1"
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{format(selectedEvent.start, "h:mm a")} - {format(selectedEvent.end, "h:mm a")}</span>
+                    </div>
+
+                    {selectedEvent.resource.location && (
+                      <div className="flex items-center gap-3">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedEvent.resource.location}</span>
+                      </div>
+                    )}
+
+                    {selectedEvent.resource.meetingLink && (
+                      <div className="flex items-center gap-3">
+                        <Video className="h-4 w-4 text-muted-foreground" />
+                        <a 
+                          href={selectedEvent.resource.meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-600 hover:underline flex items-center gap-1"
+                        >
+                          Join Meeting
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
+
+                    {selectedEvent.resource.notes && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-muted-foreground mb-1">Notes</p>
+                        <p className="text-sm">{selectedEvent.resource.notes}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-4 border-t">
+                    {selectedEvent.resource.type === "ai-interview" && selectedEvent.resource.status === "scheduled" && (
+                      <Button 
+                        className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500"
+                        onClick={() => {
+                          window.location.href = `/ai-interview/${selectedEvent.id}`;
+                        }}
                       >
-                        Join Meeting
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
-                  )}
+                        <Bot className="h-4 w-4 mr-2" />
+                        Start AI Interview
+                      </Button>
+                    )}
+                    {canReschedule(selectedEvent) && (
+                      <Button 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setShowRescheduleDialog(true)}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Request Reschedule
+                      </Button>
+                    )}
+                  </div>
+                </TabsContent>
 
-                  {selectedEvent.resource.notes && (
-                    <div className="pt-2 border-t">
-                      <p className="text-sm text-muted-foreground mb-1">Notes</p>
-                      <p className="text-sm">{selectedEvent.resource.notes}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+                <TabsContent value="preparation" className="mt-4">
+                  <div className="space-y-4">
+                    {!preparationTips && !loadingTips && (
+                      <div className="text-center py-8">
+                        <Sparkles className="h-12 w-12 mx-auto text-emerald-500 mb-4" />
+                        <h3 className="font-semibold mb-2">AI Interview Preparation</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Get personalized tips and advice to help you prepare for this interview
+                        </p>
+                        <Button onClick={handleGenerateTips} className="bg-gradient-to-r from-emerald-500 to-teal-500">
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate Preparation Tips
+                        </Button>
+                      </div>
+                    )}
+
+                    {loadingTips && (
+                      <div className="text-center py-8">
+                        <Loader2 className="h-8 w-8 mx-auto animate-spin text-emerald-500 mb-4" />
+                        <p className="text-sm text-muted-foreground">Generating personalized tips...</p>
+                      </div>
+                    )}
+
+                    {preparationTips && (
+                      <ScrollArea className="h-[400px] pr-4">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 text-emerald-600">
+                            <CheckCircle2 className="h-5 w-5" />
+                            <span className="font-semibold">Your Personalized Preparation Guide</span>
+                          </div>
+                          <div className="prose prose-sm max-w-none">
+                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                              {preparationTips}
+                            </div>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleGenerateTips}
+                            className="mt-4"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Regenerate Tips
+                          </Button>
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             )}
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedEvent(null)}>
                 Close
               </Button>
-              {selectedEvent?.resource.type === "ai-interview" && selectedEvent.resource.status === "scheduled" && (
-                <Button 
-                  className="bg-gradient-to-r from-emerald-500 to-teal-500"
-                  onClick={() => {
-                    window.location.href = `/ai-interview/${selectedEvent.id}`;
-                  }}
-                >
-                  Start AI Interview
-                </Button>
-              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reschedule Request Dialog */}
+        <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-emerald-500" />
+                Request Reschedule
+              </DialogTitle>
+              <DialogDescription>
+                Submit a request to reschedule your interview. The recruiter will review and respond.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reason">Reason for Rescheduling *</Label>
+                <Textarea
+                  id="reason"
+                  placeholder="Please explain why you need to reschedule..."
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Preferred Alternative Dates (Optional)</Label>
+                <p className="text-xs text-muted-foreground">Suggest up to 3 alternative dates/times</p>
+                <div className="space-y-2">
+                  <Input
+                    type="datetime-local"
+                    value={preferredDate1}
+                    onChange={(e) => setPreferredDate1(e.target.value)}
+                    min={format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm")}
+                  />
+                  <Input
+                    type="datetime-local"
+                    value={preferredDate2}
+                    onChange={(e) => setPreferredDate2(e.target.value)}
+                    min={format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm")}
+                  />
+                  <Input
+                    type="datetime-local"
+                    value={preferredDate3}
+                    onChange={(e) => setPreferredDate3(e.target.value)}
+                    min={format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm")}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRescheduleDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleRequestReschedule}
+                disabled={rescheduleRequestMutation.isPending || !rescheduleReason.trim()}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500"
+              >
+                {rescheduleRequestMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Submit Request
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

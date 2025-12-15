@@ -85,6 +85,52 @@ export const appRouter = router({
         const response = await invokeLLM({ messages });
         return response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
       }),
+    
+    generateInterviewPreparationTips: protectedProcedure
+      .input(z.object({
+        jobTitle: z.string(),
+        companyName: z.string(),
+        interviewType: z.string(),
+        jobDescription: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { jobTitle, companyName, interviewType, jobDescription } = input;
+        
+        const interviewTypeLabels: Record<string, string> = {
+          'phone': 'Phone Interview',
+          'video': 'Video Interview',
+          'in-person': 'In-Person Interview',
+          'ai-interview': 'AI-Powered Interview',
+        };
+        
+        const typeLabel = interviewTypeLabels[interviewType] || interviewType;
+        
+        const systemPrompt = `You are an expert career coach helping candidates prepare for job interviews. Provide practical, actionable advice that is specific to the role and company.`;
+        
+        const userPrompt = `I have an upcoming ${typeLabel} for the position of ${jobTitle} at ${companyName}.
+
+${jobDescription ? `Job Description:\n${jobDescription}\n\n` : ''}
+Please provide comprehensive preparation tips including:
+
+1. **Research Tips**: What should I research about the company and role?
+2. **Common Questions**: What questions might I be asked for this type of role?
+3. **STAR Method Examples**: How can I structure my answers using the STAR method?
+4. **Technical Preparation**: Any technical topics I should review?
+5. **Questions to Ask**: What thoughtful questions should I ask the interviewer?
+6. **${typeLabel} Specific Tips**: Any tips specific to this interview format?
+7. **Day-of Checklist**: What should I do on the day of the interview?
+
+Please be specific and practical.`;
+        
+        const response = await invokeLLM({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        });
+        
+        return { tips: response.choices[0]?.message?.content || 'Unable to generate tips at this time.' };
+      }),
   }),
   
   user: router({
@@ -1617,14 +1663,6 @@ export const appRouter = router({
         // Filter to only recruiter's jobs
         return placedApps.filter(app => jobIds.includes(app.jobId));
       }),
-    
-    // Get placed candidates by candidate (for candidate dashboard)
-    getPlacedByCandidate: protectedProcedure
-      .query(async ({ ctx }) => {
-        const candidate = await db.getCandidateByUserId(ctx.user.id);
-        if (!candidate) return [];
-        return await db.getPlacedApplicationsByCandidate(candidate.id);
-      }),
   }),
   
   interview: router({
@@ -1760,6 +1798,68 @@ export const appRouter = router({
           ...(duration && { duration }),
         });
         return { success: true };
+      }),
+    
+    // Request reschedule by candidate
+    requestRescheduleByCandidate: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        reason: z.string(),
+        preferredDates: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { interviewId, reason, preferredDates } = input;
+        
+        // Get the interview details
+        const interviewData = await db.getInterviewById(interviewId);
+        if (!interviewData) {
+          throw new Error('Interview not found');
+        }
+        const interview = interviewData.interview;
+        
+        // Verify the candidate owns this interview
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+        if (!candidate || interview.candidateId !== candidate.id) {
+          throw new Error('You can only request reschedule for your own interviews');
+        }
+        
+        // Check if interview is at least 24 hours away
+        const now = new Date();
+        const interviewTime = new Date(interview.scheduledAt);
+        const hoursUntilInterview = (interviewTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+        if (hoursUntilInterview < 24) {
+          throw new Error('Cannot reschedule interviews less than 24 hours away');
+        }
+        
+        // Get the job info from the interview data
+        const job = interviewData.job;
+        
+        // Get the recruiter info
+        const recruiter = interview.recruiterId ? await db.getRecruiterByUserId(interview.recruiterId) : null;
+        const recruiterUser = recruiter?.userId ? await db.getUserById(recruiter.userId) : null;
+        
+        // Create notification for recruiter
+        if (recruiterUser) {
+          const { notifications } = await import("../drizzle/schema");
+          const database = await db.getDb();
+          if (database) {
+            await database.insert(notifications).values({
+              userId: recruiterUser.id,
+              type: 'reschedule_request',
+              title: 'Interview Reschedule Request',
+              message: `A candidate has requested to reschedule their interview for ${job?.title || 'a position'}. Reason: ${reason}`,
+              isRead: false,
+              actionUrl: `/recruiter/interviews`,
+            });
+          }
+        }
+        
+        // Update interview status to indicate reschedule requested
+        await db.updateInterview(interviewId, {
+          notes: `[RESCHEDULE REQUESTED] ${reason}${preferredDates && preferredDates.length > 0 ? `\nPreferred dates: ${preferredDates.join(', ')}` : ''}\n\n${interview.notes || ''}`,
+        });
+        
+        return { success: true, message: 'Reschedule request submitted successfully' };
       }),
     
     // Update interview

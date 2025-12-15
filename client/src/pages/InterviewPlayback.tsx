@@ -90,41 +90,45 @@ export default function InterviewPlayback() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading interviews...</p>
+      <RecruiterLayout title="AI Interviews">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading interviews...</p>
+          </div>
         </div>
-      </div>
+      </RecruiterLayout>
     );
   }
 
   if (aiInterviews.length === 0) {
     return (
-      <div className="container mx-auto py-8">
-        <Button
-          variant="ghost"
-          onClick={() => setLocation("/recruiter/dashboard")}
-          className="mb-6"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Button>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>No Completed AI Interviews</CardTitle>
-            <CardDescription>
-              AI interview recordings and evaluations will appear here once candidates complete their interviews.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setLocation("/recruiter/interviews")}>
-              Schedule an Interview
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <RecruiterLayout title="AI Interviews">
+        <div className="container mx-auto py-8">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/recruiter/dashboard")}
+            className="mb-6"
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>No Completed AI Interviews</CardTitle>
+              <CardDescription>
+                AI interview recordings and evaluations will appear here once candidates complete their interviews.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => setLocation("/recruiter/interviews")}>
+                Schedule an Interview
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </RecruiterLayout>
     );
   }
 
@@ -151,6 +155,7 @@ export default function InterviewPlayback() {
     };
 
     return (
+      <RecruiterLayout title="Interview Evaluation">
       <div className="container mx-auto py-8 max-w-7xl">
         <Button
           variant="ghost"
@@ -448,6 +453,7 @@ export default function InterviewPlayback() {
           </CardContent>
         </Card>
       </div>
+      </RecruiterLayout>
     );
   }
 
