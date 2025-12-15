@@ -1941,6 +1941,137 @@ export const appRouter = router({
       return completedInterviews;
     }),
     
+    // Get feedback analytics for recruiter
+    getFeedbackAnalytics: protectedProcedure.query(async ({ ctx }) => {
+      const { interviewFeedback, interviews, jobs } = await import("../drizzle/schema");
+      const { eq, sql, desc, and, gte } = await import("drizzle-orm");
+      const database = await db.getDb();
+      if (!database) return null;
+      
+      const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+      if (!recruiter) return null;
+      
+      // Get all feedback for interviews related to recruiter's jobs
+      const recruiterJobIds = await database
+        .select({ id: jobs.id })
+        .from(jobs)
+        .where(eq(jobs.postedBy, ctx.user.id));
+      
+      const jobIds = recruiterJobIds.map(j => j.id);
+      if (jobIds.length === 0) {
+        return {
+          totalFeedback: 0,
+          averageOverall: 0,
+          averageInterviewer: 0,
+          averageProcess: 0,
+          averageCommunication: 0,
+          recommendRate: 0,
+          recentFeedback: [],
+          monthlyTrend: [],
+        };
+      }
+      
+      // Get all feedback with interview and job info
+      const allFeedback = await database
+        .select({
+          id: interviewFeedback.id,
+          overallRating: interviewFeedback.overallRating,
+          interviewerRating: interviewFeedback.interviewerRating,
+          processRating: interviewFeedback.processRating,
+          communicationRating: interviewFeedback.communicationRating,
+          wouldRecommend: interviewFeedback.wouldRecommend,
+          positiveAspects: interviewFeedback.positiveAspects,
+          areasForImprovement: interviewFeedback.areasForImprovement,
+          isAnonymous: interviewFeedback.isAnonymous,
+          createdAt: interviewFeedback.createdAt,
+          jobTitle: jobs.title,
+          companyName: jobs.companyName,
+        })
+        .from(interviewFeedback)
+        .innerJoin(interviews, eq(interviewFeedback.interviewId, interviews.id))
+        .innerJoin(jobs, eq(interviews.jobId, jobs.id))
+        .where(eq(jobs.postedBy, ctx.user.id))
+        .orderBy(desc(interviewFeedback.createdAt));
+      
+      if (allFeedback.length === 0) {
+        return {
+          totalFeedback: 0,
+          averageOverall: 0,
+          averageInterviewer: 0,
+          averageProcess: 0,
+          averageCommunication: 0,
+          recommendRate: 0,
+          recentFeedback: [],
+          monthlyTrend: [],
+        };
+      }
+      
+      // Calculate averages
+      const totalFeedback = allFeedback.length;
+      const avgOverall = allFeedback.reduce((sum, f) => sum + f.overallRating, 0) / totalFeedback;
+      const interviewerRatings = allFeedback.filter(f => f.interviewerRating != null);
+      const processRatings = allFeedback.filter(f => f.processRating != null);
+      const communicationRatings = allFeedback.filter(f => f.communicationRating != null);
+      const recommendResponses = allFeedback.filter(f => f.wouldRecommend != null);
+      
+      const avgInterviewer = interviewerRatings.length > 0
+        ? interviewerRatings.reduce((sum, f) => sum + (f.interviewerRating || 0), 0) / interviewerRatings.length
+        : 0;
+      const avgProcess = processRatings.length > 0
+        ? processRatings.reduce((sum, f) => sum + (f.processRating || 0), 0) / processRatings.length
+        : 0;
+      const avgCommunication = communicationRatings.length > 0
+        ? communicationRatings.reduce((sum, f) => sum + (f.communicationRating || 0), 0) / communicationRatings.length
+        : 0;
+      const recommendRate = recommendResponses.length > 0
+        ? (recommendResponses.filter(f => f.wouldRecommend === true).length / recommendResponses.length) * 100
+        : 0;
+      
+      // Get monthly trend (last 6 months)
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      
+      const monthlyData: { [key: string]: { count: number; total: number } } = {};
+      allFeedback.forEach(f => {
+        const date = new Date(f.createdAt);
+        if (date >= sixMonthsAgo) {
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          if (!monthlyData[monthKey]) {
+            monthlyData[monthKey] = { count: 0, total: 0 };
+          }
+          monthlyData[monthKey].count++;
+          monthlyData[monthKey].total += f.overallRating;
+        }
+      });
+      
+      const monthlyTrend = Object.entries(monthlyData)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, data]) => ({
+          month,
+          averageRating: data.total / data.count,
+          count: data.count,
+        }));
+      
+      return {
+        totalFeedback,
+        averageOverall: Math.round(avgOverall * 10) / 10,
+        averageInterviewer: Math.round(avgInterviewer * 10) / 10,
+        averageProcess: Math.round(avgProcess * 10) / 10,
+        averageCommunication: Math.round(avgCommunication * 10) / 10,
+        recommendRate: Math.round(recommendRate),
+        recentFeedback: allFeedback.slice(0, 5).map(f => ({
+          id: f.id,
+          overallRating: f.overallRating,
+          positiveAspects: f.positiveAspects,
+          areasForImprovement: f.areasForImprovement,
+          isAnonymous: f.isAnonymous,
+          createdAt: f.createdAt,
+          jobTitle: f.jobTitle,
+        })),
+        monthlyTrend,
+      };
+    }),
+    
     // Fraud Detection - Log event
     logFraudEvent: protectedProcedure
       .input(z.object({

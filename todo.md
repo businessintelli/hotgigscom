@@ -2111,3 +2111,18 @@
 - [x] Integrate widget into candidate dashboard
 - [x] Test feedback submission and display
 - [x] Save checkpoint
+
+
+## Feedback Analytics Dashboard (COMPLETED ✅)
+- [x] Create API endpoint for aggregate feedback statistics (interview.getFeedbackAnalytics)
+- [x] Calculate average ratings by category (overall, interviewer, process, communication)
+- [x] Get feedback trends over time (last 6 months)
+- [x] Extract recent feedback with positive aspects and improvements
+- [x] Build FeedbackAnalyticsWidget component with beautiful UI
+- [x] Display average ratings with progress bars and icons
+- [x] Show recommendation rate percentage with stat cards
+- [x] Add monthly trend bar chart visualization
+- [x] Display recent feedback snippets with star ratings
+- [x] Integrate widget into recruiter dashboard
+- [x] Test analytics display
+- [x] Save checkpoint
