@@ -1,4 +1,5 @@
 import { useState } from "react";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,6 +141,7 @@ export default function CampaignBuilder() {
   }
 
   return (
+    <RecruiterLayout title="Email Campaigns">
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
@@ -566,5 +568,6 @@ I came across your profile and was impressed by your experience...`}
         </DialogContent>
       </Dialog>
     </div>
+    </RecruiterLayout>
   );
 }

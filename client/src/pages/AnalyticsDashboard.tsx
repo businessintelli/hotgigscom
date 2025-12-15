@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { trpc } from '../lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -115,6 +116,7 @@ export default function AnalyticsDashboard() {
   }
 
   return (
+    <RecruiterLayout title="Analytics">
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -385,5 +387,6 @@ export default function AnalyticsDashboard() {
         </Card>
       )}
     </div>
+    </RecruiterLayout>
   );
 }

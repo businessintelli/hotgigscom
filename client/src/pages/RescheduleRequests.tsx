@@ -1,4 +1,5 @@
 import { useState } from "react";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,7 @@ export default function RescheduleRequests() {
   };
 
   return (
+    <RecruiterLayout title="Reschedule Requests">
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -415,5 +417,6 @@ export default function RescheduleRequests() {
         </DialogContent>
       </Dialog>
     </div>
+    </RecruiterLayout>
   );
 }

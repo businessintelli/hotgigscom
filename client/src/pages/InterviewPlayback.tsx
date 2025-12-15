@@ -1,4 +1,5 @@
 import { useState } from "react";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -452,6 +453,7 @@ export default function InterviewPlayback() {
 
   // Interview list view
   return (
+    <RecruiterLayout title="AI Interviews">
       <div className="container mx-auto py-8">
       <Button
         variant="ghost"
@@ -566,5 +568,6 @@ export default function InterviewPlayback() {
         ))}
       </div>
     </div>
+    </RecruiterLayout>
   );
 }

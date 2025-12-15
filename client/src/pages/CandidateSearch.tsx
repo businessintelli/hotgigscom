@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { trpc } from "@/lib/trpc";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,7 @@ export default function CandidateSearch() {
   };
   
   return (
+    <RecruiterLayout title="Candidates">
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto py-8">
         <Button 
@@ -471,5 +473,6 @@ export default function CandidateSearch() {
         </div>
       </div>
     </div>
+    </RecruiterLayout>
   );
 }

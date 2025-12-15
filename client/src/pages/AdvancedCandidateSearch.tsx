@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -244,6 +245,7 @@ export default function AdvancedCandidateSearch() {
   }
 
   return (
+    <RecruiterLayout title="Candidates">
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
@@ -833,5 +835,6 @@ export default function AdvancedCandidateSearch() {
         </DialogContent>
       </Dialog>
     </div>
+    </RecruiterLayout>
   );
 }

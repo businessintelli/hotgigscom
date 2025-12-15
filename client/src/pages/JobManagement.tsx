@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { EmailVerificationGuard } from "@/components/EmailVerificationGuard";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ function JobManagementContent() {
   };
 
   return (
+    <RecruiterLayout title="Jobs">
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
@@ -230,5 +232,6 @@ function JobManagementContent() {
         )}
       </div>
     </div>
+    </RecruiterLayout>
   );
 }

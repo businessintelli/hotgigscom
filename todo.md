@@ -2241,3 +2241,18 @@
 - [x] Add AI Career Coach, Recommendations, Career Resources menu items
 - [x] Remove Associates from candidate sidebar
 
+
+## Recruiter Pages Layout Fix - Dec 15
+- [x] Add RecruiterLayout to Jobs page
+- [x] Add RecruiterLayout to Candidates page  
+- [x] Add RecruiterLayout to Applications page
+- [x] Add RecruiterLayout to Interviews page
+- [x] Add RecruiterLayout to AI Interviews page
+- [x] Add RecruiterLayout to AI Matching page
+- [x] Add RecruiterLayout to AI Assistant page
+- [x] Add RecruiterLayout to Clients page
+- [x] Add RecruiterLayout to Bulk Upload page
+- [x] Add RecruiterLayout to Email Campaigns page
+- [x] Add RecruiterLayout to Analytics page
+- [x] Add RecruiterLayout to Reschedule Requests page
+

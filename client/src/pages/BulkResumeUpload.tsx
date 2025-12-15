@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { useLocation } from 'wouter';
 import { trpc } from '../lib/trpc';
 import { Button } from '../components/ui/button';
@@ -105,6 +106,7 @@ export default function BulkResumeUpload() {
     : 0;
 
   return (
+    <RecruiterLayout title="Bulk Upload">
     <div className="container mx-auto py-8 max-w-4xl">
       <div className="mb-6">
         <Button variant="outline" onClick={() => setLocation('/recruiter/dashboard')}>
@@ -357,5 +359,6 @@ export default function BulkResumeUpload() {
         </CardContent>
       </Card>
     </div>
+    </RecruiterLayout>
   );
 }

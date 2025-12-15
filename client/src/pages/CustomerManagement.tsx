@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -153,6 +154,7 @@ export default function CustomerManagement() {
   );
 
   return (
+    <RecruiterLayout title="Clients">
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -521,5 +523,6 @@ export default function CustomerManagement() {
         </DialogContent>
       </Dialog>
     </div>
+    </RecruiterLayout>
   );
 }
