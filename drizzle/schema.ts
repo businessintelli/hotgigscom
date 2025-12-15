@@ -253,6 +253,8 @@ export const interviews = mysqlTable("interviews", {
   videoStartUrl: text("videoStartUrl"),
   videoPassword: varchar("videoPassword", { length: 255 }),
   videoProvider: mysqlEnum("videoProvider", ["zoom", "teams", "none"]).default("none"),
+  reminder24hSent: boolean("reminder24hSent").default(false).notNull(),
+  reminder1hSent: boolean("reminder1hSent").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

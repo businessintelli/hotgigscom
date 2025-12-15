@@ -225,6 +225,13 @@
       "when": 1765781642927,
       "tag": "0031_thankful_katie_power",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1765787560013,
+      "tag": "0032_crazy_psylocke",
+      "breakpoints": true
     }
   ]
 }

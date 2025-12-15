@@ -2030,3 +2030,17 @@
 - [x] Update updateStatus mutation to use enhanced templates
 - [x] Test email notifications
 - [x] Save checkpoint
+
+
+## Interview Reminder Emails (COMPLETED ✅)
+- [x] Create 24-hour reminder email template with preparation checklist
+- [x] Create 1-hour reminder email template with quick tips
+- [x] Build sendInterviewReminder helper function
+- [x] Create API endpoint to process pending reminders
+- [x] Implement reminder scheduling logic with time windows
+- [x] Add reminder24hSent and reminder1hSent flags to interviews table
+- [x] Include meeting links and location in reminders
+- [x] Add interview prep resources links
+- [x] Create getUpcomingInterviewsForCandidate helper
+- [x] Test reminder email sending
+- [x] Save checkpoint
