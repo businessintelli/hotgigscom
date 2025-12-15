@@ -3004,18 +3004,61 @@ export const appRouter = router({
         
         // Get environment variables (mask sensitive values)
         const envVars: Record<string, string> = {
-          VITE_APP_TITLE: ENV.appTitle || "HotGigs",
-          VITE_APP_LOGO: ENV.appLogo || "/logo.svg",
-          VITE_APP_ID: ENV.appId || "not-set",
-          VITE_OAUTH_PORTAL_URL: ENV.oauthPortalUrl || "not-set",
-          VITE_ANALYTICS_WEBSITE_ID: ENV.analyticsWebsiteId || "not-set",
-          VITE_ANALYTICS_ENDPOINT: ENV.analyticsEndpoint || "not-set",
-          DATABASE_URL: ENV.databaseUrl ? maskSensitive(ENV.databaseUrl) : "not-set",
-          JWT_SECRET: ENV.jwtSecret ? maskSensitive(ENV.jwtSecret) : "not-set",
-          BUILT_IN_FORGE_API_KEY: ENV.forgeApiKey ? maskSensitive(ENV.forgeApiKey) : "not-set",
-          VITE_FRONTEND_FORGE_API_KEY: ENV.frontendForgeApiKey ? maskSensitive(ENV.frontendForgeApiKey) : "not-set",
-          SENDGRID_API_KEY: ENV.sendGridApiKey ? maskSensitive(ENV.sendGridApiKey) : "not-set",
-          RESEND_API_KEY: ENV.resendApiKey ? maskSensitive(ENV.resendApiKey) : "not-set",
+          // App Configuration
+          VITE_APP_TITLE: ENV.appTitle || "Not configured",
+          VITE_APP_LOGO: ENV.appLogo || "Not configured",
+          VITE_APP_ID: ENV.appId || "Not configured",
+          VITE_OAUTH_PORTAL_URL: ENV.oauthPortalUrl || "Not configured",
+          NODE_ENV: ENV.nodeEnv || "development",
+          VIDEO_PROVIDER: ENV.videoProvider || "none",
+          
+          // Analytics
+          VITE_ANALYTICS_WEBSITE_ID: ENV.analyticsWebsiteId || "Not configured",
+          VITE_ANALYTICS_ENDPOINT: ENV.analyticsEndpoint || "Not configured",
+          
+          // Database
+          DATABASE_URL: ENV.databaseUrl ? maskSensitive(ENV.databaseUrl) : "Not configured",
+          
+          // Security
+          JWT_SECRET: ENV.jwtSecret ? maskSensitive(ENV.jwtSecret) : "Not configured",
+          
+          // Manus/Forge API
+          BUILT_IN_FORGE_API_KEY: ENV.forgeApiKey ? maskSensitive(ENV.forgeApiKey) : "Not configured",
+          BUILT_IN_FORGE_API_URL: ENV.forgeApiUrl || "Not configured",
+          VITE_FRONTEND_FORGE_API_KEY: ENV.frontendForgeApiKey ? maskSensitive(ENV.frontendForgeApiKey) : "Not configured",
+          VITE_FRONTEND_FORGE_API_URL: ENV.frontendForgeApiUrl || "Not configured",
+          
+          // AI/LLM APIs
+          OPENAI_API_KEY: ENV.openaiApiKey ? maskSensitive(ENV.openaiApiKey) : "Not configured",
+          ANTHROPIC_API_KEY: ENV.anthropicApiKey ? maskSensitive(ENV.anthropicApiKey) : "Not configured",
+          
+          // Email Services
+          SENDGRID_API_KEY: ENV.sendGridApiKey ? maskSensitive(ENV.sendGridApiKey) : "Not configured",
+          RESEND_API_KEY: ENV.resendApiKey ? maskSensitive(ENV.resendApiKey) : "Not configured",
+          
+          // Video Conferencing
+          ZOOM_CLIENT_ID: ENV.zoomClientId ? maskSensitive(ENV.zoomClientId) : "Not configured",
+          ZOOM_CLIENT_SECRET: ENV.zoomClientSecret ? maskSensitive(ENV.zoomClientSecret) : "Not configured",
+          ZOOM_ACCOUNT_ID: ENV.zoomAccountId ? maskSensitive(ENV.zoomAccountId) : "Not configured",
+          TEAMS_CLIENT_ID: ENV.teamsClientId ? maskSensitive(ENV.teamsClientId) : "Not configured",
+          TEAMS_CLIENT_SECRET: ENV.teamsClientSecret ? maskSensitive(ENV.teamsClientSecret) : "Not configured",
+          TEAMS_TENANT_ID: ENV.teamsTenantId ? maskSensitive(ENV.teamsTenantId) : "Not configured",
+          
+          // Storage (S3)
+          S3_BUCKET_NAME: ENV.s3BucketName || "Not configured",
+          S3_REGION: ENV.s3Region || "Not configured",
+          S3_ACCESS_KEY_ID: ENV.s3AccessKeyId ? maskSensitive(ENV.s3AccessKeyId) : "Not configured",
+          S3_SECRET_ACCESS_KEY: ENV.s3SecretAccessKey ? maskSensitive(ENV.s3SecretAccessKey) : "Not configured",
+          
+          // Payment (Stripe)
+          STRIPE_SECRET_KEY: ENV.stripeSecretKey ? maskSensitive(ENV.stripeSecretKey) : "Not configured",
+          VITE_STRIPE_PUBLISHABLE_KEY: ENV.stripePublishableKey ? maskSensitive(ENV.stripePublishableKey) : "Not configured",
+          STRIPE_WEBHOOK_SECRET: ENV.stripeWebhookSecret ? maskSensitive(ENV.stripeWebhookSecret) : "Not configured",
+          
+          // SMS/Communication (Twilio)
+          TWILIO_ACCOUNT_SID: ENV.twilioAccountSid ? maskSensitive(ENV.twilioAccountSid) : "Not configured",
+          TWILIO_AUTH_TOKEN: ENV.twilioAuthToken ? maskSensitive(ENV.twilioAuthToken) : "Not configured",
+          TWILIO_PHONE_NUMBER: ENV.twilioPhoneNumber || "Not configured",
         };
         
         return { services, envVars };

@@ -60,18 +60,57 @@ const displayableEnvVars = [
   { key: "VITE_APP_LOGO", description: "Application logo URL", category: "App Config" },
   { key: "VITE_APP_ID", description: "Manus OAuth application ID", category: "OAuth" },
   { key: "VITE_OAUTH_PORTAL_URL", description: "Manus login portal URL", category: "OAuth" },
+  { key: "NODE_ENV", description: "Current environment (development/production)", category: "Environment" },
   { key: "VITE_ANALYTICS_WEBSITE_ID", description: "Analytics website identifier", category: "Analytics" },
   { key: "VITE_ANALYTICS_ENDPOINT", description: "Analytics data endpoint", category: "Analytics" },
+  { key: "VIDEO_PROVIDER", description: "Video conferencing provider (zoom/teams/none)", category: "Video" },
 ];
 
 // Sensitive environment variables (masked by default)
 const sensitiveEnvVars = [
+  // Database
   { key: "DATABASE_URL", description: "Database connection string", category: "Database" },
+  
+  // Security
   { key: "JWT_SECRET", description: "JWT signing secret", category: "Security" },
-  { key: "BUILT_IN_FORGE_API_KEY", description: "Manus API key (server-side)", category: "API Keys" },
-  { key: "VITE_FRONTEND_FORGE_API_KEY", description: "Manus API key (frontend)", category: "API Keys" },
+  
+  // Manus/Forge API
+  { key: "BUILT_IN_FORGE_API_KEY", description: "Manus Forge API key (server-side)", category: "Manus API" },
+  { key: "BUILT_IN_FORGE_API_URL", description: "Manus Forge API URL", category: "Manus API" },
+  { key: "VITE_FRONTEND_FORGE_API_KEY", description: "Manus Forge API key (frontend)", category: "Manus API" },
+  { key: "VITE_FRONTEND_FORGE_API_URL", description: "Manus Forge API URL (frontend)", category: "Manus API" },
+  
+  // AI/LLM APIs
+  { key: "OPENAI_API_KEY", description: "OpenAI API key for GPT models", category: "AI/LLM" },
+  { key: "ANTHROPIC_API_KEY", description: "Anthropic API key for Claude models", category: "AI/LLM" },
+  
+  // Email Services
   { key: "SENDGRID_API_KEY", description: "SendGrid email API key", category: "Email" },
   { key: "RESEND_API_KEY", description: "Resend email API key", category: "Email" },
+  
+  // Video Conferencing
+  { key: "ZOOM_CLIENT_ID", description: "Zoom OAuth client ID", category: "Video" },
+  { key: "ZOOM_CLIENT_SECRET", description: "Zoom OAuth client secret", category: "Video" },
+  { key: "ZOOM_ACCOUNT_ID", description: "Zoom account ID", category: "Video" },
+  { key: "TEAMS_CLIENT_ID", description: "Microsoft Teams client ID", category: "Video" },
+  { key: "TEAMS_CLIENT_SECRET", description: "Microsoft Teams client secret", category: "Video" },
+  { key: "TEAMS_TENANT_ID", description: "Microsoft Teams tenant ID", category: "Video" },
+  
+  // Storage (S3)
+  { key: "S3_BUCKET_NAME", description: "S3 bucket name for file storage", category: "Storage" },
+  { key: "S3_REGION", description: "S3 bucket region", category: "Storage" },
+  { key: "S3_ACCESS_KEY_ID", description: "S3 access key ID", category: "Storage" },
+  { key: "S3_SECRET_ACCESS_KEY", description: "S3 secret access key", category: "Storage" },
+  
+  // Payment (Stripe)
+  { key: "STRIPE_SECRET_KEY", description: "Stripe secret API key", category: "Payment" },
+  { key: "VITE_STRIPE_PUBLISHABLE_KEY", description: "Stripe publishable key (frontend)", category: "Payment" },
+  { key: "STRIPE_WEBHOOK_SECRET", description: "Stripe webhook signing secret", category: "Payment" },
+  
+  // SMS/Communication (Twilio)
+  { key: "TWILIO_ACCOUNT_SID", description: "Twilio account SID", category: "SMS" },
+  { key: "TWILIO_AUTH_TOKEN", description: "Twilio auth token", category: "SMS" },
+  { key: "TWILIO_PHONE_NUMBER", description: "Twilio phone number for SMS", category: "SMS" },
 ];
 
 interface ServiceStatus {
@@ -214,22 +253,9 @@ export default function AdminEnvironment() {
   };
 
   const getEnvValue = (key: string) => {
-    // In a real app, these would come from the backend
-    const envValues: Record<string, string> = envQuery.data?.envVars || {
-      VITE_APP_TITLE: "HotGigs - AI-Powered Recruitment Platform",
-      VITE_APP_LOGO: "/logo.svg",
-      VITE_APP_ID: "hotgigs-platform",
-      VITE_OAUTH_PORTAL_URL: "https://api.manus.im",
-      VITE_ANALYTICS_WEBSITE_ID: "analytics-123",
-      VITE_ANALYTICS_ENDPOINT: "https://analytics.manus.im",
-      DATABASE_URL: "mysql://user:****@host:3306/db",
-      JWT_SECRET: "****************************",
-      BUILT_IN_FORGE_API_KEY: "sk-****************************",
-      VITE_FRONTEND_FORGE_API_KEY: "pk-****************************",
-      SENDGRID_API_KEY: "SG.****************************",
-      RESEND_API_KEY: "re_****************************",
-    };
-    return envValues[key] || "Not set";
+    // Values come from backend API
+    const envValues: Record<string, string> = envQuery.data?.envVars || {};
+    return envValues[key] || "Not configured";
   };
 
   const maskValue = (value: string) => {
