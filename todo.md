@@ -1911,3 +1911,17 @@
 - [ ] Implement cancellation and rescheduling
 - [ ] Add Google Calendar integration (optional)
 - [ ] Test complete scheduling flow
+
+
+## Pipeline Enhancements (COMPLETED ✅)
+- [x] Add "Schedule Interview" button to candidate cards in pipeline
+- [x] Create interview scheduling modal with date and time selection
+- [x] Allow recruiters to pick date and time for interviews
+- [x] Send interview invitation to candidate after scheduling
+- [x] Create pipeline automation rules system
+- [x] Add workflow rules (auto-move based on score thresholds)
+- [x] Build UI for creating and managing automation rules
+- [x] Add activity timeline to candidate cards
+- [x] Show recent feedback, status changes, and interviews in popover
+- [x] Display timestamps for each activity
+- [x] Test all enhancements and save checkpoint

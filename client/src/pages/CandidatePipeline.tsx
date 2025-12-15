@@ -5,7 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, Users, Calendar, Star, MapPin, Briefcase } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, TrendingUp, Users, Calendar, Star, MapPin, Briefcase, CalendarPlus, Clock, MessageSquare, Activity } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -35,9 +39,10 @@ const STAGES: { id: PipelineStage; label: string; color: string }[] = [
 interface CandidateCardProps {
   application: any;
   isDragging?: boolean;
+  onScheduleInterview?: (application: any) => void;
 }
 
-function CandidateCard({ application, isDragging }: CandidateCardProps) {
+function CandidateCard({ application, isDragging, onScheduleInterview }: CandidateCardProps) {
   const {
     attributes,
     listeners,
@@ -113,11 +118,124 @@ function CandidateCard({ application, isDragging }: CandidateCardProps) {
           </span>
         )}
       </div>
+
+      {/* Quick Actions */}
+      <div className="mt-3 pt-3 border-t flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-1 text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            onScheduleInterview?.(application);
+          }}
+        >
+          <CalendarPlus className="h-3 w-3 mr-1" />
+          Schedule
+        </Button>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 text-xs"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Activity className="h-3 w-3 mr-1" />
+              Activity
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">Recent Activity</h4>
+              
+              {/* Timeline */}
+              <div className="space-y-3">
+                {/* Application Submitted */}
+                <div className="flex gap-2 text-xs">
+                  <div className="flex flex-col items-center">
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <div className="h-full w-px bg-gray-200 mt-1" />
+                  </div>
+                  <div className="flex-1 pb-3">
+                    <p className="font-medium">Application Submitted</p>
+                    <p className="text-muted-foreground">
+                      {new Date(application.submittedAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feedback */}
+                {application.feedback && application.feedback.length > 0 && (
+                  <div className="flex gap-2 text-xs">
+                    <div className="flex flex-col items-center">
+                      <div className="h-2 w-2 rounded-full bg-amber-500" />
+                      <div className="h-full w-px bg-gray-200 mt-1" />
+                    </div>
+                    <div className="flex-1 pb-3">
+                      <p className="font-medium">
+                        {application.feedback.length} Team Review{application.feedback.length > 1 ? 's' : ''}
+                      </p>
+                      <p className="text-muted-foreground">
+                        Latest: {application.feedback[0].recruiterName}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-3 w-3 ${
+                              i < application.feedback[0].rating
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Interviews */}
+                {application.interviews && application.interviews.length > 0 && (
+                  <div className="flex gap-2 text-xs">
+                    <div className="flex flex-col items-center">
+                      <div className="h-2 w-2 rounded-full bg-purple-500" />
+                      <div className="h-full w-px bg-gray-200 mt-1" />
+                    </div>
+                    <div className="flex-1 pb-3">
+                      <p className="font-medium">
+                        {application.interviews.length} Interview{application.interviews.length > 1 ? 's' : ''}
+                      </p>
+                      <p className="text-muted-foreground">
+                        Latest: {new Date(application.interviews[0].scheduledAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Current Status */}
+                <div className="flex gap-2 text-xs">
+                  <div className="flex flex-col items-center">
+                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">Current Status</p>
+                    <Badge variant="outline" className="mt-1">
+                      {STAGES.find(s => s.id === application.status)?.label || application.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
 
-function PipelineColumn({ stage, applications, jobFilter }: { stage: typeof STAGES[0]; applications: any[]; jobFilter: string }) {
+function PipelineColumn({ stage, applications, jobFilter, onScheduleInterview }: { stage: typeof STAGES[0]; applications: any[]; jobFilter: string; onScheduleInterview: (app: any) => void }) {
   const filteredApps = applications.filter(app => {
     if (jobFilter && jobFilter !== "all") {
       return app.jobId === parseInt(jobFilter);
@@ -135,7 +253,7 @@ function PipelineColumn({ stage, applications, jobFilter }: { stage: typeof STAG
       <SortableContext items={filteredApps.map(app => app.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 min-h-[200px]">
           {filteredApps.map(app => (
-            <CandidateCard key={app.id} application={app} />
+            <CandidateCard key={app.id} application={app} onScheduleInterview={onScheduleInterview} />
           ))}
           {filteredApps.length === 0 && (
             <div className="text-center text-gray-400 py-8">
@@ -151,6 +269,11 @@ function PipelineColumn({ stage, applications, jobFilter }: { stage: typeof STAG
 export default function CandidatePipeline() {
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [interviewDate, setInterviewDate] = useState("");
+  const [interviewTime, setInterviewTime] = useState("");
+  const [interviewNotes, setInterviewNotes] = useState("");
 
   const { data: applications, isLoading, refetch } = trpc.application.list.useQuery();
   const { data: jobs } = trpc.recruiter.getJobs.useQuery();
@@ -163,6 +286,45 @@ export default function CandidatePipeline() {
       toast.error("Failed to update candidate status");
     },
   });
+
+  const scheduleInterviewMutation = trpc.interview.create.useMutation({
+    onSuccess: () => {
+      refetch();
+      setScheduleModalOpen(false);
+      setInterviewDate("");
+      setInterviewTime("");
+      setInterviewNotes("");
+      toast.success("Interview scheduled successfully");
+    },
+    onError: () => {
+      toast.error("Failed to schedule interview");
+    },
+  });
+
+  const handleScheduleInterview = (application: any) => {
+    setSelectedApplication(application);
+    setScheduleModalOpen(true);
+  };
+
+  const handleConfirmSchedule = () => {
+    if (!selectedApplication || !interviewDate || !interviewTime) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    const scheduledAt = new Date(`${interviewDate}T${interviewTime}`);
+
+    scheduleInterviewMutation.mutate({
+      applicationId: selectedApplication.id,
+      candidateId: selectedApplication.candidateId,
+      jobId: selectedApplication.jobId,
+      type: "video",
+      scheduledAt: scheduledAt.toISOString(),
+      duration: 60,
+      location: "Online",
+      notes: interviewNotes,
+    });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -330,6 +492,7 @@ export default function CandidatePipeline() {
               stage={stage}
               applications={(applicationsByStage as any)[stage.id] || []}
               jobFilter={jobFilter}
+              onScheduleInterview={handleScheduleInterview}
             />
           ))}
         </div>
@@ -338,6 +501,73 @@ export default function CandidatePipeline() {
           {activeApplication && <CandidateCard application={activeApplication} isDragging />}
         </DragOverlay>
       </DndContext>
+
+      {/* Interview Scheduling Modal */}
+      <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Schedule Interview</DialogTitle>
+            <DialogDescription>
+              Schedule an interview with {selectedApplication?.candidate?.firstName} {selectedApplication?.candidate?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="interview-date">Interview Date *</Label>
+              <Input
+                id="interview-date"
+                type="date"
+                value={interviewDate}
+                onChange={(e) => setInterviewDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="interview-time">Interview Time *</Label>
+              <Input
+                id="interview-time"
+                type="time"
+                value={interviewTime}
+                onChange={(e) => setInterviewTime(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="interview-notes">Notes (Optional)</Label>
+              <Textarea
+                id="interview-notes"
+                placeholder="Add any notes or instructions for the interview..."
+                value={interviewNotes}
+                onChange={(e) => setInterviewNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 mt-0.5" />
+                <div>
+                  <p className="font-medium">Interview Details</p>
+                  <p className="text-xs mt-1">Type: Video Call • Duration: 60 minutes</p>
+                  <p className="text-xs">Location: Online</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmSchedule} disabled={scheduleInterviewMutation.isPending}>
+              {scheduleInterviewMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Schedule Interview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
