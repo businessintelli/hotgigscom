@@ -2027,3 +2027,25 @@
 - [x] Add notification badge to Reschedule Requests button showing pending count
 - [x] Create email template for candidates when their interview is rescheduled
 - [x] Add confirmation/decline links for panelists in alternative proposed emails
+
+## Recruiter Dashboard Redesign (Current Focus)
+- [ ] Create collapsible left sidebar with all navigation items
+- [ ] Add profile icon with dropdown menu (settings, profile)
+- [ ] Move profile completion % panel under profile dropdown
+- [ ] Move session information panel under profile dropdown
+- [ ] Create comprehensive jobs panel with filters
+- [ ] Add filter for jobs created by self vs others
+- [ ] Retain all existing dashboard functionality
+
+
+## Recruiter Dashboard Redesign (COMPLETED)
+- [x] Collapsible left sidebar with all navigation items
+- [x] Profile icon with dropdown menu (settings, profile)
+- [x] Move profile completion panel under profile dropdown
+- [x] Move session info panel under profile dropdown
+- [x] Jobs panel showing all jobs
+- [x] Filter for jobs created by self (My Jobs)
+- [x] Filter for jobs created by others (Team Jobs)
+- [x] Status filter (Active, Closed, Draft)
+- [x] Search functionality for jobs
+- [x] Retain all existing dashboard functionality
