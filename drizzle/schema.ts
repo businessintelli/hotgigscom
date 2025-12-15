@@ -858,3 +858,43 @@ export const feedbackTemplates = mysqlTable("feedbackTemplates", {
 
 export type FeedbackTemplate = typeof feedbackTemplates.$inferSelect;
 export type InsertFeedbackTemplate = typeof feedbackTemplates.$inferInsert;
+
+
+/**
+ * Interview prep questions database
+ */
+export const interviewPrepQuestions = mysqlTable("interview_prep_questions", {
+  id: int("id").autoincrement().primaryKey(),
+  role: varchar("role", { length: 255 }).notNull(), // e.g., "Software Engineer", "Product Manager"
+  category: varchar("category", { length: 255 }).notNull(), // e.g., "Technical", "Behavioral", "System Design"
+  question: text("question").notNull(),
+  sampleAnswer: text("sampleAnswer"),
+  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).default("medium"),
+  tags: text("tags"), // JSON array of tags
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InterviewPrepQuestion = typeof interviewPrepQuestions.$inferSelect;
+export type InsertInterviewPrepQuestion = typeof interviewPrepQuestions.$inferInsert;
+
+/**
+ * Company profiles for interview prep
+ */
+export const companyProfiles = mysqlTable("company_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  companyName: varchar("companyName", { length: 255 }).notNull().unique(),
+  industry: varchar("industry", { length: 255 }),
+  description: text("description"),
+  culture: text("culture"), // Company culture insights
+  interviewProcess: text("interviewProcess"), // Description of typical interview process
+  commonQuestions: text("commonQuestions"), // JSON array of common interview questions
+  tips: text("tips"), // Interview tips specific to this company
+  website: varchar("website", { length: 500 }),
+  logoUrl: varchar("logoUrl", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CompanyProfile = typeof companyProfiles.$inferSelect;
+export type InsertCompanyProfile = typeof companyProfiles.$inferInsert;

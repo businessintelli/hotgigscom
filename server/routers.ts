@@ -765,7 +765,8 @@ export const appRouter = router({
         limit: z.number().optional().default(10)
       }))
       .query(async ({ input }) => {
-        return await db.getRecommendedJobsForCandidate(input.candidateId, input.limit);
+        const { getMatchingJobsForCandidate } = await import('./jobMatching');
+        return await getMatchingJobsForCandidate(input.candidateId, input.limit);
       }),
     
     saveJob: protectedProcedure
@@ -2899,6 +2900,23 @@ export const appRouter = router({
         return {
           message: messageText,
         };
+      }),
+    
+    getInterviewPrepQuestions: protectedProcedure
+      .input(z.object({ role: z.string(), limit: z.number().optional().default(10) }))
+      .query(async ({ input }) => {
+        return await db.getInterviewPrepQuestionsByRole(input.role, input.limit);
+      }),
+    
+    getCompanyProfile: protectedProcedure
+      .input(z.object({ companyName: z.string() }))
+      .query(async ({ input }) => {
+        return await db.getCompanyProfileByName(input.companyName);
+      }),
+    
+    getAllCompanyProfiles: protectedProcedure
+      .query(async () => {
+        return await db.getAllCompanyProfiles();
       }),
   }),
 });

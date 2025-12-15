@@ -22,7 +22,9 @@ import {
   taskAssignments, InsertTaskAssignment,
   taskReminders, InsertTaskReminder,
   taskTemplates, InsertTaskTemplate,
-  applicationFeedback, InsertApplicationFeedback
+  applicationFeedback, InsertApplicationFeedback,
+  interviewPrepQuestions, InsertInterviewPrepQuestion,
+  companyProfiles, InsertCompanyProfile
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1317,4 +1319,36 @@ export async function deleteApplicationFeedback(id: number) {
   if (!db) throw new Error("Database not available");
   
   await db.delete(applicationFeedback).where(eq(applicationFeedback.id, id));
+}
+
+
+// ==================== Interview Prep Functions ====================
+
+export async function getInterviewPrepQuestionsByRole(role: string, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select()
+    .from(interviewPrepQuestions)
+    .where(eq(interviewPrepQuestions.role, role))
+    .limit(limit);
+}
+
+export async function getCompanyProfileByName(companyName: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(companyProfiles)
+    .where(eq(companyProfiles.companyName, companyName))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function getAllCompanyProfiles() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select()
+    .from(companyProfiles);
 }

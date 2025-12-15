@@ -854,53 +854,134 @@ function ResumesView({ candidateId }: any) {
 
 // Matching Jobs Card Component
 function MatchingJobsCard() {
-  const { data: jobs } = trpc.job.list.useQuery();
+  const [, navigate] = useLocation();
+  const [quickApplyJob, setQuickApplyJob] = useState<any>(null);
   const { user } = useAuth();
   const { data: candidate } = trpc.candidate.getByUserId.useQuery(
     { userId: user?.id || 0 },
     { enabled: !!user?.id }
   );
-
-  // Get candidate's skills for matching (mock implementation)
-  const matchingJobs = jobs?.slice(0, 5).map((job: any) => ({
-    ...job,
-    matchPercentage: Math.floor(Math.random() * 30) + 70, // Mock: 70-100%
-  })) || [];
+  
+  // Get AI-matched jobs
+  const { data: matchingJobs, isLoading } = trpc.candidate.getRecommendedJobs.useQuery(
+    { candidateId: candidate?.id || 0, limit: 5 },
+    { enabled: !!candidate?.id }
+  );
+  
+  const { data: resumeProfiles } = trpc.resumeProfile.getResumeProfiles.useQuery(
+    { candidateId: candidate?.id || 0 },
+    { enabled: !!candidate?.id }
+  );
+  
+  const applyMutation = trpc.application.submit.useMutation({
+    onSuccess: () => {
+      toast.success("Application submitted successfully!");
+      setQuickApplyJob(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to submit application");
+    },
+  });
+  
+  const handleQuickApply = (job: any) => {
+    if (!resumeProfiles || resumeProfiles.length === 0) {
+      toast.error("Please upload a resume first");
+      navigate("/candidate/resumes");
+      return;
+    }
+    setQuickApplyJob(job);
+  };
+  
+  const confirmQuickApply = () => {
+    if (!candidate || !quickApplyJob || !resumeProfiles || resumeProfiles.length === 0) return;
+    
+    const defaultResume = resumeProfiles[0];
+    applyMutation.mutate({
+      candidateId: candidate.id,
+      jobId: quickApplyJob.id,
+      resumeProfileId: defaultResume.id,
+      coverLetter: `I am excited to apply for the ${quickApplyJob.title} position at ${quickApplyJob.company}. With my skills and experience, I believe I would be a great fit for this role.`,
+    });
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Star className="h-5 w-5 text-yellow-500" />
-          Recommended for You
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {matchingJobs.map((job: any) => (
-            <div key={job.id} className="p-3 border rounded-lg hover:border-primary transition-colors">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <h4 className="font-semibold text-sm">{job.title}</h4>
-                  <p className="text-xs text-gray-600">{job.company}</p>
-                </div>
-                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                  {job.matchPercentage}% Match
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                <MapPin className="h-3 w-3" />
-                {job.location}
-              </div>
-              <Button size="sm" className="w-full">Quick Apply</Button>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-5 w-5 text-yellow-500" />
+            Recommended for You
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-center text-gray-500 py-8">Loading recommendations...</p>
+          ) : (
+            <div className="space-y-3">
+              {matchingJobs && matchingJobs.length > 0 ? (
+                matchingJobs.map((job: any) => (
+                  <div key={job.id} className="p-3 border rounded-lg hover:border-primary transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm">{job.title}</h4>
+                        <p className="text-xs text-gray-600">{job.company}</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                        {Math.round(job.matchScore)}% Match
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                      <MapPin className="h-3 w-3" />
+                      {job.location}
+                    </div>
+                    <Button size="sm" className="w-full" onClick={() => handleQuickApply(job)}>
+                      Quick Apply
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500 py-8">No matching jobs found</p>
+              )}
             </div>
-          ))}
-          {matchingJobs.length === 0 && (
-            <p className="text-center text-gray-500 py-8">No matching jobs found</p>
           )}
+        </CardContent>
+      </Card>
+      
+      {/* Quick Apply Dialog */}
+      {quickApplyJob && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setQuickApplyJob(null)}>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Confirm Quick Apply</h3>
+            <div className="space-y-3 mb-6">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Position</p>
+                <p className="text-sm">{quickApplyJob.title}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">Company</p>
+                <p className="text-sm">{quickApplyJob.company}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">Resume</p>
+                <p className="text-sm">{resumeProfiles?.[0]?.profileName || "Default Resume"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">Cover Letter</p>
+                <p className="text-sm text-gray-600">Auto-generated based on job details</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setQuickApplyJob(null)}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={confirmQuickApply} disabled={applyMutation.isPending}>
+                {applyMutation.isPending ? "Submitting..." : "Confirm Apply"}
+              </Button>
+            </div>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 }
 
