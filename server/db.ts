@@ -27,7 +27,9 @@ import {
   jobSkillRequirements, InsertJobSkillRequirement,
   candidateSkillRatings, InsertCandidateSkillRating,
   interviewPanelists, panelistFeedback, notifications,
-  candidateProfileShares, InsertCandidateProfileShare
+  candidateProfileShares, InsertCandidateProfileShare,
+  environmentVariables, InsertEnvironmentVariable,
+  applicationLogs, InsertApplicationLog
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1678,3 +1680,268 @@ export async function getResumeProfileByCandidate(candidateId: number) {
 }
 
 
+
+
+// ==================== Environment Variables ====================
+
+export async function getAllEnvironmentVariables() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(environmentVariables).orderBy(environmentVariables.category, environmentVariables.key);
+}
+
+export async function getEditableEnvironmentVariables() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select()
+    .from(environmentVariables)
+    .where(eq(environmentVariables.isEditable, true))
+    .orderBy(environmentVariables.category, environmentVariables.key);
+}
+
+export async function getEnvironmentVariableByKey(key: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select()
+    .from(environmentVariables)
+    .where(eq(environmentVariables.key, key))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function upsertEnvironmentVariable(data: InsertEnvironmentVariable) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getEnvironmentVariableByKey(data.key);
+  
+  if (existing) {
+    await db.update(environmentVariables)
+      .set({
+        previousValue: existing.currentValue,
+        currentValue: data.currentValue,
+        description: data.description || existing.description,
+        category: data.category || existing.category,
+        isEditable: data.isEditable ?? existing.isEditable,
+        isSensitive: data.isSensitive ?? existing.isSensitive,
+        updatedBy: data.updatedBy,
+      })
+      .where(eq(environmentVariables.key, data.key));
+  } else {
+    await db.insert(environmentVariables).values({
+      ...data,
+      previousValue: data.currentValue,
+    });
+  }
+}
+
+export async function updateEnvironmentVariableValue(key: string, newValue: string, updatedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getEnvironmentVariableByKey(key);
+  if (!existing) throw new Error(`Environment variable ${key} not found`);
+  if (!existing.isEditable) throw new Error(`Environment variable ${key} is not editable`);
+  
+  await db.update(environmentVariables)
+    .set({
+      previousValue: existing.currentValue,
+      currentValue: newValue,
+      updatedBy: updatedBy,
+    })
+    .where(eq(environmentVariables.key, key));
+  
+  return getEnvironmentVariableByKey(key);
+}
+
+export async function revertEnvironmentVariable(key: string, updatedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getEnvironmentVariableByKey(key);
+  if (!existing) throw new Error(`Environment variable ${key} not found`);
+  if (!existing.isEditable) throw new Error(`Environment variable ${key} is not editable`);
+  if (!existing.previousValue) throw new Error(`No previous value to revert to for ${key}`);
+  
+  await db.update(environmentVariables)
+    .set({
+      previousValue: existing.currentValue,
+      currentValue: existing.previousValue,
+      updatedBy: updatedBy,
+    })
+    .where(eq(environmentVariables.key, key));
+  
+  return getEnvironmentVariableByKey(key);
+}
+
+export async function deleteEnvironmentVariable(key: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(environmentVariables).where(eq(environmentVariables.key, key));
+}
+
+export async function seedDefaultEnvironmentVariables() {
+  const defaults = [
+    { key: "APP_NAME", currentValue: "HotGigs", description: "Application display name", category: "App Config", isEditable: true, isSensitive: false },
+    { key: "SUPPORT_EMAIL", currentValue: "support@hotgigs.com", description: "Support contact email", category: "App Config", isEditable: true, isSensitive: false },
+    { key: "MAX_UPLOAD_SIZE_MB", currentValue: "10", description: "Maximum file upload size in MB", category: "App Config", isEditable: true, isSensitive: false },
+    { key: "SESSION_TIMEOUT_MINUTES", currentValue: "60", description: "User session timeout in minutes", category: "Security", isEditable: true, isSensitive: false },
+    { key: "MAX_LOGIN_ATTEMPTS", currentValue: "5", description: "Maximum failed login attempts before lockout", category: "Security", isEditable: true, isSensitive: false },
+    { key: "EMAIL_FROM_NAME", currentValue: "HotGigs Team", description: "Sender name for outgoing emails", category: "Email", isEditable: true, isSensitive: false },
+    { key: "EMAIL_FROM_ADDRESS", currentValue: "noreply@hotgigs.com", description: "Sender email for outgoing emails", category: "Email", isEditable: true, isSensitive: false },
+    { key: "INTERVIEW_REMINDER_HOURS", currentValue: "24", description: "Hours before interview to send reminder", category: "Interviews", isEditable: true, isSensitive: false },
+    { key: "AI_MODEL", currentValue: "gpt-4", description: "AI model for interview analysis", category: "AI", isEditable: true, isSensitive: false },
+    { key: "MAINTENANCE_MODE", currentValue: "false", description: "Enable maintenance mode", category: "System", isEditable: true, isSensitive: false },
+  ];
+  
+  for (const envVar of defaults) {
+    const existing = await getEnvironmentVariableByKey(envVar.key);
+    if (!existing) {
+      await upsertEnvironmentVariable({
+        ...envVar,
+        previousValue: envVar.currentValue,
+      });
+    }
+  }
+}
+
+// ==================== Application Logs ====================
+
+export async function createApplicationLog(data: InsertApplicationLog) {
+  const db = await getDb();
+  if (!db) {
+    console.error("[Logs] Database not available, log not saved:", data);
+    return null;
+  }
+  
+  const result = await db.insert(applicationLogs).values(data);
+  return result;
+}
+
+export async function getApplicationLogs(options: {
+  level?: string;
+  source?: string;
+  search?: string;
+  resolved?: boolean;
+  limit?: number;
+  offset?: number;
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  const db = await getDb();
+  if (!db) return { logs: [], total: 0 };
+  
+  const conditions = [];
+  
+  if (options.level) {
+    conditions.push(eq(applicationLogs.level, options.level as any));
+  }
+  if (options.source) {
+    conditions.push(eq(applicationLogs.source, options.source));
+  }
+  if (options.search) {
+    conditions.push(or(
+      like(applicationLogs.message, `%${options.search}%`),
+      like(applicationLogs.details, `%${options.search}%`)
+    ));
+  }
+  if (options.resolved !== undefined) {
+    conditions.push(eq(applicationLogs.resolved, options.resolved));
+  }
+  if (options.startDate) {
+    conditions.push(gte(applicationLogs.createdAt, options.startDate));
+  }
+  if (options.endDate) {
+    conditions.push(lte(applicationLogs.createdAt, options.endDate));
+  }
+  
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  
+  const logs = await db.select()
+    .from(applicationLogs)
+    .where(whereClause)
+    .orderBy(desc(applicationLogs.createdAt))
+    .limit(options.limit || 50)
+    .offset(options.offset || 0);
+  
+  const countResult = await db.select({ count: sql<number>`count(*)` })
+    .from(applicationLogs)
+    .where(whereClause);
+  
+  return {
+    logs,
+    total: countResult[0]?.count || 0
+  };
+}
+
+export async function getLogById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select()
+    .from(applicationLogs)
+    .where(eq(applicationLogs.id, id))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function resolveLog(id: number, resolvedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(applicationLogs)
+    .set({
+      resolved: true,
+      resolvedBy,
+      resolvedAt: new Date(),
+    })
+    .where(eq(applicationLogs.id, id));
+  
+  return getLogById(id);
+}
+
+export async function getLogStats() {
+  const db = await getDb();
+  if (!db) return { total: 0, byLevel: {}, bySource: {}, unresolvedCount: 0 };
+  
+  const total = await db.select({ count: sql<number>`count(*)` }).from(applicationLogs);
+  const unresolved = await db.select({ count: sql<number>`count(*)` })
+    .from(applicationLogs)
+    .where(eq(applicationLogs.resolved, false));
+  
+  const byLevel = await db.select({
+    level: applicationLogs.level,
+    count: sql<number>`count(*)`
+  })
+    .from(applicationLogs)
+    .groupBy(applicationLogs.level);
+  
+  const bySource = await db.select({
+    source: applicationLogs.source,
+    count: sql<number>`count(*)`
+  })
+    .from(applicationLogs)
+    .groupBy(applicationLogs.source);
+  
+  return {
+    total: total[0]?.count || 0,
+    unresolvedCount: unresolved[0]?.count || 0,
+    byLevel: Object.fromEntries(byLevel.map(r => [r.level, r.count])),
+    bySource: Object.fromEntries(bySource.map(r => [r.source, r.count]))
+  };
+}
+
+export async function deleteOldLogs(daysToKeep: number = 30) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+  
+  await db.delete(applicationLogs)
+    .where(and(
+      lte(applicationLogs.createdAt, cutoffDate),
+      eq(applicationLogs.resolved, true)
+    ));
+}

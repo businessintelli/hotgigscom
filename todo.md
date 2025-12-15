@@ -2195,3 +2195,12 @@
 - [x] Add backend API for server management operations
 - [x] Test environment management features
 
+
+## Admin Improvements - Dec 15
+- [x] Fix environment page edit functionality (enable save/update)
+- [x] Implement AdminDatabase page for database management
+- [x] Create logs database table for application logs
+- [x] Add Logs menu item to AdminLayout sidebar
+- [x] Create AdminLogs page with error viewing and search
+- [x] Add backend API for logs CRUD operations
+

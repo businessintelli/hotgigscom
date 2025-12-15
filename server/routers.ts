@@ -3116,6 +3116,141 @@ export const appRouter = router({
           timestamp: new Date().toISOString()
         };
       }),
+
+    // Environment Variables CRUD
+    getEditableEnvVars: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        await db.seedDefaultEnvironmentVariables();
+        return db.getEditableEnvironmentVariables();
+      }),
+
+    updateEnvVar: protectedProcedure
+      .input(z.object({ key: z.string(), value: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        console.log(`[Admin] Updating env var: ${input.key}`);
+        const updated = await db.updateEnvironmentVariableValue(input.key, input.value, ctx.user.id);
+        return { success: true, envVar: updated, message: `${input.key} updated successfully` };
+      }),
+
+    revertEnvVar: protectedProcedure
+      .input(z.object({ key: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        console.log(`[Admin] Reverting env var: ${input.key}`);
+        const reverted = await db.revertEnvironmentVariable(input.key, ctx.user.id);
+        return { success: true, envVar: reverted, message: `${input.key} reverted to previous value` };
+      }),
+
+    createEnvVar: protectedProcedure
+      .input(z.object({
+        key: z.string(),
+        value: z.string(),
+        description: z.string().optional(),
+        category: z.string().optional(),
+        isSensitive: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        console.log(`[Admin] Creating env var: ${input.key}`);
+        await db.upsertEnvironmentVariable({
+          key: input.key,
+          currentValue: input.value,
+          previousValue: input.value,
+          description: input.description,
+          category: input.category || 'Custom',
+          isEditable: true,
+          isSensitive: input.isSensitive || false,
+          updatedBy: ctx.user.id,
+        });
+        return { success: true, message: `${input.key} created successfully` };
+      }),
+
+    deleteEnvVar: protectedProcedure
+      .input(z.object({ key: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        console.log(`[Admin] Deleting env var: ${input.key}`);
+        await db.deleteEnvironmentVariable(input.key);
+        return { success: true, message: `${input.key} deleted successfully` };
+      }),
+
+    // Application Logs
+    getLogs: protectedProcedure
+      .input(z.object({
+        level: z.string().optional(),
+        source: z.string().optional(),
+        search: z.string().optional(),
+        resolved: z.boolean().optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        return db.getApplicationLogs(input);
+      }),
+
+    getLogStats: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        return db.getLogStats();
+      }),
+
+    resolveLog: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        const resolved = await db.resolveLog(input.id, ctx.user.id);
+        return { success: true, log: resolved };
+      }),
+
+    createLog: protectedProcedure
+      .input(z.object({
+        level: z.enum(['debug', 'info', 'warn', 'error', 'critical']),
+        source: z.string(),
+        message: z.string(),
+        details: z.string().optional(),
+        stackTrace: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createApplicationLog({
+          ...input,
+          userId: ctx.user.id,
+        });
+        return { success: true };
+      }),
+
+    // Database Info
+    getDatabaseInfo: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        // Return list of tables and basic info
+        const tables = [
+          'users', 'recruiters', 'candidates', 'jobs', 'applications',
+          'interviews', 'customers', 'resume_profiles', 'video_introductions',
+          'application_logs', 'environment_variables'
+        ];
+        return { tables, connectionStatus: 'connected' };
+      }),
   }),
 
   // Resume Ranking Router

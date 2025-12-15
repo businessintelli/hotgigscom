@@ -1041,3 +1041,48 @@ export const candidateProfileShares = mysqlTable("candidate_profile_shares", {
 
 export type CandidateProfileShare = typeof candidateProfileShares.$inferSelect;
 export type InsertCandidateProfileShare = typeof candidateProfileShares.$inferInsert;
+
+
+/**
+ * Environment variables configuration - editable settings stored in database
+ * Stores current and previous values for rollback capability
+ */
+export const environmentVariables = mysqlTable("environment_variables", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 255 }).notNull().unique(),
+  currentValue: text("currentValue").notNull(),
+  previousValue: text("previousValue"), // For rollback capability
+  description: varchar("description", { length: 500 }),
+  category: varchar("category", { length: 100 }), // e.g., 'App Config', 'Email', 'Video'
+  isEditable: boolean("isEditable").default(true).notNull(),
+  isSensitive: boolean("isSensitive").default(false).notNull(),
+  updatedBy: int("updatedBy").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EnvironmentVariable = typeof environmentVariables.$inferSelect;
+export type InsertEnvironmentVariable = typeof environmentVariables.$inferInsert;
+
+/**
+ * Application logs - store critical application events and errors
+ */
+export const applicationLogs = mysqlTable("application_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  level: mysqlEnum("level", ["debug", "info", "warn", "error", "critical"]).notNull(),
+  source: varchar("source", { length: 255 }).notNull(), // e.g., 'auth', 'api', 'database', 'email'
+  message: text("message").notNull(),
+  details: text("details"), // JSON string with additional context
+  userId: int("userId").references(() => users.id), // Optional: associated user
+  requestId: varchar("requestId", { length: 64 }), // For tracing requests
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  stackTrace: text("stackTrace"), // For errors
+  resolved: boolean("resolved").default(false).notNull(),
+  resolvedBy: int("resolvedBy").references(() => users.id),
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ApplicationLog = typeof applicationLogs.$inferSelect;
+export type InsertApplicationLog = typeof applicationLogs.$inferInsert;

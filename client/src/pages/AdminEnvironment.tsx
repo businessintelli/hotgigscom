@@ -126,13 +126,22 @@ export default function AdminEnvironment() {
   const [isRestarting, setIsRestarting] = useState<string | null>(null);
   const [newEnvKey, setNewEnvKey] = useState("");
   const [newEnvValue, setNewEnvValue] = useState("");
+  const [newEnvDescription, setNewEnvDescription] = useState("");
+  const [newEnvCategory, setNewEnvCategory] = useState("Custom");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   // Get environment info from backend
   const envQuery = trpc.admin.getEnvironmentInfo.useQuery();
+  const editableEnvQuery = trpc.admin.getEditableEnvVars.useQuery();
   const restartServiceMutation = trpc.admin.restartService.useMutation();
   const stopServiceMutation = trpc.admin.stopService.useMutation();
   const startServiceMutation = trpc.admin.startService.useMutation();
+  const updateEnvMutation = trpc.admin.updateEnvVar.useMutation();
+  const revertEnvMutation = trpc.admin.revertEnvVar.useMutation();
+  const createEnvMutation = trpc.admin.createEnvVar.useMutation();
+  const deleteEnvMutation = trpc.admin.deleteEnvVar.useMutation();
 
   const services: ServiceStatus[] = envQuery.data?.services || [
     { name: "Frontend (Vite)", status: "running", port: 3000, uptime: "2h 34m" },
@@ -262,6 +271,114 @@ export default function AdminEnvironment() {
     if (value.length <= 8) return "••••••••";
     return value.substring(0, 4) + "••••••••" + value.substring(value.length - 4);
   };
+
+  // Editable environment variable handlers
+  const handleStartEdit = (key: string, currentValue: string) => {
+    setEditingKey(key);
+    setEditValue(currentValue);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingKey(null);
+    setEditValue("");
+  };
+
+  const handleSaveEdit = async (key: string) => {
+    try {
+      await updateEnvMutation.mutateAsync({ key, value: editValue });
+      toast({
+        title: "Updated",
+        description: `${key} has been updated successfully`,
+      });
+      setEditingKey(null);
+      setEditValue("");
+      editableEnvQuery.refetch();
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: `Failed to update ${key}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRevert = async (key: string) => {
+    try {
+      await revertEnvMutation.mutateAsync({ key });
+      toast({
+        title: "Reverted",
+        description: `${key} has been reverted to previous value`,
+      });
+      editableEnvQuery.refetch();
+    } catch (error) {
+      toast({
+        title: "Revert Failed",
+        description: `Failed to revert ${key}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateEnvVar = async () => {
+    if (!newEnvKey || !newEnvValue) {
+      toast({
+        title: "Validation Error",
+        description: "Key and value are required",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await createEnvMutation.mutateAsync({
+        key: newEnvKey,
+        value: newEnvValue,
+        description: newEnvDescription,
+        category: newEnvCategory,
+      });
+      toast({
+        title: "Created",
+        description: `${newEnvKey} has been created successfully`,
+      });
+      setShowAddDialog(false);
+      setNewEnvKey("");
+      setNewEnvValue("");
+      setNewEnvDescription("");
+      setNewEnvCategory("Custom");
+      editableEnvQuery.refetch();
+    } catch (error) {
+      toast({
+        title: "Create Failed",
+        description: "Failed to create environment variable",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteEnvVar = async (key: string) => {
+    try {
+      await deleteEnvMutation.mutateAsync({ key });
+      toast({
+        title: "Deleted",
+        description: `${key} has been deleted`,
+      });
+      editableEnvQuery.refetch();
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: `Failed to delete ${key}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Group editable env vars by category
+  const editableEnvVars = editableEnvQuery.data || [];
+  const envVarsByCategory = editableEnvVars.reduce((acc: Record<string, any[]>, envVar: any) => {
+    const category = envVar.category || "Other";
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(envVar);
+    return acc;
+  }, {});
 
   return (
     <AdminLayout title="Environment Management">
@@ -595,6 +712,221 @@ export default function AdminEnvironment() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Configurable Settings - Editable from Database */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-green-600" />
+                  Configurable Settings
+                </CardTitle>
+                <CardDescription>
+                  Editable settings stored in database - changes take effect immediately
+                </CardDescription>
+              </div>
+              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Variable
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Configuration Variable</DialogTitle>
+                    <DialogDescription>
+                      Create a new editable configuration variable
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="newKey">Variable Key</Label>
+                      <Input
+                        id="newKey"
+                        placeholder="MY_CUSTOM_SETTING"
+                        value={newEnvKey}
+                        onChange={(e) => setNewEnvKey(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '_'))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newValue">Value</Label>
+                      <Input
+                        id="newValue"
+                        placeholder="Enter value"
+                        value={newEnvValue}
+                        onChange={(e) => setNewEnvValue(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newDescription">Description</Label>
+                      <Input
+                        id="newDescription"
+                        placeholder="What this setting does"
+                        value={newEnvDescription}
+                        onChange={(e) => setNewEnvDescription(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newCategory">Category</Label>
+                      <Select value={newEnvCategory} onValueChange={setNewEnvCategory}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Custom">Custom</SelectItem>
+                          <SelectItem value="App Config">App Config</SelectItem>
+                          <SelectItem value="Email">Email</SelectItem>
+                          <SelectItem value="Security">Security</SelectItem>
+                          <SelectItem value="AI">AI</SelectItem>
+                          <SelectItem value="Interviews">Interviews</SelectItem>
+                          <SelectItem value="System">System</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+                    <Button onClick={handleCreateEnvVar} disabled={createEnvMutation.isPending}>
+                      {createEnvMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                      Create
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {editableEnvQuery.isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : Object.keys(envVarsByCategory).length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Settings className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No configurable settings yet</p>
+                <p className="text-sm">Click "Add Variable" to create your first setting</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(envVarsByCategory).map(([category, vars]) => (
+                  <div key={category}>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                      <Badge variant="outline">{category}</Badge>
+                      <span className="text-gray-400 text-xs">({(vars as any[]).length} variables)</span>
+                    </h4>
+                    <div className="space-y-2">
+                      {(vars as any[]).map((envVar: any) => (
+                        <div
+                          key={envVar.key}
+                          className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <code className="text-sm font-mono bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                                {envVar.key}
+                              </code>
+                              {envVar.currentValue !== envVar.previousValue && (
+                                <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 text-xs">
+                                  Modified
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">{envVar.description}</p>
+                            {envVar.currentValue !== envVar.previousValue && (
+                              <p className="text-xs text-gray-400 mt-1">
+                                Previous: <code className="bg-gray-100 px-1 rounded">{envVar.previousValue}</code>
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {editingKey === envVar.key ? (
+                              <>
+                                <Input
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  className="w-48 h-8 text-sm"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveEdit(envVar.key)}
+                                  disabled={updateEnvMutation.isPending}
+                                >
+                                  {updateEnvMutation.isPending ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Save className="h-3 w-3" />
+                                  )}
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                                  Cancel
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <code className="text-sm bg-white px-3 py-1 rounded border max-w-[200px] truncate">
+                                  {envVar.currentValue}
+                                </code>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleStartEdit(envVar.key, envVar.currentValue)}
+                                >
+                                  <Settings className="h-4 w-4" />
+                                </Button>
+                                {envVar.currentValue !== envVar.previousValue && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-yellow-600"
+                                    onClick={() => handleRevert(envVar.key)}
+                                    title="Revert to previous value"
+                                  >
+                                    <RefreshCw className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-red-600"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Variable?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete {envVar.key}? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteEnvVar(envVar.key)}
+                                        className="bg-red-600 hover:bg-red-700"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
