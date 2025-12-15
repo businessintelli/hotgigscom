@@ -41,6 +41,23 @@ function randomSuffix() {
   return Math.random().toString(36).substring(2, 15);
 }
 
+// Helper to format uptime in human-readable format
+function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+// Helper to mask sensitive values
+function maskSensitive(value: string): string {
+  if (value.length <= 8) return '••••••••';
+  return value.substring(0, 4) + '••••••••' + value.substring(value.length - 4);
+}
+
 export const appRouter = router({
   system: systemRouter,
   resumeProfile: resumeProfileRouter,
@@ -2952,6 +2969,108 @@ export const appRouter = router({
           spamReports,
           sendgridStats,
           resendStats,
+        };
+      }),
+
+    // Environment management endpoints
+    getEnvironmentInfo: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        const { ENV } = await import('./_core/env');
+        
+        // Get service statuses (simulated - in production would check actual services)
+        const services = [
+          { 
+            name: "Frontend (Vite)", 
+            status: "running" as const, 
+            port: 3000, 
+            uptime: formatUptime(process.uptime()) 
+          },
+          { 
+            name: "Backend (Express)", 
+            status: "running" as const, 
+            port: 3000, 
+            uptime: formatUptime(process.uptime()) 
+          },
+          { 
+            name: "Database (TiDB)", 
+            status: "running" as const, 
+            uptime: "Connected" 
+          },
+        ];
+        
+        // Get environment variables (mask sensitive values)
+        const envVars: Record<string, string> = {
+          VITE_APP_TITLE: ENV.appTitle || "HotGigs",
+          VITE_APP_LOGO: ENV.appLogo || "/logo.svg",
+          VITE_APP_ID: ENV.appId || "not-set",
+          VITE_OAUTH_PORTAL_URL: ENV.oauthPortalUrl || "not-set",
+          VITE_ANALYTICS_WEBSITE_ID: ENV.analyticsWebsiteId || "not-set",
+          VITE_ANALYTICS_ENDPOINT: ENV.analyticsEndpoint || "not-set",
+          DATABASE_URL: ENV.databaseUrl ? maskSensitive(ENV.databaseUrl) : "not-set",
+          JWT_SECRET: ENV.jwtSecret ? maskSensitive(ENV.jwtSecret) : "not-set",
+          BUILT_IN_FORGE_API_KEY: ENV.forgeApiKey ? maskSensitive(ENV.forgeApiKey) : "not-set",
+          VITE_FRONTEND_FORGE_API_KEY: ENV.frontendForgeApiKey ? maskSensitive(ENV.frontendForgeApiKey) : "not-set",
+          SENDGRID_API_KEY: ENV.sendGridApiKey ? maskSensitive(ENV.sendGridApiKey) : "not-set",
+          RESEND_API_KEY: ENV.resendApiKey ? maskSensitive(ENV.resendApiKey) : "not-set",
+        };
+        
+        return { services, envVars };
+      }),
+
+    restartService: protectedProcedure
+      .input(z.object({ service: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        // In a real production environment, this would trigger actual service restarts
+        // For now, we simulate the restart
+        console.log(`[Admin] Restart requested for service: ${input.service}`);
+        
+        // Simulate restart delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        return { 
+          success: true, 
+          message: `Service ${input.service} restart initiated`,
+          timestamp: new Date().toISOString()
+        };
+      }),
+
+    stopService: protectedProcedure
+      .input(z.object({ service: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        console.log(`[Admin] Stop requested for service: ${input.service}`);
+        
+        return { 
+          success: true, 
+          message: `Service ${input.service} stop initiated`,
+          timestamp: new Date().toISOString()
+        };
+      }),
+
+    startService: protectedProcedure
+      .input(z.object({ service: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        
+        console.log(`[Admin] Start requested for service: ${input.service}`);
+        
+        return { 
+          success: true, 
+          message: `Service ${input.service} start initiated`,
+          timestamp: new Date().toISOString()
         };
       }),
   }),

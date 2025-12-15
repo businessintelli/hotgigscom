@@ -49,6 +49,7 @@ import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminReports from "./pages/AdminReports";
+import AdminEnvironment from "./pages/AdminEnvironment";
 import UserManagement from "./pages/UserManagement";
 import SystemHealth from "./pages/SystemHealth";
 import Analytics from "./pages/Analytics";
@@ -140,6 +141,7 @@ function Router() {
       <Route path="/admin/email-delivery" component={EmailDeliveryDashboard} />
       <Route path="/admin/analytics" component={Analytics} />
       <Route path="/admin/reports" component={AdminReports} />
+      <Route path="/admin/environment" component={AdminEnvironment} />
       <Route path="/analytics" component={AnalyticsDashboard} />
       <Route path="/candidate-dashboard" component={CandidateDashboard} />
       <Route path="/my-applications" component={MyApplications} />

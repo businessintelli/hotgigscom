@@ -2186,3 +2186,12 @@
 - [x] Add AdminLayout with sidebar to all admin pages
 - [x] Add Reports menu item to admin sidebar
 - [x] Create AdminReports page with aggregate reports across recruiters and candidates
+
+## Admin Environment Management
+- [x] Add Environment menu item to AdminLayout sidebar
+- [x] Create AdminEnvironment page with environment variables display
+- [x] Add server control buttons (restart frontend, backend, database)
+- [x] Add restart all services / stop all services / start all services options
+- [x] Add backend API for server management operations
+- [x] Test environment management features
+

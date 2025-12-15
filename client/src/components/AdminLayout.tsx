@@ -27,7 +27,8 @@ import {
   Briefcase,
   FileText,
   Bell,
-  BarChart3
+  BarChart3,
+  Server
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_TITLE } from "@/const";
@@ -44,6 +45,7 @@ const sidebarItems = [
   { title: "Reports", href: "/admin/reports", icon: BarChart3 },
   { title: "System Health", href: "/admin/health", icon: Activity },
   { title: "Analytics", href: "/admin/analytics", icon: TrendingUp },
+  { title: "Environment", href: "/admin/environment", icon: Server },
   { title: "Email Settings", href: "/admin/email-settings", icon: Mail },
   { title: "Video Settings", href: "/admin/video-settings", icon: Video },
   { title: "Email Delivery", href: "/admin/email-delivery", icon: TrendingUp },
