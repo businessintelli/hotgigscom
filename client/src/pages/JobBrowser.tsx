@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import CandidateLayout from "@/components/CandidateLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,6 +76,7 @@ export default function JobBrowser() {
   }
 
   return (
+    <CandidateLayout title="Browse Jobs">
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10">
@@ -280,5 +282,6 @@ export default function JobBrowser() {
         )}
       </div>
     </div>
+    </CandidateLayout>
   );
 }

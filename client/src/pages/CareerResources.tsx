@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CandidateLayout from "@/components/CandidateLayout";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,6 +195,7 @@ export default function CareerResources() {
   );
 
   return (
+    <CandidateLayout title="Career Resources">
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
@@ -419,5 +421,6 @@ export default function CareerResources() {
         </Card>
       </div>
     </div>
+    </CandidateLayout>
   );
 }

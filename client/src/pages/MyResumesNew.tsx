@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CandidateLayout from "@/components/CandidateLayout";
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
@@ -181,6 +182,7 @@ export default function MyResumesNew() {
   };
 
   return (
+    <CandidateLayout title="My Resume">
     <div className="container mx-auto py-8">
       <div className="max-w-6xl mx-auto">
         <Button 
@@ -561,5 +563,6 @@ export default function MyResumesNew() {
         )}
       </div>
     </div>
+    </CandidateLayout>
   );
 }

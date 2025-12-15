@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CandidateLayout from "@/components/CandidateLayout";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -81,6 +82,7 @@ export default function Recommendations() {
   };
 
   return (
+    <CandidateLayout title="Recommendations">
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
@@ -309,5 +311,6 @@ export default function Recommendations() {
         )}
       </div>
     </div>
+    </CandidateLayout>
   );
 }

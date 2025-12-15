@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import CandidateLayout from "@/components/CandidateLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,7 @@ export default function SavedJobs() {
   }
 
   return (
+    <CandidateLayout title="Saved Jobs">
     <div className="container py-8">
       <Button 
         onClick={() => setLocation('/candidate/dashboard')}
@@ -174,5 +176,6 @@ export default function SavedJobs() {
         </div>
       )}
     </div>
+    </CandidateLayout>
   );
 }

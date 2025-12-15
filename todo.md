@@ -2256,3 +2256,14 @@
 - [x] Add RecruiterLayout to Analytics page
 - [x] Add RecruiterLayout to Reschedule Requests page
 
+
+## Candidate Pages Layout Fix - Dec 15
+- [x] Add CandidateLayout to My Resume page
+- [x] Add CandidateLayout to Video Introduction page
+- [x] Add CandidateLayout to Browse Jobs page
+- [x] Add CandidateLayout to My Applications page
+- [x] Add CandidateLayout to Saved Jobs page
+- [x] Add CandidateLayout to Calendar page
+- [x] Add CandidateLayout to Recommendations page
+- [x] Add CandidateLayout to Career Resources page
+
