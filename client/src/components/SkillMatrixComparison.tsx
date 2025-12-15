@@ -186,7 +186,7 @@ export function SkillMatrixComparison({
       rows.push(scoresRow);
       
       const csvContent = [headers, ...rows]
-        .map(row => row.map(cell => `"${cell}"`).join(','))
+        .map((row: (string | number)[]) => row.map((cell: string | number) => `"${cell}"`).join(','))
         .join('\n');
       
       // Download

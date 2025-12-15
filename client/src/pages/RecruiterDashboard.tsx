@@ -252,6 +252,15 @@ function RecruiterDashboardContent() {
                   <div className="text-xs opacity-90">Drag & drop to reschedule</div>
                 </div>
               </Button>
+              <Button onClick={() => setLocation('/recruiter/reschedule-requests')} className="h-20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
+                <div className="text-center">
+                  <div className="text-lg font-semibold flex items-center justify-center">
+                    <span className="mr-2">🔄</span>
+                    Reschedule Requests
+                  </div>
+                  <div className="text-xs opacity-90">Manage panelist requests</div>
+                </div>
+              </Button>
               <Button onClick={() => setLocation('/recruiter/search-candidates')} className="h-20 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white">
                 <div className="text-center">
                   <div className="text-lg font-semibold">🔍 Search Candidates</div>

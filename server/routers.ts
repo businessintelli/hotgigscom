@@ -31,6 +31,7 @@ import { profileCompletionRouter } from './profileCompletionRouter';
 import { createVideoMeeting } from './videoMeetingService';
 import { panelPublicRouter } from './panelPublicRouter';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
+import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
 import { sendEmail } from './emailService';
 
 // Helper to generate random suffix for file keys
@@ -1775,7 +1776,7 @@ export const appRouter = router({
               panelistEmail: input.email,
               panelistName: input.name,
               recruiterName: recruiter?.companyName || ctx.user.name || 'Recruiter',
-              candidateName: candidate?.fullName || 'Candidate',
+              candidateName: (candidate as any)?.fullName || (candidate as any)?.name || 'Candidate',
               jobTitle: job?.title || 'Position',
               companyName: job?.companyName || undefined,
               interviewDate: new Date(interview.interview.scheduledAt),
@@ -3195,7 +3196,7 @@ export const appRouter = router({
                   recruiterName: recruiter.name || recruiter.email.split('@')[0],
                   panelistName: panelist?.name || ctx.user.email?.split('@')[0] || 'Panel Member',
                   panelistEmail: panelist?.email || ctx.user.email || '',
-                  candidateName: candidate?.fullName || 'Candidate',
+                  candidateName: (candidate as any)?.fullName || (candidate as any)?.name || 'Candidate',
                   jobTitle: job.title,
                   originalDate: scheduledDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
                   originalTime: scheduledDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
@@ -3238,8 +3239,9 @@ export const appRouter = router({
     resolveRequest: protectedProcedure
       .input(z.object({
         requestId: z.number(),
-        status: z.enum(['approved', 'rejected', 'resolved']),
+        status: z.enum(['approved', 'rejected', 'alternative_proposed']),
         newInterviewTime: z.string().optional(),
+        notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await db.updateRescheduleRequest(input.requestId, {
@@ -3249,11 +3251,127 @@ export const appRouter = router({
           newInterviewTime: input.newInterviewTime ? new Date(input.newInterviewTime) : null,
         });
 
-        // If approved with new time, update the interview
+        // Get request details for email notification
+        try {
+          const { rescheduleRequests, interviews, applications, jobs, candidates, users, interviewPanelists } = await import("../drizzle/schema");
+          const { eq } = await import("drizzle-orm");
+          const database = await db.getDb();
+          
+          if (database) {
+            const requestDetails = await database
+              .select()
+              .from(rescheduleRequests)
+              .leftJoin(interviews, eq(rescheduleRequests.interviewId, interviews.id))
+              .leftJoin(applications, eq(interviews.applicationId, applications.id))
+              .leftJoin(jobs, eq(applications.jobId, jobs.id))
+              .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+              .leftJoin(users, eq(candidates.userId, users.id))
+              .where(eq(rescheduleRequests.id, input.requestId))
+              .limit(1);
+            
+            if (requestDetails.length > 0) {
+              const req = requestDetails[0];
+              const panelistEmail = (req.reschedule_requests as any)?.panelistEmail;
+              const panelistName = (req.reschedule_requests as any)?.panelistName || 'Panelist';
+              const candidateName = (req.users as any)?.name || 'Candidate';
+              const jobTitle = (req.jobs as any)?.title || 'Position';
+              const originalDate = (req.interviews as any)?.scheduledAt 
+                ? new Date((req.interviews as any).scheduledAt).toLocaleString()
+                : 'TBD';
+              
+              if (panelistEmail) {
+                let emailContent;
+                
+                if (input.status === 'approved') {
+                  emailContent = generateRescheduleApprovedEmail({
+                    panelistName,
+                    candidateName,
+                    jobTitle,
+                    originalDate,
+                    notes: input.notes,
+                  });
+                } else if (input.status === 'rejected') {
+                  emailContent = generateRescheduleRejectedEmail({
+                    panelistName,
+                    candidateName,
+                    jobTitle,
+                    originalDate,
+                    notes: input.notes,
+                  });
+                } else if (input.status === 'alternative_proposed' && input.newInterviewTime) {
+                  emailContent = generateAlternativeProposedEmail({
+                    panelistName,
+                    candidateName,
+                    jobTitle,
+                    originalDate,
+                    proposedDate: new Date(input.newInterviewTime).toLocaleString(),
+                    notes: input.notes,
+                  });
+                }
+                
+                if (emailContent) {
+                  await sendEmail({
+                    to: panelistEmail,
+                    subject: emailContent.subject,
+                    html: emailContent.html,
+                    text: emailContent.text,
+                  });
+                }
+              }
+            }
+          }
+        } catch (emailError) {
+          console.error('Failed to send reschedule response email:', emailError);
+          // Don't fail the request if email fails
+        }
+
+        // If approved with new time, automatically update the interview
         if (input.status === 'approved' && input.newInterviewTime) {
-          // Get the request to find the interview
-          const requests = await db.getRescheduleRequestsByInterview(0); // We need to get by request ID
-          // For now, we'll handle this in the UI by also calling updateInterview
+          try {
+            const { rescheduleRequests } = await import("../drizzle/schema");
+            const { eq } = await import("drizzle-orm");
+            const database = await db.getDb();
+            
+            if (database) {
+              const request = await database
+                .select()
+                .from(rescheduleRequests)
+                .where(eq(rescheduleRequests.id, input.requestId))
+                .limit(1);
+              
+              if (request.length > 0) {
+                const interviewId = (request[0] as any).interviewId;
+                if (interviewId) {
+                  await db.updateInterview(interviewId, {
+                    scheduledAt: new Date(input.newInterviewTime),
+                  });
+                  
+                  // Create notification for the candidate about the rescheduled interview
+                  const interviewDetails = await db.getInterviewById(interviewId);
+                  if (interviewDetails) {
+                    const application = await db.getApplicationById((interviewDetails as any).applicationId);
+                    if (application) {
+                      const candidate = await db.getCandidateById((application as any).candidateId);
+                      if (candidate) {
+                        await db.createNotification({
+                          userId: (candidate as any).userId,
+                          type: 'interview_rescheduled',
+                          title: 'Interview Rescheduled',
+                          message: `Your interview has been rescheduled to ${new Date(input.newInterviewTime).toLocaleString()}`,
+                          relatedEntityType: 'interview',
+                          relatedEntityId: interviewId,
+                          actionUrl: `/candidate/dashboard`,
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } catch (calendarError) {
+            console.error('Failed to update interview calendar:', calendarError);
+            // Don't fail the request if calendar update fails
+          }
         }
 
         return { success: true };

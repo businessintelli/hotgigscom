@@ -611,6 +611,14 @@ export async function createApplication(application: InsertApplication) {
   return { insertId };
 }
 
+export async function getApplicationById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(applications).where(eq(applications.id, id)).limit(1);
+  return result[0] || null;
+}
+
 export async function getApplicationsByJob(jobId: number) {
   const db = await getDb();
   if (!db) return [];

@@ -1,0 +1,1 @@
+ALTER TABLE `reschedule_requests` MODIFY COLUMN `status` enum('pending','approved','rejected','resolved','alternative_proposed') NOT NULL DEFAULT 'pending';

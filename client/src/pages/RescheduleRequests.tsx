@@ -51,40 +51,21 @@ export default function RescheduleRequests() {
   // Fetch reschedule requests
   const { data: requests, isLoading, refetch } = (trpc as any).reschedule?.getPendingRequests?.useQuery() || { data: [], isLoading: false };
 
-  // Mutations
-  const approveMutation = (trpc as any).reschedule?.approveRequest?.useMutation({
-    onSuccess: () => {
-      toast.success("Reschedule request approved");
+  // Mutation for resolving reschedule requests
+  const resolveMutation = (trpc as any).reschedule?.resolveRequest?.useMutation({
+    onSuccess: (_: any, variables: any) => {
+      const messages: Record<string, string> = {
+        approved: "Reschedule request approved - panelist notified",
+        rejected: "Reschedule request rejected - panelist notified",
+        alternative_proposed: "Alternative time proposed - panelist notified",
+      };
+      toast.success(messages[variables.status] || "Request updated");
       refetch();
       setResponseModalOpen(false);
       setSelectedRequest(null);
     },
     onError: () => {
-      toast.error("Failed to approve request");
-    },
-  });
-
-  const rejectMutation = (trpc as any).reschedule?.rejectRequest?.useMutation({
-    onSuccess: () => {
-      toast.success("Reschedule request rejected");
-      refetch();
-      setResponseModalOpen(false);
-      setSelectedRequest(null);
-    },
-    onError: () => {
-      toast.error("Failed to reject request");
-    },
-  });
-
-  const proposeMutation = (trpc as any).reschedule?.proposeAlternative?.useMutation({
-    onSuccess: () => {
-      toast.success("Alternative time proposed");
-      refetch();
-      setResponseModalOpen(false);
-      setSelectedRequest(null);
-    },
-    onError: () => {
-      toast.error("Failed to propose alternative");
+      toast.error("Failed to process request");
     },
   });
 
@@ -132,27 +113,23 @@ export default function RescheduleRequests() {
   const submitResponse = () => {
     if (!selectedRequest) return;
 
-    if (responseAction === "approve") {
-      approveMutation.mutate({
-        requestId: selectedRequest.id,
-        notes: responseNotes,
-      });
-    } else if (responseAction === "reject") {
-      rejectMutation.mutate({
-        requestId: selectedRequest.id,
-        notes: responseNotes,
-      });
-    } else if (responseAction === "propose") {
-      if (!proposedDate) {
-        toast.error("Please select a proposed date and time");
-        return;
-      }
-      proposeMutation.mutate({
-        requestId: selectedRequest.id,
-        proposedDate,
-        notes: responseNotes,
-      });
+    const statusMap: Record<string, string> = {
+      approve: "approved",
+      reject: "rejected",
+      propose: "alternative_proposed",
+    };
+
+    if (responseAction === "propose" && !proposedDate) {
+      toast.error("Please select a proposed date and time");
+      return;
     }
+
+    resolveMutation.mutate({
+      requestId: selectedRequest.id,
+      status: statusMap[responseAction],
+      newInterviewTime: responseAction === "propose" ? proposedDate : undefined,
+      notes: responseNotes || undefined,
+    });
   };
 
   const stats = {
@@ -418,7 +395,7 @@ export default function RescheduleRequests() {
             </Button>
             <Button
               onClick={submitResponse}
-              disabled={approveMutation.isPending || rejectMutation.isPending || proposeMutation.isPending}
+              disabled={resolveMutation?.isPending}
               className={
                 responseAction === "approve" 
                   ? "bg-green-600 hover:bg-green-700"
@@ -427,7 +404,7 @@ export default function RescheduleRequests() {
                   : "bg-blue-600 hover:bg-blue-700"
               }
             >
-              {(approveMutation.isPending || rejectMutation.isPending || proposeMutation.isPending) && (
+              {resolveMutation?.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
               {responseAction === "approve" && "Approve Request"}

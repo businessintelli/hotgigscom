@@ -968,7 +968,7 @@ export const rescheduleRequests = mysqlTable("reschedule_requests", {
   requestedBy: int("requestedBy").references(() => users.id), // null for non-registered panelists
   reason: text("reason"),
   preferredDates: text("preferredDates"), // JSON array of preferred date/time slots
-  status: mysqlEnum("status", ["pending", "approved", "rejected", "resolved"]).default("pending").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "resolved", "alternative_proposed"]).default("pending").notNull(),
   resolvedAt: timestamp("resolvedAt"),
   resolvedBy: int("resolvedBy").references(() => users.id),
   newInterviewTime: timestamp("newInterviewTime"),
