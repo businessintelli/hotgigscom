@@ -668,6 +668,51 @@ export default function ApplicationManagement() {
                           </div>
                         )}
 
+                        {/* Existing Feedback */}
+                        {application.feedback && application.feedback.length > 0 && (
+                          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <MessageSquare className="h-4 w-4 text-amber-600" />
+                                Team Feedback ({application.feedback.length})
+                              </h4>
+                            </div>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {application.feedback.map((fb: any) => (
+                                <div key={fb.id} className="p-2 bg-white rounded border border-amber-100">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-medium text-gray-900">
+                                        {fb.recruiter?.companyName || 'Team Member'}
+                                      </span>
+                                      {fb.rating && (
+                                        <div className="flex gap-0.5">
+                                          {Array.from({ length: 5 }).map((_, i) => (
+                                            <Star
+                                              key={i}
+                                              className={`h-3 w-3 ${
+                                                i < fb.rating
+                                                  ? 'fill-yellow-400 text-yellow-400'
+                                                  : 'text-gray-300'
+                                              }`}
+                                            />
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {new Date(fb.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  {fb.notes && (
+                                    <p className="text-xs text-gray-700 mt-1">{fb.notes}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex flex-wrap items-center gap-2 pt-3 border-t">
                           {application.resumeProfileId ? (
                             <Button 

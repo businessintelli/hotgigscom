@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Mail, Phone, MapPin, Linkedin, Github, Award, Briefcase, GraduationCap, Star } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Linkedin, Github, Award, Briefcase, GraduationCap, Star, Download } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 export default function CandidateComparison() {
@@ -65,12 +65,25 @@ export default function CandidateComparison() {
       <div className="container mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => setLocation('/recruiter/applications')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Applications
-          </Button>
-          <h1 className="text-3xl font-bold mt-4">Candidate Comparison</h1>
-          <p className="text-gray-600">Compare up to 5 candidates side-by-side</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <Button variant="ghost" onClick={() => setLocation('/recruiter/applications')}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Applications
+              </Button>
+              <h1 className="text-3xl font-bold mt-4">Candidate Comparison</h1>
+              <p className="text-gray-600">Compare up to 5 candidates side-by-side</p>
+            </div>
+            <Button
+              onClick={() => {
+                window.print();
+              }}
+              className="bg-gradient-to-r from-blue-600 to-purple-600"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export to PDF
+            </Button>
+          </div>
         </div>
 
         {/* Comparison Table */}

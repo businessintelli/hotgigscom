@@ -1230,6 +1230,35 @@ export const appRouter = router({
           notes: input.notes,
         });
         
+        // Create notification for other recruiters
+        try {
+          const application = await db.getApplicationById(input.applicationId);
+          if (application) {
+            const job = await db.getJobById(application.jobId);
+            const candidate = await db.getCandidateById(application.candidateId);
+            
+            if (job && candidate) {
+              const jobOwnerRecruiter = await db.getRecruiterByUserId(job.postedBy);
+              
+              // Notify job owner if they're not the one who added feedback
+              if (jobOwnerRecruiter && jobOwnerRecruiter.id !== recruiter.id) {
+                await notificationHelpers.createNotification({
+                  userId: job.postedBy,
+                  type: 'application_feedback',
+                  title: 'New Feedback on Application',
+                  message: `${recruiter.companyName} added feedback for ${candidate.fullName}'s application to ${job.title}`,
+                  relatedEntityType: 'application',
+                  relatedEntityId: input.applicationId,
+                  actionUrl: `/recruiter/applications`,
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('[Feedback] Failed to create notification:', error);
+          // Don't fail the feedback creation if notification fails
+        }
+        
         return { success: true };
       }),
     

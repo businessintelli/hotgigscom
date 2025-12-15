@@ -1839,3 +1839,17 @@
 - [x] Fix candidate dashboard - add dropdown menu with navigation items
 - [x] Add "Recommended Jobs" button to candidate quick actions
 - [x] Test all features and save checkpoint
+
+
+## Feedback Display and Export Enhancements (COMPLETED ✅)
+- [x] Update getAllApplications to include feedback data with recruiter info
+- [x] Display existing feedback on application cards (show all team feedback)
+- [x] Show feedback author name, rating, notes, and timestamp
+- [x] Add visual feedback indicator (amber-colored section with count)
+- [x] Create PDF export functionality for candidate comparison page
+- [x] Add "Export to PDF" button on comparison page (uses browser print)
+- [x] Generate formatted PDF with candidate comparison table
+- [x] Implement feedback notification system
+- [x] Create notification when recruiter adds feedback to application
+- [x] Notify job owner recruiter when team members add feedback
+- [x] Test all features and save checkpoint

@@ -623,13 +623,22 @@ export async function getAllApplications() {
     .leftJoin(resumeProfiles, eq(applications.resumeProfileId, resumeProfiles.id))
     .orderBy(desc(applications.submittedAt));
   
-  return results.map((row: any) => ({
-    ...row.applications,
-    candidate: row.candidates,
-    job: row.jobs,
-    videoIntroduction: row.videoIntroductions,
-    resumeProfile: row.resumeProfiles,
-  }));
+  // Fetch feedback for all applications
+  const applicationsWithData = await Promise.all(
+    results.map(async (row: any) => {
+      const feedback = await getApplicationFeedback(row.applications.id);
+      return {
+        ...row.applications,
+        candidate: row.candidates,
+        job: row.jobs,
+        videoIntroduction: row.videoIntroductions,
+        resumeProfile: row.resumeProfiles,
+        feedback: feedback || [],
+      };
+    })
+  );
+  
+  return applicationsWithData;
 }
 
 export async function getApplicationsByCandidate(candidateId: number) {
@@ -637,6 +646,14 @@ export async function getApplicationsByCandidate(candidateId: number) {
   if (!db) return [];
   
   return await db.select().from(applications).where(eq(applications.candidateId, candidateId)).orderBy(desc(applications.submittedAt));
+}
+
+export async function getApplicationById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const results = await db.select().from(applications).where(eq(applications.id, id)).limit(1);
+  return results[0];
 }
 
 export async function updateApplication(id: number, data: Partial<InsertApplication>) {
