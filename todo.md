@@ -1707,3 +1707,71 @@
 - [x] Add back button to JobBrowser page (only shows when user is logged in)
 - [x] Verified MyApplications already has back button
 - [x] Consistent back navigation across all candidate pages
+
+
+## Comprehensive Resume Management System (IN PROGRESS 🔄)
+
+### Database & Backend
+- [ ] Design database schema for storing parsed resume data (skills, experience, education, certifications, etc.)
+- [ ] Add resume ranking algorithm based on domain and skill match percentage
+- [ ] Create backend endpoints for AI resume parsing
+- [ ] Add endpoints for resume CRUD operations with parsed data
+- [ ] Implement resume ranking by domain and experience
+
+### My Resumes Page
+- [ ] Create new My Resumes page with list and grid view toggle
+- [ ] Implement list view showing resume cards with key info
+- [ ] Implement grid view with thumbnail/preview layout
+- [ ] Add resume ranking display (domain match %, skill match %, experience score)
+- [ ] Show up to 5 resumes with visual indicators for slots
+- [ ] Add "Upload New Resume" button with AI parsing
+
+### Resume Detail & Edit
+- [ ] Create resume detail page showing all parsed data
+- [ ] Display skills, experience, education, certifications in organized sections
+- [ ] Add edit mode for all parsed fields
+- [ ] Implement save functionality for edited data
+- [ ] Show ranking metrics on detail page
+
+### Unified AI Parsing Integration
+- [ ] Update "Quick Import" to use AI parsing
+- [ ] Update "Resume Upload" on home page to use AI parsing
+- [ ] Update candidate dashboard resume upload to use AI parsing
+- [ ] Ensure all upload flows store parsed data consistently
+- [ ] Add loading states and progress indicators for AI parsing
+
+### UI/UX Enhancements
+- [ ] Add view toggle button (list/grid) with icons
+- [ ] Design resume cards showing key metrics
+- [ ] Add visual ranking indicators (progress bars, badges)
+- [ ] Implement smooth transitions between views
+- [ ] Add empty state for no resumes uploaded
+
+
+## Comprehensive Resume Management System (IN PROGRESS \ud83d\udd04 - Phase 3/6 Complete)
+- [x] Design database schema for storing parsed resume data with ranking fields
+- [x] Add domainMatchScore, skillMatchScore, experienceScore, overallScore fields to resumeProfiles
+- [x] Add primaryDomain and totalExperienceYears fields
+- [x] Update backend to support AI parsing and resume ranking
+- [x] Create resume ranking algorithm with domain detection
+- [x] Implement skill match scoring (0-100 based on skill count)
+- [x] Implement experience scoring (0-100 based on years)
+- [x] Implement overall weighted score calculation
+- [x] Update createResumeProfile endpoint to calculate and store scores
+- [x] Create My Resumes page with list/grid views and ranking
+- [x] Implement list view with detailed score breakdown
+- [x] Implement grid view with compact score display
+- [x] Add view mode toggle (list/grid)
+- [x] Sort resumes by overall score (highest first)
+- [x] Add visual score indicators with progress bars
+- [x] Add upload dialog with AI parsing
+- [x] Add set default, download, and delete actions
+- [x] Enforce 5 resume limit
+- [ ] Build resume detail view with edit capabilities
+- [ ] Create resume detail page showing full parsed data
+- [ ] Add edit mode for parsed data (skills, experience, education)
+- [ ] Add save changes functionality
+- [ ] Integrate AI parsing into all upload flows
+- [ ] Update Quick Import to use AI parsing
+- [ ] Update Resume Upload on home page to use AI parsing
+- [ ] Test complete resume management system and save checkpoint

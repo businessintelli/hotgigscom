@@ -1,6 +1,30 @@
 import { rankResumesBySkills, type ParsedResume, type ResumeRanking } from './resumeParser';
 import * as db from './db';
 
+// Domain keywords mapping for resume scoring
+const DOMAIN_KEYWORDS = {
+  'Software Development': [
+    'software', 'developer', 'programming', 'coding', 'engineer', 'full stack', 
+    'frontend', 'backend', 'web development', 'mobile development', 'api', 'database'
+  ],
+  'Data Science': [
+    'data science', 'machine learning', 'ml', 'ai', 'artificial intelligence', 
+    'data analysis', 'analytics', 'statistics', 'python', 'r', 'tensorflow', 'pytorch'
+  ],
+  'DevOps': [
+    'devops', 'ci/cd', 'docker', 'kubernetes', 'aws', 'azure', 'cloud', 
+    'infrastructure', 'deployment', 'automation', 'jenkins', 'terraform'
+  ],
+  'RPA & Automation': [
+    'rpa', 'robotic process automation', 'uipath', 'automation anywhere', 'blue prism',
+    'process automation', 'workflow automation', 'bot', 'intelligent automation'
+  ],
+  'Business Analysis': [
+    'business analyst', 'requirements', 'process improvement', 'stakeholder management',
+    'documentation', 'workflow', 'business process', 'analysis', 'specifications'
+  ],
+};
+
 /**
  * Rank candidates for a specific job based on skill match
  */
@@ -199,5 +223,154 @@ export async function compareCandidates(candidateId1: number, candidateId2: numb
       educationAdvantage,
       overallRecommendation
     }
+  };
+}
+
+
+/**
+ * Detect primary domain from resume content
+ */
+export function detectPrimaryDomain(parsedData: ParsedResume): string {
+  const content = JSON.stringify(parsedData).toLowerCase();
+  const domainScores: Record<string, number> = {};
+
+  for (const [domain, keywords] of Object.entries(DOMAIN_KEYWORDS)) {
+    let score = 0;
+    for (const keyword of keywords) {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      const matches = content.match(regex);
+      score += matches ? matches.length : 0;
+    }
+    domainScores[domain] = score;
+  }
+
+  // Return domain with highest score
+  const sortedDomains = Object.entries(domainScores).sort((a, b) => b[1] - a[1]);
+  return sortedDomains[0]?.[0] || 'General';
+}
+
+/**
+ * Calculate domain match score (0-100)
+ */
+export function calculateDomainMatchScore(resumeDomain: string, parsedData: ParsedResume): number {
+  const content = JSON.stringify(parsedData).toLowerCase();
+  const domainKeywords = DOMAIN_KEYWORDS[resumeDomain as keyof typeof DOMAIN_KEYWORDS] || [];
+  
+  if (domainKeywords.length === 0) return 50;
+
+  let matchCount = 0;
+  for (const keyword of domainKeywords) {
+    const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+    if (regex.test(content)) {
+      matchCount++;
+    }
+  }
+
+  return Math.min(100, Math.round((matchCount / domainKeywords.length) * 100));
+}
+
+/**
+ * Calculate skill match score (0-100)
+ */
+export function calculateSkillMatchScore(parsedData: ParsedResume): number {
+  const skills = parsedData.skills || [];
+  
+  if (skills.length === 0) return 0;
+  
+  if (skills.length <= 5) {
+    return Math.round((skills.length / 5) * 25);
+  } else if (skills.length <= 15) {
+    return 25 + Math.round(((skills.length - 5) / 10) * 25);
+  } else if (skills.length <= 30) {
+    return 50 + Math.round(((skills.length - 15) / 15) * 25);
+  } else {
+    return Math.min(100, 75 + Math.round(((skills.length - 30) / 20) * 25));
+  }
+}
+
+/**
+ * Calculate total years of experience
+ */
+function calculateTotalExperience(experience: ParsedResume['experience']): number {
+  if (!experience || experience.length === 0) return 0;
+
+  let totalMonths = 0;
+
+  for (const exp of experience) {
+    if (exp.duration) {
+      const yearMatch = exp.duration.match(/(\d+)\s*year/i);
+      const monthMatch = exp.duration.match(/(\d+)\s*month/i);
+      
+      const years = yearMatch ? parseInt(yearMatch[1]) : 0;
+      const months = monthMatch ? parseInt(monthMatch[1]) : 0;
+      
+      totalMonths += (years * 12) + months;
+    } else if (exp.startDate && exp.endDate) {
+      const start = new Date(exp.startDate);
+      const end = exp.endDate.toLowerCase() === 'present' ? new Date() : new Date(exp.endDate);
+      
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + 
+                          (end.getMonth() - start.getMonth());
+        totalMonths += Math.max(0, diffMonths);
+      }
+    }
+  }
+
+  return Math.round(totalMonths / 12 * 10) / 10;
+}
+
+/**
+ * Calculate experience score (0-100)
+ */
+export function calculateExperienceScore(parsedData: ParsedResume): number {
+  const experience = parsedData.experience || [];
+  
+  if (experience.length === 0) return 0;
+
+  const totalYears = calculateTotalExperience(experience);
+  
+  if (totalYears < 1) {
+    return Math.round(totalYears * 20);
+  } else if (totalYears < 3) {
+    return 20 + Math.round(((totalYears - 1) / 2) * 20);
+  } else if (totalYears < 5) {
+    return 40 + Math.round(((totalYears - 3) / 2) * 20);
+  } else if (totalYears < 10) {
+    return 60 + Math.round(((totalYears - 5) / 5) * 20);
+  } else {
+    return Math.min(100, 80 + Math.round(((totalYears - 10) / 10) * 20));
+  }
+}
+
+/**
+ * Calculate overall score (weighted average)
+ */
+export function calculateOverallScore(
+  domainScore: number,
+  skillScore: number,
+  experienceScore: number
+): number {
+  return Math.round((domainScore * 0.3) + (skillScore * 0.4) + (experienceScore * 0.3));
+}
+
+/**
+ * Calculate all scores for a resume
+ */
+export function calculateResumeScores(parsedData: ParsedResume) {
+  const primaryDomain = detectPrimaryDomain(parsedData);
+  const domainMatchScore = calculateDomainMatchScore(primaryDomain, parsedData);
+  const skillMatchScore = calculateSkillMatchScore(parsedData);
+  const experienceScore = calculateExperienceScore(parsedData);
+  const overallScore = calculateOverallScore(domainMatchScore, skillMatchScore, experienceScore);
+  const totalExperienceYears = calculateTotalExperience(parsedData.experience);
+
+  return {
+    primaryDomain,
+    domainMatchScore,
+    skillMatchScore,
+    experienceScore,
+    overallScore,
+    totalExperienceYears,
   };
 }

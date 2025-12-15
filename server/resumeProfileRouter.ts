@@ -3,6 +3,7 @@ import { router, protectedProcedure } from "./_core/trpc";
 import * as db from "./db";
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
+import { calculateResumeScores } from "./resumeRanking";
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -49,9 +50,15 @@ export const resumeProfileRouter = router({
       
       // Parse resume with AI
       let parsedData = null;
+      let scores = null;
       try {
         const resumeText = await extractResumeText(buffer, mimeType);
         parsedData = await parseResumeWithAI(resumeText);
+        
+        // Calculate ranking scores
+        if (parsedData) {
+          scores = calculateResumeScores(parsedData);
+        }
       } catch (error) {
         console.error('Resume parsing failed:', error);
       }
@@ -59,7 +66,7 @@ export const resumeProfileRouter = router({
       // Check if this is the first profile (make it default)
       const isDefault = count === 0;
       
-      // Create resume profile
+      // Create resume profile with scores
       await db.createResumeProfile({
         candidateId,
         profileName,
@@ -67,6 +74,12 @@ export const resumeProfileRouter = router({
         resumeFileKey: fileKey,
         resumeFilename: fileName,
         parsedData: parsedData ? JSON.stringify(parsedData) : null,
+        domainMatchScore: scores?.domainMatchScore || 0,
+        skillMatchScore: scores?.skillMatchScore || 0,
+        experienceScore: scores?.experienceScore || 0,
+        overallScore: scores?.overallScore || 0,
+        primaryDomain: scores?.primaryDomain || null,
+        totalExperienceYears: scores?.totalExperienceYears || 0,
         isDefault,
         uploadedAt: new Date(),
       });

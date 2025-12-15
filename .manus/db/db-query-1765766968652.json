@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE resumeProfiles \nADD COLUMN domainMatchScore INT DEFAULT 0,\nADD COLUMN skillMatchScore INT DEFAULT 0,\nADD COLUMN experienceScore INT DEFAULT 0,\nADD COLUMN overallScore INT DEFAULT 0,\nADD COLUMN primaryDomain VARCHAR(100),\nADD COLUMN totalExperienceYears INT DEFAULT 0;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE resumeProfiles \nADD COLUMN domainMatchScore INT DEFAULT 0,\nADD COLUMN skillMatchScore INT DEFAULT 0,\nADD COLUMN experienceScore INT DEFAULT 0,\nADD COLUMN overallScore INT DEFAULT 0,\nADD COLUMN primaryDomain VARCHAR(100),\nADD COLUMN totalExperienceYears INT DEFAULT 0;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3154
+}

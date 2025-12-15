@@ -98,6 +98,13 @@ export const resumeProfiles = mysqlTable("resumeProfiles", {
   resumeFileKey: varchar("resumeFileKey", { length: 500 }).notNull(), // S3 key for file management
   resumeFilename: varchar("resumeFilename", { length: 255 }).notNull(),
   parsedData: text("parsedData"), // Full ParsedResume JSON from AI parsing
+  // Ranking and matching scores
+  domainMatchScore: int("domainMatchScore").default(0), // 0-100 percentage
+  skillMatchScore: int("skillMatchScore").default(0), // 0-100 percentage
+  experienceScore: int("experienceScore").default(0), // 0-100 based on years and relevance
+  overallScore: int("overallScore").default(0), // 0-100 weighted average
+  primaryDomain: varchar("primaryDomain", { length: 100 }), // e.g., "Software Development", "Data Science"
+  totalExperienceYears: int("totalExperienceYears").default(0),
   isDefault: boolean("isDefault").default(false).notNull(),
   uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
