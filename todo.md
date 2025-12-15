@@ -1998,3 +1998,17 @@
 - [x] Create InterviewQuestionsSection component with tRPC query
 - [x] Test interview prep section with real data
 - [x] Save checkpoint
+
+
+## Skill-Based Job Recommendations Widget (COMPLETED ✅)
+- [x] Create backend API endpoint for skill-based job matching
+- [x] Extract candidate's top 5 skills from resume profile
+- [x] Calculate skill match percentage for each job
+- [x] Sort jobs by skill match score
+- [x] Build SkillBasedJobsWidget UI component
+- [x] Display jobs with skill match percentage badges
+- [x] Show matched skills as badges under each job
+- [x] Add "View All" link to browse more jobs
+- [x] Integrate widget into candidate dashboard overview
+- [x] Test skill-based matching algorithm
+- [x] Save checkpoint

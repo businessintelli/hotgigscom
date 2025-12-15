@@ -398,6 +398,9 @@ function DashboardOverview({ stats, applications, interviews }: any) {
         <MatchingJobsCard />
       </div>
 
+      {/* Skill-Based Job Matches */}
+      <SkillBasedJobsCard />
+
       {/* Browse Jobs */}
       <BrowseJobsCard />
     </div>
@@ -968,6 +971,100 @@ function MatchingJobsCard() {
         </div>
       )}
     </>
+  );
+}
+
+// Skill-Based Jobs Card Component
+function SkillBasedJobsCard() {
+  const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { data: candidate } = trpc.candidate.getByUserId.useQuery(
+    { userId: user?.id || 0 },
+    { enabled: !!user?.id }
+  );
+  
+  // Get skill-based job matches
+  const { data: skillBasedJobs, isLoading } = trpc.candidate.getSkillBasedJobs.useQuery(
+    { candidateId: candidate?.id || 0, limit: 8 },
+    { enabled: !!candidate?.id }
+  );
+
+  if (!skillBasedJobs || skillBasedJobs.length === 0) {
+    return null; // Don't show widget if no skill matches
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-blue-500" />
+              Jobs Matching Your Skills
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">
+              Positions that require your top skills
+            </p>
+          </div>
+          <Button variant="link" onClick={() => setLocation("/jobs")}>
+            View All →
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-center text-gray-500 py-8">Loading skill matches...</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {skillBasedJobs.map((job: any) => (
+              <div 
+                key={job.id} 
+                className="p-4 border rounded-lg hover:border-primary transition-colors cursor-pointer"
+                onClick={() => setLocation(`/jobs/${job.id}`)}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h4 className="font-semibold">{job.title}</h4>
+                    <p className="text-sm text-gray-600">{job.company}</p>
+                  </div>
+                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                    {job.skillMatchPercentage}% Skills Match
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                  <MapPin className="h-4 w-4" />
+                  {job.location}
+                </div>
+                
+                {job.matchedSkills && job.matchedSkills.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-2">Your matching skills:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {job.matchedSkills.slice(0, 3).map((skill: string, idx: number) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                      {job.matchedSkills.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{job.matchedSkills.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <DollarSign className="h-4 w-4" />
+                  {job.salaryRange || "Competitive"}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

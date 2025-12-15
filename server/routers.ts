@@ -769,6 +769,16 @@ export const appRouter = router({
         return await getMatchingJobsForCandidate(input.candidateId, input.limit);
       }),
     
+    getSkillBasedJobs: protectedProcedure
+      .input(z.object({ 
+        candidateId: z.number(),
+        limit: z.number().optional().default(10)
+      }))
+      .query(async ({ input }) => {
+        const { getSkillBasedJobs } = await import('./skillBasedMatching');
+        return await getSkillBasedJobs(input.candidateId, input.limit);
+      }),
+    
     saveJob: protectedProcedure
       .input(z.object({ candidateId: z.number(), jobId: z.number() }))
       .mutation(async ({ input }) => {
