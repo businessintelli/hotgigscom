@@ -387,10 +387,26 @@ export const appRouter = router({
         companyName: z.string().optional(),
         phoneNumber: z.string().optional(),
         bio: z.string().optional(),
+        emailDigestFrequency: z.enum(['never', 'daily', 'weekly']).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
         await db.updateRecruiter(id, data);
+        return { success: true };
+      }),
+    
+    updateDigestPreferences: protectedProcedure
+      .input(z.object({
+        frequency: z.enum(['never', 'daily', 'weekly']),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        
+        await db.updateRecruiter(recruiter.id, {
+          emailDigestFrequency: input.frequency,
+        });
+        
         return { success: true };
       }),
     

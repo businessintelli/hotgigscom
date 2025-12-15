@@ -1874,3 +1874,40 @@
 - [x] Show interview scores and evaluator comments
 - [x] Add visual separator between application and interview feedback
 - [x] Test all features and save checkpoint
+
+
+## Email Digest System (COMPLETED ✅)
+- [x] Create email digest preferences in recruiter settings
+- [x] Add digest frequency options (daily, weekly, never)
+- [x] Create email template for recruiter digest
+- [x] Include new applications count in digest
+- [x] Include top-rated candidates (4+ stars) in digest
+- [x] Include upcoming interviews in digest
+- [x] Create backend logic to generate and send digests
+- [x] Add settings page for recruiters to configure preferences
+- [x] Add API endpoints for updating digest preferences
+- [ ] Create scheduled job to send digests (requires cron setup)
+- [ ] Test digest email generation and delivery
+
+## Candidate Pipeline Kanban Board (IN PROGRESS 🔄)
+- [ ] Create pipeline stages (Applied, Screening, Interview, Offer, Hired, Rejected)
+- [ ] Build kanban board UI with columns for each stage
+- [ ] Implement drag-and-drop functionality between stages
+- [ ] Update application status when card is moved
+- [ ] Add candidate card with key info (name, score, applied date)
+- [ ] Show candidate count per stage
+- [ ] Add filters for job position and date range
+- [ ] Create pipeline analytics (conversion rates per stage)
+- [ ] Test drag-and-drop and status updates
+
+## Automated Interview Scheduling (IN PROGRESS 🔄)
+- [ ] Create recruiter availability calendar settings
+- [ ] Add time slot configuration (duration, buffer time)
+- [ ] Build candidate-facing booking page
+- [ ] Show available time slots to candidates
+- [ ] Allow candidates to select and confirm slots
+- [ ] Send confirmation emails to both parties
+- [ ] Add calendar invite attachments (ICS format)
+- [ ] Implement cancellation and rescheduling
+- [ ] Add Google Calendar integration (optional)
+- [ ] Test complete scheduling flow

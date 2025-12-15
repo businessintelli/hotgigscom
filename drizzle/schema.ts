@@ -37,6 +37,8 @@ export const recruiters = mysqlTable("recruiters", {
   bio: text("bio"),
   profileCompleted: boolean("profileCompleted").default(false).notNull(),
   profileCompletionStep: int("profileCompletionStep").default(0).notNull(),
+  emailDigestFrequency: mysqlEnum("emailDigestFrequency", ["never", "daily", "weekly"]).default("weekly"),
+  lastDigestSentAt: timestamp("lastDigestSentAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
