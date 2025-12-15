@@ -2291,3 +2291,11 @@
 - [x] Fix recruiter interview playback page - add RecruiterLayout with sidebar
 - [x] Add interview rescheduling for candidates from calendar event details
 - [x] Add AI interview preparation tips for candidates in calendar event details
+
+## GitHub Commit & Deployment Documentation
+- [ ] Commit entire codebase to GitHub repository
+- [ ] Create standalone server setup documentation
+- [ ] Create AWS deployment documentation
+- [ ] Create GCP deployment documentation
+- [ ] Create Azure deployment documentation
+- [ ] Include all dependencies with proper versions
