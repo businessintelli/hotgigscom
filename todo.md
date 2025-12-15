@@ -1606,3 +1606,17 @@
 - [x] Fixed by updating role in database
 - [x] Login now works - user successfully redirected to recruiter dashboard
 - [ ] TODO: Fix signup process to correctly set role based on user type selection
+
+
+## Signup Role Assignment Fix (COMPLETED ✅)
+- [x] Investigate signup flow to identify where role is being set incorrectly
+- [x] Check SignUp.tsx - confirmed role selection is being passed correctly
+- [x] Check signup endpoint in routers.ts - confirmed role is received
+- [x] ROOT CAUSE: authService.signUp was not setting role field in db.upsertUser call
+- [x] Fix backend signup logic - added role: data.role to upsertUser call
+- [x] Frontend signup form already properly passes role selection
+- [x] Test recruiter signup flow - verified role set to 'recruiter' in database
+- [x] Test candidate signup flow - verified role set to 'candidate' in database
+- [x] Verify new users immediately access correct onboarding after signup
+- [x] Confirmed recruiter redirects to /recruiter/onboarding
+- [x] Confirmed candidate redirects to /candidate/onboarding

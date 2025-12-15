@@ -61,13 +61,14 @@ export async function signUp(data: SignUpData, baseUrl: string): Promise<{ succe
   const verificationToken = generateVerificationToken();
   const verificationTokenExpiry = generateTokenExpiry(24); // 24 hours
 
-  // Create user
+  // Create user with correct role
   const user = await db.upsertUser({
     openId: null,
     name: data.name,
     email: data.email,
     passwordHash,
     loginMethod: 'email',
+    role: data.role, // Set role based on signup selection
     emailVerified: false,
     verificationToken,
     verificationTokenExpiry,
@@ -78,8 +79,6 @@ export async function signUp(data: SignUpData, baseUrl: string): Promise<{ succe
   if (!createdUser) {
     throw new Error('Failed to create user');
   }
-
-  // Note: User role will be determined by profile existence
 
   // Create role-specific profile
   if (data.role === 'recruiter') {
