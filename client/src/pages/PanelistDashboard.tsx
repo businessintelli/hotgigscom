@@ -7,13 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar, Clock, Video, MapPin, User, Briefcase, 
-  CheckCircle, XCircle, MessageSquare, Loader2, Building
+  CheckCircle, XCircle, MessageSquare, Loader2, Building, RefreshCw
 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Link } from "wouter";
 
 export default function PanelistDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [selectedInterview, setSelectedInterview] = useState<any>(null);
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [preferredDate1, setPreferredDate1] = useState("");
+  const [preferredDate2, setPreferredDate2] = useState("");
+  const [preferredDate3, setPreferredDate3] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get panelist's interviews
   const { data: interviews, isLoading } = (trpc as any).interview.getPanelistInterviews?.useQuery(
@@ -30,6 +42,60 @@ export default function PanelistDashboard() {
   ) || [];
 
   const pendingFeedback = pastInterviews.filter((i: any) => !i.feedbackSubmitted) || [];
+
+  // Reschedule request mutation
+  const createRescheduleMutation = (trpc as any).reschedule?.createRequest?.useMutation({
+    onSuccess: () => {
+      toast.success("Reschedule request submitted successfully");
+      setRescheduleModalOpen(false);
+      resetRescheduleForm();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to submit request: ${error.message}`);
+    },
+  }) || { mutateAsync: async () => {}, isPending: false };
+
+  const resetRescheduleForm = () => {
+    setRescheduleReason("");
+    setPreferredDate1("");
+    setPreferredDate2("");
+    setPreferredDate3("");
+    setSelectedInterview(null);
+  };
+
+  const handleRequestReschedule = (interview: any) => {
+    setSelectedInterview(interview);
+    setRescheduleModalOpen(true);
+  };
+
+  const handleSubmitReschedule = async () => {
+    if (!rescheduleReason.trim()) {
+      toast.error("Please provide a reason for rescheduling");
+      return;
+    }
+    if (!preferredDate1) {
+      toast.error("Please provide at least one preferred date/time");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createRescheduleMutation.mutateAsync({
+        interviewId: selectedInterview.id,
+        panelistId: selectedInterview.panelistId,
+        reason: rescheduleReason,
+        preferredTimes: [
+          preferredDate1,
+          preferredDate2,
+          preferredDate3,
+        ].filter(Boolean),
+      });
+    } catch (error) {
+      console.error("Reschedule request failed:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -228,15 +294,26 @@ export default function PanelistDashboard() {
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          {interview.meetingLink && (
-                            <Button asChild>
-                              <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer">
-                                <Video className="h-4 w-4 mr-2" />
-                                Join
-                              </a>
-                            </Button>
-                          )}
+                        <div className="flex flex-col gap-2">
+                          <div className="flex gap-2">
+                            {interview.meetingLink && (
+                              <Button asChild>
+                                <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer">
+                                  <Video className="h-4 w-4 mr-2" />
+                                  Join
+                                </a>
+                              </Button>
+                            )}
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleRequestReschedule(interview)}
+                            className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Request Reschedule
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -315,6 +392,99 @@ export default function PanelistDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Reschedule Request Modal */}
+      <Dialog open={rescheduleModalOpen} onOpenChange={setRescheduleModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Reschedule</DialogTitle>
+            <DialogDescription>
+              Submit a request to reschedule this interview. The recruiter will be notified and will propose alternative times.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedInterview && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="font-medium">{selectedInterview.jobTitle}</p>
+                <p className="text-sm text-gray-600">Candidate: {selectedInterview.candidateName}</p>
+                <p className="text-sm text-gray-600">
+                  Current: {formatDate(selectedInterview.scheduledAt)} at {formatTime(selectedInterview.scheduledAt)}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reason">Reason for Rescheduling *</Label>
+                <Textarea
+                  id="reason"
+                  placeholder="Please explain why you need to reschedule..."
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label>Preferred Alternative Times</Label>
+                <p className="text-sm text-gray-500">Provide up to 3 preferred date/times</p>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500 w-6">1.</span>
+                    <Input
+                      type="datetime-local"
+                      value={preferredDate1}
+                      onChange={(e) => setPreferredDate1(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500 w-6">2.</span>
+                    <Input
+                      type="datetime-local"
+                      value={preferredDate2}
+                      onChange={(e) => setPreferredDate2(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500 w-6">3.</span>
+                    <Input
+                      type="datetime-local"
+                      value={preferredDate3}
+                      onChange={(e) => setPreferredDate3(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitReschedule} 
+              disabled={isSubmitting}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Submit Request
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

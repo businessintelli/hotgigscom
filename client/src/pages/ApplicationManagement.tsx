@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video } from "lucide-react";
+import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ResumeViewer } from "@/components/ResumeViewer";
 import SkillMatrixDisplay from "@/components/SkillMatrixDisplay";
+import { SkillMatrixComparison } from "@/components/SkillMatrixComparison";
 
 export default function ApplicationManagement() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -250,6 +251,22 @@ export default function ApplicationManagement() {
               </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              {selectedJobId && filteredApplications.length >= 2 && (
+                <SkillMatrixComparison
+                  jobId={selectedJobId}
+                  candidates={filteredApplications.map((app: any) => ({
+                    id: app.candidateId,
+                    name: app.candidateName || app.candidate?.fullName || "Unknown",
+                    applicationId: app.id,
+                  }))}
+                  trigger={
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-purple-600 border-purple-300 hover:bg-purple-50">
+                      <BarChart3 className="h-4 w-4 mr-1" />
+                      <span className="hidden sm:inline">Compare Skills</span>
+                    </Button>
+                  }
+                />
+              )}
               <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
                 <Download className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Export</span>

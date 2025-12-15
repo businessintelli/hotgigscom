@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { Loader2, Search, Plus, Calendar, Video, Phone, MapPin, Clock, Edit, Trash2, CheckCircle, XCircle, Play, Users, ChevronDown, ChevronUp } from "lucide-react";
 import InterviewPanelSection from "@/components/InterviewPanelSection";
 import { PanelFeedbackSummary } from "@/components/PanelFeedbackSummary";
+import { FeedbackPDFPreview } from "@/components/FeedbackPDFPreview";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -347,6 +348,14 @@ export default function InterviewManagement() {
                             {interview.status === "completed" && (
                               <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                                 <PanelFeedbackSummary interviewId={interview.id} compact={true} />
+                                <div className="mt-2">
+                                  <FeedbackPDFPreview
+                                    interviewId={interview.id}
+                                    candidateName={candidate?.fullName}
+                                    jobTitle={job?.title}
+                                    interviewDate={interview.scheduledAt}
+                                  />
+                                </div>
                               </div>
                             )}
                             

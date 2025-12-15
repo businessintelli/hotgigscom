@@ -2002,3 +2002,10 @@
 - [x] Add skill matrix form to job application flow
 - [x] Display skill matrix in application management view
 - [x] Include skill matrix in customer submission/sharing
+
+
+## Enhancement Features (Current Session)
+- [x] Add "Request Reschedule" button to panelist interview view
+- [x] Create reschedule request modal with reason and preferred times
+- [x] Create PDF preview modal for feedback reports before download
+- [x] Build skill matrix comparison view to compare multiple candidates side-by-side
