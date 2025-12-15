@@ -1209,6 +1209,54 @@ export const appRouter = router({
         
         return { questions };
       }),
+    
+    // Feedback endpoints
+    createFeedback: protectedProcedure
+      .input(z.object({
+        applicationId: z.number(),
+        rating: z.number().min(1).max(5).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) {
+          throw new Error("Recruiter profile not found");
+        }
+        
+        await db.createApplicationFeedback({
+          applicationId: input.applicationId,
+          recruiterId: recruiter.id,
+          rating: input.rating,
+          notes: input.notes,
+        });
+        
+        return { success: true };
+      }),
+    
+    getFeedback: protectedProcedure
+      .input(z.object({ applicationId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getApplicationFeedback(input.applicationId);
+      }),
+    
+    updateFeedback: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        rating: z.number().min(1).max(5).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateApplicationFeedback(id, data);
+        return { success: true };
+      }),
+    
+    deleteFeedback: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteApplicationFeedback(input.id);
+        return { success: true };
+      }),
   }),
   
   interview: router({

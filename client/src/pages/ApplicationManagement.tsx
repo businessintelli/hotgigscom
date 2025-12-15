@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video } from "lucide-react";
+import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video, Star } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -43,6 +43,12 @@ export default function ApplicationManagement() {
   const [minDomainScore, setMinDomainScore] = useState(0);
   const [minSkillScore, setMinSkillScore] = useState(0);
   const [minExperienceScore, setMinExperienceScore] = useState(0);
+  
+  // Feedback state
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [feedbackApplicationId, setFeedbackApplicationId] = useState<number | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState<number>(0);
+  const [feedbackNotes, setFeedbackNotes] = useState("");
 
   const utils = trpc.useUtils();
 
@@ -99,6 +105,30 @@ export default function ApplicationManagement() {
       toast.error(`Failed to schedule interview: ${error.message}`);
     },
   });
+  
+  // Feedback mutation
+  const createFeedbackMutation = trpc.application.createFeedback.useMutation({
+    onSuccess: () => {
+      utils.application.list.invalidate();
+      setFeedbackDialogOpen(false);
+      setFeedbackRating(0);
+      setFeedbackNotes("");
+      toast.success("Feedback added successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to add feedback: ${error.message}`);
+    },
+  });
+  
+  const handleSubmitFeedback = () => {
+    if (!feedbackApplicationId) return;
+    
+    createFeedbackMutation.mutate({
+      applicationId: feedbackApplicationId,
+      rating: feedbackRating > 0 ? feedbackRating : undefined,
+      notes: feedbackNotes || undefined,
+    });
+  };
 
   if (authLoading || applicationsLoading) {
     return (
@@ -462,7 +492,17 @@ export default function ApplicationManagement() {
                   <Checkbox checked={true} onCheckedChange={handleSelectAll} />
                   <span className="font-medium">{selectedApplications.length} selected</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedApplications.length >= 2 && selectedApplications.length <= 5 && (
+                    <Button 
+                      size="sm" 
+                      variant="default"
+                      onClick={() => setLocation(`/recruiter/compare-candidates?ids=${selectedApplications.join(',')}`)}
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      Compare ({selectedApplications.length})
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("reviewing")}>
                     Mark as Reviewing
                   </Button>
@@ -669,9 +709,16 @@ export default function ApplicationManagement() {
                               Watch Video
                             </Button>
                           )}
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setFeedbackApplicationId(application.id);
+                              setFeedbackDialogOpen(true);
+                            }}
+                          >
                             <MessageSquare className="h-4 w-4 mr-1" />
-                            Message
+                            Add Feedback
                           </Button>
                           <Button variant="outline" size="sm">
                             <Share2 className="h-4 w-4 mr-1" />
@@ -894,6 +941,68 @@ export default function ApplicationManagement() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setVideoDialogOpen(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Feedback Dialog */}
+      <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Feedback</DialogTitle>
+            <DialogDescription>
+              Add your notes and rating for this application
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Star Rating */}
+            <div className="space-y-2">
+              <Label>Rating (Optional)</Label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFeedbackRating(star)}
+                    className="focus:outline-none"
+                  >
+                    <Star
+                      className={`h-8 w-8 ${
+                        star <= feedbackRating
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="feedback-notes">Notes</Label>
+              <Textarea
+                id="feedback-notes"
+                placeholder="Add your private notes about this candidate..."
+                value={feedbackNotes}
+                onChange={(e) => setFeedbackNotes(e.target.value)}
+                rows={5}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitFeedback}
+              disabled={createFeedbackMutation.isPending || (!feedbackRating && !feedbackNotes)}
+            >
+              {createFeedbackMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save Feedback
             </Button>
           </DialogFooter>
         </DialogContent>

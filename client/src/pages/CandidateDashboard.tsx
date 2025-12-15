@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Briefcase, FileText, Eye, TrendingUp, Upload, Search, Users, MessageSquare, Loader2, Heart } from "lucide-react";
+import { Briefcase, FileText, Eye, TrendingUp, Upload, Search, Users, MessageSquare, Loader2, Heart, User, LogOut, Settings } from "lucide-react";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { useState, useRef, useEffect } from "react";
@@ -194,9 +194,62 @@ function CandidateDashboardContent() {
           <div className="flex items-center gap-2 sm:gap-4">
             <NotificationBell />
             <span className="text-xs sm:text-sm text-gray-600 hidden md:inline">Welcome, {candidate?.fullName || user.name}</span>
-            <Button variant="outline" size="sm" onClick={() => setLocation("/")}>
-              Logout
-            </Button>
+            
+            {/* Profile Menu */}
+            <div className="relative group">
+              <button className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+                  {(candidate?.fullName || user.name || 'U').charAt(0).toUpperCase()}
+                </div>
+              </button>
+              
+              {/* Dropdown Menu */}
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="p-3 border-b">
+                  <p className="font-semibold text-sm">{candidate?.fullName || user.name}</p>
+                  <p className="text-xs text-gray-600">{user.email}</p>
+                </div>
+                <div className="py-2">
+                  <button
+                    onClick={() => setIsEditingProfile(true)}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={() => setLocation("/candidate/my-resumes")}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    My Resumes
+                  </button>
+                  <button
+                    onClick={() => setLocation("/my-applications")}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    My Applications
+                  </button>
+                  <button
+                    onClick={() => setLocation("/saved-jobs")}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Heart className="h-4 w-4" />
+                    Saved Jobs
+                  </button>
+                </div>
+                <div className="border-t py-2">
+                  <button
+                    onClick={() => setLocation("/")}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -480,7 +533,7 @@ function CandidateDashboardContent() {
             )}
 
             {/* Recommended Jobs */}
-            <Card>
+            <Card id="recommended-jobs">
               <CardHeader>
                 <CardTitle>Recommended Jobs</CardTitle>
                 <CardDescription>Jobs matching your profile</CardDescription>
@@ -563,6 +616,22 @@ function CandidateDashboardContent() {
                 >
                   <Search className="mr-2 h-4 w-4" />
                   Search Jobs
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
+                  onClick={() => {
+                    // Scroll to recommended jobs section
+                    document.getElementById('recommended-jobs')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  <TrendingUp className="mr-2 h-4 w-4 text-blue-600" />
+                  <span className="flex-1 text-left">Recommended Jobs</span>
+                  {recommendedJobs && recommendedJobs.length > 0 && (
+                    <span className="ml-auto px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+                      {recommendedJobs.length}
+                    </span>
+                  )}
                 </Button>
                 <Button
                   variant="outline"
