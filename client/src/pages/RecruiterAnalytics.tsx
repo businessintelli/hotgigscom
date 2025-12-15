@@ -3,11 +3,13 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, TrendingUp, Users, Clock, Target } from "lucide-react";
+import { Download, TrendingUp, Users, Clock, Target, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function RecruiterAnalytics() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [timeRange, setTimeRange] = useState<"7" | "30" | "90" | "365">("30");
   
   const { data: analytics, isLoading } = trpc.recruiter.getAnalytics.useQuery({
@@ -76,6 +78,14 @@ export default function RecruiterAnalytics() {
   return (
     <div className="container py-8 space-y-6">
       {/* Header */}
+      <Button 
+        onClick={() => setLocation('/recruiter/dashboard')}
+        variant="ghost"
+        className="mb-4"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </Button>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Recruiter Analytics</h1>

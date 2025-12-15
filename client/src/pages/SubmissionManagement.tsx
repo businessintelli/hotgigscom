@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { Search, User, Briefcase, Calendar, CheckCircle, Clock, XCircle, Eye } from "lucide-react";
+import { Search, User, Briefcase, Calendar, CheckCircle, Clock, XCircle, Eye, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 export default function SubmissionManagement() {
@@ -65,6 +65,14 @@ function SubmissionManagementContent() {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="container mx-auto py-8">
+          <Button 
+            onClick={() => setLocation('/recruiter/dashboard')}
+            variant="ghost"
+            className="text-white hover:bg-white/10 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
           <div>
             <h1 className="text-3xl font-bold mb-2">Candidate Submissions</h1>
             <p className="text-blue-100">Track candidates submitted to clients</p>

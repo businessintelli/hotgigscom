@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { Plus, Search, Briefcase, MapPin, DollarSign, Calendar, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Briefcase, MapPin, DollarSign, Calendar, Edit, Trash2, Eye, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 export default function JobManagement() {
@@ -48,6 +48,14 @@ function JobManagementContent() {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="container mx-auto py-8">
+          <Button 
+            onClick={() => setLocation('/recruiter/dashboard')}
+            variant="ghost"
+            className="text-white hover:bg-white/10 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold mb-2">Job Management</h1>

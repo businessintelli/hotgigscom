@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Briefcase, Mail, Phone, FileText, SlidersHorizontal, X, Save, Bookmark, Bell, Trash2 } from "lucide-react";
+import { Search, MapPin, Briefcase, Mail, Phone, FileText, SlidersHorizontal, X, Save, Bookmark, Bell, Trash2, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useLocation } from "wouter";
 
 export default function CandidateSearch() {
+  const [, navigate] = useLocation();
   const [keyword, setKeyword] = useState("");
   const [location, setLocation] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("all");
@@ -91,6 +93,14 @@ export default function CandidateSearch() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto py-8">
+        <Button 
+          onClick={() => navigate('/recruiter/dashboard')}
+          variant="ghost"
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-slate-900 mb-2">Candidate Search</h1>
