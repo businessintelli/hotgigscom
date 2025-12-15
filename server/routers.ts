@@ -311,17 +311,13 @@ export const appRouter = router({
         }
         
         // Mark email as verified and clear token
-        await db.upsertUser({
-          openId: user.openId,
-          name: user.name,
-          email: user.email,
-          passwordHash: user.passwordHash,
-          loginMethod: user.loginMethod,
-          lastSignedIn: user.lastSignedIn,
-          emailVerified: true,
-          verificationToken: null,
-          verificationTokenExpiry: null,
-        });
+        await dbInstance.update(users)
+          .set({
+            emailVerified: true,
+            verificationToken: null,
+            verificationTokenExpiry: null,
+          })
+          .where(eq(users.id, user.id));
         
         return { success: true, message: 'Email verified successfully!' };
       }),

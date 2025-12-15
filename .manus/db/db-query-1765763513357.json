@@ -1,0 +1,37 @@
+{
+  "query": "SELECT id, email, name, emailVerified, verificationToken, openId, loginMethod FROM users WHERE email = 'bhimireddy@gmail.com' ORDER BY id DESC LIMIT 3",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SELECT id, email, name, emailVerified, verificationToken, openId, loginMethod FROM users WHERE email = 'bhimireddy@gmail.com' ORDER BY id DESC LIMIT 3",
+  "rows": [
+    {
+      "id": "540004",
+      "email": "bhimireddy@gmail.com",
+      "name": "pratap bhimireddy",
+      "emailVerified": "1",
+      "verificationToken": "NULL",
+      "openId": "NULL",
+      "loginMethod": "email"
+    },
+    {
+      "id": "540003",
+      "email": "bhimireddy@gmail.com",
+      "name": "pratap bhimireddy",
+      "emailVerified": "0",
+      "verificationToken": "118f96a3d2cf94cfd72aae48f10902cd62f24ae82ffd9f9aab813eb546827b1c",
+      "openId": "NULL",
+      "loginMethod": "email"
+    },
+    {
+      "id": "540002",
+      "email": "bhimireddy@gmail.com",
+      "name": "pratap bhimireddy",
+      "emailVerified": "1",
+      "verificationToken": "NULL",
+      "openId": "NULL",
+      "loginMethod": "email"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tname\temailVerified\tverificationToken\topenId\tloginMethod\n540004\tbhimireddy@gmail.com\tpratap bhimireddy\t1\tNULL\tNULL\temail\n540003\tbhimireddy@gmail.com\tpratap bhimireddy\t0\t118f96a3d2cf94cfd72aae48f10902cd62f24ae82ffd9f9aab813eb546827b1c\tNULL\temail\n540002\tbhimireddy@gmail.com\tpratap bhimireddy\t1\tNULL\tNULL\temail\n",
+  "stderr": "",
+  "execution_time_ms": 1914
+}

@@ -1643,3 +1643,13 @@
 - [x] Confirmed SendGrid/Resend API keys are configured
 - [x] Verified emails now sent through proper email service with HTML support
 - [ ] User to test: Sign up with new account and verify HTML email displays correctly
+
+
+## Email Verification Flow Bug (COMPLETED ✅)
+- [x] Investigate why users still see /verification-required after clicking verification link
+- [x] Check VerifyEmail page component and endpoint
+- [x] Verify emailVerified field is being updated in database
+- [x] Fix verification endpoint to properly update user status (changed from upsertUser to direct UPDATE query)
+- [x] Fixed issue where upsertUser was creating duplicate users for email/password accounts
+- [x] Cleaned up duplicate user records
+- [ ] User to test: Log out, log back in, and verify dashboard access works
