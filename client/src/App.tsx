@@ -43,6 +43,7 @@ import MyResumes from "./pages/MyResumesNew";
 import ResumeDetail from "./pages/ResumeDetail";
 import CandidateResumeView from "./pages/CandidateResumeView";
 import CandidateComparison from "./pages/CandidateComparison";
+import FeedbackAnalytics from "./pages/FeedbackAnalytics";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -94,7 +95,8 @@ function Router() {
       <Route path="/recruiter/active-associates" component={ActiveAssociates} />
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
       <Route path="/recruiter/candidate-resume/:id" component={CandidateResumeView} />
-      <Route path="/recruiter/compare-candidates" component={CandidateComparison} />
+          <Route path="/recruiter/compare-candidates" component={CandidateComparison} />
+          <Route path="/recruiter/feedback-analytics" component={FeedbackAnalytics} />
       <Route path="/select-role" component={SelectRole} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />

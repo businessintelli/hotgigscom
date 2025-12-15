@@ -838,3 +838,21 @@ export const applicationFeedback = mysqlTable("applicationFeedback", {
 
 export type ApplicationFeedback = typeof applicationFeedback.$inferSelect;
 export type InsertApplicationFeedback = typeof applicationFeedback.$inferInsert;
+
+
+/**
+ * Feedback templates for quick feedback entry
+ */
+export const feedbackTemplates = mysqlTable("feedbackTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(), // 'positive', 'neutral', 'negative'
+  rating: int("rating"), // Suggested rating (1-5)
+  notes: text("notes").notNull(),
+  isDefault: boolean("isDefault").default(true).notNull(), // System default or custom
+  createdBy: int("createdBy").references(() => users.id), // null for system templates
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FeedbackTemplate = typeof feedbackTemplates.$inferSelect;
+export type InsertFeedbackTemplate = typeof feedbackTemplates.$inferInsert;

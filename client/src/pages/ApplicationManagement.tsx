@@ -45,10 +45,13 @@ export default function ApplicationManagement() {
   const [minExperienceScore, setMinExperienceScore] = useState(0);
   
   // Feedback state
-  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+    const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [feedbackApplicationId, setFeedbackApplicationId] = useState<number | null>(null);
-  const [feedbackRating, setFeedbackRating] = useState<number>(0);
-  const [feedbackNotes, setFeedbackNotes] = useState("");
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackNotes, setFeedbackNotes] = useState('');
+  const [bulkFeedbackDialogOpen, setBulkFeedbackDialogOpen] = useState(false);
+  const [bulkFeedbackRating, setBulkFeedbackRating] = useState(0);
+  const [bulkFeedbackNotes, setBulkFeedbackNotes] = useState('');
 
   const utils = trpc.useUtils();
 
@@ -279,6 +282,15 @@ export default function ApplicationManagement() {
               </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 sm:flex-none"
+                onClick={() => setLocation('/recruiter/feedback-analytics')}
+              >
+                <TrendingUp className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Analytics</span>
+              </Button>
               <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
                 <Download className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Export</span>
@@ -503,6 +515,14 @@ export default function ApplicationManagement() {
                       Compare ({selectedApplications.length})
                     </Button>
                   )}
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setBulkFeedbackDialogOpen(true)}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Add Feedback to All
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => handleBulkStatusUpdate("reviewing")}>
                     Mark as Reviewing
                   </Button>
@@ -706,6 +726,65 @@ export default function ApplicationManagement() {
                                   </div>
                                   {fb.notes && (
                                     <p className="text-xs text-gray-700 mt-1">{fb.notes}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Interview Feedback */}
+                        {application.interviews && application.interviews.length > 0 && (
+                          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <Video className="h-4 w-4 text-blue-600" />
+                                Interview History ({application.interviews.length})
+                              </h4>
+                            </div>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {application.interviews.map((interview: any) => (
+                                <div key={interview.interview.id} className="p-2 bg-white rounded border border-blue-100">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className="text-xs">
+                                        {interview.interview.type || 'Interview'}
+                                      </Badge>
+                                      {interview.interview.status && (
+                                        <Badge 
+                                          className={`text-xs ${
+                                            interview.interview.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                            interview.interview.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-gray-100 text-gray-700'
+                                          }`}
+                                        >
+                                          {interview.interview.status}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {new Date(interview.interview.scheduledAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  {interview.interview.feedback && (
+                                    <p className="text-xs text-gray-700 mt-1">{interview.interview.feedback}</p>
+                                  )}
+                                  {interview.interview.rating && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <span className="text-xs text-gray-600">Rating:</span>
+                                      <div className="flex gap-0.5">
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                          <Star
+                                            key={i}
+                                            className={`h-3 w-3 ${
+                                              i < interview.interview.rating
+                                                ? 'fill-yellow-400 text-yellow-400'
+                                                : 'text-gray-300'
+                                            }`}
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
                               ))}
@@ -1002,6 +1081,46 @@ export default function ApplicationManagement() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {/* Template Selector */}
+            <div className="space-y-2">
+              <Label>Quick Templates</Label>
+              <Select onValueChange={(value) => {
+                const templates: Record<string, {rating: number, notes: string}> = {
+                  'excellent_culture': { rating: 5, notes: 'Outstanding cultural alignment. Demonstrates strong values match with our company culture and team dynamics.' },
+                  'strong_technical': { rating: 5, notes: 'Impressive technical expertise. Shows deep understanding of required technologies and best practices.' },
+                  'great_communication': { rating: 4, notes: 'Excellent communication skills. Clear, articulate, and professional in all interactions.' },
+                  'leadership': { rating: 5, notes: 'Demonstrates strong leadership qualities. Shows initiative, decision-making ability, and team management skills.' },
+                  'solid_candidate': { rating: 3, notes: 'Good overall candidate. Meets most requirements with room for growth in specific areas.' },
+                  'needs_experience': { rating: 3, notes: 'Shows potential but requires additional experience in key areas before being ready for this role.' },
+                  'overqualified': { rating: 3, notes: 'Candidate exceeds requirements significantly. May seek more challenging opportunities quickly.' },
+                  'skills_gap': { rating: 2, notes: 'Significant gap in required skills. Would need extensive training to meet role requirements.' },
+                  'communication_concerns': { rating: 2, notes: 'Communication skills below expectations. May impact team collaboration and client interactions.' },
+                  'not_culture_fit': { rating: 2, notes: "Values and work style don't align well with our company culture and team environment." },
+                };
+                const template = templates[value];
+                if (template) {
+                  setFeedbackRating(template.rating);
+                  setFeedbackNotes(template.notes);
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excellent_culture">✅ Excellent Culture Fit</SelectItem>
+                  <SelectItem value="strong_technical">✅ Strong Technical Skills</SelectItem>
+                  <SelectItem value="great_communication">✅ Great Communication</SelectItem>
+                  <SelectItem value="leadership">✅ Leadership Potential</SelectItem>
+                  <SelectItem value="solid_candidate">➖ Solid Candidate</SelectItem>
+                  <SelectItem value="needs_experience">➖ Needs More Experience</SelectItem>
+                  <SelectItem value="overqualified">➖ Overqualified</SelectItem>
+                  <SelectItem value="skills_gap">❌ Skills Gap</SelectItem>
+                  <SelectItem value="communication_concerns">❌ Communication Concerns</SelectItem>
+                  <SelectItem value="not_culture_fit">❌ Not a Culture Fit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             {/* Star Rating */}
             <div className="space-y-2">
               <Label>Rating (Optional)</Label>
@@ -1048,6 +1167,132 @@ export default function ApplicationManagement() {
             >
               {createFeedbackMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save Feedback
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Bulk Feedback Dialog */}
+      <Dialog open={bulkFeedbackDialogOpen} onOpenChange={setBulkFeedbackDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Feedback to Multiple Candidates</DialogTitle>
+            <DialogDescription>
+              Add the same feedback to {selectedApplications.length} selected candidates
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Template Selector */}
+            <div className="space-y-2">
+              <Label>Quick Templates</Label>
+              <Select onValueChange={(value) => {
+                const templates: Record<string, {rating: number, notes: string}> = {
+                  'excellent_culture': { rating: 5, notes: 'Outstanding cultural alignment. Demonstrates strong values match with our company culture and team dynamics.' },
+                  'strong_technical': { rating: 5, notes: 'Impressive technical expertise. Shows deep understanding of required technologies and best practices.' },
+                  'great_communication': { rating: 4, notes: 'Excellent communication skills. Clear, articulate, and professional in all interactions.' },
+                  'leadership': { rating: 5, notes: 'Demonstrates strong leadership qualities. Shows initiative, decision-making ability, and team management skills.' },
+                  'solid_candidate': { rating: 3, notes: 'Good overall candidate. Meets most requirements with room for growth in specific areas.' },
+                  'needs_experience': { rating: 3, notes: 'Shows potential but requires additional experience in key areas before being ready for this role.' },
+                  'overqualified': { rating: 3, notes: 'Candidate exceeds requirements significantly. May seek more challenging opportunities quickly.' },
+                  'skills_gap': { rating: 2, notes: 'Significant gap in required skills. Would need extensive training to meet role requirements.' },
+                  'communication_concerns': { rating: 2, notes: 'Communication skills below expectations. May impact team collaboration and client interactions.' },
+                  'not_culture_fit': { rating: 2, notes: "Values and work style don't align well with our company culture and team environment." },
+                };
+                const template = templates[value];
+                if (template) {
+                  setBulkFeedbackRating(template.rating);
+                  setBulkFeedbackNotes(template.notes);
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excellent_culture">✅ Excellent Culture Fit</SelectItem>
+                  <SelectItem value="strong_technical">✅ Strong Technical Skills</SelectItem>
+                  <SelectItem value="great_communication">✅ Great Communication</SelectItem>
+                  <SelectItem value="leadership">✅ Leadership Potential</SelectItem>
+                  <SelectItem value="solid_candidate">➖ Solid Candidate</SelectItem>
+                  <SelectItem value="needs_experience">➖ Needs More Experience</SelectItem>
+                  <SelectItem value="overqualified">➖ Overqualified</SelectItem>
+                  <SelectItem value="skills_gap">❌ Skills Gap</SelectItem>
+                  <SelectItem value="communication_concerns">❌ Communication Concerns</SelectItem>
+                  <SelectItem value="not_culture_fit">❌ Not a Culture Fit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Star Rating */}
+            <div className="space-y-2">
+              <Label>Rating (Optional)</Label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setBulkFeedbackRating(star)}
+                    className="focus:outline-none"
+                  >
+                    <Star
+                      className={`h-8 w-8 ${
+                        star <= bulkFeedbackRating
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="bulk-feedback-notes">Notes</Label>
+              <Textarea
+                id="bulk-feedback-notes"
+                placeholder="Add notes that will apply to all selected candidates..."
+                value={bulkFeedbackNotes}
+                onChange={(e) => setBulkFeedbackNotes(e.target.value)}
+                rows={5}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkFeedbackDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (!bulkFeedbackRating && !bulkFeedbackNotes) return;
+                
+                try {
+                  // Add feedback to all selected applications
+                  await Promise.all(
+                    selectedApplications.map(appId =>
+                      createFeedbackMutation.mutateAsync({
+                        applicationId: appId,
+                        rating: bulkFeedbackRating || undefined,
+                        notes: bulkFeedbackNotes || undefined,
+                      })
+                    )
+                  );
+                  
+                  setBulkFeedbackDialogOpen(false);
+                  setBulkFeedbackRating(0);
+                  setBulkFeedbackNotes('');
+                  setSelectedApplications([]);
+                  
+                  toast.success(`Feedback added to ${selectedApplications.length} candidates`);
+                } catch (error) {
+                  toast.error('Failed to add bulk feedback');
+                }
+              }}
+              disabled={createFeedbackMutation.isPending || (!bulkFeedbackRating && !bulkFeedbackNotes)}
+            >
+              {createFeedbackMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Add to {selectedApplications.length} Candidates
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -623,10 +623,12 @@ export async function getAllApplications() {
     .leftJoin(resumeProfiles, eq(applications.resumeProfileId, resumeProfiles.id))
     .orderBy(desc(applications.submittedAt));
   
-  // Fetch feedback for all applications
+  // Fetch feedback and interviews for all applications
   const applicationsWithData = await Promise.all(
     results.map(async (row: any) => {
       const feedback = await getApplicationFeedback(row.applications.id);
+      const candidateInterviews = row.candidates ? await getInterviewsByCandidateId(row.candidates.id) : [];
+      
       return {
         ...row.applications,
         candidate: row.candidates,
@@ -634,6 +636,7 @@ export async function getAllApplications() {
         videoIntroduction: row.videoIntroductions,
         resumeProfile: row.resumeProfiles,
         feedback: feedback || [],
+        interviews: candidateInterviews || [],
       };
     })
   );
