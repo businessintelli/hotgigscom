@@ -20,6 +20,7 @@ import JobManagement from "@/pages/JobManagement";
 import SubmissionManagement from "@/pages/SubmissionManagement";
 import InterviewManagement from "@/pages/InterviewManagement";
 import RescheduleRequests from "@/pages/RescheduleRequests";
+import RescheduleConfirmation from "@/pages/RescheduleConfirmation";
 import InterviewPlayback from "@/pages/InterviewPlayback";
 import InterviewCalendar from "@/pages/InterviewCalendar";
 import AIInterviewPage from "@/pages/AIInterviewPage";
@@ -86,6 +87,7 @@ function Router() {
       <Route path="/recruiter/applications" component={ApplicationManagement} />
       <Route path="/recruiter/interviews" component={InterviewManagement} />
       <Route path="/recruiter/reschedule-requests" component={RescheduleRequests} />
+      <Route path="/reschedule/confirm" component={RescheduleConfirmation} />
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path="/recruiter/bulk-upload" component={BulkResumeUpload} />
        <Route path="/recruiter/interview-calendar" component={InterviewCalendar} />

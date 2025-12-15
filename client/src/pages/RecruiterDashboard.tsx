@@ -29,6 +29,7 @@ function RecruiterDashboardContent() {
   const { data: dashboardData, isLoading } = trpc.recruiter.getDashboardStats.useQuery();
   const { data: profile } = trpc.recruiter.getProfile.useQuery();
   const { data: completionStatus } = trpc.profileCompletion.getStatus.useQuery();
+  const { data: pendingReschedules } = (trpc as any).reschedule?.getPendingRequests?.useQuery() || { data: [] };
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -252,7 +253,7 @@ function RecruiterDashboardContent() {
                   <div className="text-xs opacity-90">Drag & drop to reschedule</div>
                 </div>
               </Button>
-              <Button onClick={() => setLocation('/recruiter/reschedule-requests')} className="h-20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
+              <Button onClick={() => setLocation('/recruiter/reschedule-requests')} className="h-20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white relative">
                 <div className="text-center">
                   <div className="text-lg font-semibold flex items-center justify-center">
                     <span className="mr-2">🔄</span>
@@ -260,6 +261,11 @@ function RecruiterDashboardContent() {
                   </div>
                   <div className="text-xs opacity-90">Manage panelist requests</div>
                 </div>
+                {pendingReschedules && pendingReschedules.filter((r: any) => r.status === 'pending').length > 0 && (
+                  <Badge className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                    {pendingReschedules.filter((r: any) => r.status === 'pending').length}
+                  </Badge>
+                )}
               </Button>
               <Button onClick={() => setLocation('/recruiter/search-candidates')} className="h-20 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white">
                 <div className="text-center">

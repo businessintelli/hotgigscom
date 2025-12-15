@@ -2021,3 +2021,9 @@
 - [x] Add reschedule requests link to recruiter sidebar navigation
 - [x] Implement panelist notifications when their reschedule request is approved/rejected/alternative proposed
 - [x] Add calendar integration to automatically update interview slots when reschedules are approved
+
+
+## More Enhancements (Current Session)
+- [x] Add notification badge to Reschedule Requests button showing pending count
+- [x] Create email template for candidates when their interview is rescheduled
+- [x] Add confirmation/decline links for panelists in alternative proposed emails

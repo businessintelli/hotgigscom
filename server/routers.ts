@@ -32,6 +32,7 @@ import { createVideoMeeting } from './videoMeetingService';
 import { panelPublicRouter } from './panelPublicRouter';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
+import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
 import { sendEmail } from './emailService';
 
 // Helper to generate random suffix for file keys
@@ -3299,6 +3300,11 @@ export const appRouter = router({
                     notes: input.notes,
                   });
                 } else if (input.status === 'alternative_proposed' && input.newInterviewTime) {
+                  // Generate confirmation/decline URLs for panelist
+                  const baseUrl = process.env.VITE_OAUTH_PORTAL_URL?.replace('/portal', '') || '';
+                  const confirmUrl = `${baseUrl}/reschedule/confirm?requestId=${input.requestId}&action=confirm`;
+                  const declineUrl = `${baseUrl}/reschedule/confirm?requestId=${input.requestId}&action=decline`;
+                  
                   emailContent = generateAlternativeProposedEmail({
                     panelistName,
                     candidateName,
@@ -3306,6 +3312,9 @@ export const appRouter = router({
                     originalDate,
                     proposedDate: new Date(input.newInterviewTime).toLocaleString(),
                     notes: input.notes,
+                    rescheduleRequestId: input.requestId,
+                    confirmUrl,
+                    declineUrl,
                   });
                 }
                 
@@ -3346,13 +3355,15 @@ export const appRouter = router({
                     scheduledAt: new Date(input.newInterviewTime),
                   });
                   
-                  // Create notification for the candidate about the rescheduled interview
+                  // Create notification and send email to the candidate about the rescheduled interview
                   const interviewDetails = await db.getInterviewById(interviewId);
                   if (interviewDetails) {
                     const application = await db.getApplicationById((interviewDetails as any).applicationId);
                     if (application) {
                       const candidate = await db.getCandidateById((application as any).candidateId);
+                      const job = await db.getJobById((application as any).jobId);
                       if (candidate) {
+                        // Create in-app notification
                         await db.createNotification({
                           userId: (candidate as any).userId,
                           type: 'interview_rescheduled',
@@ -3362,6 +3373,31 @@ export const appRouter = router({
                           relatedEntityId: interviewId,
                           actionUrl: `/candidate/dashboard`,
                         });
+                        
+                        // Send email to candidate
+                        const candidateUser = await db.getUserById((candidate as any).userId);
+                        if (candidateUser?.email) {
+                          const originalDate = new Date((interviewDetails as any).scheduledAt);
+                          const newDate = new Date(input.newInterviewTime);
+                          
+                          const emailData = generateInterviewRescheduledEmail({
+                            candidateName: candidateUser.name || candidateUser.email.split('@')[0],
+                            jobTitle: job?.title || 'Position',
+                            companyName: job?.companyName || undefined,
+                            originalDate: originalDate.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                            newDate: newDate.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                            interviewType: (interviewDetails as any).type || 'video',
+                            meetingLink: (interviewDetails as any).meetingLink || undefined,
+                            location: (interviewDetails as any).location || undefined,
+                            recruiterName: ctx.user.name || undefined,
+                          });
+                          
+                          await sendEmail({
+                            to: candidateUser.email,
+                            subject: emailData.subject,
+                            html: emailData.html,
+                          });
+                        }
                       }
                     }
                   }
@@ -3375,6 +3411,60 @@ export const appRouter = router({
         }
 
         return { success: true };
+      }),
+    
+    // Panelist confirms or declines proposed alternative time (from email link)
+    confirmAlternative: publicProcedure
+      .input(z.object({
+        requestId: z.number(),
+        action: z.enum(['confirm', 'decline']),
+      }))
+      .mutation(async ({ input }) => {
+        const { rescheduleRequests, interviews } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await db.getDb();
+        
+        if (!database) throw new Error('Database not available');
+        
+        // Get the request details
+        const [request] = await database
+          .select()
+          .from(rescheduleRequests)
+          .where(eq(rescheduleRequests.id, input.requestId))
+          .limit(1);
+        
+        if (!request) {
+          throw new Error('Reschedule request not found');
+        }
+        
+        if (request.status !== 'alternative_proposed') {
+          throw new Error('This request is no longer pending confirmation');
+        }
+        
+        if (input.action === 'confirm') {
+          // Update request status to approved
+          await database.update(rescheduleRequests).set({
+            status: 'approved',
+            resolvedAt: new Date(),
+          }).where(eq(rescheduleRequests.id, input.requestId));
+          
+          // Update the interview time if newInterviewTime was set
+          if (request.newInterviewTime) {
+            await database.update(interviews).set({
+              scheduledAt: request.newInterviewTime,
+            }).where(eq(interviews.id, request.interviewId));
+          }
+          
+          return { success: true, message: 'Alternative time confirmed. The interview has been rescheduled.' };
+        } else {
+          // Update request status to rejected
+          await database.update(rescheduleRequests).set({
+            status: 'rejected',
+            resolvedAt: new Date(),
+          }).where(eq(rescheduleRequests.id, input.requestId));
+          
+          return { success: true, message: 'Alternative time declined. The recruiter will be notified.' };
+        }
       }),
   }),
 

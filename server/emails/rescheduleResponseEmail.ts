@@ -181,6 +181,9 @@ export function generateAlternativeProposedEmail(data: {
   originalDate: string;
   proposedDate: string;
   notes?: string;
+  rescheduleRequestId?: number;
+  confirmUrl?: string;
+  declineUrl?: string;
 }): { subject: string; html: string; text: string } {
   const subject = `📅 Alternative Interview Time Proposed - ${data.jobTitle}`;
 
@@ -230,7 +233,15 @@ export function generateAlternativeProposedEmail(data: {
         </div>
         ` : ''}
         
+        ${data.confirmUrl && data.declineUrl ? `
+        <div style="text-align: center; margin: 30px 0;">
+          <p style="font-size: 14px; color: #64748b; margin-bottom: 15px;">Does this time work for you?</p>
+          <a href="${data.confirmUrl}" style="display: inline-block; background: #22c55e; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 500; margin: 0 10px;">✓ Confirm</a>
+          <a href="${data.declineUrl}" style="display: inline-block; background: #ef4444; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 500; margin: 0 10px;">✗ Decline</a>
+        </div>
+        ` : `
         <p style="font-size: 16px; margin-top: 20px;">Please confirm if this new time works for you by responding to this email or contacting the recruiter directly.</p>
+        `}
         
         <p style="font-size: 14px; color: #64748b; margin-top: 30px;">Thank you for your cooperation!</p>
       </div>
@@ -258,7 +269,11 @@ PROPOSED NEW TIME: ${data.proposedDate}
 
 ${data.notes ? `Note from recruiter: ${data.notes}` : ''}
 
-Please confirm if this new time works for you by responding to this email or contacting the recruiter directly.
+Please confirm if this new time works for you:
+${data.confirmUrl ? `- To CONFIRM: ${data.confirmUrl}` : ''}
+${data.declineUrl ? `- To DECLINE: ${data.declineUrl}` : ''}
+
+Or respond to this email or contact the recruiter directly.
 
 Thank you for your cooperation!
 
