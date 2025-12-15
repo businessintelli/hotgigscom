@@ -1013,3 +1013,31 @@ export const candidateSkillRatings = mysqlTable("candidate_skill_ratings", {
 
 export type CandidateSkillRating = typeof candidateSkillRatings.$inferSelect;
 export type InsertCandidateSkillRating = typeof candidateSkillRatings.$inferInsert;
+
+
+/**
+ * Candidate profile sharing - secure links for sharing profiles with clients
+ */
+export const candidateProfileShares = mysqlTable("candidate_profile_shares", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  sharedByUserId: int("sharedByUserId").notNull().references(() => users.id),
+  shareToken: varchar("shareToken", { length: 64 }).notNull().unique(),
+  recipientEmail: varchar("recipientEmail", { length: 320 }),
+  recipientName: varchar("recipientName", { length: 255 }),
+  customerId: int("customerId").references(() => customers.id), // Optional: link to client
+  jobId: int("jobId").references(() => jobs.id), // Optional: context for which job
+  matchScore: int("matchScore"), // Optional: include match score
+  includeResume: boolean("includeResume").default(true).notNull(),
+  includeVideo: boolean("includeVideo").default(true).notNull(),
+  includeContact: boolean("includeContact").default(false).notNull(), // Whether to show contact info
+  viewCount: int("viewCount").default(0).notNull(),
+  lastViewedAt: timestamp("lastViewedAt"),
+  expiresAt: timestamp("expiresAt"), // Optional expiration
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CandidateProfileShare = typeof candidateProfileShares.$inferSelect;
+export type InsertCandidateProfileShare = typeof candidateProfileShares.$inferInsert;

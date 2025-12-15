@@ -2142,3 +2142,11 @@
 - [x] Profile icon with dropdown menu for settings
 - [x] Move profile completion and session info under profile dropdown
 - [x] Jobs panel with comprehensive filters
+
+
+## New Feature Requests (Current Session)
+- [x] Interview Video Conferencing - Zoom/Google Meet integration for one-click meeting creation
+- [x] Email Campaign Analytics - Track open rates, click rates, and response rates
+- [x] Candidate Profile Sharing - Secure links for sharing profiles with clients
+- [x] Video Introduction Page - Dedicated page with quick link and sidebar menu item for candidates
+- [x] Associates Menu - List of placed candidates (offer accepted + onboarded) for candidates

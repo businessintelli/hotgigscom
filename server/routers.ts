@@ -842,6 +842,108 @@ export const appRouter = router({
         
         return result;
       }),
+
+    // Profile sharing - create secure share link
+    createShareLink: protectedProcedure
+      .input(z.object({
+        candidateId: z.number(),
+        recipientEmail: z.string().optional(),
+        recipientName: z.string().optional(),
+        customerId: z.number().optional(),
+        jobId: z.number().optional(),
+        matchScore: z.number().optional(),
+        includeResume: z.boolean().optional().default(true),
+        includeVideo: z.boolean().optional().default(true),
+        includeContact: z.boolean().optional().default(false),
+        expiresInDays: z.number().optional().default(30),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const shareToken = crypto.randomUUID().replace(/-/g, '');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + (input.expiresInDays || 30));
+        
+        await db.createProfileShare({
+          candidateId: input.candidateId,
+          sharedByUserId: ctx.user.id,
+          shareToken,
+          recipientEmail: input.recipientEmail,
+          recipientName: input.recipientName,
+          customerId: input.customerId,
+          jobId: input.jobId,
+          matchScore: input.matchScore,
+          includeResume: input.includeResume ?? true,
+          includeVideo: input.includeVideo ?? true,
+          includeContact: input.includeContact ?? false,
+          expiresAt,
+        });
+        
+        return { shareToken, shareUrl: `/share/candidate/${shareToken}` };
+      }),
+
+    // Get shared profile (public)
+    getSharedProfile: publicProcedure
+      .input(z.object({ shareToken: z.string() }))
+      .query(async ({ input }) => {
+        const share = await db.getProfileShareByToken(input.shareToken);
+        if (!share || !share.isActive) {
+          throw new Error('Share link not found or expired');
+        }
+        
+        if (share.expiresAt && new Date(share.expiresAt) < new Date()) {
+          throw new Error('Share link has expired');
+        }
+        
+        // Increment view count
+        await db.incrementShareViewCount(share.id);
+        
+        // Get candidate data
+        const candidate = await db.getCandidateById(share.candidateId);
+        if (!candidate) throw new Error('Candidate not found');
+        
+        const user = await db.getUserById(candidate.userId);
+        const sharedBy = await db.getUserById(share.sharedByUserId);
+        
+        // Get resume profile if included
+        let resumeProfile = null;
+        if (share.includeResume) {
+          resumeProfile = await db.getResumeProfileByCandidate(share.candidateId);
+        }
+        
+        // Get video introduction if included
+        let videoIntroduction = null;
+        if (share.includeVideo) {
+          videoIntroduction = await db.getVideoIntroductionByCandidate(share.candidateId);
+        }
+        
+        return {
+          candidate: {
+            ...candidate,
+            // Hide contact info if not included
+            phoneNumber: share.includeContact ? candidate.phoneNumber : null,
+          },
+          user: share.includeContact ? user : { name: user?.name },
+          resumeProfile,
+          videoIntroduction,
+          sharedBy: { name: sharedBy?.name },
+          matchScore: share.matchScore,
+          expiresAt: share.expiresAt,
+        };
+      }),
+
+    // Get all share links created by recruiter
+    getShareLinks: protectedProcedure
+      .input(z.object({ candidateId: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return await db.getProfileSharesByUser(ctx.user.id, input.candidateId);
+      }),
+
+    // Deactivate share link
+    deactivateShareLink: protectedProcedure
+      .input(z.object({ shareToken: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deactivateProfileShare(input.shareToken, ctx.user.id);
+        return { success: true };
+      }),
   }),
 
   customer: router({
@@ -1202,6 +1304,13 @@ export const appRouter = router({
       .input(z.object({ candidateId: z.number() }))
       .query(async ({ input }) => {
         return await db.getApplicationsByCandidate(input.candidateId);
+      }),
+    
+    // Get placed applications (hired or offered status) for a candidate
+    getPlacedByCandidate: protectedProcedure
+      .input(z.object({ candidateId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPlacedApplicationsByCandidate(input.candidateId);
       }),
     
     getCandidateApplications: protectedProcedure
@@ -3170,6 +3279,47 @@ export const appRouter = router({
         });
 
         return { success: true };
+      }),
+  }),
+
+  // Email Campaign Analytics router
+  emailCampaign: router({
+    list: protectedProcedure
+      .input(z.object({ recruiterId: z.number() }))
+      .query(async ({ ctx }) => {
+        const campaigns = await emailCampaignHelpers.getCampaignsByUser(ctx.user.id);
+        return campaigns.map(c => ({
+          id: c.campaign.id,
+          name: c.campaign.name,
+          subject: c.campaign.subject,
+          status: c.campaign.status,
+          sentAt: c.campaign.sentAt,
+          sentCount: c.campaign.sentCount || 0,
+          openedCount: c.campaign.openedCount || 0,
+          clickedCount: c.campaign.clickedCount || 0,
+          bouncedCount: c.campaign.bouncedCount || 0,
+          repliedCount: c.campaign.repliedCount || 0,
+        }));
+      }),
+
+    getAnalytics: protectedProcedure
+      .input(z.object({ campaignId: z.number() }))
+      .query(async ({ input }) => {
+        const campaignData = await emailCampaignHelpers.getCampaignById(input.campaignId);
+        if (!campaignData) throw new Error('Campaign not found');
+        
+        return {
+          campaign: campaignData,
+          recipients: campaignData.recipients?.map(r => ({
+            id: r.recipient.id,
+            email: r.user?.email || r.recipient.email || '',
+            sentAt: r.recipient.sentAt,
+            openedAt: r.recipient.openedAt,
+            clickedAt: r.recipient.clickedAt,
+            bouncedAt: r.recipient.bouncedAt,
+            repliedAt: null, // Add if available in schema
+          })) || [],
+        };
       }),
   }),
 

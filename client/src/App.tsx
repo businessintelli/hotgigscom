@@ -71,6 +71,10 @@ import PanelFeedback from "./pages/PanelFeedback";
 import PanelistDashboard from "./pages/PanelistDashboard";
 import Recommendations from "./pages/Recommendations";
 import CareerResources from "./pages/CareerResources";
+import VideoIntroductionPage from "./pages/VideoIntroductionPage";
+import CandidateAssociates from "./pages/CandidateAssociates";
+import EmailCampaignAnalytics from "./pages/EmailCampaignAnalytics";
+import CandidateProfileShare from "./pages/CandidateProfileShare";
 
 
 function Router() {
@@ -139,6 +143,10 @@ function Router() {
       <Route path="/my-resumes" component={MyResumes} />
       <Route path="/candidate/my-resumes" component={MyResumes} />
       <Route path="/candidate/resume/:id" component={ResumeDetail} />
+      <Route path="/candidate/video-intro" component={VideoIntroductionPage} />
+      <Route path="/candidate/associates" component={CandidateAssociates} />
+      <Route path="/recruiter/email-analytics" component={EmailCampaignAnalytics} />
+      <Route path="/share/candidate/:shareToken" component={CandidateProfileShare} />
       <Route path="/jobs" component={JobBrowser} />
       <Route path={"/jobs/search"} component={AdvancedJobSearch} />
       <Route path={"/jobs/:id"} component={JobDetails} />

@@ -91,12 +91,13 @@ export default function CandidateDashboard() {
 // Sidebar navigation items for candidates
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/candidate-dashboard", badge: null },
-  { icon: FileText, label: "My Resume", path: "/my-resume", badge: null },
+  { icon: FileText, label: "My Resume", path: "/candidate/my-resumes", badge: null },
+  { icon: Video, label: "Video Introduction", path: "/candidate/video-intro", badge: null },
   { icon: Search, label: "Browse Jobs", path: "/jobs", badge: null },
   { icon: Briefcase, label: "My Applications", path: "/my-applications", badge: null },
   { icon: Heart, label: "Saved Jobs", path: "/saved-jobs", badge: null },
   { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
-  { icon: Video, label: "AI Interview", path: "/ai-interview", badge: null },
+  { icon: Users, label: "Associates", path: "/candidate/associates", badge: null },
   { icon: MessageSquare, label: "AI Career Coach", path: null, badge: null, isCareerCoach: true },
   { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
   { icon: BookOpen, label: "Career Resources", path: "/resources", badge: null },

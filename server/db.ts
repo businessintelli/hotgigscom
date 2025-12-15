@@ -26,7 +26,8 @@ import {
   rescheduleRequests, InsertRescheduleRequest,
   jobSkillRequirements, InsertJobSkillRequirement,
   candidateSkillRatings, InsertCandidateSkillRating,
-  interviewPanelists, panelistFeedback, notifications
+  interviewPanelists, panelistFeedback, notifications,
+  candidateProfileShares, InsertCandidateProfileShare
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -653,6 +654,42 @@ export async function getApplicationsByCandidate(candidateId: number) {
   if (!db) return [];
   
   return await db.select().from(applications).where(eq(applications.candidateId, candidateId)).orderBy(desc(applications.submittedAt));
+}
+
+// Get placed applications (offered status) for a candidate
+export async function getPlacedApplicationsByCandidate(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select({
+      id: applications.id,
+      jobId: applications.jobId,
+      candidateId: applications.candidateId,
+      status: applications.status,
+      coverLetter: applications.coverLetter,
+      createdAt: applications.submittedAt,
+      job: {
+        id: jobs.id,
+        title: jobs.title,
+        companyName: jobs.companyName,
+        location: jobs.location,
+        employmentType: jobs.employmentType,
+        salaryMin: jobs.salaryMin,
+        salaryMax: jobs.salaryMax,
+      },
+    })
+    .from(applications)
+    .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .where(
+      and(
+        eq(applications.candidateId, candidateId),
+        eq(applications.status, 'offered')
+      )
+    )
+    .orderBy(desc(applications.submittedAt));
+  
+  return result;
 }
 
 export async function updateApplication(id: number, data: Partial<InsertApplication>) {
@@ -1552,3 +1589,92 @@ export async function getPanelistFeedbackForInterview(interviewId: number) {
     panelist: row.interview_panelists,
   }));
 }
+
+
+// Profile sharing functions
+export async function createProfileShare(data: InsertCandidateProfileShare) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(candidateProfileShares).values(data);
+}
+
+export async function getProfileShareByToken(shareToken: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(candidateProfileShares)
+    .where(eq(candidateProfileShares.shareToken, shareToken))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function incrementShareViewCount(shareId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(candidateProfileShares)
+    .set({ 
+      viewCount: sql`${candidateProfileShares.viewCount} + 1`,
+      lastViewedAt: new Date()
+    })
+    .where(eq(candidateProfileShares.id, shareId));
+}
+
+export async function getProfileSharesByUser(userId: number, candidateId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(candidateProfileShares.sharedByUserId, userId)];
+  if (candidateId) {
+    conditions.push(eq(candidateProfileShares.candidateId, candidateId));
+  }
+  
+  const result = await db
+    .select({
+      share: candidateProfileShares,
+      candidate: candidates,
+      user: users,
+    })
+    .from(candidateProfileShares)
+    .leftJoin(candidates, eq(candidateProfileShares.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(candidateProfileShares.createdAt));
+  
+  return result.map(row => ({
+    ...row.share,
+    candidate: row.candidate,
+    user: row.user,
+  }));
+}
+
+export async function deactivateProfileShare(shareToken: string, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(candidateProfileShares)
+    .set({ isActive: false })
+    .where(and(
+      eq(candidateProfileShares.shareToken, shareToken),
+      eq(candidateProfileShares.sharedByUserId, userId)
+    ));
+}
+
+export async function getResumeProfileByCandidate(candidateId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(resumeProfiles)
+    .where(eq(resumeProfiles.candidateId, candidateId))
+    .orderBy(desc(resumeProfiles.createdAt))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+
