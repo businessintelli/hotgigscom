@@ -45,6 +45,7 @@ import CandidateResumeView from "./pages/CandidateResumeView";
 import CandidateComparison from "./pages/CandidateComparison";
 import FeedbackAnalytics from "./pages/FeedbackAnalytics";
 import RecruiterSettings from "./pages/RecruiterSettings";
+import CandidatePipeline from "./pages/CandidatePipeline";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -99,6 +100,7 @@ function Router() {
           <Route path="/recruiter/compare-candidates" component={CandidateComparison} />
           <Route path="/recruiter/feedback-analytics" component={FeedbackAnalytics} />
           <Route path="/recruiter/settings" component={RecruiterSettings} />
+          <Route path="/recruiter/pipeline" component={CandidatePipeline} />
       <Route path="/select-role" component={SelectRole} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />

@@ -1889,16 +1889,16 @@
 - [ ] Create scheduled job to send digests (requires cron setup)
 - [ ] Test digest email generation and delivery
 
-## Candidate Pipeline Kanban Board (IN PROGRESS 🔄)
-- [ ] Create pipeline stages (Applied, Screening, Interview, Offer, Hired, Rejected)
-- [ ] Build kanban board UI with columns for each stage
-- [ ] Implement drag-and-drop functionality between stages
-- [ ] Update application status when card is moved
-- [ ] Add candidate card with key info (name, score, applied date)
-- [ ] Show candidate count per stage
-- [ ] Add filters for job position and date range
-- [ ] Create pipeline analytics (conversion rates per stage)
-- [ ] Test drag-and-drop and status updates
+## Candidate Pipeline Kanban Board (COMPLETED ✅)
+- [x] Create pipeline stages (Applied, Screening, Interview, Offer, Hired, Rejected)
+- [x] Build kanban board UI with columns for each stage
+- [x] Implement drag-and-drop functionality between stages
+- [x] Update application status when card is moved
+- [x] Add candidate card with key info (name, score, applied date, skills)
+- [x] Show candidate count per stage
+- [x] Add filters for job position
+- [x] Create pipeline analytics (conversion rates per stage)
+- [x] Test drag-and-drop and status updates
 
 ## Automated Interview Scheduling (IN PROGRESS 🔄)
 - [ ] Create recruiter availability calendar settings
