@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -141,6 +142,7 @@ export default function RecruiterReports() {
   };
 
   return (
+    <RecruiterLayout title="Reports">
     <div className="container py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -717,5 +719,6 @@ export default function RecruiterReports() {
         </TabsContent>
       </Tabs>
     </div>
+    </RecruiterLayout>
   );
 }
