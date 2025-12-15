@@ -75,6 +75,7 @@ import VideoIntroductionPage from "./pages/VideoIntroductionPage";
 import CandidateAssociates from "./pages/CandidateAssociates";
 import EmailCampaignAnalytics from "./pages/EmailCampaignAnalytics";
 import CandidateProfileShare from "./pages/CandidateProfileShare";
+import RecruiterAssociates from "./pages/RecruiterAssociates";
 
 
 function Router() {
@@ -106,6 +107,7 @@ function Router() {
       <Route path="/recruiter/sequences" component={FollowUpSequenceBuilder} />
       <Route path="/unsubscribe/:trackingId" component={Unsubscribe} />
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
+      <Route path="/recruiter/associates" component={RecruiterAssociates} />
       <Route path="/recruiter/active-associates" component={ActiveAssociates} />
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
       <Route path="/recruiter/notification-preferences" component={RecruiterNotificationPreferences} />

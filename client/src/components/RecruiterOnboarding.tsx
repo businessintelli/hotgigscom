@@ -17,17 +17,29 @@ export default function RecruiterOnboarding({ open, onComplete }: RecruiterOnboa
   const [phoneNumber, setPhoneNumber] = useState("");
   const [bio, setBio] = useState("");
 
+  const utils = trpc.useUtils();
   const { data: profile } = trpc.recruiter.getProfile.useQuery();
   
   const updateProfile = trpc.recruiter.updateProfile.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Profile completed successfully!");
+      // Invalidate and refetch the profile to update the cache
+      await utils.recruiter.getProfile.invalidate();
       onComplete();
     },
     onError: (error) => {
       toast.error(`Failed to update profile: ${error.message}`);
     },
   });
+
+  // Pre-fill form if profile has existing data
+  useEffect(() => {
+    if (profile) {
+      if (profile.companyName) setCompanyName(profile.companyName);
+      if (profile.phoneNumber) setPhoneNumber(profile.phoneNumber);
+      if (profile.bio) setBio(profile.bio);
+    }
+  }, [profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

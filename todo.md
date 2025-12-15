@@ -2150,3 +2150,17 @@
 - [x] Candidate Profile Sharing - Secure links for sharing profiles with clients
 - [x] Video Introduction Page - Dedicated page with quick link and sidebar menu item for candidates
 - [x] Associates Menu - List of placed candidates (offer accepted + onboarded) for candidates
+
+
+## New Feature Requests (Current Session - Part 2)
+- [x] Calendar Sync - Google Calendar/Outlook integration for interview schedules with video meeting links
+- [x] Email Campaign Templates - Pre-built templates for all recruitment scenarios
+  - [x] Job sharing template
+  - [x] Interview schedule template
+  - [x] Offer letter template
+  - [x] Offer acceptance template
+  - [x] Offer rejection template
+  - [x] Welcome email template
+  - [x] Recruiter signup welcome template
+- [x] Fix Recruiter Profile Setup Loop - Profile setup keeps prompting after saving successfully
+- [x] Associates Menu for Recruiters - Add sidebar menu showing all onboarded candidates

@@ -1499,6 +1499,77 @@ export const appRouter = router({
         
         return { questions };
       }),
+    
+    // Get placed candidates (offered or onboarded)
+    getPlaced: protectedProcedure
+      .query(async ({ ctx }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) return [];
+        
+        // Get all applications with offered or onboarded status for this recruiter's jobs
+        const database = await db.getDb();
+        if (!database) return [];
+        
+        const { applications, jobs, candidates, users } = await import('../drizzle/schema');
+        const { eq, or, inArray } = await import('drizzle-orm');
+        
+        // Get recruiter's jobs
+        const recruiterJobs = await database
+          .select({ id: jobs.id })
+          .from(jobs)
+          .where(eq(jobs.postedBy, ctx.user.id));
+        
+        const jobIds = recruiterJobs.map(j => j.id);
+        if (jobIds.length === 0) return [];
+        
+        // Get placed applications
+        const placedApps = await database
+          .select({
+            id: applications.id,
+            jobId: applications.jobId,
+            candidateId: applications.candidateId,
+            status: applications.status,
+            createdAt: applications.createdAt,
+            updatedAt: applications.updatedAt,
+            job: {
+              id: jobs.id,
+              title: jobs.title,
+              companyName: jobs.companyName,
+              location: jobs.location,
+              salaryMin: jobs.salaryMin,
+              salaryMax: jobs.salaryMax,
+            },
+            candidate: {
+              id: candidates.id,
+              fullName: candidates.fullName,
+              phoneNumber: candidates.phoneNumber,
+              user: {
+                id: users.id,
+                name: users.name,
+                email: users.email,
+              },
+            },
+          })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .innerJoin(candidates, eq(applications.candidateId, candidates.id))
+          .innerJoin(users, eq(candidates.userId, users.id))
+          .where(or(
+            eq(applications.status, 'offered'),
+            eq(applications.status, 'onboarded')
+          ));
+        
+        // Filter to only recruiter's jobs
+        return placedApps.filter(app => jobIds.includes(app.jobId));
+      }),
+    
+    // Get placed candidates by candidate (for candidate dashboard)
+    getPlacedByCandidate: protectedProcedure
+      .query(async ({ ctx }) => {
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+        if (!candidate) return [];
+        return await db.getPlacedApplicationsByCandidate(candidate.id);
+      }),
   }),
   
   interview: router({
@@ -2215,6 +2286,24 @@ export const appRouter = router({
             overallScore: f.overallScore,
           })),
         };
+      }),
+    
+    // Calendar Sync - Get calendar links for interview
+    getCalendarLinks: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const { generateCalendarLinks } = await import('./services/calendarSyncService');
+        return await generateCalendarLinks(input.interviewId);
+      }),
+    
+    // Calendar Sync - Download ICS file
+    downloadICS: protectedProcedure
+      .input(z.object({ interviewId: z.number() }))
+      .query(async ({ input }) => {
+        const { generateCalendarLinks } = await import('./services/calendarSyncService');
+        const links = await generateCalendarLinks(input.interviewId);
+        if (!links) return null;
+        return { icsContent: links.icsContent };
       }),
   }),
   
@@ -3320,6 +3409,48 @@ export const appRouter = router({
             repliedAt: null, // Add if available in schema
           })) || [],
         };
+      }),
+
+    // Get all email templates
+    getTemplates: protectedProcedure
+      .query(async () => {
+        const { allEmailTemplates } = await import('./emails/recruitmentTemplates');
+        return allEmailTemplates.map(t => ({
+          id: t.id,
+          name: t.name,
+          category: t.category,
+          subject: t.subject,
+          variables: t.variables,
+        }));
+      }),
+
+    // Get template by ID
+    getTemplateById: protectedProcedure
+      .input(z.object({ templateId: z.string() }))
+      .query(async ({ input }) => {
+        const { getEmailTemplateById } = await import('./emails/recruitmentTemplates');
+        return getEmailTemplateById(input.templateId);
+      }),
+
+    // Get templates by category
+    getTemplatesByCategory: protectedProcedure
+      .input(z.object({ category: z.enum(['job', 'interview', 'offer', 'onboarding', 'general']) }))
+      .query(async ({ input }) => {
+        const { getEmailTemplatesByCategory } = await import('./emails/recruitmentTemplates');
+        return getEmailTemplatesByCategory(input.category);
+      }),
+
+    // Fill template with variables
+    fillTemplate: protectedProcedure
+      .input(z.object({
+        templateId: z.string(),
+        variables: z.record(z.string()),
+      }))
+      .mutation(async ({ input }) => {
+        const { getEmailTemplateById, fillEmailTemplate } = await import('./emails/recruitmentTemplates');
+        const template = getEmailTemplateById(input.templateId);
+        if (!template) throw new Error('Template not found');
+        return fillEmailTemplate(template, input.variables);
       }),
   }),
 

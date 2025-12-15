@@ -95,7 +95,8 @@ import {
   Keyboard,
   GripVertical,
   MessageSquare,
-  Bot
+  Bot,
+  UserCheck
 } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -227,6 +228,7 @@ const sidebarItems = [
   { icon: Briefcase, label: "Jobs", path: "/recruiter/jobs", badge: null },
   { icon: Users, label: "Candidates", path: "/recruiter/search-candidates", badge: null },
   { icon: FileText, label: "Applications", path: "/recruiter/applications", badge: null },
+  { icon: UserCheck, label: "Associates", path: "/recruiter/associates", badge: null },
   { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
   { icon: Calendar, label: "Interviews", path: "/recruiter/interviews", badge: null },
   { icon: Video, label: "AI Interviews", path: "/recruiter/interview-playback", badge: null },
@@ -319,10 +321,12 @@ function RecruiterDashboardContent() {
   }, [authLoading, user, setLocation]);
 
   useEffect(() => {
-    if (profile && !profile.companyName) {
+    // Only show onboarding if profile exists and companyName is empty/null
+    // Don't show if onboarding was already dismissed
+    if (profile && !profile.companyName && !showOnboarding) {
       setShowOnboarding(true);
     }
-  }, [profile]);
+  }, [profile?.id]); // Only trigger on profile ID change, not every profile update
 
   // Keyboard shortcuts handler - must be before early returns
   useEffect(() => {
