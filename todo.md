@@ -2174,3 +2174,9 @@
 ## New Feature Requests (Current Session - Part 4)
 - [x] Add collapsible left sidebar menu to all candidate pages
 - [x] Add collapsible left sidebar menu to all recruiter pages
+
+
+## New Feature Requests (Current Session - Part 5)
+- [x] Auto-redirect admin users to admin dashboard on login
+- [x] Create dedicated AdminLayout with collapsible sidebar
+- [x] Set pratap@businessintelli.com as admin role

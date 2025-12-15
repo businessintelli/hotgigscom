@@ -53,7 +53,10 @@ export default function SignIn() {
         localStorage.setItem('auth_token', result.token);
         
         // Use window.location.href for full page reload to ensure state is fresh
-        if (result.role === 'recruiter') {
+        if (result.role === 'admin') {
+          console.log('Redirecting to admin dashboard');
+          window.location.href = '/admin/dashboard';
+        } else if (result.role === 'recruiter') {
           console.log('Redirecting to recruiter dashboard');
           window.location.href = '/recruiter/dashboard';
         } else if (result.role === 'candidate') {
