@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { NotificationBell } from "@/components/NotificationBell";
+import { OrionChatbot } from "@/components/OrionChatbot";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -97,6 +98,7 @@ function CandidateDashboardContent() {
   };
 
   return (
+    <>
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <aside
@@ -238,6 +240,8 @@ function CandidateDashboardContent() {
         </div>
       </main>
     </div>
+    <OrionChatbot />
+    </>
   );
 }
 

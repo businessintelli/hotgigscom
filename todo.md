@@ -1955,3 +1955,16 @@
 - [x] Calculate and display AI match percentage for each job (70-100%)
 - [x] Add quick apply button to matching jobs
 - [x] Test all features and save checkpoint
+
+
+## Missing Features - Orion Chatbot & Profile Pages (COMPLETED ✅)
+- [x] Find existing Orion chatbot component (AIChatBox)
+- [x] Create AI chat router endpoint with Orion personality
+- [x] Build OrionChatbot floating button component
+- [x] Add Orion chatbot to candidate dashboard
+- [x] Add Orion chatbot to recruiter dashboard
+- [x] Create /candidate/profile page with full form fields
+- [x] Create /candidate/settings page with preferences
+- [x] Update sidebar menu to link Profile to /candidate/profile
+- [x] Update sidebar menu to link Settings to /candidate/settings
+- [x] Test all features and save checkpoint

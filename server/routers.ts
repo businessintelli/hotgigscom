@@ -2870,6 +2870,37 @@ export const appRouter = router({
         return await analyticsHelpers.getRecruiterPerformance(input.recruiterId, startDate, endDate);
       }),
   }),
+
+  // AI Assistant (Orion)
+  ai: router({
+    chat: protectedProcedure
+      .input(z.object({
+        messages: z.array(z.object({
+          role: z.enum(["system", "user", "assistant"]),
+          content: z.string(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        
+        // Add system message for Orion's personality
+        const systemMessage = {
+          role: "system" as const,
+          content: "You are Orion, an AI career assistant for HotGigs recruitment platform. You help candidates with resume optimization, interview preparation, career advice, job search strategies, and salary negotiation. Be friendly, professional, and provide actionable advice. Keep responses concise and helpful.",
+        };
+
+        const response = await invokeLLM({
+          messages: [systemMessage, ...input.messages],
+        });
+
+        const content = response.choices[0].message.content;
+        const messageText = typeof content === 'string' ? content : "I'm sorry, I couldn't generate a response.";
+        
+        return {
+          message: messageText,
+        };
+      }),
+  }),
 });
 
 

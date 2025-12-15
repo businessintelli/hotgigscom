@@ -10,6 +10,7 @@ import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { SessionInfo } from "@/components/SessionInfo";
+import { OrionChatbot } from "@/components/OrionChatbot";
 import { Menu, X } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -345,6 +346,7 @@ function RecruiterDashboardContent() {
         </Card>
       </div>
     </div>
+    <OrionChatbot />
     </>
   );
 }
