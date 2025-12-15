@@ -44,6 +44,7 @@ const sidebarItems = [
   { icon: Calendar, label: "Interviews", path: "/recruiter/interviews" },
   { icon: Video, label: "AI Interviews", path: "/recruiter/interview-playback" },
   { icon: Target, label: "AI Matching", path: "/recruiter/ai-matching" },
+  { icon: Bot, label: "AI Assistant", path: "/recruiter/ai-assistant" },
   { icon: Building2, label: "Clients", path: "/recruiter/customers" },
   { icon: Upload, label: "Bulk Upload", path: "/recruiter/bulk-upload" },
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/campaigns" },

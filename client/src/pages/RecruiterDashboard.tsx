@@ -37,7 +37,6 @@ import {
 import { toast } from "sonner";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
-import { AIAssistantChat } from "@/components/AIAssistantChat";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
 import {
   DndContext,
@@ -233,7 +232,7 @@ const sidebarItems = [
   { icon: Calendar, label: "Interviews", path: "/recruiter/interviews", badge: null },
   { icon: Video, label: "AI Interviews", path: "/recruiter/interview-playback", badge: null },
   { icon: Target, label: "AI Matching", path: "/recruiter/ai-matching", badge: null },
-  { icon: Bot, label: "AI Assistant", path: null, badge: null, isAIBot: true },
+  { icon: Bot, label: "AI Assistant", path: "/recruiter/ai-assistant", badge: null },
   { icon: Building2, label: "Clients", path: "/recruiter/customers", badge: null },
   { icon: Upload, label: "Bulk Upload", path: "/recruiter/bulk-upload", badge: null },
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/campaigns", badge: null },
@@ -287,8 +286,6 @@ function RecruiterDashboardContent() {
   // Export state
   const [exporting, setExporting] = useState(false);
   
-  // AI Bot state
-  const [showAIBot, setShowAIBot] = useState(false);
   
   // Drag and drop state for job reordering
   const [jobOrder, setJobOrder] = useState<number[]>([]);
@@ -631,8 +628,6 @@ function RecruiterDashboardContent() {
                         onClick={() => {
                           if ((item as any).isCalendar) {
                             setShowCalendar(true);
-                          } else if ((item as any).isAIBot) {
-                            setShowAIBot(true);
                           } else if (item.path) {
                             setLocation(item.path);
                           }
@@ -715,8 +710,6 @@ function RecruiterDashboardContent() {
                             onClick={() => {
                               if ((item as any).isCalendar) {
                                 setShowCalendar(true);
-                              } else if ((item as any).isAIBot) {
-                                setShowAIBot(true);
                               } else if (item.path) {
                                 setLocation(item.path);
                               }
@@ -1452,48 +1445,6 @@ function RecruiterDashboardContent() {
                 </Button>
               </div>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* AI Assistant Dialog */}
-      <Dialog open={showAIBot} onOpenChange={setShowAIBot}>
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
-          <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                <Bot className="h-4 w-4 text-white" />
-              </div>
-              AI Recruiting Assistant
-            </DialogTitle>
-            <DialogDescription>
-              Get help with job descriptions, candidate screening, and recruitment strategies
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden">
-            <AIAssistantChat
-              systemPrompt={`You are an AI Recruiting Assistant for HotGigs. You help recruiters with:
-- Writing compelling job descriptions
-- Screening candidate profiles and resumes
-- Interview question suggestions
-- Recruitment strategy advice
-- Salary benchmarking insights
-- Diversity and inclusion best practices
-- Employer branding tips
-
-The recruiter is from ${profile?.companyName || 'a company'}.
-They currently have ${dashboardData?.stats?.activeJobs || 0} active job postings.
-They have received ${dashboardData?.stats?.totalApplications || 0} total applications.
-
-Be professional, data-driven, and provide actionable advice. Focus on efficiency and quality of hire.`}
-              placeholder="Ask me about job descriptions, candidates, or recruitment strategies..."
-              suggestedPrompts={[
-                "Write a job description for a Senior Developer",
-                "What interview questions should I ask?",
-                "How can I improve my employer brand?",
-                "Tips for reducing time-to-hire"
-              ]}
-            />
           </div>
         </DialogContent>
       </Dialog>

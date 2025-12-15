@@ -77,7 +77,6 @@ import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
 // VideoIntroduction moved to dedicated page
 import { NotificationBell } from "@/components/NotificationBell";
-import { AIAssistantChat } from "@/components/AIAssistantChat";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 
 export default function CandidateDashboard() {
@@ -98,7 +97,7 @@ const sidebarItems = [
   { icon: Heart, label: "Saved Jobs", path: "/saved-jobs", badge: null },
   { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
   { icon: Users, label: "Associates", path: "/candidate/associates", badge: null },
-  { icon: MessageSquare, label: "AI Career Coach", path: null, badge: null, isCareerCoach: true },
+  { icon: MessageSquare, label: "AI Career Coach", path: "/candidate/career-coach", badge: null },
   { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
   { icon: BookOpen, label: "Career Resources", path: "/resources", badge: null },
 ];
@@ -116,7 +115,7 @@ function CandidateDashboardContent() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [sortBy, setSortBy] = useState<SortOption>('date_desc');
-  const [showCareerCoach, setShowCareerCoach] = useState(false);
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -369,8 +368,6 @@ function CandidateDashboardContent() {
                         onClick={() => {
                           if (item.isCalendar) {
                             setShowCalendar(true);
-                          } else if ((item as any).isCareerCoach) {
-                            setShowCareerCoach(true);
                           } else if (item.path) {
                             setLocation(item.path);
                           }
@@ -427,8 +424,6 @@ function CandidateDashboardContent() {
                       onClick={() => {
                         if (item.isCalendar) {
                           setShowCalendar(true);
-                        } else if ((item as any).isCareerCoach) {
-                          setShowCareerCoach(true);
                         } else if (item.path) {
                           setLocation(item.path);
                         }
@@ -796,7 +791,7 @@ function CandidateDashboardContent() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => setShowCareerCoach(true)}
+                      onClick={() => setLocation("/candidate/career-coach")}
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       AI Career Coach
@@ -816,7 +811,7 @@ function CandidateDashboardContent() {
                     <Button 
                       variant="secondary" 
                       className="w-full"
-                      onClick={() => setShowCareerCoach(true)}
+                      onClick={() => setLocation("/candidate/career-coach")}
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Chat with Orion
@@ -1138,46 +1133,6 @@ function CandidateDashboardContent() {
         </DialogContent>
       </Dialog>
 
-      {/* AI Career Coach Dialog */}
-      <Dialog open={showCareerCoach} onOpenChange={setShowCareerCoach}>
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
-          <DialogHeader className="px-6 py-4 border-b">
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full flex items-center justify-center">
-                <MessageSquare className="h-4 w-4 text-white" />
-              </div>
-              AI Career Coach - Orion
-            </DialogTitle>
-            <DialogDescription>
-              Get personalized career advice, resume tips, and interview preparation help
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden">
-            <AIAssistantChat
-              systemPrompt={`You are Orion, an AI Career Coach for HotGigs. You help candidates with:
-- Resume writing and optimization tips
-- Interview preparation and common questions
-- Career path guidance and skill development
-- Job search strategies
-- Salary negotiation advice
-- Professional networking tips
-
-The candidate's name is ${candidate?.fullName || 'there'}.
-${candidate?.skills ? `Their skills include: ${candidate.skills}` : ''}
-${candidate?.experience ? `They have ${candidate.experience} years of experience.` : ''}
-
-Be friendly, encouraging, and provide actionable advice. Keep responses concise but helpful.`}
-              placeholder="Ask me anything about your career..."
-              suggestedPrompts={[
-                "How can I improve my resume?",
-                "What questions should I prepare for interviews?",
-                "How do I negotiate a better salary?",
-                "What skills should I learn next?"
-              ]}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

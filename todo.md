@@ -2276,3 +2276,10 @@
 - [x] Add quick action buttons for common questions
 - [x] Test AI responses with real user data
 
+
+## AI Assistant Improvements
+- [x] Convert AI Career Coach from popup to dedicated page
+- [x] Convert AI Recruiting Assistant from popup to dedicated page
+- [x] Fix stuck issue after answering questions
+- [x] Update sidebar navigation to link to dedicated pages
+- [x] Remove floating popup components from dashboards
