@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Briefcase, MapPin, DollarSign, Clock, Loader2, Building2, Bookmark, Trash2 } from "lucide-react";
+import { Briefcase, MapPin, DollarSign, Clock, Loader2, Building2, Bookmark, Trash2, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -57,6 +57,14 @@ export default function SavedJobs() {
 
   return (
     <div className="container py-8">
+      <Button 
+        onClick={() => setLocation('/candidate/dashboard')}
+        variant="ghost"
+        className="mb-4"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </Button>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Saved Jobs</h1>
         <p className="text-muted-foreground">

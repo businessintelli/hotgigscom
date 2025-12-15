@@ -1698,3 +1698,12 @@
 - [x] Fix logout to redirect user to home page (/)
 - [x] Updated useAuth hook to properly clear all auth data and redirect
 - [ ] User to test: Click logout and verify redirect to home page
+
+
+## Add Back Buttons to Candidate Pages (COMPLETED ✅)
+- [x] Add back button to /resume-upload (ResumeUploadReview)
+- [x] Add back button to /saved-jobs (SavedJobs)
+- [x] Add back button to MyResumes page
+- [x] Add back button to JobBrowser page (only shows when user is logged in)
+- [x] Verified MyApplications already has back button
+- [x] Consistent back navigation across all candidate pages

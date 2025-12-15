@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Edit2, Save, X } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Edit2, Save, X, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ResumeUploadReview() {
@@ -160,6 +160,14 @@ export default function ResumeUploadReview() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
+        <Button 
+          onClick={() => setLocation('/candidate/dashboard')}
+          variant="ghost"
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Upload & Review Resume</h1>
           <p className="text-gray-600 mt-2">

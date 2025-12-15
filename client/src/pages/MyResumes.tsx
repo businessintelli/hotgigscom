@@ -25,10 +25,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { FileText, Upload, Star, Trash2, Download, Plus, CheckCircle2 } from 'lucide-react';
+import { FileText, Upload, Star, Trash2, Download, Plus, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocation } from 'wouter';
 
 export default function MyResumes() {
+  const [, setLocation] = useLocation();
   const { user } = useAuth();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [profileName, setProfileName] = useState('');
@@ -148,6 +150,14 @@ export default function MyResumes() {
   return (
     <div className="container mx-auto py-8">
       <div className="max-w-5xl mx-auto">
+        <Button 
+          onClick={() => setLocation('/candidate/dashboard')}
+          variant="ghost"
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>

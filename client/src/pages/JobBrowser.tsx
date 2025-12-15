@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Briefcase, MapPin, DollarSign, Clock, Search, Loader2, Building2, SlidersHorizontal } from "lucide-react";
+import { Briefcase, MapPin, DollarSign, Clock, Search, Loader2, Building2, SlidersHorizontal, ArrowLeft } from "lucide-react";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { useState } from "react";
@@ -101,6 +101,16 @@ export default function JobBrowser() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {user && (
+          <Button 
+            onClick={() => setLocation('/candidate/dashboard')}
+            variant="ghost"
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        )}
         {/* Search and Filters */}
         <Card className="mb-8">
           <CardHeader>
