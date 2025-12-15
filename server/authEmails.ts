@@ -1,4 +1,4 @@
-import { notifyOwner } from './_core/notification';
+import { sendEmail } from './emailService';
 import { getVerificationEmailTemplate } from './emailTemplates/verificationEmail';
 import { getPasswordResetEmailTemplate } from './emailTemplates/passwordResetEmail';
 import {
@@ -6,26 +6,25 @@ import {
   getPasswordResetEmailText,
 } from './authEmailTemplates';
 
-interface EmailParams {
-  to: string;
-  subject: string;
-  html: string;
-  text: string;
-}
-
 /**
- * Send email using owner notification as fallback
- * In production, this would use SendGrid, AWS SES, or similar service
+ * Send authentication email using the configured email service
+ * Supports SendGrid, Resend, or mock for testing
  */
-async function sendEmail(params: EmailParams): Promise<boolean> {
-  // For now, notify owner (in production, use proper email service)
-  const success = await notifyOwner({
-    title: `Email to ${params.to}: ${params.subject}`,
-    content: params.html,
-  });
-  
-  console.log(`[Auth Email] Sent "${params.subject}" to ${params.to}`);
-  return success;
+async function sendAuthEmail(to: string, subject: string, html: string): Promise<boolean> {
+  try {
+    await sendEmail({
+      to,
+      subject,
+      html,
+      from: 'noreply@hotgigs.com',
+    });
+    
+    console.log(`[Auth Email] Sent "${subject}" to ${to}`);
+    return true;
+  } catch (error: any) {
+    console.error(`[Auth Email] Failed to send "${subject}" to ${to}:`, error.message);
+    return false;
+  }
 }
 
 /**
@@ -39,12 +38,11 @@ export async function sendVerificationEmail(
 ): Promise<boolean> {
   const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
   
-  return sendEmail({
-    to: email,
-    subject: 'Verify Your Email Address',
-    html: getVerificationEmailTemplate(verificationUrl, userName, "HotGigs"),
-    text: getVerificationEmailText(verificationUrl, userName),
-  });
+  return sendAuthEmail(
+    email,
+    'Verify Your Email Address',
+    getVerificationEmailTemplate(verificationUrl, userName, "HotGigs")
+  );
 }
 
 /**
@@ -58,10 +56,9 @@ export async function sendPasswordResetEmail(
 ): Promise<boolean> {
   const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   
-  return sendEmail({
-    to: email,
-    subject: 'Reset Your Password',
-    html: getPasswordResetEmailTemplate(resetUrl, userName, "HotGigs"),
-    text: getPasswordResetEmailText(resetUrl, userName),
-  });
+  return sendAuthEmail(
+    email,
+    'Reset Your Password',
+    getPasswordResetEmailTemplate(resetUrl, userName, "HotGigs")
+  );
 }

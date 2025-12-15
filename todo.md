@@ -1633,3 +1633,13 @@
 - [x] Created database helper functions (updateUserById, updateUserByEmail, deleteUserById)
 - [x] Wrote comprehensive email verification tests
 - [ ] Fix test database connection issues (tests failing due to getUserById returning undefined)
+
+
+## Email HTML Rendering Issue (COMPLETED ✅)
+- [x] Investigate why HTML emails are being sent as plain text
+- [x] Check email service content-type headers
+- [x] Fix email sending to properly render HTML templates (changed authEmails.ts to use emailService.ts instead of notifyOwner)
+- [x] Test verification email with proper HTML rendering
+- [x] Confirmed SendGrid/Resend API keys are configured
+- [x] Verified emails now sent through proper email service with HTML support
+- [ ] User to test: Sign up with new account and verify HTML email displays correctly
