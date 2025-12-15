@@ -75,7 +75,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
-import VideoIntroduction from "@/components/VideoIntroduction";
+// VideoIntroduction moved to dedicated page
 import { NotificationBell } from "@/components/NotificationBell";
 import { AIAssistantChat } from "@/components/AIAssistantChat";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from "date-fns";
@@ -141,11 +141,7 @@ function CandidateDashboardContent() {
     { enabled: !!candidate?.id }
   );
 
-  // Fetch video introduction
-  const { data: videoIntroduction, refetch: refetchVideo } = trpc.resumeProfile.getVideoIntroduction.useQuery(
-    { candidateId: candidate?.id || 0 },
-    { enabled: !!candidate?.id }
-  );
+  // Video introduction moved to dedicated page at /candidate/video-intro
 
   // Fetch interviews for calendar
   const { data: interviews } = trpc.interview.getByCandidate.useQuery(
@@ -684,19 +680,7 @@ function CandidateDashboardContent() {
                   </CardContent>
                 </Card>
 
-                {/* Video Introduction */}
-                {candidate?.id && (
-                  <VideoIntroduction
-                    candidateId={candidate.id}
-                    existingVideo={videoIntroduction ? {
-                      id: videoIntroduction.id,
-                      videoUrl: videoIntroduction.videoUrl,
-                      duration: videoIntroduction.duration,
-                      uploadedAt: videoIntroduction.createdAt
-                    } : null}
-                    onUploadSuccess={() => refetchVideo()}
-                  />
-                )}
+                {/* Video Introduction - Moved to dedicated page at /candidate/video-intro */}
               </div>
 
               {/* Sidebar Column */}

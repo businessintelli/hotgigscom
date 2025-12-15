@@ -2164,3 +2164,8 @@
   - [x] Recruiter signup welcome template
 - [x] Fix Recruiter Profile Setup Loop - Profile setup keeps prompting after saving successfully
 - [x] Associates Menu for Recruiters - Add sidebar menu showing all onboarded candidates
+
+
+## New Feature Requests (Current Session - Part 3)
+- [x] Email Template Preview - Allow recruiters to preview filled templates before sending campaigns
+- [x] Remove Video Introduction from Dashboard - Video Introduction has its own page, remove from dashboard

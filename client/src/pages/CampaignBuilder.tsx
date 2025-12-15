@@ -25,7 +25,19 @@ export default function CampaignBuilder() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [recipientDialogOpen, setRecipientDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [previewVariables, setPreviewVariables] = useState<Record<string, string>>({
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    companyName: 'Tech Corp',
+    jobTitle: 'Software Engineer',
+    location: 'San Francisco, CA',
+    salary: '$150,000 - $180,000',
+    recruiterName: user?.name || 'Recruiter',
+    recruiterEmail: user?.email || 'recruiter@example.com',
+  });
 
   // Form state
   const [name, setName] = useState("");
@@ -350,7 +362,23 @@ I came across your profile and was impressed by your experience...`}
                 rows={10}
                 className="font-mono text-sm"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Use variables like {'{'}{'{'} firstName {'}'}{'}'}, {'{'}{'{'} companyName {'}'}{'}'}, {'{'}{'{'} jobTitle {'}'}{'}'}  etc.
+              </p>
             </div>
+            
+            {/* Preview Button */}
+            {(subject || body) && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setPreviewDialogOpen(true)}
+                className="w-full"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Preview Email
+              </Button>
+            )}
             <div>
               <Label>Schedule Send (Optional)</Label>
               <Input
@@ -369,6 +397,73 @@ I came across your profile and was impressed by your experience...`}
             </Button>
             <Button onClick={handleCreate} disabled={createCampaignMutation.isPending}>
               {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Preview Dialog */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Email Preview
+            </DialogTitle>
+            <DialogDescription>
+              Preview how your email will look with sample data
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Variables Editor */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm text-gray-700">Preview Variables</h3>
+              <p className="text-xs text-gray-500">Edit these values to see how your email will look for different recipients</p>
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {Object.entries(previewVariables).map(([key, value]) => (
+                  <div key={key}>
+                    <Label className="text-xs text-gray-600">{key}</Label>
+                    <Input
+                      value={value}
+                      onChange={(e) => setPreviewVariables(prev => ({ ...prev, [key]: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Email Preview */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm text-gray-700">Email Preview</h3>
+              <div className="border rounded-lg overflow-hidden">
+                {/* Email Header */}
+                <div className="bg-gray-100 p-3 border-b">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-500">To:</span>
+                    <span className="font-medium">{previewVariables.firstName} {previewVariables.lastName} &lt;{previewVariables.email}&gt;</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm mt-1">
+                    <span className="text-gray-500">Subject:</span>
+                    <span className="font-medium">
+                      {subject.replace(/\{\{(\w+)\}\}/g, (_, key) => previewVariables[key] || `{{${key}}}`).trim() || 'No subject'}
+                    </span>
+                  </div>
+                </div>
+                {/* Email Body */}
+                <div className="p-4 bg-white min-h-[300px]">
+                  <div className="prose prose-sm max-w-none whitespace-pre-wrap">
+                    {body.replace(/\{\{(\w+)\}\}/g, (_, key) => previewVariables[key] || `{{${key}}}`) || 'No content'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
+              Close Preview
             </Button>
           </DialogFooter>
         </DialogContent>
