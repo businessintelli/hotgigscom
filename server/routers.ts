@@ -1195,8 +1195,24 @@ Please be specific and practical.`;
             // Send invitation email if user is not verified
             if (!user.emailVerified) {
               try {
-                // TODO: Send invitation email
-                // await sendInvitationEmail(user.email, user.name);
+                const { generateCandidateInvitationEmail } = await import('./emailTemplates');
+                const emailHtml = generateCandidateInvitationEmail({
+                  candidateName: user.name,
+                  candidateEmail: user.email,
+                  jobTitle: job.title,
+                  jobId: input.jobId,
+                  companyName: 'HotGigs',
+                  recruiterName: ctx.user.name,
+                  registrationUrl: `${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/candidate-dashboard`,
+                });
+                
+                // TODO: Send email using email service
+                // await sendEmail({
+                //   to: user.email,
+                //   subject: `You've been invited to apply for ${job.title}`,
+                //   html: emailHtml,
+                // });
+                console.log('Invitation email prepared for:', user.email);
               } catch (emailError) {
                 console.error('Failed to send invitation email:', emailError);
               }

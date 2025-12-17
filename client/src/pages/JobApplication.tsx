@@ -41,6 +41,68 @@ export default function JobApplication() {
   
   // Draft key for localStorage
   const draftKey = `job-application-draft-${jobId}`;
+
+  // Auto-fill extended info from candidate profile
+  useEffect(() => {
+    if (candidate && Object.keys(extendedInfo).length === 0) {
+      const autoFilledInfo: ExtendedCandidateInfo = {};
+      
+      if (candidate.workAuthorization) autoFilledInfo.workAuthorization = candidate.workAuthorization;
+      if (candidate.workAuthorizationEndDate) autoFilledInfo.workAuthorizationEndDate = new Date(candidate.workAuthorizationEndDate).toISOString().split('T')[0];
+      if (candidate.w2EmployerName) autoFilledInfo.w2EmployerName = candidate.w2EmployerName;
+      if (candidate.nationality) autoFilledInfo.nationality = candidate.nationality;
+      if (candidate.gender) autoFilledInfo.gender = candidate.gender;
+      if (candidate.dateOfBirth) autoFilledInfo.dateOfBirth = new Date(candidate.dateOfBirth).toISOString().split('T')[0];
+      if (candidate.highestEducation) autoFilledInfo.highestEducation = candidate.highestEducation;
+      if (candidate.specialization) autoFilledInfo.specialization = candidate.specialization;
+      if (candidate.highestDegreeStartDate) autoFilledInfo.highestDegreeStartDate = new Date(candidate.highestDegreeStartDate).toISOString().split('T')[0];
+      if (candidate.highestDegreeEndDate) autoFilledInfo.highestDegreeEndDate = new Date(candidate.highestDegreeEndDate).toISOString().split('T')[0];
+      if (candidate.employmentHistory) {
+        try {
+          autoFilledInfo.employmentHistory = JSON.parse(candidate.employmentHistory);
+        } catch (e) {
+          console.error('Failed to parse employment history:', e);
+        }
+      }
+      if (candidate.languagesRead) {
+        try {
+          autoFilledInfo.languagesRead = JSON.parse(candidate.languagesRead);
+        } catch (e) {
+          console.error('Failed to parse languagesRead:', e);
+        }
+      }
+      if (candidate.languagesSpeak) {
+        try {
+          autoFilledInfo.languagesSpeak = JSON.parse(candidate.languagesSpeak);
+        } catch (e) {
+          console.error('Failed to parse languagesSpeak:', e);
+        }
+      }
+      if (candidate.languagesWrite) {
+        try {
+          autoFilledInfo.languagesWrite = JSON.parse(candidate.languagesWrite);
+        } catch (e) {
+          console.error('Failed to parse languagesWrite:', e);
+        }
+      }
+      if (candidate.currentResidenceZipCode) autoFilledInfo.currentResidenceZipCode = candidate.currentResidenceZipCode;
+      if (candidate.passportNumber) autoFilledInfo.passportNumber = candidate.passportNumber;
+      if (candidate.sinLast4) autoFilledInfo.sinLast4 = candidate.sinLast4;
+      if (candidate.linkedinId) autoFilledInfo.linkedinId = candidate.linkedinId;
+      if (candidate.passportCopyUrl) autoFilledInfo.passportCopyUrl = candidate.passportCopyUrl;
+      if (candidate.dlCopyUrl) autoFilledInfo.dlCopyUrl = candidate.dlCopyUrl;
+      if (candidate.currentSalary) autoFilledInfo.currentSalary = candidate.currentSalary;
+      if (candidate.currentHourlyRate) autoFilledInfo.currentHourlyRate = candidate.currentHourlyRate;
+      if (candidate.expectedSalary) autoFilledInfo.expectedSalary = candidate.expectedSalary;
+      if (candidate.expectedHourlyRate) autoFilledInfo.expectedHourlyRate = candidate.expectedHourlyRate;
+      if (candidate.salaryType) autoFilledInfo.salaryType = candidate.salaryType as 'salary' | 'hourly';
+
+      if (Object.keys(autoFilledInfo).length > 0) {
+        setExtendedInfo(autoFilledInfo);
+        toast.success('Profile information auto-filled');
+      }
+    }
+  }, [candidate]);
   
   // Load draft on mount
   useEffect(() => {
@@ -689,6 +751,47 @@ export default function JobApplication() {
                 </Button>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Progress Tracker Sidebar */}
+          <div className="lg:col-span-1">
+            <ApplicationProgressTracker
+              sections={[
+                {
+                  id: 'resume',
+                  title: 'Resume',
+                  isComplete: !!(selectedResumeProfileId || customResumeFile || candidate?.resumeUrl),
+                  hasError: false,
+                },
+                {
+                  id: 'skills',
+                  title: 'Skill Matrix',
+                  isComplete: skillRatings.length > 0 && validateSkillMatrix(skillRatings, job?.requiredSkills || []),
+                  hasError: showSkillValidation && !validateSkillMatrix(skillRatings, job?.requiredSkills || []),
+                },
+                {
+                  id: 'extended-info',
+                  title: 'Extended Information',
+                  isComplete: !!(extendedInfo.salaryType && extendedInfo.workAuthorization && extendedInfo.nationality),
+                  hasError: false,
+                },
+                {
+                  id: 'cover-letter',
+                  title: 'Cover Letter',
+                  isComplete: coverLetter.length >= 50,
+                  isOptional: true,
+                  hasError: false,
+                },
+                {
+                  id: 'video',
+                  title: 'Video Introduction',
+                  isComplete: !!selectedVideoId,
+                  isOptional: true,
+                  hasError: false,
+                },
+              ]}
+              currentSection={currentSection}
+            />
           </div>
         </div>
       </div>

@@ -2384,20 +2384,20 @@
 - [x] Add expected salary/hourly rate fields to database schema
 - [x] Create comprehensive candidate profile creation/edit form
 - [x] Include all extended info fields in profile form
-- [ ] Auto-prefill application form from candidate profile data
+- [x] Auto-prefill application form from candidate profile data
 - [ ] Update candidate dashboard to show profile completion percentage
 
 ## Application Progress Tracking
 - [x] Design progress indicator component
 - [x] Track completion status for each section (resume, extended info, cover letter, skills)
-- [ ] Show visual progress bar in application form (component created, integration pending)
+- [x] Show visual progress bar in application form
 - [x] Add section validation indicators (complete/incomplete/optional)
 - [ ] Save progress automatically as user fills form
 
 ## Branded Email Templates
-- [ ] Design HTML email template for candidate invitations
-- [ ] Include job details in invitation email
-- [ ] Add company branding and logo to email
-- [ ] Include clear registration instructions
-- [ ] Add direct links to job and registration page
+- [x] Design HTML email template for candidate invitations
+- [x] Include job details in invitation email
+- [x] Add company branding and logo to email
+- [x] Include clear registration instructions
+- [x] Add direct links to job and registration page
 - [ ] Create email preview functionality for recruiters

@@ -434,3 +434,82 @@ export function generateNewApplicationEmail(params: NewApplicationParams): strin
 </html>
   `.trim();
 }
+
+interface CandidateInvitationParams {
+  candidateName: string;
+  candidateEmail: string;
+  jobTitle: string;
+  jobId: number;
+  companyName: string;
+  recruiterName: string;
+  registrationUrl: string;
+}
+
+export function generateCandidateInvitationEmail(params: CandidateInvitationParams): string {
+  const { candidateName, jobTitle, companyName, recruiterName, registrationUrl } = params;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Application Invitation</title>
+  <style>${EMAIL_STYLES}</style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>🎯 You've Been Invited to Apply!</h1>
+    </div>
+    <div class="content">
+      <p>Hello ${candidateName},</p>
+      
+      <p><strong>${recruiterName}</strong> from <strong>${companyName}</strong> has submitted your application for the following position:</p>
+      
+      <div class="info-box">
+        <div class="info-box-item">
+          <span class="info-box-label">Position:</span> ${jobTitle}
+        </div>
+        <div class="info-box-item">
+          <span class="info-box-label">Company:</span> ${companyName}
+        </div>
+        <div class="info-box-item">
+          <span class="info-box-label">Submitted By:</span> ${recruiterName}
+        </div>
+      </div>
+      
+      <p>To review your application details and complete your registration on HotGigs, please click the button below:</p>
+      
+      <center>
+        <a href="${registrationUrl}" class="button">
+          Review Application & Register
+        </a>
+      </center>
+      
+      <p><strong>Once registered, you'll be able to:</strong></p>
+      <ul>
+        <li>View and manage your application status</li>
+        <li>Update your profile and resume</li>
+        <li>Track interview schedules</li>
+        <li>Apply for other opportunities</li>
+      </ul>
+      
+      <p style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 4px;">
+        <strong>Note:</strong> If you didn't expect this invitation or have any questions, please contact ${recruiterName} directly.
+      </p>
+      
+      <p>Best regards,<br>
+      <strong>The HotGigs Team</strong></p>
+    </div>
+    <div class="footer">
+      <p>© 2025 HotGigs. All rights reserved.</p>
+      <p>
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}">Visit HotGigs</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
