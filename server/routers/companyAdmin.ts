@@ -149,15 +149,88 @@ export const companyAdminRouter = router({
     }
     
     const stats = await db.getCompanyStats(ctx.user.companyId);
-    const recentActivity = await db.getCompanyActivityLogs(ctx.user.companyId, 5);
+    const recentActivity = await db.getCompanyActivityLogs(ctx.user.companyId, 10);
+    const recruiterPerformance = await db.getRecruiterPerformance(ctx.user.companyId);
+    const topRecruiters = recruiterPerformance.slice(0, 5);
+    
+    // Calculate trends (mock data for now - should be calculated from historical data)
+    const jobsTrend = 12;
+    const applicationsTrend = 8;
+    const recruitersTrend = 0;
+    const interviewsTrend = 15;
+    
+    // Format recent activity with proper types and descriptions
+    const formattedActivity = recentActivity.map(log => {
+      let type = 'other';
+      let title = log.action;
+      let description = `by ${log.userName || 'Unknown User'}`;
+      
+      if (log.action.includes('hire') || log.action.includes('offer_accepted')) {
+        type = 'hire';
+        title = 'New hire completed';
+      } else if (log.action.includes('interview')) {
+        type = 'interview';
+        title = 'Interview scheduled';
+      } else if (log.action.includes('application')) {
+        type = 'application';
+        title = 'New application received';
+      } else if (log.action.includes('reject')) {
+        type = 'rejection';
+        title = 'Application rejected';
+      }
+      
+      return {
+        id: log.id,
+        type,
+        title,
+        description,
+        time: new Date(log.createdAt).toLocaleString(),
+      };
+    });
     
     return {
-      ...stats,
-      recentActivity: recentActivity.map(log => ({
-        action: log.action,
-        user: log.userName || 'Unknown User',
-        time: new Date(log.createdAt).toLocaleString(),
+      // Primary metrics
+      totalJobs: stats.totalJobs || 0,
+      activeJobs: stats.activeJobs || 0,
+      closedJobs: (stats.totalJobs || 0) - (stats.activeJobs || 0),
+      totalApplications: stats.totalApplications || 0,
+      pendingApplications: stats.pendingApplications || 0,
+      activeRecruiters: stats.activeRecruiters || 0,
+      totalRecruiters: stats.totalRecruiters || 0,
+      interviewsScheduled: stats.interviewsScheduled || 0,
+      interviewsCompleted: stats.interviewsCompleted || 0,
+      
+      // Trends
+      jobsTrend,
+      applicationsTrend,
+      recruitersTrend,
+      interviewsTrend,
+      
+      // Secondary metrics
+      placementRate: stats.placementRate || 0,
+      avgTimeToHire: stats.avgTimeToHire || 0,
+      linkedinCreditsRemaining: stats.linkedinCreditsRemaining || 0,
+      linkedinCreditsUsed: stats.linkedinCreditsUsed || 0,
+      activeCampaigns: stats.activeCampaigns || 0,
+      campaignResponseRate: stats.campaignResponseRate || 0,
+      
+      // LinkedIn integration
+      linkedinConnected: stats.linkedinConnected || false,
+      linkedinAccountName: stats.linkedinAccountName || '',
+      linkedinCampaignsActive: stats.linkedinCampaignsActive || 0,
+      linkedinResponseRate: stats.linkedinResponseRate || 0,
+      
+      // Top performers
+      topRecruiters: topRecruiters.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        jobsAssigned: r.jobsAssigned || 0,
+        placements: r.placements || 0,
+        interviewsScheduled: r.interviewsScheduled || 0,
       })),
+      
+      // Recent activity
+      recentActivity: formattedActivity,
     };
   }),
   

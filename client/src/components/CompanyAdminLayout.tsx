@@ -23,13 +23,14 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navigation = [
     { name: "Dashboard", href: "/company-admin/dashboard", icon: BarChart3 },
-    { name: "Team Members", href: "/company-admin/users", icon: Users },
+    { name: "Team Members", href: "/company-admin/team-members", icon: Users },
     { name: "LinkedIn Settings", href: "/company-admin/linkedin-settings", icon: Linkedin },
     { name: "InMail Templates", href: "/company-admin/inmail-templates", icon: MessageSquare },
-    { name: "Company Settings", href: "/company-admin/settings", icon: Settings },
+    { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },
   ];
 
   const isActive = (path: string) => location === path;
@@ -38,29 +39,44 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 bg-card border-r border-border transform transition-all duration-200 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
+        } lg:translate-x-0 ${
+          isCollapsed ? "lg:w-20" : "lg:w-64"
+        } w-64`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-border">
-            <Link href="/company-admin/dashboard">
-              <a className="flex items-center gap-2">
-                {APP_LOGO && (
-                  <img src={APP_LOGO} alt="Logo" className="h-8 w-8" />
-                )}
-                <span className="text-lg font-semibold">{APP_TITLE}</span>
-              </a>
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            {!isCollapsed && (
+              <Link href="/company-admin/dashboard">
+                <a className="flex items-center gap-2">
+                  {APP_LOGO && (
+                    <img src={APP_LOGO} alt="Logo" className="h-8 w-8" />
+                  )}
+                  <span className="text-lg font-semibold">{APP_TITLE}</span>
+                </a>
+              </Link>
+            )}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden lg:flex"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -74,10 +90,13 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
                       isActive(item.href)
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    } ${
+                      isCollapsed ? "justify-center" : ""
                     }`}
+                    title={isCollapsed ? item.name : undefined}
                   >
-                    <Icon className="h-5 w-5" />
-                    {item.name}
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {!isCollapsed && item.name}
                   </a>
                 </Link>
               );

@@ -1847,3 +1847,36 @@ export const systemHealthMetrics = mysqlTable("systemHealthMetrics", {
 
 export type SystemHealthMetric = typeof systemHealthMetrics.$inferSelect;
 export type InsertSystemHealthMetric = typeof systemHealthMetrics.$inferInsert;
+
+
+/**
+ * Team members table for company admin to manage recruiters
+ */
+export const teamMembers = mysqlTable("team_members", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  recruiterId: int("recruiterId").references(() => recruiters.id, { onDelete: "cascade" }),
+  
+  // Role and permissions
+  role: mysqlEnum("role", ["recruiter", "senior_recruiter", "team_lead"]).notNull().default("recruiter"),
+  permissions: json("permissions"), // Custom permissions object
+  
+  // Status
+  status: mysqlEnum("status", ["active", "inactive", "suspended"]).notNull().default("active"),
+  
+  // Performance tracking
+  jobsAssigned: int("jobsAssigned").default(0),
+  applicationsProcessed: int("applicationsProcessed").default(0),
+  interviewsScheduled: int("interviewsScheduled").default(0),
+  hiresCompleted: int("hiresCompleted").default(0),
+  
+  // Dates
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+  lastActiveAt: timestamp("lastActiveAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = typeof teamMembers.$inferInsert;

@@ -3152,3 +3152,90 @@
 - [x] Fix redirect logic in SignIn.tsx to handle company_admin role
 - [x] Update auth callback to properly detect existing company_admin users
 - [x] Test login flow for pratap@businessintelli.com
+
+## Company Admin System Overhaul (Current Focus)
+
+### Research & Planning
+- [ ] Research recruitment platform admin dashboard best practices
+- [ ] Design company-level analytics data architecture
+- [ ] Define key metrics for company admin dashboard
+
+### Database & Backend
+- [ ] Create team_members table with role/permission fields
+- [ ] Create linkedin_settings table for integration config
+- [ ] Create sourcing_campaigns table for tracking
+- [ ] Build company-level analytics aggregation procedures
+- [ ] Create team member CRUD procedures
+- [ ] Create LinkedIn settings procedures
+
+### UI Components & Layout
+- [ ] Create CompanyAdminLayout with collapsible sidebar
+- [ ] Design consistent color scheme and spacing
+- [ ] Build reusable stat card components
+- [ ] Build drill-down list view components
+
+### Company Admin Dashboard
+- [ ] Build main dashboard with company-level stats
+- [ ] Add total jobs posted metric with drill-down
+- [ ] Add total applications received metric with drill-down
+- [ ] Add active recruiters metric with drill-down
+- [ ] Add interviews scheduled metric with drill-down
+- [ ] Add placement rate metric
+- [ ] Add time-to-hire metric
+- [ ] Add top performing recruiters widget
+- [ ] Add recent activity feed
+- [ ] Make all stats clickable to show detailed list views
+
+### Team Members Management
+- [ ] Create team members listing page
+- [ ] Add recruiter invite/add functionality
+- [ ] Add role assignment (recruiter, senior_recruiter, team_lead)
+- [ ] Add permission management
+- [ ] Add performance tracking per recruiter
+- [ ] Add recruiter status management (active/inactive)
+- [ ] Build recruiter detail view with individual stats
+
+### LinkedIn Integration
+- [ ] Create LinkedIn settings page
+- [ ] Add LinkedIn account connection interface
+- [ ] Add InMail template management
+- [ ] Add automated sourcing campaign setup
+- [ ] Add LinkedIn API credentials configuration
+- [ ] Add connection status indicator
+
+### Testing & Polish
+- [ ] Test all company admin pages with real data
+- [ ] Verify collapsible sidebar works on all pages
+- [ ] Test drill-down navigation flows
+- [ ] Verify consistent UI across all pages
+- [ ] Test team member management workflows
+
+## Company Admin System Overhaul (COMPLETED)
+- [x] Research recruitment metrics and KPIs
+- [x] Design database schema for team members and LinkedIn settings
+- [x] Create collapsible sidebar layout component with responsive design
+- [x] Build comprehensive dashboard with company-level stats and trends
+- [x] Implement drill-down views for all metrics (clickable stat cards)
+- [x] Create team members management page with role assignment
+- [x] Build LinkedIn settings integration page with usage tracking
+- [x] Create InMail templates management with categories
+- [x] Implement company settings page with email and branding config
+- [x] Ensure consistent UI across all company admin pages
+- [x] Add routes for all new company admin pages
+- [x] Update sidebar navigation with correct paths
+
+## Company Admin System (COMPLETED)
+- [x] Research recruitment metrics and KPIs for company-level analytics
+- [x] Design database schema for team members and LinkedIn settings
+- [x] Create CompanyAdminLayout component with collapsible sidebar
+- [x] Build comprehensive company admin dashboard with company-level stats
+- [x] Implement drill-down views for all metrics (jobs, applications, recruiters, interviews)
+- [x] Create team members management page with role badges and search
+- [x] Build LinkedIn settings integration page with OAuth flow instructions
+- [x] Create InMail templates management with CRUD operations
+- [x] Implement company settings page (branding, email config, notifications, API keys)
+- [x] Ensure consistent UI across all company admin pages
+- [x] Test sidebar collapse functionality
+- [x] Fix InMail templates template variable syntax errors
+- [x] Fix company admin role detection and redirect logic
+- [x] Reset password for pratap@businessintelli.com to Demo123!

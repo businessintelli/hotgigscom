@@ -344,6 +344,13 @@
       "when": 1765985245985,
       "tag": "0048_bent_drax",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "5",
+      "when": 1765989464965,
+      "tag": "0049_lush_ultragirl",
+      "breakpoints": true
     }
   ]
 }
