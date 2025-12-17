@@ -29,6 +29,7 @@ import ResumeRankingDashboard from "@/pages/ResumeRankingDashboard";
 import BulkResumeUpload from "@/pages/BulkResumeUpload";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
+import ApplyOnBehalf from "./pages/ApplyOnBehalf";
 import CandidateSearch from "./pages/CandidateSearch";
 import AdvancedCandidateSearch from "./pages/AdvancedCandidateSearch";
 import EmailTemplateManager from "./pages/EmailTemplateManager";
@@ -172,6 +173,7 @@ function Router() {
       <Route path={"/jobs/:id"} component={JobDetails} />
       <Route path={"/recruiter/jobs/:id"} component={JobDetails} />
       <Route path={"/apply/:id"} component={JobApplication} />
+      <Route path={"/recruiter/apply-on-behalf/:jobId"} component={ApplyOnBehalf} />
       <Route path="/ai-interview" component={AIInterviewPage} />
       <Route path="/recommendations" component={Recommendations} />
       <Route path="/resources" component={CareerResources} />

@@ -130,13 +130,33 @@ export default function JobDetails() {
 
             {/* Apply Button */}
             <div className="pt-4 border-t">
-              <Button
-                size="lg"
-                className="w-full md:w-auto"
-                onClick={() => setLocation(`/apply/${job.id}`)}
-              >
-                Apply for this Position
-              </Button>
+              {user?.role === 'recruiter' ? (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    size="lg"
+                    className="flex-1"
+                    onClick={() => setLocation(`/apply/${job.id}`)}
+                  >
+                    Apply for this Position
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setLocation(`/recruiter/apply-on-behalf/${job.id}`)}
+                  >
+                    Apply on Behalf of Candidate
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="lg"
+                  className="w-full md:w-auto"
+                  onClick={() => setLocation(`/apply/${job.id}`)}
+                >
+                  Apply for this Position
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

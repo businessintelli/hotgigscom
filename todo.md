@@ -2342,3 +2342,13 @@
 
 - [x] Fix recruiter applications page showing dummy data instead of real applications
 - [x] Fix job details page 404 error at /recruiter/jobs/:id
+
+## Apply on Behalf of Candidate Feature
+- [x] Implement AI resume parsing for recruiter-uploaded resumes
+- [x] Create multi-step form for recruiter to review and edit parsed candidate data
+- [x] Create candidate account automatically if not exists (using email from resume)
+- [x] Send email invitation to candidate to register and review application
+- [x] Store candidate in candidates table and link to recruiter
+- [x] Show recruiter-added candidates in Candidates tab
+- [x] Return recruiter to original page after successful submission
+- [x] Handle duplicate candidate detection (by email)

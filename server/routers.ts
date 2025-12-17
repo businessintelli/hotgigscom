@@ -1723,6 +1723,178 @@ Please be specific and practical.`;
         
         return rankings;
       }),
+    
+    // Parse resume for recruiter (returns parsed data for review)
+    parseResumeForRecruiter: protectedProcedure
+      .input(z.object({
+        resumeFile: z.object({
+          data: z.string(), // base64
+          filename: z.string(),
+          mimeType: z.string(),
+        }),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error("Recruiter profile not found");
+        
+        try {
+          // Convert base64 to buffer
+          const buffer = Buffer.from(input.resumeFile.data, 'base64');
+          
+          // Extract text from resume
+          const resumeText = await extractResumeText(buffer, input.resumeFile.mimeType);
+          
+          // Parse with AI
+          const parsedData = await parseResumeWithAI(resumeText);
+          
+          return {
+            success: true,
+            parsedData,
+          };
+        } catch (error: any) {
+          console.error('Resume parsing failed:', error);
+          return {
+            success: false,
+            error: error.message || 'Failed to parse resume',
+          };
+        }
+      }),
+    
+    // Submit application on behalf of candidate (recruiter feature)
+    submitOnBehalf: protectedProcedure
+      .input(z.object({
+        jobId: z.number(),
+        resumeFile: z.object({
+          data: z.string(), // base64
+          filename: z.string(),
+          mimeType: z.string(),
+        }),
+        candidateData: z.object({
+          name: z.string(),
+          email: z.string(),
+          phone: z.string().optional(),
+          location: z.string().optional(),
+          skills: z.array(z.string()).optional(),
+          experience: z.array(z.any()).optional(),
+          education: z.array(z.any()).optional(),
+          totalExperienceYears: z.number().optional(),
+          seniorityLevel: z.string().optional(),
+        }),
+        coverLetter: z.string().optional(),
+        returnUrl: z.string().optional(), // URL to return to after submission
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error("Recruiter profile not found");
+        
+        // Upload resume to S3
+        const buffer = Buffer.from(input.resumeFile.data, 'base64');
+        const fileKey = `recruiter-${recruiter.id}/candidates/${input.candidateData.email}-${randomSuffix()}.${input.resumeFile.filename.split('.').pop()}`;
+        const { url: resumeUrl } = await storagePut(
+          fileKey,
+          buffer,
+          input.resumeFile.mimeType
+        );
+        
+        // Check if candidate already exists by email
+        let user = await db.getUserByEmail(input.candidateData.email);
+        let candidate;
+        
+        if (user) {
+          // User exists, get or create candidate profile
+          candidate = await db.getCandidateByUserId(user.id);
+          if (!candidate) {
+            // User exists but no candidate profile, create one
+            const candidateResult = await db.createCandidate({
+              userId: user.id,
+              phoneNumber: input.candidateData.phone,
+              location: input.candidateData.location,
+              skills: input.candidateData.skills?.join(', '),
+              experience: JSON.stringify(input.candidateData.experience || []),
+              education: JSON.stringify(input.candidateData.education || []),
+              resumeUrl,
+              resumeFilename: input.resumeFile.filename,
+              resumeUploadedAt: new Date(),
+              totalExperienceYears: input.candidateData.totalExperienceYears,
+              seniorityLevel: input.candidateData.seniorityLevel,
+            });
+            candidate = await db.getCandidateById(candidateResult.insertId);
+          } else {
+            // Update existing candidate with new resume
+            await db.updateCandidate(candidate.id, {
+              resumeUrl,
+              resumeFilename: input.resumeFile.filename,
+              resumeUploadedAt: new Date(),
+            });
+          }
+        } else {
+          // Create new user and candidate
+          const userResult = await db.createUser({
+            email: input.candidateData.email,
+            name: input.candidateData.name,
+            role: 'candidate',
+            loginMethod: 'pending', // User needs to complete registration
+            emailVerified: false,
+          });
+          
+          const candidateResult = await db.createCandidate({
+            userId: userResult.insertId,
+            phoneNumber: input.candidateData.phone,
+            location: input.candidateData.location,
+            skills: input.candidateData.skills?.join(', '),
+            experience: JSON.stringify(input.candidateData.experience || []),
+            education: JSON.stringify(input.candidateData.education || []),
+            resumeUrl,
+            resumeFilename: input.resumeFile.filename,
+            resumeUploadedAt: new Date(),
+            totalExperienceYears: input.candidateData.totalExperienceYears,
+            seniorityLevel: input.candidateData.seniorityLevel,
+          });
+          
+          candidate = await db.getCandidateById(candidateResult.insertId);
+          user = await db.getUserById(userResult.insertId);
+        }
+        
+        if (!candidate) throw new Error("Failed to create candidate");
+        
+        // Create application
+        const appResult = await db.createApplication({
+          jobId: input.jobId,
+          candidateId: candidate.id,
+          coverLetter: input.coverLetter,
+          resumeUrl,
+          resumeFilename: input.resumeFile.filename,
+        });
+        
+        // Send email invitation to candidate
+        const job = await db.getJobById(input.jobId);
+        if (job && user) {
+          // TODO: Send email invitation using email service
+          // For now, create a notification
+          try {
+            await notificationHelpers.createNotification({
+              userId: user.id,
+              type: 'application',
+              title: 'You\'ve been applied to a job',
+              message: `A recruiter has submitted your application for ${job.title}. Please register to review and manage your application.`,
+              isRead: false,
+              relatedEntityType: 'application',
+              relatedEntityId: appResult.insertId,
+              actionUrl: `/candidate/applications`,
+            });
+          } catch (error) {
+            console.error('Failed to create notification:', error);
+          }
+        }
+        
+        return {
+          success: true,
+          applicationId: appResult.insertId,
+          candidateId: candidate.id,
+          isNewCandidate: !user || user.loginMethod === 'pending',
+          returnUrl: input.returnUrl,
+        };
+      }),
   }),
   
   interview: router({
