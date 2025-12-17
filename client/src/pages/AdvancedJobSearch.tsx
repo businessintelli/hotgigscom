@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
+import { JobShareButton } from "@/components/JobShareButton";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -373,6 +374,13 @@ export default function AdvancedJobSearch() {
                           variant="outline"
                           size="default"
                           showText
+                        />
+                        <JobShareButton
+                          jobId={job.id}
+                          jobTitle={job.title}
+                          companyName={job.companyName || undefined}
+                          variant="outline"
+                          size="default"
                         />
                       </div>
                     </CardContent>

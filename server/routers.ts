@@ -13,12 +13,16 @@ import * as authService from "./authService";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
+import { applicationHistory } from "../drizzle/schema";
+import { desc } from "drizzle-orm";
 import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
 import { sendInterviewInvitation, sendApplicationStatusUpdate } from "./emailNotifications";
+import { getStageEmailTemplate } from "./services/stageTransitionEmails";
+import { sendEmail } from "./emailService";
 import { rankCandidatesForJob, getTopCandidatesForJob, compareCandidates } from './resumeRanking';
 import { exportCandidatesToExcel, exportCandidatesToCSV } from './resumeExport';
 import * as notificationHelpers from './notificationHelpers';
@@ -2321,29 +2325,72 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         status: z.enum(["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
+        
+        // Get current application status before update
+        const applications = await db.getApplicationsByJob(0);
+        const application = applications.find(app => app.id === id);
+        const oldStatus = application?.status;
+        
+        // Update application status
         await db.updateApplication(id, data);
         
+        // Log status change in history
+        const database = await getDb();
+        if (database && oldStatus !== input.status) {
+          await database.insert(applicationHistory).values({
+            applicationId: id,
+            fromStatus: oldStatus || null,
+            toStatus: input.status,
+            changedBy: ctx.user?.id || null,
+            notes: input.notes || null,
+            emailSent: false,
+          });
+        }
+        
         // Send email notification and in-app notification to candidate
+        let emailSent = false;
         try {
-          const applications = await db.getApplicationsByJob(0); // Get application details
-          const application = applications.find(app => app.id === id);
           if (application) {
             const candidate = await db.getCandidateById(application.candidateId);
             const job = await db.getJobById(application.jobId);
             if (candidate && job) {
               const user = await db.getUserById(candidate.userId);
               if (user?.email) {
-                // Send email
-                await sendApplicationStatusUpdate({
-                  candidateEmail: user.email,
+                // Get recruiter info for email
+                const recruiter = ctx.user?.id ? await db.getRecruiterByUserId(ctx.user.id) : null;
+                const recruiterUser = recruiter ? await db.getUserById(recruiter.userId) : null;
+                
+                // Generate email using new template
+                const emailData = {
                   candidateName: user.name || "Candidate",
                   jobTitle: job.title,
                   companyName: job.companyName || "Company",
-                  oldStatus: application.status || "pending",
-                  newStatus: input.status,
+                  currentStage: input.status,
+                  recruiterName: recruiterUser?.name,
+                  recruiterEmail: recruiterUser?.email,
+                };
+                
+                const { subject, html } = getStageEmailTemplate(input.status, emailData);
+                
+                // Send email
+                await sendEmail({
+                  to: user.email,
+                  subject,
+                  html,
                 });
+                
+                emailSent = true;
+                
+                // Update history to mark email as sent
+                if (database) {
+                  await database.update(applicationHistory)
+                    .set({ emailSent: true })
+                    .where(eq(applicationHistory.applicationId, id))
+                    .orderBy(desc(applicationHistory.createdAt))
+                    .limit(1);
+                }
                 
                 // Create in-app notification
                 await notificationHelpers.createNotification({
@@ -2363,7 +2410,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           console.error("Failed to send application status email:", error);
         }
         
-        return { success: true };
+        return { success: true, emailSent };
       }),
     
     calculateMatch: protectedProcedure
@@ -2400,16 +2447,127 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return await db.getAllApplications();
       }),
     
+    getApplicationHistory: protectedProcedure
+      .input(z.object({ applicationId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return [];
+        
+        const history = await database
+          .select({
+            id: applicationHistory.id,
+            applicationId: applicationHistory.applicationId,
+            fromStatus: applicationHistory.fromStatus,
+            toStatus: applicationHistory.toStatus,
+            changedBy: applicationHistory.changedBy,
+            notes: applicationHistory.notes,
+            emailSent: applicationHistory.emailSent,
+            createdAt: applicationHistory.createdAt,
+            changedByName: users.name,
+            changedByEmail: users.email,
+          })
+          .from(applicationHistory)
+          .leftJoin(users, eq(applicationHistory.changedBy, users.id))
+          .where(eq(applicationHistory.applicationId, input.applicationId))
+          .orderBy(desc(applicationHistory.createdAt));
+        
+        return history;
+      }),
+    
     bulkUpdateStatus: protectedProcedure
       .input(z.object({
         applicationIds: z.array(z.number()),
         status: z.enum(["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const database = await getDb();
+        let emailsSent = 0;
+        let emailsFailed = 0;
+        
         for (const id of input.applicationIds) {
+          // Get current application status before update
+          const applications = await db.getApplicationsByJob(0);
+          const application = applications.find(app => app.id === id);
+          const oldStatus = application?.status;
+          
+          // Update application status
           await db.updateApplication(id, { status: input.status });
+          
+          // Log status change in history
+          if (database && oldStatus !== input.status) {
+            await database.insert(applicationHistory).values({
+              applicationId: id,
+              fromStatus: oldStatus || null,
+              toStatus: input.status,
+              changedBy: ctx.user?.id || null,
+              notes: "Bulk status update",
+              emailSent: false,
+            });
+          }
+          
+          // Send email notification
+          try {
+            if (application) {
+              const candidate = await db.getCandidateById(application.candidateId);
+              const job = await db.getJobById(application.jobId);
+              if (candidate && job) {
+                const user = await db.getUserById(candidate.userId);
+                if (user?.email) {
+                  // Get recruiter info for email
+                  const recruiter = ctx.user?.id ? await db.getRecruiterByUserId(ctx.user.id) : null;
+                  const recruiterUser = recruiter ? await db.getUserById(recruiter.userId) : null;
+                  
+                  // Generate email using new template
+                  const emailData = {
+                    candidateName: user.name || "Candidate",
+                    jobTitle: job.title,
+                    companyName: job.companyName || "Company",
+                    currentStage: input.status,
+                    recruiterName: recruiterUser?.name,
+                    recruiterEmail: recruiterUser?.email,
+                  };
+                  
+                  const { subject, html } = getStageEmailTemplate(input.status, emailData);
+                  
+                  // Send email
+                  await sendEmail({
+                    to: user.email,
+                    subject,
+                    html,
+                  });
+                  
+                  emailsSent++;
+                  
+                  // Update history to mark email as sent
+                  if (database) {
+                    await database.update(applicationHistory)
+                      .set({ emailSent: true })
+                      .where(eq(applicationHistory.applicationId, id))
+                      .orderBy(desc(applicationHistory.createdAt))
+                      .limit(1);
+                  }
+                  
+                  // Create in-app notification
+                  await notificationHelpers.createNotification({
+                    userId: candidate.userId,
+                    type: 'status_change',
+                    title: 'Application Status Updated',
+                    message: `Your application for ${job.title} has been updated to: ${input.status}`,
+                    isRead: false,
+                    relatedEntityType: 'application',
+                    relatedEntityId: id,
+                    actionUrl: '/my-applications',
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to send email for application ${id}:`, error);
+            emailsFailed++;
+          }
         }
-        return { success: true };
+        
+        return { success: true, emailsSent, emailsFailed };
       }),
     
     getMatchedCandidates: protectedProcedure

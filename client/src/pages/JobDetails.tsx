@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2, Users, FileCheck, Video, Gift, CheckCircle, XCircle, UserX } from "lucide-react";
+import { JobShareButton } from "@/components/JobShareButton";
 import { useLocation, useRoute } from "wouter";
 
 export default function JobDetails() {
@@ -93,9 +94,18 @@ export default function JobDetails() {
                   </CardDescription>
                 )}
               </div>
-              <Badge variant={job.status === "active" ? "default" : "secondary"}>
-                {job.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <JobShareButton
+                  jobId={job.id}
+                  jobTitle={job.title}
+                  companyName={job.companyName || undefined}
+                  variant="outline"
+                  size="sm"
+                />
+                <Badge variant={job.status === "active" ? "default" : "secondary"}>
+                  {job.status}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">

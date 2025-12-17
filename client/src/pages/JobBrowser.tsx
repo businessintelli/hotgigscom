@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { Briefcase, MapPin, DollarSign, Clock, Search, Loader2, Building2, SlidersHorizontal, ArrowLeft } from "lucide-react";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
+import { JobShareButton } from "@/components/JobShareButton";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -228,8 +229,12 @@ export default function JobBrowser() {
                         jobId={job.id}
                         candidateId={candidate?.id}
                         variant="outline"
-                        size="default"
-                        showText
+                      />
+                      <JobShareButton
+                        jobId={job.id}
+                        jobTitle={job.title}
+                        companyName={job.companyName || undefined}
+                        variant="outline"
                       />
                     </div>
                   </div>

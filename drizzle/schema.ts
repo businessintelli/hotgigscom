@@ -269,6 +269,23 @@ export type Application = typeof applications.$inferSelect;
 export type InsertApplication = typeof applications.$inferInsert;
 
 /**
+ * Application history table for tracking status changes and timeline
+ */
+export const applicationHistory = mysqlTable("application_history", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  fromStatus: varchar("fromStatus", { length: 50 }),
+  toStatus: varchar("toStatus", { length: 50 }).notNull(),
+  changedBy: int("changedBy").references(() => users.id), // User who made the change
+  notes: text("notes"),
+  emailSent: boolean("emailSent").default(false).notNull(), // Track if notification email was sent
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ApplicationHistory = typeof applicationHistory.$inferSelect;
+export type InsertApplicationHistory = typeof applicationHistory.$inferInsert;
+
+/**
  * Interviews table for scheduling and tracking candidate interviews
  */
 export const interviews = mysqlTable("interviews", {
