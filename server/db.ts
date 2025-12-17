@@ -36,7 +36,10 @@ import {
   inmailTemplates, InsertInmailTemplate,
   companySettings, InsertCompanySettings,
   userActivityLogs, InsertUserActivityLog,
-  systemHealthMetrics, InsertSystemHealthMetric
+  systemHealthMetrics, InsertSystemHealthMetric,
+  customReports, InsertCustomReport,
+  reportSchedules, InsertReportSchedule,
+  reportExecutions, InsertReportExecution
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1609,4 +1612,201 @@ export async function searchJobs(filters: {
   }
   
   return results;
+}
+
+// ============================================================================
+// Custom Reports Database Helpers
+// ============================================================================
+
+/**
+ * Create a new custom report
+ */
+export async function createCustomReport(data: InsertCustomReport) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [report] = await db.insert(customReports).values(data);
+  return report;
+}
+
+/**
+ * Get custom reports by company ID
+ */
+export async function getCustomReportsByCompany(companyId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return await db.select()
+    .from(customReports)
+    .where(eq(customReports.companyId, companyId))
+    .orderBy(desc(customReports.createdAt));
+}
+
+/**
+ * Get custom report by ID
+ */
+export async function getCustomReportById(reportId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [report] = await db.select()
+    .from(customReports)
+    .where(eq(customReports.id, reportId));
+  
+  return report || null;
+}
+
+/**
+ * Update custom report
+ */
+export async function updateCustomReport(reportId: number, data: Partial<InsertCustomReport>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(customReports)
+    .set(data)
+    .where(eq(customReports.id, reportId));
+  
+  return await getCustomReportById(reportId);
+}
+
+/**
+ * Delete custom report
+ */
+export async function deleteCustomReport(reportId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.delete(customReports)
+    .where(eq(customReports.id, reportId));
+}
+
+// ============================================================================
+// Report Schedules Database Helpers
+// ============================================================================
+
+/**
+ * Create a new report schedule
+ */
+export async function createReportSchedule(data: InsertReportSchedule) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [schedule] = await db.insert(reportSchedules).values(data);
+  return schedule;
+}
+
+/**
+ * Get report schedules by company ID
+ */
+export async function getReportSchedulesByCompany(companyId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return await db.select()
+    .from(reportSchedules)
+    .where(eq(reportSchedules.companyId, companyId))
+    .orderBy(desc(reportSchedules.createdAt));
+}
+
+/**
+ * Get report schedule by ID
+ */
+export async function getReportScheduleById(scheduleId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [schedule] = await db.select()
+    .from(reportSchedules)
+    .where(eq(reportSchedules.id, scheduleId));
+  
+  return schedule || null;
+}
+
+/**
+ * Update report schedule
+ */
+export async function updateReportSchedule(scheduleId: number, data: Partial<InsertReportSchedule>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(reportSchedules)
+    .set(data)
+    .where(eq(reportSchedules.id, scheduleId));
+  
+  return await getReportScheduleById(scheduleId);
+}
+
+/**
+ * Delete report schedule
+ */
+export async function deleteReportSchedule(scheduleId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.delete(reportSchedules)
+    .where(eq(reportSchedules.id, scheduleId));
+}
+
+/**
+ * Get active schedules that need to be executed
+ */
+export async function getSchedulesDueForExecution() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const now = new Date();
+  
+  return await db.select()
+    .from(reportSchedules)
+    .where(
+      and(
+        eq(reportSchedules.isActive, true),
+        or(
+          isNull(reportSchedules.nextSendAt),
+          lte(reportSchedules.nextSendAt, now)
+        )
+      )
+    );
+}
+
+// ============================================================================
+// Report Executions Database Helpers
+// ============================================================================
+
+/**
+ * Create a new report execution record
+ */
+export async function createReportExecution(data: InsertReportExecution) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [execution] = await db.insert(reportExecutions).values(data);
+  return execution;
+}
+
+/**
+ * Get report executions by schedule ID
+ */
+export async function getReportExecutionsBySchedule(scheduleId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return await db.select()
+    .from(reportExecutions)
+    .where(eq(reportExecutions.scheduleId, scheduleId))
+    .orderBy(desc(reportExecutions.executedAt))
+    .limit(limit);
+}
+
+/**
+ * Update report execution status
+ */
+export async function updateReportExecution(executionId: number, data: Partial<InsertReportExecution>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(reportExecutions)
+    .set(data)
+    .where(eq(reportExecutions.id, executionId));
 }

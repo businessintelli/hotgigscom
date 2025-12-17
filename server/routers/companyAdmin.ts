@@ -452,6 +452,232 @@ export const companyAdminRouter = router({
     }),
   
   // ============================================
+  // CUSTOM REPORTS
+  // ============================================
+  
+  createCustomReport: companyAdminProcedure
+    .input(z.object({
+      name: z.string(),
+      description: z.string().optional(),
+      selectedFields: z.array(z.string()),
+      filters: z.array(z.object({
+        field: z.string(),
+        operator: z.string(),
+        value: z.string(),
+      })).optional(),
+      groupBy: z.string().optional(),
+      sortBy: z.string().optional(),
+      sortOrder: z.enum(['asc', 'desc']).default('asc'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      return await db.createCustomReport({
+        companyId: ctx.user.companyId,
+        userId: ctx.user.id,
+        name: input.name,
+        description: input.description,
+        selectedFields: input.selectedFields,
+        filters: input.filters || [],
+        groupBy: input.groupBy,
+        sortBy: input.sortBy,
+        sortOrder: input.sortOrder,
+      });
+    }),
+  
+  getCustomReports: companyAdminProcedure.query(async ({ ctx }) => {
+    if (!ctx.user.companyId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'User is not associated with a company',
+      });
+    }
+    
+    return await db.getCustomReportsByCompany(ctx.user.companyId);
+  }),
+  
+  getCustomReportById: companyAdminProcedure
+    .input(z.object({ reportId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const report = await db.getCustomReportById(input.reportId);
+      
+      if (!report || report.companyId !== ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Report not found',
+        });
+      }
+      
+      return report;
+    }),
+  
+  updateCustomReport: companyAdminProcedure
+    .input(z.object({
+      reportId: z.number(),
+      name: z.string().optional(),
+      description: z.string().optional(),
+      selectedFields: z.array(z.string()).optional(),
+      filters: z.array(z.object({
+        field: z.string(),
+        operator: z.string(),
+        value: z.string(),
+      })).optional(),
+      groupBy: z.string().optional(),
+      sortBy: z.string().optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const report = await db.getCustomReportById(input.reportId);
+      
+      if (!report || report.companyId !== ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Report not found',
+        });
+      }
+      
+      const { reportId, ...updates } = input;
+      return await db.updateCustomReport(reportId, updates);
+    }),
+  
+  deleteCustomReport: companyAdminProcedure
+    .input(z.object({ reportId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const report = await db.getCustomReportById(input.reportId);
+      
+      if (!report || report.companyId !== ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Report not found',
+        });
+      }
+      
+      await db.deleteCustomReport(input.reportId);
+      return { success: true };
+    }),
+  
+  // ============================================
+  // REPORT SCHEDULES
+  // ============================================
+  
+  createReportSchedule: companyAdminProcedure
+    .input(z.object({
+      reportId: z.number().optional(),
+      reportType: z.string(),
+      frequency: z.enum(['daily', 'weekly', 'monthly']),
+      dayOfWeek: z.number().optional(),
+      dayOfMonth: z.number().optional(),
+      timeOfDay: z.string().default('09:00:00'),
+      recipients: z.array(z.string().email()),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      // Calculate next send time based on frequency
+      const now = new Date();
+      let nextSendAt = new Date();
+      
+      if (input.frequency === 'daily') {
+        nextSendAt.setDate(now.getDate() + 1);
+      } else if (input.frequency === 'weekly') {
+        const daysUntilTarget = ((input.dayOfWeek || 0) - now.getDay() + 7) % 7;
+        nextSendAt.setDate(now.getDate() + (daysUntilTarget || 7));
+      } else if (input.frequency === 'monthly') {
+        nextSendAt.setMonth(now.getMonth() + 1);
+        nextSendAt.setDate(input.dayOfMonth || 1);
+      }
+      
+      return await db.createReportSchedule({
+        companyId: ctx.user.companyId,
+        reportId: input.reportId,
+        reportType: input.reportType,
+        frequency: input.frequency,
+        dayOfWeek: input.dayOfWeek,
+        dayOfMonth: input.dayOfMonth,
+        timeOfDay: input.timeOfDay,
+        recipients: input.recipients,
+        isActive: true,
+        nextSendAt,
+      });
+    }),
+  
+  getReportSchedules: companyAdminProcedure.query(async ({ ctx }) => {
+    if (!ctx.user.companyId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'User is not associated with a company',
+      });
+    }
+    
+    return await db.getReportSchedulesByCompany(ctx.user.companyId);
+  }),
+  
+  updateReportSchedule: companyAdminProcedure
+    .input(z.object({
+      scheduleId: z.number(),
+      isActive: z.boolean().optional(),
+      frequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
+      dayOfWeek: z.number().optional(),
+      dayOfMonth: z.number().optional(),
+      timeOfDay: z.string().optional(),
+      recipients: z.array(z.string().email()).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const schedule = await db.getReportScheduleById(input.scheduleId);
+      
+      if (!schedule || schedule.companyId !== ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Schedule not found',
+        });
+      }
+      
+      const { scheduleId, ...updates } = input;
+      return await db.updateReportSchedule(scheduleId, updates);
+    }),
+  
+  deleteReportSchedule: companyAdminProcedure
+    .input(z.object({ scheduleId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const schedule = await db.getReportScheduleById(input.scheduleId);
+      
+      if (!schedule || schedule.companyId !== ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Schedule not found',
+        });
+      }
+      
+      await db.deleteReportSchedule(input.scheduleId);
+      return { success: true };
+    }),
+  
+  getReportExecutions: companyAdminProcedure
+    .input(z.object({ scheduleId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const schedule = await db.getReportScheduleById(input.scheduleId);
+      
+      if (!schedule || schedule.companyId !== ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Schedule not found',
+        });
+      }
+      
+      return await db.getReportExecutionsBySchedule(input.scheduleId);
+    }),
+
+  // ============================================
   // ACTIVITY LOGS
   // ============================================
   

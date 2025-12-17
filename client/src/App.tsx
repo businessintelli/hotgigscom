@@ -66,6 +66,9 @@ import { CompanyAdminTeamMembers } from "./pages/CompanyAdminTeamMembers";
 import { CompanyAdminLinkedInSettings } from "./pages/CompanyAdminLinkedInSettings";
 import { CompanyAdminInMailTemplates } from "./pages/CompanyAdminInMailTemplates";
 import { CompanyAdminCompanySettings } from "./pages/CompanyAdminCompanySettings";
+import CustomReports from "./pages/company-admin/CustomReports";
+import CustomReportBuilder from "./pages/company-admin/CustomReportBuilder";
+import ReportSchedules from "./pages/company-admin/ReportSchedules";
 import CandidateCareerCoach from "./pages/CandidateCareerCoach";
 import CandidateCalendar from "./pages/CandidateCalendar";
 import RecruiterAIAssistant from "./pages/RecruiterAIAssistant";
@@ -189,6 +192,10 @@ function Router() {
       <Route path="/company-admin/company-settings" component={CompanyAdminCompanySettings} />
       <Route path="/company-admin/settings" component={CompanyAdminSettings} />
       <Route path="/company-admin/reports" component={CompanyAdminReports} />
+      <Route path="/company-admin/custom-reports" component={CustomReports} />
+      <Route path="/company-admin/custom-reports/new" component={CustomReportBuilder} />
+      <Route path="/company-admin/custom-reports/:id" component={CustomReportBuilder} />
+      <Route path="/company-admin/report-schedules" component={ReportSchedules} />
       <Route path="/company-admin/master-lists" component={CompanyAdminMasterLists} />
       
       {/* Application Admin Routes */}

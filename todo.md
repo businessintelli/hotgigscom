@@ -3285,3 +3285,44 @@
 - [x] Test all new reports with sample data (empty states verified)
 - [x] Test export functionality (PDF and Excel) (UI verified, needs data)
 - [ ] Test email scheduling system (FUTURE)
+
+
+## Custom Report Builder & Email Scheduling System (IN PROGRESS)
+
+### Phase 1: Database Schema & Backend
+- [x] Create custom_reports table (name, fields, filters, groupings, userId, companyId)
+- [x] Create report_schedules table (reportId, frequency, recipients, lastSent, nextSend)
+- [x] Create report_executions table (scheduleId, executedAt, status, pdfUrl)
+- [x] Add database helper functions for custom reports CRUD
+- [x] Add database helper functions for report schedules CRUD
+- [x] Create report execution service for generating reports on demand
+
+### Phase 2: Custom Report Builder UI
+- [x] Create CustomReportBuilder page at /company-admin/custom-reports
+- [x] Implement field selection panel with drag-and-drop (available fields → selected fields)
+- [x] Add filter builder with conditions (equals, contains, greater than, less than, between)
+- [x] Add grouping selector (group by job, recruiter, status, date)
+- [x] Add sorting options (ascending/descending by any field)
+- [ ] Implement report preview with sample data
+- [x] Add save/update/delete custom report functionality
+- [x] Create report library showing all saved custom reports
+
+### Phase 3: Email Scheduling System
+- [x] Create ReportScheduling page at /company-admin/report-schedules
+- [x] Add schedule creation form (select report, frequency, recipients)
+- [x] Implement frequency selector (daily, weekly, monthly, custom cron)
+- [x] Add recipient management (multiple email addresses)
+- [ ] Create background job service for scheduled report generation
+- [ ] Implement PDF generation for scheduled reports
+- [ ] Add email service integration for sending reports
+- [x] Create schedule management UI (view, edit, pause, delete schedules)
+- [x] Add execution history view showing past report deliveries
+
+### Phase 4: Testing & Integration
+- [ ] Test custom report builder with various field combinations
+- [ ] Test filter conditions with real data
+- [ ] Test email scheduling with different frequencies
+- [ ] Verify PDF attachments in emails
+- [ ] Test pause/resume schedule functionality
+- [x] Add navigation links to company admin sidebar
+- [ ] Update documentation with new features

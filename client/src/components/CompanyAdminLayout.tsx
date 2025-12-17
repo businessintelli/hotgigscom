@@ -38,6 +38,8 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     { name: "Dashboard", href: "/company-admin/dashboard", icon: BarChart3 },
     { name: "Team Members", href: "/company-admin/team-members", icon: Users },
     { name: "Reports", href: "/company-admin/reports", icon: BarChart3 },
+    { name: "Custom Reports", href: "/company-admin/custom-reports", icon: BarChart3 },
+    { name: "Report Schedules", href: "/company-admin/report-schedules", icon: BarChart3 },
     { name: "LinkedIn Settings", href: "/company-admin/linkedin-settings", icon: Linkedin },
     { name: "InMail Templates", href: "/company-admin/inmail-templates", icon: MessageSquare },
     { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },

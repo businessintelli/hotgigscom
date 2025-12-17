@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index, date, decimal } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index, date, decimal, time } from "drizzle-orm/mysql-core";
 
 /**
  * Companies table for multi-tenant architecture
@@ -1880,3 +1880,70 @@ export const teamMembers = mysqlTable("team_members", {
 
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertTeamMember = typeof teamMembers.$inferInsert;
+
+/**
+ * Custom Reports table for company admin report builder
+ */
+export const customReports = mysqlTable("custom_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Report configuration
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  selectedFields: json("selectedFields").notNull(), // Array of field names
+  filters: json("filters"), // Array of filter conditions
+  groupBy: varchar("groupBy", { length: 100 }), // Field to group by
+  sortBy: varchar("sortBy", { length: 100 }), // Field to sort by
+  sortOrder: mysqlEnum("sortOrder", ["asc", "desc"]).default("asc"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CustomReport = typeof customReports.$inferSelect;
+export type InsertCustomReport = typeof customReports.$inferInsert;
+
+/**
+ * Report Schedules table for automated report delivery
+ */
+export const reportSchedules = mysqlTable("report_schedules", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  reportId: int("reportId").references(() => customReports.id, { onDelete: "cascade" }), // NULL for standard reports
+  reportType: varchar("reportType", { length: 100 }).notNull(), // 'custom', 'submissions', 'placements', etc.
+  
+  // Schedule configuration
+  frequency: mysqlEnum("frequency", ["daily", "weekly", "monthly"]).notNull(),
+  dayOfWeek: int("dayOfWeek"), // 0-6 for weekly (0=Sunday)
+  dayOfMonth: int("dayOfMonth"), // 1-31 for monthly
+  timeOfDay: time("timeOfDay").default("09:00:00"),
+  recipients: json("recipients").notNull(), // Array of email addresses
+  
+  // Status
+  isActive: boolean("isActive").default(true),
+  lastSentAt: timestamp("lastSentAt"),
+  nextSendAt: timestamp("nextSendAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ReportSchedule = typeof reportSchedules.$inferSelect;
+export type InsertReportSchedule = typeof reportSchedules.$inferInsert;
+
+/**
+ * Report Executions table for audit trail
+ */
+export const reportExecutions = mysqlTable("report_executions", {
+  id: int("id").autoincrement().primaryKey(),
+  scheduleId: int("scheduleId").notNull().references(() => reportSchedules.id, { onDelete: "cascade" }),
+  
+  // Execution details
+  executedAt: timestamp("executedAt").defaultNow().notNull(),
+  status: mysqlEnum("status", ["success", "failed", "pending"]).default("pending"),
+  pdfUrl: varchar("pdfUrl", { length: 500 }), // S3 URL of generated PDF
+  errorMessage: text("errorMessage"),
+  recipientCount: int("recipientCount").default(0),
+});
+export type ReportExecution = typeof reportExecutions.$inferSelect;
+export type InsertReportExecution = typeof reportExecutions.$inferInsert;
