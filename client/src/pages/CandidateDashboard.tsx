@@ -67,7 +67,9 @@ import {
   ArrowUpDown,
   CalendarDays,
   ChevronDown,
-  X
+  X,
+  Mail,
+  HelpCircle
 } from "lucide-react";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
@@ -102,6 +104,9 @@ const sidebarItems = [
   { icon: MessageSquare, label: "AI Career Coach", path: "/candidate/career-coach", badge: null },
   { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
   { icon: BookOpen, label: "Career Resources", path: "/resources", badge: null },
+  { icon: Mail, label: "Messages", path: "/candidate/messages", badge: null },
+  { icon: Settings, label: "Settings", path: "/candidate/settings", badge: null },
+  { icon: HelpCircle, label: "Help & Support", path: "/help", badge: null },
 ];
 
 type SortOption = 'date_desc' | 'date_asc' | 'match_desc' | 'match_asc' | 'salary_desc' | 'salary_asc';

@@ -2419,3 +2419,17 @@
 - [x] Create recruiter analytics dashboard widget
 - [x] Show average candidate profile completion rate
 - [x] Display correlation between profile completion and placement success
+
+## Navigation Menu Improvements (Current Session)
+- [x] Add Settings/Profile navigation item for candidates
+- [x] Add Settings/Profile navigation item for recruiters
+- [x] Add Messages/Inbox navigation item for candidates
+- [x] Add Messages/Inbox navigation item for recruiters
+- [x] Add Help/Support navigation item for candidates
+- [x] Add Help/Support navigation item for recruiters
+- [x] Create Settings page for candidates
+- [x] Create Settings page for recruiters
+- [x] Create Messages/Inbox page for candidates
+- [x] Create Messages/Inbox page for recruiters
+- [x] Create Help/Support page or modal
+- [ ] Add section dividers in navigation for better organization

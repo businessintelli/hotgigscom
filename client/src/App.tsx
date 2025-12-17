@@ -78,6 +78,10 @@ import { SessionExpiryWarning } from "@/components/SessionExpiryWarning";
 import PanelAccept from "./pages/PanelAccept";
 import PanelDecline from "./pages/PanelDecline";
 import PanelReschedule from "./pages/PanelReschedule";
+import CandidateSettings from "./pages/CandidateSettings";
+import RecruiterSettings from "./pages/RecruiterSettings";
+import Messages from "./pages/Messages";
+import Help from "./pages/Help";
 import PanelFeedback from "./pages/PanelFeedback";
 import PanelistDashboard from "./pages/PanelistDashboard";
 import Recommendations from "./pages/Recommendations";
@@ -167,7 +171,12 @@ function Router() {
       <Route path="/candidate/career-coach" component={CandidateCareerCoach} />
       <Route path="/candidate/calendar" component={CandidateCalendar} />
       <Route path="/candidate/associates" component={CandidateAssociates} />
+      <Route path="/candidate/settings" component={CandidateSettings} />
+      <Route path="/candidate/messages" component={Messages} />
       <Route path="/recruiter/ai-assistant" component={RecruiterAIAssistant} />
+      <Route path="/recruiter/settings" component={RecruiterSettings} />
+      <Route path="/recruiter/messages" component={Messages} />
+      <Route path="/help" component={Help} />
       <Route path="/recruiter/email-analytics" component={EmailCampaignAnalytics} />
       <Route path="/share/candidate/:shareToken" component={CandidateProfileShare} />
       <Route path="/jobs" component={JobBrowser} />

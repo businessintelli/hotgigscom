@@ -96,7 +96,8 @@ import {
   GripVertical,
   MessageSquare,
   Bot,
-  UserCheck
+  UserCheck,
+  HelpCircle
 } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -239,6 +240,9 @@ const sidebarItems = [
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/campaigns", badge: null },
   { icon: BarChart3, label: "Analytics", path: "/analytics", badge: null },
   { icon: RefreshCw, label: "Reschedule Requests", path: "/recruiter/reschedule-requests", badge: "pending" },
+  { icon: MessageSquare, label: "Messages", path: "/recruiter/messages", badge: null },
+  { icon: Settings, label: "Settings", path: "/recruiter/settings", badge: null },
+  { icon: HelpCircle, label: "Help & Support", path: "/help", badge: null },
 ];
 
 function RecruiterDashboardContent() {
