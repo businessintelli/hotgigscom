@@ -77,6 +77,7 @@ import { useLocation } from "wouter";
 import CandidateOnboarding from "@/components/CandidateOnboarding";
 // VideoIntroduction moved to dedicated page
 import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 
 export default function CandidateDashboard() {
@@ -103,6 +104,24 @@ const sidebarItems = [
 ];
 
 type SortOption = 'date_desc' | 'date_asc' | 'match_desc' | 'match_asc' | 'salary_desc' | 'salary_asc';
+
+// Helper function to get missing profile fields
+function getMissingFields(candidate: any): string[] {
+  const missing: string[] = [];
+  if (!candidate) return missing;
+  
+  if (!candidate.title) missing.push('Job Title');
+  if (!candidate.phoneNumber) missing.push('Phone Number');
+  if (!candidate.location) missing.push('Location');
+  if (!candidate.skills) missing.push('Skills');
+  if (!candidate.experience) missing.push('Experience');
+  if (!candidate.bio) missing.push('Bio/Summary');
+  if (!candidate.availability) missing.push('Availability');
+  if (!candidate.expectedSalaryMin) missing.push('Expected Salary');
+  if (!candidate.resumeUrl) missing.push('Resume');
+  
+  return missing;
+}
 
 function CandidateDashboardContent() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -576,8 +595,17 @@ function CandidateDashboardContent() {
               <p className="opacity-90">Track your job applications and discover new opportunities.</p>
             </div>
 
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Profile Completion Banner */}
+            {profilePercentage < 100 && completionStatus && (
+              <ProfileCompletionBanner 
+                percentage={profilePercentage}
+                role="candidate"
+                missingFields={getMissingFields(candidate)}
+              />
+            )}
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
               {statCards.map((stat, index) => (
                 <Card key={index} className="hover:shadow-lg transition-all hover:-translate-y-0.5">
                   <CardContent className="p-4 lg:p-6">
