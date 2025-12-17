@@ -4714,6 +4714,416 @@ Please be specific and practical.`;
           .where(eq(testAssignments.candidateId, candidate.id))
           .orderBy(desc(testAssignments.createdAt));
       }),
+
+    // Get test details with questions
+    getTestDetails: protectedProcedure
+      .input(z.object({ testId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        
+        const { testLibrary, testQuestions, personalityQuestions } = await import('../drizzle/schema');
+        const { eq } = await import('drizzle-orm');
+
+        // Get test details
+        const [test] = await database
+          .select()
+          .from(testLibrary)
+          .where(eq(testLibrary.id, input.testId));
+
+        if (!test) throw new Error('Test not found');
+
+        // Get questions based on test type
+        let questions: any[] = [];
+        if (test.testType === 'coding' || test.testType === 'domain-specific' || test.testType === 'technical') {
+          questions = await database
+            .select()
+            .from(testQuestions)
+            .where(eq(testQuestions.testId, input.testId));
+        } else if (test.testType === 'personality') {
+          questions = await database
+            .select()
+            .from(personalityQuestions)
+            .where(eq(personalityQuestions.testId, input.testId));
+        }
+
+        return { test, questions };
+      }),
+
+    // Start test (update assignment status)
+    startTest: protectedProcedure
+      .input(z.object({ assignmentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        
+        const { testAssignments } = await import('../drizzle/schema');
+        const { eq } = await import('drizzle-orm');
+
+        await database
+          .update(testAssignments)
+          .set({ 
+            status: 'in-progress',
+            startedAt: new Date(),
+          })
+          .where(eq(testAssignments.id, input.assignmentId));
+
+        return { success: true };
+      }),
+
+    // Save test response (auto-save)
+    saveTestResponse: protectedProcedure
+      .input(z.object({
+        assignmentId: z.number(),
+        questionId: z.number(),
+        response: z.string(),
+        questionType: z.enum(['coding', 'personality', 'multiple-choice', 'text']),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        
+        const { testResponses } = await import('../drizzle/schema');
+        const { eq, and } = await import('drizzle-orm');
+
+        // Check if response exists
+        const existing = await database
+          .select()
+          .from(testResponses)
+          .where(
+            and(
+              eq(testResponses.assignmentId, input.assignmentId),
+              eq(testResponses.questionId, input.questionId)
+            )
+          );
+
+        if (existing.length > 0) {
+          // Update existing response
+          await database
+            .update(testResponses)
+            .set({ 
+              candidateAnswer: input.response,
+            })
+            .where(eq(testResponses.id, existing[0].id));
+        } else {
+          // Insert new response
+          await database.insert(testResponses).values({
+            assignmentId: input.assignmentId,
+            questionId: input.questionId,
+            candidateAnswer: input.response,
+            isCorrect: null,
+            pointsEarned: 0,
+          });
+        }
+
+        return { success: true };
+      }),
+
+    // Submit test
+    submitTest: protectedProcedure
+      .input(z.object({ assignmentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        
+        const { testAssignments, testResponses, testQuestions } = await import('../drizzle/schema');
+        const { eq } = await import('drizzle-orm');
+
+        // Get assignment and test details
+        const [assignment] = await database
+          .select()
+          .from(testAssignments)
+          .where(eq(testAssignments.id, input.assignmentId));
+
+        if (!assignment) throw new Error('Assignment not found');
+
+        // Get all responses
+        const responses = await database
+          .select()
+          .from(testResponses)
+          .where(eq(testResponses.assignmentId, input.assignmentId));
+
+        // Get all questions for scoring
+        const questions = await database
+          .select()
+          .from(testQuestions)
+          .where(eq(testQuestions.testId, assignment.testId));
+
+        // Calculate score (simplified - can be enhanced)
+        let correctAnswers = 0;
+        let totalQuestions = questions.length;
+
+        for (const response of responses) {
+          const question = questions.find(q => q.id === response.questionId);
+          if (question && question.correctAnswer === response.candidateAnswer) {
+            correctAnswers++;
+          }
+        }
+
+        const scorePercentage = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+
+        // Update assignment
+        await database
+          .update(testAssignments)
+          .set({ 
+            status: 'completed',
+            completedAt: new Date(),
+            score: scorePercentage,
+          })
+          .where(eq(testAssignments.id, input.assignmentId));
+
+        return { 
+          success: true, 
+          score: scorePercentage,
+          correctAnswers,
+          totalQuestions,
+        };
+      }),
+
+    // Get test results for recruiter
+    getTestResults: protectedProcedure
+      .input(z.object({ testId: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) return [];
+
+        const database = await getDb();
+        if (!database) return [];
+        
+        const { testAssignments, testLibrary, candidates, users } = await import('../drizzle/schema');
+        const { eq, and, desc } = await import('drizzle-orm');
+
+        const results = await database
+          .select({
+            assignment: testAssignments,
+            test: testLibrary,
+            candidate: candidates,
+            user: users,
+          })
+          .from(testAssignments)
+          .innerJoin(testLibrary, eq(testAssignments.testId, testLibrary.id))
+          .innerJoin(candidates, eq(testAssignments.candidateId, candidates.id))
+          .innerJoin(users, eq(candidates.userId, users.id))
+          .where(
+            input.testId 
+              ? and(
+                  eq(testLibrary.recruiterId, recruiter.id),
+                  eq(testAssignments.testId, input.testId)
+                )
+              : eq(testLibrary.recruiterId, recruiter.id)
+          )
+          .orderBy(desc(testAssignments.completedAt));
+
+        return results;
+      }),
+
+    // Get detailed test analytics
+    getTestAnalytics: protectedProcedure
+      .input(z.object({ testId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter not found');
+
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        
+        const { testAssignments, testLibrary, candidates, users, testResponses } = await import('../drizzle/schema');
+        const { eq, and, desc, sql, avg, count } = await import('drizzle-orm');
+
+        // Get test details
+        const [test] = await database
+          .select()
+          .from(testLibrary)
+          .where(
+            and(
+              eq(testLibrary.id, input.testId),
+              eq(testLibrary.recruiterId, recruiter.id)
+            )
+          );
+
+        if (!test) throw new Error('Test not found');
+
+        // Get all completed assignments for this test
+        const completedAssignments = await database
+          .select({
+            assignment: testAssignments,
+            candidate: candidates,
+            user: users,
+          })
+          .from(testAssignments)
+          .innerJoin(candidates, eq(testAssignments.candidateId, candidates.id))
+          .innerJoin(users, eq(candidates.userId, users.id))
+          .where(
+            and(
+              eq(testAssignments.testId, input.testId),
+              eq(testAssignments.status, 'completed')
+            )
+          )
+          .orderBy(desc(testAssignments.score));
+
+        // Calculate statistics
+        const scores = completedAssignments.map(a => a.assignment.score || 0);
+        const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+        const maxScore = scores.length > 0 ? Math.max(...scores) : 0;
+        const minScore = scores.length > 0 ? Math.min(...scores) : 0;
+        const passRate = scores.length > 0 
+          ? (scores.filter(s => s >= test.passingScore).length / scores.length) * 100 
+          : 0;
+
+        // Score distribution (for histogram)
+        const scoreRanges = [
+          { range: '0-20', count: 0 },
+          { range: '21-40', count: 0 },
+          { range: '41-60', count: 0 },
+          { range: '61-80', count: 0 },
+          { range: '81-100', count: 0 },
+        ];
+
+        scores.forEach(score => {
+          if (score <= 20) scoreRanges[0].count++;
+          else if (score <= 40) scoreRanges[1].count++;
+          else if (score <= 60) scoreRanges[2].count++;
+          else if (score <= 80) scoreRanges[3].count++;
+          else scoreRanges[4].count++;
+        });
+
+        return {
+          test,
+          statistics: {
+            totalAttempts: completedAssignments.length,
+            avgScore,
+            maxScore,
+            minScore,
+            passRate,
+            scoreRanges,
+          },
+          topPerformers: completedAssignments.slice(0, 10),
+        };
+      }),
+
+    // Get skill gap analysis
+    getSkillGapAnalysis: protectedProcedure
+      .input(z.object({ candidateId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter not found');
+
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        
+        const { testAssignments, testLibrary } = await import('../drizzle/schema');
+        const { eq, and } = await import('drizzle-orm');
+
+        // Get all completed tests for this candidate
+        const candidateTests = await database
+          .select({
+            assignment: testAssignments,
+            test: testLibrary,
+          })
+          .from(testAssignments)
+          .innerJoin(testLibrary, eq(testAssignments.testId, testLibrary.id))
+          .where(
+            and(
+              eq(testAssignments.candidateId, input.candidateId),
+              eq(testAssignments.status, 'completed')
+            )
+          );
+
+        // Group by test type and calculate averages
+        const skillsByType: Record<string, { totalScore: number; count: number; tests: any[] }> = {};
+
+        candidateTests.forEach(({ assignment, test }) => {
+          const type = test.testType;
+          if (!skillsByType[type]) {
+            skillsByType[type] = { totalScore: 0, count: 0, tests: [] };
+          }
+          skillsByType[type].totalScore += assignment.score || 0;
+          skillsByType[type].count++;
+          skillsByType[type].tests.push({ test, assignment });
+        });
+
+        // Calculate averages and identify gaps
+        const skillGaps = Object.entries(skillsByType).map(([type, data]) => ({
+          skillType: type,
+          averageScore: data.totalScore / data.count,
+          testsCompleted: data.count,
+          proficiencyLevel: 
+            data.totalScore / data.count >= 80 ? 'Expert' :
+            data.totalScore / data.count >= 60 ? 'Proficient' :
+            data.totalScore / data.count >= 40 ? 'Intermediate' : 'Beginner',
+          tests: data.tests,
+        }));
+
+        return {
+          candidateId: input.candidateId,
+          skillGaps: skillGaps.sort((a, b) => a.averageScore - b.averageScore),
+          overallScore: candidateTests.length > 0
+            ? candidateTests.reduce((sum, t) => sum + (t.assignment.score || 0), 0) / candidateTests.length
+            : 0,
+        };
+      }),
+
+    // Compare candidates
+    compareCandidates: protectedProcedure
+      .input(z.object({ candidateIds: z.array(z.number()), testId: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter not found');
+
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        
+        const { testAssignments, testLibrary, candidates, users } = await import('../drizzle/schema');
+        const { eq, and, inArray } = await import('drizzle-orm');
+
+        const comparisons = [];
+
+        for (const candidateId of input.candidateIds) {
+          let query = database
+            .select({
+              assignment: testAssignments,
+              test: testLibrary,
+              candidate: candidates,
+              user: users,
+            })
+            .from(testAssignments)
+            .innerJoin(testLibrary, eq(testAssignments.testId, testLibrary.id))
+            .innerJoin(candidates, eq(testAssignments.candidateId, candidates.id))
+            .innerJoin(users, eq(candidates.userId, users.id))
+            .where(
+              and(
+                eq(testAssignments.candidateId, candidateId),
+                eq(testAssignments.status, 'completed')
+              )
+            );
+
+          if (input.testId) {
+            query = query.where(
+              and(
+                eq(testAssignments.candidateId, candidateId),
+                eq(testAssignments.status, 'completed'),
+                eq(testAssignments.testId, input.testId)
+              )
+            ) as any;
+          }
+
+          const results = await query;
+          const avgScore = results.length > 0
+            ? results.reduce((sum, r) => sum + (r.assignment.score || 0), 0) / results.length
+            : 0;
+
+          comparisons.push({
+            candidateId,
+            candidate: results[0]?.candidate,
+            user: results[0]?.user,
+            avgScore,
+            testsCompleted: results.length,
+            results,
+          });
+        }
+
+        return comparisons.sort((a, b) => b.avgScore - a.avgScore);
+      }),
   }),
 
   // Messaging System
