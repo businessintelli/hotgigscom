@@ -724,7 +724,7 @@ export const companyAdminRouter = router({
       const recruiters = companyUsers.filter(u => u.role === 'recruiter');
       
       // Get aggregate stats
-      const stats = await db.getCompanyDashboardStats(ctx.user.companyId);
+      const stats = await db.getCompanyStats(ctx.user.companyId);
       
       // Build system prompt with company context
       const systemPrompt = `You are an AI assistant for a company admin managing recruitment operations.

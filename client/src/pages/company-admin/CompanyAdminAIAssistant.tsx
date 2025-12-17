@@ -178,7 +178,8 @@ export default function CompanyAdminAIAssistant() {
               </CardHeader>
 
               {/* Messages */}
-              <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+              <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
                 <div className="space-y-4">
                   {messages.map((message, index) => (
                     <div
@@ -223,6 +224,7 @@ export default function CompanyAdminAIAssistant() {
                   )}
                 </div>
               </ScrollArea>
+              </div>
 
               {/* Input Area */}
               <div className="border-t p-4">

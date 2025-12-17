@@ -3336,3 +3336,11 @@
 - [x] Fix Select component error in CustomReportBuilder (empty string value not allowed)
 - [x] Create profile settings page for company admin at /company-admin/profile-settings
 - [x] Implement AI Assistant for company admin (same model as recruiter AI assistant)
+
+
+## AI Assistant Bug Fixes (COMPLETED ✅)
+- [x] Fix missing companyAdmin.aiAssistant tRPC endpoint (404 error)
+- [x] Add vertical scrolling to company admin AI assistant chat window
+- [x] Add vertical scrolling to recruiter AI assistant chat window
+- [x] Add vertical scrolling to candidate AI career coach chat window
+- [x] Fix getCompanyStats database query errors (recruiterId vs postedBy)

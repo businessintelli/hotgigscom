@@ -1010,37 +1010,21 @@ export async function getCompanyStats(companyId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
-  // Get all recruiters in the company
-  const companyUsers = await db.select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.companyId, companyId), eq(users.role, 'recruiter')));
-  
-  const recruiterIds = companyUsers.map(u => u.id);
-  
-  if (recruiterIds.length === 0) {
-    return {
-      totalJobs: 0,
-      activeJobs: 0,
-      totalApplications: 0,
-      totalCandidates: 0,
-      totalAssociates: 0,
-      totalInterviews: 0,
-      totalPlacements: 0
-    };
-  }
-  
-  // Count jobs
+  // Count jobs posted by company users
   const jobCounts = await db.select({
     total: count(),
-    active: count(sql`CASE WHEN ${jobs.status} = 'open' THEN 1 END`)
+    active: count(sql`CASE WHEN ${jobs.status} = 'active' THEN 1 END`)
   })
   .from(jobs)
-  .where(inArray(jobs.recruiterId, recruiterIds));
+  .innerJoin(users, eq(jobs.postedBy, users.id))
+  .where(eq(users.companyId, companyId));
   
-  // Count applications
+  // Count applications for company jobs
   const appCounts = await db.select({ count: count() })
     .from(applications)
-    .where(inArray(applications.recruiterId, recruiterIds));
+    .innerJoin(jobs, eq(applications.jobId, jobs.id))
+    .innerJoin(users, eq(jobs.postedBy, users.id))
+    .where(eq(users.companyId, companyId));
   
   // Count candidates
   const candidateCounts = await db.select({ count: count() })
@@ -1051,18 +1035,22 @@ export async function getCompanyStats(companyId: number) {
   // Count associates
   const associateCounts = await db.select({ count: count() })
     .from(associates)
-    .where(inArray(associates.recruiterId, recruiterIds));
+    .where(eq(associates.companyId, companyId));
   
-  // Count interviews
+  // Count interviews for company jobs
   const interviewCounts = await db.select({ count: count() })
     .from(interviews)
-    .where(inArray(interviews.recruiterId, recruiterIds));
+    .innerJoin(jobs, eq(interviews.jobId, jobs.id))
+    .innerJoin(users, eq(jobs.postedBy, users.id))
+    .where(eq(users.companyId, companyId));
   
   // Count placements (hired applications)
   const placementCounts = await db.select({ count: count() })
     .from(applications)
+    .innerJoin(jobs, eq(applications.jobId, jobs.id))
+    .innerJoin(users, eq(jobs.postedBy, users.id))
     .where(and(
-      inArray(applications.recruiterId, recruiterIds),
+      eq(users.companyId, companyId),
       eq(applications.status, 'hired')
     ));
   
