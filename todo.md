@@ -3109,3 +3109,16 @@
 - [ ] Update users table with additional admin fields
 - [ ] Add indexes for performance on large datasets
 - [ ] Migration scripts for schema updates
+
+
+## Bug Fixes - Missing Database Functions (COMPLETED)
+- [x] Add db.getDashboardStats function
+- [x] Add db.getPendingRescheduleRequests function
+- [x] Add db.getInterviewsByRecruiterId function
+- [x] Add db.getJobsByRecruiter function
+- [x] Add db.searchCandidates function
+- [x] Add db.getSavedSearchesByUser function
+- [x] Add db.getPublicJobs function
+- [x] Fix emailCampaigns undefined error (added to schema imports)
+- [x] Fix Calendly integration not found error (added graceful error handling)
+- [ ] Fix invalid input validation errors (needs investigation)

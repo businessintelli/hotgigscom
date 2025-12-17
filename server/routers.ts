@@ -13,7 +13,7 @@ import * as authService from "./authService";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
-import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates } from "../drizzle/schema";
+import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 import { storagePut } from "./storage";
@@ -1178,8 +1178,15 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
 
     getCalendlyEventTypes: protectedProcedure
       .query(async ({ ctx }) => {
-        const { getCalendlyEventTypes } = await import('./integrations/calendly');
-        return await getCalendlyEventTypes(ctx.user.id);
+        try {
+          const { getCalendlyEventTypes } = await import('./integrations/calendly');
+          return await getCalendlyEventTypes(ctx.user.id);
+        } catch (error: any) {
+          if (error.message === 'Calendly integration not found') {
+            return [];
+          }
+          throw error;
+        }
       }),
 
     createSchedulingLink: protectedProcedure

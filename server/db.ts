@@ -1384,3 +1384,124 @@ export async function createRecruiterInvitation(invitation: {
   // For now, we just return success
   return { success: true, message: "Invitation would be sent to " + invitation.email };
 }
+
+/**
+ * Get dashboard stats for recruiter
+ */
+export async function getDashboardStats(recruiterId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [jobsResult] = await db.select({ count: count() })
+    .from(jobs)
+    .where(eq(jobs.recruiterId, recruiterId));
+  
+  const [applicationsResult] = await db.select({ count: count() })
+    .from(applications)
+    .where(eq(applications.recruiterId, recruiterId));
+  
+  const [interviewsResult] = await db.select({ count: count() })
+    .from(interviews)
+    .where(eq(interviews.recruiterId, recruiterId));
+  
+  const [candidatesResult] = await db.select({ count: count() })
+    .from(candidates)
+    .where(eq(candidates.recruiterId, recruiterId));
+  
+  return {
+    totalJobs: jobsResult?.count || 0,
+    totalApplications: applicationsResult?.count || 0,
+    totalInterviews: interviewsResult?.count || 0,
+    totalCandidates: candidatesResult?.count || 0,
+  };
+}
+
+/**
+ * Get pending reschedule requests for recruiter
+ */
+export async function getPendingRescheduleRequests(recruiterId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return await db.select()
+    .from(rescheduleRequests)
+    .where(
+      and(
+        eq(rescheduleRequests.recruiterId, recruiterId),
+        eq(rescheduleRequests.status, 'pending')
+      )
+    )
+    .orderBy(desc(rescheduleRequests.createdAt));
+}
+
+/**
+ * Get interviews by recruiter ID
+ */
+export async function getInterviewsByRecruiterId(recruiterId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return await db.select()
+    .from(interviews)
+    .where(eq(interviews.recruiterId, recruiterId))
+    .orderBy(desc(interviews.scheduledAt));
+}
+
+/**
+ * Get jobs by recruiter (alias for getJobsByRecruiterId)
+ */
+export async function getJobsByRecruiter(recruiterId: number) {
+  return await getJobsByRecruiterId(recruiterId);
+}
+
+/**
+ * Search candidates with filters
+ */
+export async function searchCandidates(filters: {
+  recruiterId?: number;
+  skills?: string[];
+  location?: string;
+  experienceLevel?: string;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  let query = db.select()
+    .from(candidates)
+    .limit(filters.limit || 50);
+  
+  if (filters.recruiterId) {
+    query = query.where(eq(candidates.recruiterId, filters.recruiterId));
+  }
+  
+  return await query;
+}
+
+/**
+ * Get saved searches by user (alias for getSavedSearchesByUserId)
+ */
+export async function getSavedSearchesByUser(userId: number) {
+  return await getSavedSearchesByUserId(userId);
+}
+
+/**
+ * Get public jobs (all active jobs)
+ */
+export async function getPublicJobs(filters?: {
+  search?: string;
+  location?: string;
+  employmentType?: string;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  let query = db.select()
+    .from(jobs)
+    .where(eq(jobs.status, 'active'))
+    .orderBy(desc(jobs.createdAt))
+    .limit(filters?.limit || 50);
+  
+  return await query;
+}
