@@ -66,6 +66,45 @@ async function startServer() {
       res.status(500).json({ error: "Webhook processing failed" });
     }
   });
+  // Health check endpoint
+  app.get("/api/health", async (req, res) => {
+    try {
+      const { getDb } = await import("../db");
+      const db = await getDb();
+      
+      const health = {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        database: {
+          connected: !!db,
+          status: db ? "healthy" : "disconnected",
+        },
+      };
+      
+      // Test database connectivity with a simple query
+      if (db) {
+        try {
+          await db.execute("SELECT 1");
+          health.database.status = "healthy";
+        } catch (error) {
+          health.database.status = "error";
+          health.database.error = error instanceof Error ? error.message : "Unknown error";
+        }
+      }
+      
+      const statusCode = health.database.connected ? 200 : 503;
+      res.status(statusCode).json(health);
+    } catch (error) {
+      console.error("[Health Check] Error:", error);
+      res.status(503).json({
+        status: "error",
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Health check failed",
+      });
+    }
+  });
+  
   // tRPC API
   app.use(
     "/api/trpc",

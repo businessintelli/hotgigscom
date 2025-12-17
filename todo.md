@@ -2914,3 +2914,23 @@
 - [x] Fix JobApplication.tsx: candidate variable scope error (moved useEffect after declaration)
 - [ ] Fix other TypeScript errors in remaining files
 - [ ] Verify all TypeScript compilation passes
+
+## Application Resilience Improvements (December 17, 2025)
+
+### Error Handling & User Experience
+- [x] Create ErrorBoundary component for graceful error handling (enhanced existing component)
+- [x] Wrap RecruiterDashboard with ErrorBoundary
+- [x] Wrap CandidateDashboard with ErrorBoundary
+- [x] Add user-friendly error fallback UI with retry option (added Go Home button and customizable messages)
+
+### Query Retry Logic
+- [x] Configure tRPC client with retry logic
+- [x] Implement exponential backoff for failed queries (1s, 2s, 4s)
+- [x] Add retry count limits to prevent infinite loops (max 3 retries)
+- [x] Skip retries for authentication errors to avoid unnecessary attempts
+
+### Health Monitoring
+- [x] Create /api/health endpoint
+- [x] Add database connectivity check (SELECT 1 query test)
+- [x] Return server uptime and status information
+- [x] Return appropriate HTTP status codes (200 for healthy, 503 for unhealthy)

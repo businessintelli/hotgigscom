@@ -109,7 +109,14 @@ function Router() {
       <Route path={"/"} component={PublicHome} />
       <Route path="/about" component={AboutUs} />
 
-      <Route path={"/recruiter/dashboard"} component={RecruiterDashboard} />
+      <Route path={"/recruiter/dashboard"}>
+        <ErrorBoundary 
+          fallbackTitle="Dashboard Error" 
+          fallbackMessage="We encountered an issue loading your recruiter dashboard. Please try refreshing the page."
+        >
+          <RecruiterDashboard />
+        </ErrorBoundary>
+      </Route>
       <Route path="/recruiter/analytics" component={RecruiterAnalytics} />
       <Route path="/recruiter/predictive-analytics" component={PredictiveAnalytics} />
           <Route path="/recruiter/automation-analytics" component={AutomationAnalytics} />
@@ -187,7 +194,14 @@ function Router() {
       <Route path="/admin/inmail-templates" component={AdminInMailTemplates} />
       <Route path="/admin/database" component={AdminDatabase} />
       <Route path="/analytics" component={AnalyticsDashboard} />
-      <Route path="/candidate-dashboard" component={CandidateDashboard} />
+      <Route path="/candidate-dashboard">  
+        <ErrorBoundary 
+          fallbackTitle="Dashboard Error" 
+          fallbackMessage="We encountered an issue loading your candidate dashboard. Please try refreshing the page."
+        >
+          <CandidateDashboard />
+        </ErrorBoundary>
+      </Route>
       <Route path="/my-applications" component={MyApplications} />
       <Route path="/saved-jobs" component={SavedJobs} />
       <Route path="/my-resumes" component={MyResumes} />
