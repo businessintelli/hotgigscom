@@ -1,7 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { APP_TITLE, APP_LOGO } from "@/const";
 import {
   Building2,
   Users,
@@ -28,6 +27,7 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
   const navigation = [
     { name: "Dashboard", href: "/company-admin/dashboard", icon: BarChart3 },
     { name: "Team Members", href: "/company-admin/team-members", icon: Users },
+    { name: "Reports", href: "/company-admin/reports", icon: BarChart3 },
     { name: "LinkedIn Settings", href: "/company-admin/linkedin-settings", icon: Linkedin },
     { name: "InMail Templates", href: "/company-admin/inmail-templates", icon: MessageSquare },
     { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },
@@ -50,33 +50,31 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
           <div className="flex items-center justify-between h-16 px-6 border-b border-border">
             {!isCollapsed && (
               <Link href="/company-admin/dashboard">
-                <a className="flex items-center gap-2">
-                  {APP_LOGO && (
-                    <img src={APP_LOGO} alt="Logo" className="h-8 w-8" />
-                  )}
-                  <span className="text-lg font-semibold">{APP_TITLE}</span>
+                <a className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">HG</span>
+                  </div>
+                  <span className="font-bold text-gray-900">HotGigs</span>
                 </a>
               </Link>
             )}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden lg:flex"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              >
-                {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden lg:flex"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
 
           {/* Navigation */}

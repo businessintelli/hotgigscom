@@ -3239,3 +3239,29 @@
 - [x] Fix InMail templates template variable syntax errors
 - [x] Fix company admin role detection and redirect logic
 - [x] Reset password for pratap@businessintelli.com to Demo123!
+
+## Company Admin Improvements (Current Focus)
+- [ ] Fix logo inconsistency on company admin pages to match recruiter/candidate
+- [ ] Clarify role hierarchy: admin (application admin) vs company_admin (company-level admin)
+- [ ] Update user management to show proper role assignments
+- [ ] Research company admin reports requirements
+- [ ] Build comprehensive reports module with analytics
+- [ ] Add Reports menu item to company admin sidebar
+- [ ] Test all changes across different user roles
+
+## Company Admin Improvements - COMPLETED
+- [x] Fix logo inconsistency on company admin pages to match recruiter/candidate
+- [x] Clarify role hierarchy: admin (application admin) vs company_admin (company-level admin)
+- [x] Update user management to show proper role assignments
+- [x] Research company admin reports requirements
+- [x] Build comprehensive reports module with analytics
+- [x] Add Reports menu item to company admin sidebar
+- [ ] Test all changes across different user roles
+
+## Company Admin Logo & Reports Enhancement (COMPLETED)
+- [x] Fix logo inconsistency - updated CompanyAdminLayout to use gradient "HG" logo matching recruiter/candidate
+- [x] Document role hierarchy - created ROLE_HIERARCHY.md explaining admin vs company_admin
+- [x] Research recruitment reports - analyzed industry best practices from Folks ATS, AIHR, Geckoboard
+- [x] Build comprehensive reports backend - added 6 new tRPC procedures for analytics
+- [x] Add Reports menu item to company admin sidebar
+- [x] Test reports page functionality
