@@ -1,4 +1,5 @@
 import { useState } from "react";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +56,7 @@ export default function IntegrationSettings() {
   };
 
   return (
+    <RecruiterLayout title="Integration Settings">
     <div className="container max-w-6xl py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Integration Settings</h1>
@@ -409,5 +411,6 @@ export default function IntegrationSettings() {
         </TabsContent>
       </Tabs>
     </div>
+    </RecruiterLayout>
   );
 }

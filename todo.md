@@ -3140,3 +3140,8 @@
 ## Bug Fixes - ApplicationManagement Errors
 - [x] Fix setState during render in ApplicationManagement component (wrapped in useEffect)
 - [x] Fix server crash causing HTML response (will be resolved by server restart after getDashboardStats fix)
+
+## Bug Fixes: Recruiter Dashboard & Missing Sidebars (Current Focus)
+- [x] Fix AI assistant error: "Cannot read properties of undefined (reading '0')"
+- [x] Add RecruiterLayout sidebar to sourcing-campaigns page
+- [x] Add RecruiterLayout sidebar to integrations page

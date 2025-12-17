@@ -21,7 +21,7 @@ interface RecruiterContext {
 export async function buildCandidateContext(userId: number): Promise<string> {
   try {
     // Get candidate's applications
-    const applications = await db.getApplicationsByCandidate(userId);
+    const applications = await db.getApplicationsByCandidateId(userId);
     
     // Get application statistics
     const stats = {
@@ -73,7 +73,7 @@ export async function buildRecruiterContext(userId: number): Promise<string> {
     // Get all applications for recruiter's jobs
     let allApplications: any[] = [];
     for (const job of jobs) {
-      const apps = await db.getApplicationsByJob(job.id);
+      const apps = await db.getApplicationsByJobId(job.id);
       allApplications = allApplications.concat(apps.map((a: any) => ({ ...a, jobTitle: job.title })));
     }
 

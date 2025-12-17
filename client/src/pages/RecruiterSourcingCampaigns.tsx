@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import RecruiterLayout from '@/components/RecruiterLayout';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,6 +107,7 @@ export default function RecruiterSourcingCampaigns() {
   }
 
   return (
+    <RecruiterLayout title="Candidate Sourcing Automation">
     <div className="container py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -393,6 +395,7 @@ export default function RecruiterSourcingCampaigns() {
         />
       )}
     </div>
+    </RecruiterLayout>
   );
 }
 
