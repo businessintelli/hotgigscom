@@ -1487,3 +1487,201 @@ export const candidateInteractions = mysqlTable("candidate_interactions", {
 
 export type CandidateInteraction = typeof candidateInteractions.$inferSelect;
 export type InsertCandidateInteraction = typeof candidateInteractions.$inferInsert;
+
+/**
+ * LinkedIn Profiles - Store imported candidate profiles from LinkedIn
+ */
+export const linkedinProfiles = mysqlTable("linkedin_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").references(() => candidates.id),
+  
+  // LinkedIn identifiers
+  linkedinId: varchar("linkedinId", { length: 255 }).unique().notNull(),
+  profileUrl: varchar("profileUrl", { length: 500 }),
+  publicIdentifier: varchar("publicIdentifier", { length: 255 }),
+  
+  // Profile data
+  firstName: varchar("firstName", { length: 255 }),
+  lastName: varchar("lastName", { length: 255 }),
+  headline: text("headline"),
+  summary: text("summary"),
+  location: varchar("location", { length: 255 }),
+  industry: varchar("industry", { length: 255 }),
+  
+  // Current position
+  currentCompany: varchar("currentCompany", { length: 255 }),
+  currentTitle: varchar("currentTitle", { length: 255 }),
+  
+  // Profile metadata
+  profilePictureUrl: varchar("profilePictureUrl", { length: 500 }),
+  connections: int("connections"),
+  followersCount: int("followersCount"),
+  
+  // Full profile data (JSON)
+  fullProfileData: text("fullProfileData"), // Complete LinkedIn API response
+  
+  // Import tracking
+  importedBy: int("importedBy").notNull(), // Recruiter who imported
+  sourcingCampaignId: int("sourcingCampaignId").references(() => sourcingCampaigns.id),
+  importSource: varchar("importSource", { length: 100 }), // 'search', 'recruiter', 'manual'
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LinkedinProfile = typeof linkedinProfiles.$inferSelect;
+export type InsertLinkedinProfile = typeof linkedinProfiles.$inferInsert;
+
+/**
+ * LinkedIn InMails - Track outreach messages sent through LinkedIn
+ */
+export const linkedinInmails = mysqlTable("linkedin_inmails", {
+  id: int("id").autoincrement().primaryKey(),
+  linkedinProfileId: int("linkedinProfileId").notNull().references(() => linkedinProfiles.id),
+  candidateId: int("candidateId").references(() => candidates.id),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  
+  // InMail details
+  subject: varchar("subject", { length: 500 }),
+  message: text("message"),
+  linkedinConversationId: varchar("linkedinConversationId", { length: 255 }),
+  
+  // Tracking
+  sentAt: timestamp("sentAt").notNull(),
+  openedAt: timestamp("openedAt"),
+  repliedAt: timestamp("repliedAt"),
+  replied: boolean("replied").default(false).notNull(),
+  replyMessage: text("replyMessage"),
+  
+  // Campaign association
+  sourcingCampaignId: int("sourcingCampaignId").references(() => sourcingCampaigns.id),
+  emailCampaignId: int("emailCampaignId"),
+  
+  // Metadata
+  inmailCreditsUsed: int("inmailCreditsUsed").default(1),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LinkedinInmail = typeof linkedinInmails.$inferSelect;
+export type InsertLinkedinInmail = typeof linkedinInmails.$inferInsert;
+
+/**
+ * Calendar Integrations - Store OAuth tokens for calendar providers
+ */
+export const calendarIntegrations = mysqlTable("calendar_integrations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  
+  // Provider info
+  provider: mysqlEnum("provider", ["google", "microsoft", "calendly", "cal_com"]).notNull(),
+  providerAccountId: varchar("providerAccountId", { length: 255 }),
+  providerEmail: varchar("providerEmail", { length: 320 }),
+  
+  // OAuth tokens
+  accessToken: text("accessToken").notNull(),
+  refreshToken: text("refreshToken"),
+  tokenExpiry: timestamp("tokenExpiry"),
+  
+  // Calendar settings
+  defaultCalendarId: varchar("defaultCalendarId", { length: 255 }),
+  calendarName: varchar("calendarName", { length: 255 }),
+  timezone: varchar("timezone", { length: 100 }).default("UTC").notNull(),
+  
+  // Sync settings
+  autoSync: boolean("autoSync").default(true).notNull(),
+  syncDirection: mysqlEnum("syncDirection", ["one-way", "two-way"]).default("two-way").notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  
+  // Status
+  isActive: boolean("isActive").default(true).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CalendarIntegration = typeof calendarIntegrations.$inferSelect;
+export type InsertCalendarIntegration = typeof calendarIntegrations.$inferInsert;
+
+/**
+ * Calendar Events - Sync interview events with external calendars
+ */
+export const calendarEvents = mysqlTable("calendar_events", {
+  id: int("id").autoincrement().primaryKey(),
+  interviewId: int("interviewId").notNull().references(() => interviews.id),
+  calendarIntegrationId: int("calendarIntegrationId").notNull().references(() => calendarIntegrations.id),
+  
+  // External calendar event details
+  externalEventId: varchar("externalEventId", { length: 255 }).notNull(),
+  provider: mysqlEnum("provider", ["google", "microsoft", "calendly", "cal_com"]).notNull(),
+  
+  // Event details
+  title: varchar("title", { length: 500 }),
+  description: text("description"),
+  location: varchar("location", { length: 500 }),
+  meetingUrl: varchar("meetingUrl", { length: 500 }),
+  
+  // Timing
+  startTime: timestamp("startTime").notNull(),
+  endTime: timestamp("endTime").notNull(),
+  timezone: varchar("timezone", { length: 100 }).notNull(),
+  
+  // Attendees
+  attendees: text("attendees"), // JSON array of email addresses
+  organizerEmail: varchar("organizerEmail", { length: 320 }),
+  
+  // Sync status
+  syncStatus: mysqlEnum("syncStatus", ["pending", "synced", "failed", "cancelled"]).default("pending").notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  syncError: text("syncError"),
+  
+  // Booking tracking (for Calendly/Cal.com)
+  bookingConfirmedAt: timestamp("bookingConfirmedAt"),
+  bookingCancelledAt: timestamp("bookingCancelledAt"),
+  cancellationReason: text("cancellationReason"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
+
+/**
+ * Scheduling Links - Calendly/Cal.com scheduling links for candidates
+ */
+export const schedulingLinks = mysqlTable("scheduling_links", {
+  id: int("id").autoincrement().primaryKey(),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  interviewId: int("interviewId").references(() => interviews.id),
+  candidateId: int("candidateId").references(() => candidates.id),
+  
+  // Link details
+  provider: mysqlEnum("provider", ["calendly", "cal_com"]).notNull(),
+  schedulingUrl: varchar("schedulingUrl", { length: 500 }).notNull(),
+  externalLinkId: varchar("externalLinkId", { length: 255 }),
+  
+  // Configuration
+  eventType: varchar("eventType", { length: 255 }), // e.g., "30min-phone-screen"
+  duration: int("duration").notNull(), // in minutes
+  timezone: varchar("timezone", { length: 100 }),
+  
+  // Availability
+  availableSlots: text("availableSlots"), // JSON array of time slots
+  
+  // Tracking
+  linkSentAt: timestamp("linkSentAt"),
+  linkClickedAt: timestamp("linkClickedAt"),
+  bookedAt: timestamp("bookedAt"),
+  bookingStatus: mysqlEnum("bookingStatus", ["pending", "clicked", "booked", "cancelled", "expired"]).default("pending").notNull(),
+  
+  // Expiry
+  expiresAt: timestamp("expiresAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SchedulingLink = typeof schedulingLinks.$inferSelect;
+export type InsertSchedulingLink = typeof schedulingLinks.$inferInsert;

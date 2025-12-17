@@ -44,6 +44,18 @@ async function startServer() {
   
   // Candidate tracking webhook endpoints (public, no auth required)
   app.use("/api", webhookRoutes);
+  
+  // Calendly webhook endpoint (public, no auth required)
+  app.post("/api/webhooks/calendly", async (req, res) => {
+    try {
+      const { processCalendlyBookingWebhook } = await import("../integrations/calendly");
+      await processCalendlyBookingWebhook(req.body);
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error("[Calendly Webhook] Error:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

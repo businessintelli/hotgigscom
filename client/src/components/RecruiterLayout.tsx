@@ -30,7 +30,8 @@ import {
   Plus,
   TrendingUp,
   Search,
-  Zap
+  Zap,
+  Settings
 } from "lucide-react";
 import { useState, ReactNode } from "react";
 import { useLocation } from "wouter";
@@ -53,6 +54,7 @@ const sidebarItems = [
   { icon: Search, label: "Sourcing Campaigns", path: "/recruiter/sourcing-campaigns" },
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/email-campaigns" },
   { icon: Zap, label: "Automation Analytics", path: "/recruiter/automation-analytics" },
+  { icon: Settings, label: "Integrations", path: "/recruiter/integrations" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: TrendingUp, label: "Predictive Analytics", path: "/recruiter/predictive-analytics" },
   { icon: FileText, label: "Reports", path: "/recruiter/reports" },

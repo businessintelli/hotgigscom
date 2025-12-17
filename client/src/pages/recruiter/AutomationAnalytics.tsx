@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Download, TrendingUp, TrendingDown, Minus, Target, Mail, Calendar, Brain } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Minus, Target, Mail, Calendar, Brain, Linkedin, Link as LinkIcon } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
@@ -82,6 +82,44 @@ export default function AutomationAnalytics() {
             </Button>
           </div>
         </div>
+
+        {/* Integration Status Banner */}
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg mb-2">Integration Status</h3>
+                <p className="text-sm text-gray-600">Connect your tools to unlock real-time automation data</p>
+              </div>
+              <Button variant="outline" onClick={() => window.location.href = '/recruiter/integrations'}>
+                Manage Integrations
+              </Button>
+            </div>
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              <div className="flex items-center gap-2">
+                <Linkedin className="w-5 h-5 text-blue-600" />
+                <div>
+                  <div className="text-xs text-gray-500">LinkedIn</div>
+                  <div className="text-sm font-medium">Mock Mode</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-green-600" />
+                <div>
+                  <div className="text-xs text-gray-500">Calendar</div>
+                  <div className="text-sm font-medium">Not Connected</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <LinkIcon className="w-5 h-5 text-purple-600" />
+                <div>
+                  <div className="text-xs text-gray-500">Scheduling</div>
+                  <div className="text-sm font-medium">Mock Mode</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

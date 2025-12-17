@@ -1015,6 +1015,198 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         const analytics = await getAutomationAnalytics(ctx.user.id, input.days);
         return analytics;
       }),
+
+    // LinkedIn Integration
+    importLinkedInProfile: protectedProcedure
+      .input(z.object({
+        profileUrl: z.string(),
+        sourcingCampaignId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { enrichCandidateFromLinkedIn } = await import('./integrations/linkedin');
+        const success = await enrichCandidateFromLinkedIn(ctx.user.id, input.profileUrl);
+        return { success };
+      }),
+
+    bulkImportLinkedInProfiles: protectedProcedure
+      .input(z.object({
+        profileUrls: z.array(z.string()),
+        sourcingCampaignId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { bulkImportLinkedInProfiles } = await import('./integrations/linkedin');
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        return await bulkImportLinkedInProfiles(input.profileUrls, recruiter.id, input.sourcingCampaignId);
+      }),
+
+    trackLinkedInInMail: protectedProcedure
+      .input(z.object({
+        linkedinProfileId: z.number(),
+        candidateId: z.number().optional(),
+        subject: z.string(),
+        message: z.string(),
+        sourcingCampaignId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { trackLinkedInInMail } = await import('./integrations/linkedin');
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        const inmailId = await trackLinkedInInMail({
+          ...input,
+          recruiterId: recruiter.id,
+        });
+        return { success: true, inmailId };
+      }),
+
+    getInMailResponseRate: protectedProcedure
+      .input(z.object({
+        sourcingCampaignId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const { getInMailResponseRate } = await import('./integrations/linkedin');
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) return { totalSent: 0, totalReplied: 0, responseRate: 0 };
+        return await getInMailResponseRate(recruiter.id, input.sourcingCampaignId);
+      }),
+
+    // Google Calendar Integration
+    getGoogleCalendarAuthUrl: protectedProcedure
+      .input(z.object({
+        redirectUri: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const { getGoogleCalendarAuthUrl } = await import('./integrations/googleCalendar');
+        return { authUrl: getGoogleCalendarAuthUrl(ctx.user.id, input.redirectUri) };
+      }),
+
+    connectGoogleCalendar: protectedProcedure
+      .input(z.object({
+        code: z.string(),
+        redirectUri: z.string(),
+        calendarEmail: z.string(),
+        timezone: z.string().default('UTC'),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { exchangeGoogleCalendarCode, saveGoogleCalendarIntegration } = await import('./integrations/googleCalendar');
+        const tokens = await exchangeGoogleCalendarCode(input.code, ctx.user.id, input.redirectUri);
+        const integrationId = await saveGoogleCalendarIntegration(
+          ctx.user.id,
+          tokens.accessToken,
+          tokens.refreshToken,
+          tokens.expiresIn,
+          input.calendarEmail,
+          input.timezone
+        );
+        return { success: true, integrationId };
+      }),
+
+    createCalendarEvent: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        title: z.string(),
+        description: z.string().optional(),
+        location: z.string().optional(),
+        startTime: z.string(),
+        endTime: z.string(),
+        timezone: z.string(),
+        attendees: z.array(z.object({
+          email: z.string(),
+          name: z.string().optional(),
+        })),
+        meetingUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createGoogleCalendarEvent } = await import('./integrations/googleCalendar');
+        const { calendarIntegrations } = await import('../drizzle/schema');
+        const db = await getDb();
+        if (!db) throw new Error('Database connection failed');
+        
+        // Get user's calendar integration
+        const integration = await db
+          .select()
+          .from(calendarIntegrations)
+          .where(eq(calendarIntegrations.userId, ctx.user.id))
+          .limit(1);
+        
+        if (integration.length === 0) {
+          throw new Error('No calendar integration found. Please connect your calendar first.');
+        }
+
+        const eventId = await createGoogleCalendarEvent(
+          input.interviewId,
+          integration[0].id,
+          {
+            ...input,
+            startTime: new Date(input.startTime),
+            endTime: new Date(input.endTime),
+          }
+        );
+        return { success: true, eventId };
+      }),
+
+    // Calendly Integration
+    getCalendlyAuthUrl: protectedProcedure
+      .input(z.object({
+        redirectUri: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const { getCalendlyAuthUrl } = await import('./integrations/calendly');
+        return { authUrl: getCalendlyAuthUrl(ctx.user.id, input.redirectUri) };
+      }),
+
+    connectCalendly: protectedProcedure
+      .input(z.object({
+        code: z.string(),
+        redirectUri: z.string(),
+        calendlyEmail: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { exchangeCalendlyCode, saveCalendlyIntegration } = await import('./integrations/calendly');
+        const tokens = await exchangeCalendlyCode(input.code, ctx.user.id, input.redirectUri);
+        const integrationId = await saveCalendlyIntegration(
+          ctx.user.id,
+          tokens.accessToken,
+          tokens.refreshToken,
+          tokens.expiresIn,
+          input.calendlyEmail
+        );
+        return { success: true, integrationId };
+      }),
+
+    getCalendlyEventTypes: protectedProcedure
+      .query(async ({ ctx }) => {
+        const { getCalendlyEventTypes } = await import('./integrations/calendly');
+        return await getCalendlyEventTypes(ctx.user.id);
+      }),
+
+    createSchedulingLink: protectedProcedure
+      .input(z.object({
+        interviewId: z.number(),
+        candidateId: z.number(),
+        eventTypeUri: z.string(),
+        expiresInDays: z.number().default(7),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createCalendlySchedulingLink } = await import('./integrations/calendly');
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        return await createCalendlySchedulingLink(
+          recruiter.id,
+          input.interviewId,
+          input.candidateId,
+          input.eventTypeUri,
+          input.expiresInDays
+        );
+      }),
+
+    getSchedulingLinkStats: protectedProcedure
+      .query(async ({ ctx }) => {
+        const { getSchedulingLinkStats } = await import('./integrations/calendly');
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) return { totalLinks: 0, clicked: 0, booked: 0, expired: 0, conversionRate: 0 };
+        return await getSchedulingLinkStats(recruiter.id);
+      }),
   }),
 
   candidate: router({

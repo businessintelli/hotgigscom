@@ -2646,4 +2646,92 @@
 - [x] Test navigation links work correctly (verified in browser - all 3 links visible and working)
 - [x] Test analytics dashboard displays correctly (verified - shows all metrics, charts, and insights)
 - [x] Webhook endpoints created and integrated with Express server
+- [x] Save final checkpoint (version 945b8380)
+
+
+## Phase 9: LinkedIn Recruiter & Calendar Integration
+
+### Database Schema Design
+- [x] Create linkedin_profiles table for imported candidate data
+- [x] Create linkedin_inmails table for tracking outreach messages
+- [x] Create calendar_integrations table for storing OAuth tokens
+- [x] Create calendar_events table for syncing interview events
+- [x] Create scheduling_links table for Calendly/Cal.com
+- [x] Generate migration file (0045_yellow_red_ghost.sql)
+- [ ] Push schema changes to database
+
+### LinkedIn Recruiter Integration
+- [x] Create LinkedIn integration service (server/integrations/linkedin.ts)
+- [x] Build LinkedIn profile import functionality
+- [x] Implement bulk import for multiple profiles
+- [x] Create InMail tracking service
+- [x] Build profile enrichment service (auto-fill candidate data)
+- [x] Add InMail response rate calculation
+- [ ] Create LinkedIn sourcing campaign UI
+- [ ] Add LinkedIn profile import to candidate creation flow
+- [ ] Connect LinkedIn data to Sourcing Campaign ROI metrics
+
+### Google Calendar Integration
+- [x] Create Google Calendar OAuth service (server/integrations/googleCalendar.ts)
+- [x] Build calendar event creation API
+- [x] Implement availability checking service
+- [x] Create interview scheduling with calendar sync
+- [x] Add calendar event update/cancellation handlers
+- [x] Build timezone support
+- [ ] Create calendar settings page for recruiters
+- [ ] Add tRPC endpoints for calendar operations
+
+### Outlook Calendar Integration
+- [ ] Create Microsoft OAuth service
+- [ ] Build Outlook calendar API wrapper
+- [ ] Implement Outlook event creation/sync
+- [ ] Add Outlook availability checking
+- [ ] Support both personal and work Microsoft accounts
+
+### Calendly/Cal.com Integration
+- [x] Create Calendly OAuth service (server/integrations/calendly.ts)
+- [x] Build Calendly scheduling link generator
+- [x] Implement webhook handler for booking confirmations
+- [x] Add scheduling link click tracking
+- [x] Build scheduling link statistics calculator
+- [ ] Create Cal.com integration (similar to Calendly)
+- [ ] Add scheduling link embedding in interview invitations
+- [ ] Add tRPC endpoints for Calendly operations
+
+### Calendar Scheduling UI
+- [x] Create calendar integration settings page (IntegrationSettings.tsx)
+- [x] Add OAuth callback handler page (IntegrationCallback.tsx)
+- [x] Create LinkedIn profile import interface (LinkedInImport.tsx)
+- [x] Add routes to App.tsx for all new pages
+- [x] Add "Integrations" link to RecruiterLayout sidebar
+- [x] Add Calendly webhook endpoint to Express server
+- [ ] Build interview scheduling wizard with calendar sync
+- [ ] Add availability slot picker component
+- [ ] Implement timezone selector with auto-detection
+- [ ] Create interview reschedule flow with calendar updates
+- [ ] Add calendar conflict detection
+- [ ] Build recruiter availability management UI
+
+### Analytics Integration
+- [x] Add integration status banner to AutomationAnalytics page
+- [x] Show LinkedIn, Calendar, and Scheduling integration status
+- [x] Add "Manage Integrations" button linking to settings page
+- [ ] Connect LinkedIn import data to Sourcing Campaigns analytics (pending real data)
+- [ ] Feed InMail response rates into Email Campaign metrics (pending real data)
+- [ ] Update Auto-Scheduling metrics with calendar booking data (pending real data)
+- [ ] Add LinkedIn sourcing channel to channel distribution chart
+- [ ] Track calendar booking conversion rates
+- [ ] Add timezone distribution analytics
+
+### Testing & Deployment
+- [x] Backend APIs created for all integration features
+- [x] UI pages created (IntegrationSettings, LinkedInImport, IntegrationCallback)
+- [x] Routes and navigation configured
+- [x] Webhook endpoints added to Express server
+- [x] Tested Integration Settings page - all 3 tabs working
+- [x] Tested LinkedIn Import page - single and bulk import UI functional
+- [x] Tested Calendar tab - Google Calendar and Outlook options displayed
+- [x] Tested Scheduling tab - Calendly and Cal.com options displayed
+- [x] Verified integration status displays correctly in AutomationAnalytics
+- [x] Verified navigation link in RecruiterLayout sidebar
 - [ ] Save final checkpoint
