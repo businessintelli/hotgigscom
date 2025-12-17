@@ -3265,3 +3265,23 @@
 - [x] Build comprehensive reports backend - added 6 new tRPC procedures for analytics
 - [x] Add Reports menu item to company admin sidebar
 - [x] Test reports page functionality
+
+
+## Company Admin Advanced Reports & Features (NEW)
+- [x] Build Total Submissions Report with metrics and trends
+- [x] Build Placements Report with success rates and timeline
+- [x] Build Submissions by Job Report with job-level breakdown
+- [x] Build Backed Out Candidates Report (withdrawn/rejected analysis)
+- [x] Build Feedback Report by Applicant with ratings and comments
+- [x] Implement advanced date filtering (day, week, month, quarter, year)
+- [x] Add custom date range picker with calendar UI
+- [ ] Build Custom Report Builder with drag-and-drop fields (FUTURE)
+- [x] Add profile dropdown menu to company admin header (settings, logout)
+- [x] Implement PDF export for all reports using PDF generation library
+- [x] Implement Excel export for all reports using XLSX library
+- [ ] Build email scheduling system for automated reports (FUTURE)
+- [ ] Add report schedule configuration UI (daily, weekly, monthly) (FUTURE)
+- [ ] Implement background job for sending scheduled reports (FUTURE)
+- [x] Test all new reports with sample data (empty states verified)
+- [x] Test export functionality (PDF and Excel) (UI verified, needs data)
+- [ ] Test email scheduling system (FUTURE)

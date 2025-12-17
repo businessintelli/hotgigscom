@@ -2,6 +2,14 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Building2,
   Users,
   Settings,
@@ -10,7 +18,9 @@ import {
   LogOut,
   Menu,
   X,
-  Linkedin
+  Linkedin,
+  User,
+  ChevronDown
 } from "lucide-react";
 import { useState } from "react";
 
@@ -39,30 +49,28 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-card border-r border-border transform transition-all duration-200 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 ${
-          isCollapsed ? "lg:w-20" : "lg:w-64"
-        } w-64`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-card border-r border-border transition-all duration-300 ${
+          sidebarOpen ? (isCollapsed ? "w-20" : "w-64") : "-translate-x-full lg:translate-x-0"
+        } lg:translate-x-0`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-border">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-border">
             {!isCollapsed && (
               <Link href="/company-admin/dashboard">
-                <a className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">HG</span>
+                <a className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">HG</span>
                   </div>
-                  <span className="font-bold text-gray-900">HotGigs</span>
+                  <span className="font-bold text-lg">HotGigs</span>
                 </a>
               </Link>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className="hidden lg:flex"
               onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden lg:flex"
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
@@ -70,8 +78,8 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               onClick={() => setSidebarOpen(false)}
+              className="lg:hidden"
             >
               <X className="h-5 w-5" />
             </Button>
@@ -101,28 +109,53 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
             })}
           </nav>
 
-          {/* User Profile */}
+          {/* User Profile with Dropdown */}
           <div className="p-4 border-t border-border">
             <div className="flex items-center gap-3 mb-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Building2 className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  Company Admin
-                </p>
-              </div>
+              {!isCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Company Admin
+                  </p>
+                </div>
+              )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={logout}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {!isCollapsed && "Profile"}
+                  </span>
+                  {!isCollapsed && <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => window.location.href = '/company-admin/profile-settings'}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.location.href = '/company-admin/company-settings'}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Company Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </aside>
@@ -141,17 +174,13 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
-        <main className="p-6 lg:p-8">{children}</main>
-      </div>
-
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      <main
+        className={`transition-all duration-300 ${
+          isCollapsed ? "lg:ml-20" : "lg:ml-64"
+        }`}
+      >
+        {children}
+      </main>
     </div>
   );
 }

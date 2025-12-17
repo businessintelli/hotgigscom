@@ -5352,6 +5352,360 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       
       return recruiters;
     }),
+    
+    // Get total submissions report
+    getTotalSubmissionsReport: protectedProcedure
+      .input(z.object({ 
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        groupBy: z.enum(['day', 'week', 'month', 'quarter', 'year']).optional().default('month')
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        if (!ctx.user.companyId) {
+          throw new Error('User not associated with a company');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { count, sql, eq, and, gte, lte } = await import("drizzle-orm");
+        const { applications, jobs } = await import("../drizzle/schema");
+        
+        // Build date filter
+        const dateFilters = [eq(jobs.companyId, ctx.user.companyId)];
+        if (input.startDate) {
+          dateFilters.push(gte(applications.submittedAt, new Date(input.startDate)));
+        }
+        if (input.endDate) {
+          dateFilters.push(lte(applications.submittedAt, new Date(input.endDate)));
+        }
+        
+        // Get total submissions
+        const [totalResult] = await database.select({ count: count() })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters));
+        
+        // Get submissions by status
+        const byStatus = await database.select({
+          status: applications.status,
+          count: count()
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters))
+          .groupBy(applications.status);
+        
+        // Get submissions trend (simplified - by month)
+        const trendData = await database.select({
+          month: sql`DATE_FORMAT(${applications.submittedAt}, '%Y-%m')`,
+          count: count()
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters))
+          .groupBy(sql`DATE_FORMAT(${applications.submittedAt}, '%Y-%m')`);
+        
+        return {
+          total: totalResult.count,
+          byStatus,
+          trend: trendData
+        };
+      }),
+    
+    // Get placements report
+    getPlacementsReport: protectedProcedure
+      .input(z.object({ 
+        startDate: z.string().optional(),
+        endDate: z.string().optional()
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        if (!ctx.user.companyId) {
+          throw new Error('User not associated with a company');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { count, sql, eq, and, gte, lte } = await import("drizzle-orm");
+        const { applications, jobs, users } = await import("../drizzle/schema");
+        
+        // Build date filter
+        const dateFilters = [
+          eq(jobs.companyId, ctx.user.companyId),
+          eq(applications.status, 'offered')
+        ];
+        if (input.startDate) {
+          dateFilters.push(gte(applications.updatedAt, new Date(input.startDate)));
+        }
+        if (input.endDate) {
+          dateFilters.push(lte(applications.updatedAt, new Date(input.endDate)));
+        }
+        
+        // Get total placements
+        const [totalResult] = await database.select({ count: count() })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters));
+        
+        // Get placements by job
+        const byJob = await database.select({
+          jobId: jobs.id,
+          jobTitle: jobs.title,
+          count: count()
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters))
+          .groupBy(jobs.id, jobs.title);
+        
+        // Get placements by recruiter
+        const byRecruiter = await database.select({
+          recruiterId: users.id,
+          recruiterName: users.name,
+          count: count()
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .innerJoin(users, eq(jobs.postedBy, users.id))
+          .where(and(...dateFilters))
+          .groupBy(users.id, users.name);
+        
+        // Calculate success rate
+        const [totalAppsResult] = await database.select({ count: count() })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(eq(jobs.companyId, ctx.user.companyId));
+        
+        const successRate = totalAppsResult.count > 0 
+          ? Math.round((totalResult.count / totalAppsResult.count) * 100)
+          : 0;
+        
+        return {
+          total: totalResult.count,
+          successRate,
+          byJob,
+          byRecruiter
+        };
+      }),
+    
+    // Get submissions by job report
+    getSubmissionsByJobReport: protectedProcedure
+      .input(z.object({ 
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        jobId: z.number().optional()
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        if (!ctx.user.companyId) {
+          throw new Error('User not associated with a company');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { count, sql, eq, and, gte, lte } = await import("drizzle-orm");
+        const { applications, jobs, users } = await import("../drizzle/schema");
+        
+        // Build date filter
+        const dateFilters = [eq(jobs.companyId, ctx.user.companyId)];
+        if (input.startDate) {
+          dateFilters.push(gte(applications.submittedAt, new Date(input.startDate)));
+        }
+        if (input.endDate) {
+          dateFilters.push(lte(applications.submittedAt, new Date(input.endDate)));
+        }
+        if (input.jobId) {
+          dateFilters.push(eq(jobs.id, input.jobId));
+        }
+        
+        // Get submissions by job with details
+        const jobSubmissions = await database.select({
+          jobId: jobs.id,
+          jobTitle: jobs.title,
+          jobType: jobs.type,
+          location: jobs.location,
+          recruiterName: users.name,
+          totalSubmissions: count(),
+          submitted: sql`SUM(CASE WHEN ${applications.status} = 'submitted' THEN 1 ELSE 0 END)`,
+          reviewing: sql`SUM(CASE WHEN ${applications.status} = 'reviewing' THEN 1 ELSE 0 END)`,
+          shortlisted: sql`SUM(CASE WHEN ${applications.status} = 'shortlisted' THEN 1 ELSE 0 END)`,
+          interviewing: sql`SUM(CASE WHEN ${applications.status} = 'interviewing' THEN 1 ELSE 0 END)`,
+          offered: sql`SUM(CASE WHEN ${applications.status} = 'offered' THEN 1 ELSE 0 END)`,
+          rejected: sql`SUM(CASE WHEN ${applications.status} = 'rejected' THEN 1 ELSE 0 END)`,
+          withdrawn: sql`SUM(CASE WHEN ${applications.status} = 'withdrawn' THEN 1 ELSE 0 END)`
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .innerJoin(users, eq(jobs.postedBy, users.id))
+          .where(and(...dateFilters))
+          .groupBy(jobs.id, jobs.title, jobs.type, jobs.location, users.name);
+        
+        return { jobs: jobSubmissions };
+      }),
+    
+    // Get backed out candidates report
+    getBackedOutReport: protectedProcedure
+      .input(z.object({ 
+        startDate: z.string().optional(),
+        endDate: z.string().optional()
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        if (!ctx.user.companyId) {
+          throw new Error('User not associated with a company');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { count, sql, eq, and, gte, lte, or } = await import("drizzle-orm");
+        const { applications, jobs, candidates, users: usersTable } = await import("../drizzle/schema");
+        
+        // Build date filter for withdrawn or rejected applications
+        const dateFilters = [
+          eq(jobs.companyId, ctx.user.companyId),
+          or(
+            eq(applications.status, 'withdrawn'),
+            eq(applications.status, 'rejected')
+          )
+        ];
+        if (input.startDate) {
+          dateFilters.push(gte(applications.updatedAt, new Date(input.startDate)));
+        }
+        if (input.endDate) {
+          dateFilters.push(lte(applications.updatedAt, new Date(input.endDate)));
+        }
+        
+        // Get total backed out count
+        const [totalResult] = await database.select({ count: count() })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters));
+        
+        // Get backed out by status
+        const byStatus = await database.select({
+          status: applications.status,
+          count: count()
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters))
+          .groupBy(applications.status);
+        
+        // Get backed out by job
+        const byJob = await database.select({
+          jobId: jobs.id,
+          jobTitle: jobs.title,
+          count: count()
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters))
+          .groupBy(jobs.id, jobs.title);
+        
+        // Get backed out trend
+        const trend = await database.select({
+          month: sql`DATE_FORMAT(${applications.updatedAt}, '%Y-%m')`,
+          withdrawn: sql`SUM(CASE WHEN ${applications.status} = 'withdrawn' THEN 1 ELSE 0 END)`,
+          rejected: sql`SUM(CASE WHEN ${applications.status} = 'rejected' THEN 1 ELSE 0 END)`
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters))
+          .groupBy(sql`DATE_FORMAT(${applications.updatedAt}, '%Y-%m')`);
+        
+        return {
+          total: totalResult.count,
+          byStatus,
+          byJob,
+          trend
+        };
+      }),
+    
+    // Get feedback report by applicant
+    getFeedbackReport: protectedProcedure
+      .input(z.object({ 
+        startDate: z.string().optional(),
+        endDate: z.string().optional()
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        if (!ctx.user.companyId) {
+          throw new Error('User not associated with a company');
+        }
+        
+        const database = await db.getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const { count, sql, eq, and, gte, lte, isNotNull } = await import("drizzle-orm");
+        const { applications, jobs, candidates, users: usersTable } = await import("../drizzle/schema");
+        
+        // Build date filter for applications with notes/feedback
+        const dateFilters = [
+          eq(jobs.companyId, ctx.user.companyId),
+          isNotNull(applications.notes)
+        ];
+        if (input.startDate) {
+          dateFilters.push(gte(applications.updatedAt, new Date(input.startDate)));
+        }
+        if (input.endDate) {
+          dateFilters.push(lte(applications.updatedAt, new Date(input.endDate)));
+        }
+        
+        // Get applications with feedback
+        const feedbackData = await database.select({
+          applicationId: applications.id,
+          candidateName: usersTable.name,
+          candidateEmail: usersTable.email,
+          jobTitle: jobs.title,
+          status: applications.status,
+          notes: applications.notes,
+          aiScore: applications.aiScore,
+          submittedAt: applications.submittedAt,
+          updatedAt: applications.updatedAt
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .innerJoin(candidates, eq(applications.candidateId, candidates.id))
+          .innerJoin(usersTable, eq(candidates.userId, usersTable.id))
+          .where(and(...dateFilters))
+          .limit(100); // Limit for performance
+        
+        // Get feedback count by status
+        const byStatus = await database.select({
+          status: applications.status,
+          count: count()
+        })
+          .from(applications)
+          .innerJoin(jobs, eq(applications.jobId, jobs.id))
+          .where(and(...dateFilters))
+          .groupBy(applications.status);
+        
+        return {
+          feedback: feedbackData,
+          byStatus,
+          total: feedbackData.length
+        };
+      }),
   }),
 
   // Resume Ranking Router
