@@ -695,4 +695,70 @@ export const companyAdminRouter = router({
       
       return await db.getCompanyActivityLogs(ctx.user.companyId, input.limit);
     }),
+  
+  // ============================================
+  // AI ASSISTANT
+  // ============================================
+  
+  aiAssistant: companyAdminProcedure
+    .input(z.object({
+      message: z.string(),
+      conversationHistory: z.array(z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string(),
+      })).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      // Import LLM helper
+      const { invokeLLM } = await import('../_core/llm');
+      
+      // Build context with company-wide data
+      const companyUsers = await db.getCompanyUsers(ctx.user.companyId);
+      const recruiters = companyUsers.filter(u => u.role === 'recruiter');
+      
+      // Get aggregate stats
+      const stats = await db.getCompanyDashboardStats(ctx.user.companyId);
+      
+      // Build system prompt with company context
+      const systemPrompt = `You are an AI assistant for a company admin managing recruitment operations.
+      
+Company Context:
+- Total Recruiters: ${recruiters.length}
+- Active Jobs: ${stats?.totalJobs || 0}
+- Total Applications: ${stats?.totalApplications || 0}
+- Total Candidates: ${stats?.totalCandidates || 0}
+
+You have access to company-wide recruitment data. Help the admin with:
+- Team performance analysis
+- Resource optimization
+- Hiring trends and insights
+- Strategic recommendations
+- Compliance monitoring
+
+Provide data-driven, actionable insights based on the company's recruitment operations.`;
+      
+      // Build messages array
+      const messages = [
+        { role: 'system' as const, content: systemPrompt },
+        ...(input.conversationHistory || []).map(m => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        })),
+        { role: 'user' as const, content: input.message },
+      ];
+      
+      // Call LLM
+      const response = await invokeLLM({ messages });
+      
+      return {
+        response: response.choices[0].message.content || 'I apologize, but I could not generate a response.',
+      };
+    }),
 });

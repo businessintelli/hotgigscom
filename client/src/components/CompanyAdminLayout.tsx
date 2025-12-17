@@ -20,7 +20,8 @@ import {
   X,
   Linkedin,
   User,
-  ChevronDown
+  ChevronDown,
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
 
@@ -42,6 +43,7 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     { name: "Report Schedules", href: "/company-admin/report-schedules", icon: BarChart3 },
     { name: "LinkedIn Settings", href: "/company-admin/linkedin-settings", icon: Linkedin },
     { name: "InMail Templates", href: "/company-admin/inmail-templates", icon: MessageSquare },
+    { name: "AI Assistant", href: "/company-admin/ai-assistant", icon: Sparkles },
     { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },
   ];
 

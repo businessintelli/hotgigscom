@@ -381,7 +381,7 @@ export default function CustomReportBuilder() {
                     <SelectValue placeholder="No grouping" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No grouping</SelectItem>
+                    <SelectItem value="none">No grouping</SelectItem>
                     <SelectItem value="job">Job</SelectItem>
                     <SelectItem value="recruiter">Recruiter</SelectItem>
                     <SelectItem value="status">Status</SelectItem>
