@@ -1423,11 +1423,26 @@ export async function getPendingRescheduleRequests(recruiterId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
-  return await db.select()
+  // Join with interviews table to filter by recruiter
+  return await db.select({
+    id: rescheduleRequests.id,
+    interviewId: rescheduleRequests.interviewId,
+    panelistId: rescheduleRequests.panelistId,
+    requestedBy: rescheduleRequests.requestedBy,
+    reason: rescheduleRequests.reason,
+    preferredDates: rescheduleRequests.preferredDates,
+    status: rescheduleRequests.status,
+    resolvedAt: rescheduleRequests.resolvedAt,
+    resolvedBy: rescheduleRequests.resolvedBy,
+    newInterviewTime: rescheduleRequests.newInterviewTime,
+    createdAt: rescheduleRequests.createdAt,
+    updatedAt: rescheduleRequests.updatedAt,
+  })
     .from(rescheduleRequests)
+    .innerJoin(interviews, eq(rescheduleRequests.interviewId, interviews.id))
     .where(
       and(
-        eq(rescheduleRequests.recruiterId, recruiterId),
+        eq(interviews.recruiterId, recruiterId),
         eq(rescheduleRequests.status, 'pending')
       )
     )

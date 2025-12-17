@@ -359,9 +359,13 @@ export default function CandidateSearch() {
             ) : (
               <div className="grid gap-4">
                 {results.map((result) => {
-                  const candidate = result.candidate;
-                  const user = result.user;
-                  const skills = candidate.skills ? candidate.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+                  const candidate = result?.candidate;
+                  const user = result?.user;
+                  
+                  // Skip if candidate data is missing
+                  if (!candidate) return null;
+                  
+                  const skills = candidate?.skills ? candidate.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
                   
                   return (
                     <Card key={candidate.id} className="hover:shadow-lg transition-shadow">

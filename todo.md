@@ -3126,3 +3126,8 @@
 
 ## Bug Fix - Missing searchJobs Function
 - [x] Add db.searchJobs function for job search functionality
+
+
+## Bug Fixes - Candidate Search Page Errors
+- [x] Fix getPendingRescheduleRequests SQL query (added join with interviews table)
+- [x] Fix CandidateSearch component undefined skills error (added null checks)
