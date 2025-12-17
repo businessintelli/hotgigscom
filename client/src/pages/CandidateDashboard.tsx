@@ -91,19 +91,24 @@ export default function CandidateDashboard() {
   );
 }
 
-// Sidebar navigation items for candidates
+// Sidebar navigation items for candidates with sections
 const sidebarItems = [
+  // Core
   { icon: LayoutDashboard, label: "Dashboard", path: "/candidate-dashboard", badge: null },
   { icon: FileText, label: "My Resume", path: "/candidate/my-resumes", badge: null },
   { icon: Video, label: "Video Introduction", path: "/candidate/video-intro", badge: null },
+  { type: "divider", label: "Job Search" },
   { icon: Search, label: "Browse Jobs", path: "/jobs", badge: null },
   { icon: Briefcase, label: "My Applications", path: "/my-applications", badge: null },
   { icon: Heart, label: "Saved Jobs", path: "/saved-jobs", badge: null },
+  { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
+  { type: "divider", label: "Schedule & Team" },
   { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
   { icon: Users, label: "Associates", path: "/candidate/associates", badge: null },
+  { type: "divider", label: "Career Development" },
   { icon: MessageSquare, label: "AI Career Coach", path: "/candidate/career-coach", badge: null },
-  { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
   { icon: BookOpen, label: "Career Resources", path: "/resources", badge: null },
+  { type: "divider", label: "Support" },
   { icon: Mail, label: "Messages", path: "/candidate/messages", badge: null },
   { icon: Settings, label: "Settings", path: "/candidate/settings", badge: null },
   { icon: HelpCircle, label: "Help & Support", path: "/help", badge: null },
@@ -384,7 +389,23 @@ function CandidateDashboardContent() {
           {/* Sidebar Navigation */}
           <ScrollArea className="flex-1 py-4">
             <nav className="px-2 space-y-1">
-              {sidebarItems.map((item) => {
+              {sidebarItems.map((item, index) => {
+                // Handle section dividers
+                if (item.type === "divider") {
+                  return (
+                    <div key={`divider-${index}`} className="pt-4 pb-2 px-3">
+                      {!sidebarCollapsed && (
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          {item.label}
+                        </h3>
+                      )}
+                      {sidebarCollapsed && (
+                        <div className="h-px bg-gray-200" />
+                      )}
+                    </div>
+                  );
+                }
+                
                 const isActive = item.path ? location === item.path : false;
                 return (
                   <Tooltip key={item.label} delayDuration={0}>

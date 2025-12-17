@@ -2433,3 +2433,11 @@
 - [x] Create Messages/Inbox page for recruiters
 - [x] Create Help/Support page or modal
 - [ ] Add section dividers in navigation for better organization
+
+## Navigation Section Dividers (Current Session)
+- [x] Design logical groupings for candidate navigation items
+- [x] Design logical groupings for recruiter navigation items
+- [x] Implement section dividers in candidate sidebar
+- [x] Implement section dividers in recruiter sidebar
+- [x] Add section labels/headings for each group
+- [x] Test visual hierarchy and spacing

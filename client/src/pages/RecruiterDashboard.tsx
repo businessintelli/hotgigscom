@@ -225,21 +225,27 @@ function SortableJobItem({ job, isSelected, onToggleSelect, onClick, isOwner, dr
 type JobSortOption = 'date_desc' | 'date_asc' | 'applications_desc' | 'applications_asc' | 'status_asc' | 'status_desc';
 
 const sidebarItems = [
+  // Core
   { icon: LayoutDashboard, label: "Dashboard", path: "/recruiter/dashboard", badge: null },
   { icon: Briefcase, label: "Jobs", path: "/recruiter/jobs", badge: null },
   { icon: Users, label: "Candidates", path: "/recruiter/search-candidates", badge: null },
   { icon: FileText, label: "Applications", path: "/recruiter/applications", badge: null },
+  { type: "divider", label: "Team & Clients" },
   { icon: UserCheck, label: "Associates", path: "/recruiter/associates", badge: null },
+  { icon: Building2, label: "Clients", path: "/recruiter/customers", badge: null },
+  { type: "divider", label: "Scheduling" },
   { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
   { icon: Calendar, label: "Interviews", path: "/recruiter/interviews", badge: null },
+  { icon: RefreshCw, label: "Reschedule Requests", path: "/recruiter/reschedule-requests", badge: "pending" },
+  { type: "divider", label: "AI Tools" },
   { icon: Video, label: "AI Interviews", path: "/recruiter/interview-playback", badge: null },
   { icon: Target, label: "AI Matching", path: "/recruiter/ai-matching", badge: null },
   { icon: Bot, label: "AI Assistant", path: "/recruiter/ai-assistant", badge: null },
-  { icon: Building2, label: "Clients", path: "/recruiter/customers", badge: null },
+  { type: "divider", label: "Operations" },
   { icon: Upload, label: "Bulk Upload", path: "/recruiter/bulk-upload", badge: null },
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/campaigns", badge: null },
   { icon: BarChart3, label: "Analytics", path: "/analytics", badge: null },
-  { icon: RefreshCw, label: "Reschedule Requests", path: "/recruiter/reschedule-requests", badge: "pending" },
+  { type: "divider", label: "Support" },
   { icon: MessageSquare, label: "Messages", path: "/recruiter/messages", badge: null },
   { icon: Settings, label: "Settings", path: "/recruiter/settings", badge: null },
   { icon: HelpCircle, label: "Help & Support", path: "/help", badge: null },
@@ -622,7 +628,23 @@ function RecruiterDashboardContent() {
           {/* Sidebar Navigation */}
           <ScrollArea className="flex-1 py-4">
             <nav className="space-y-1 px-2">
-              {sidebarItems.map((item) => {
+              {sidebarItems.map((item, index) => {
+                // Handle section dividers
+                if (item.type === "divider") {
+                  return (
+                    <div key={`divider-${index}`} className="pt-4 pb-2 px-3">
+                      {!sidebarCollapsed && (
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          {item.label}
+                        </h3>
+                      )}
+                      {sidebarCollapsed && (
+                        <div className="h-px bg-gray-200" />
+                      )}
+                    </div>
+                  );
+                }
+                
                 const isActive = item.path ? (location === item.path || (item.path !== '/recruiter/dashboard' && location.startsWith(item.path))) : false;
                 const badgeCount = item.badge === "pending" ? pendingCount : null;
                 
@@ -705,7 +727,18 @@ function RecruiterDashboardContent() {
                   </SheetHeader>
                   <ScrollArea className="flex-1 py-4">
                     <nav className="space-y-1 px-2">
-                      {sidebarItems.map((item) => {
+                      {sidebarItems.map((item, index) => {
+                        // Handle section dividers
+                        if (item.type === "divider") {
+                          return (
+                            <div key={`divider-${index}`} className="pt-4 pb-2 px-3">
+                              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                {item.label}
+                              </h3>
+                            </div>
+                          );
+                        }
+                        
                         const isActive = item.path ? location === item.path : false;
                         const badgeCount = item.badge === "pending" ? pendingCount : null;
                         
