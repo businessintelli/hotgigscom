@@ -2890,3 +2890,12 @@
 - [x] Cleared TypeScript build cache
 - [x] Verified application runs without actual TypeScript errors
 - Note: Errors shown in health check are stale LSP cache, not real compilation issues
+
+## Bug Fixes - Recruiter Jobs Page (December 17, 2025)
+
+### Database Connection Race Condition (FIXED)
+- [x] Fixed "db2.select is not a function" error on /recruiter/jobs page
+- [x] Identified root cause: race condition during database initialization
+- [x] Improved getDb() function with initialization lock and retry mechanism
+- [x] Added better error logging for database connection issues
+- [x] Tested recruiter jobs page loads without errors

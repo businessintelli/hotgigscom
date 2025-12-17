@@ -38,16 +38,39 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _dbInitializing = false;
 
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
+  // If database is already initialized, return it
+  if (_db) {
+    return _db;
   }
+  
+  // If database is currently initializing, wait a bit and retry
+  if (_dbInitializing) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return getDb();
+  }
+  
+  // Check if DATABASE_URL is available
+  if (!process.env.DATABASE_URL) {
+    console.error("[Database] DATABASE_URL environment variable is not set");
+    return null;
+  }
+  
+  // Initialize database connection
+  _dbInitializing = true;
+  try {
+    console.log("[Database] Initializing connection...");
+    _db = drizzle(process.env.DATABASE_URL);
+    console.log("[Database] Connection established successfully");
+  } catch (error) {
+    console.error("[Database] Failed to connect:", error);
+    _db = null;
+  } finally {
+    _dbInitializing = false;
+  }
+  
   return _db;
 }
 
