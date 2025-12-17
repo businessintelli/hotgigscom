@@ -1,4 +1,4 @@
-import { db } from "../_core/db";
+import { getDb } from "../db";
 import { candidates, recruiters, jobs, applications, interviews } from "../../drizzle/schema";
 import { eq, and, gte, lte, desc, sql, like, or } from "drizzle-orm";
 import * as dbHelpers from "../db";

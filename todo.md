@@ -2481,3 +2481,30 @@
 - [ ] Integrate database tools with AI assistant conversations
 - [ ] Add query result formatting and presentation
 - [x] Implement safety checks for database queries
+
+
+## Phase 5: LLM Intelligence Layer Integration (Current Focus)
+
+### AI Database Tools Integration
+- [x] Update AI Career Coach router to use database query tools
+- [x] Update AI Recruiting Assistant router to use database query tools
+- [ ] Test AI assistants with sample questions requiring database access
+- [x] Add error handling for failed tool executions
+
+### Bias Detection Integration
+- [x] Add bias detection to resume upload flow
+- [x] Add bias detection to job posting creation flow
+- [ ] Create bias alert UI component
+- [ ] Test bias detection with sample resumes and job descriptions
+
+### Notification Preferences UI
+- [ ] Create notification preferences section in candidate Settings
+- [ ] Create notification preferences section in recruiter Settings
+- [ ] Add API endpoints for saving preferences
+- [ ] Test preference saving and retrieval
+
+### Testing & Documentation
+- [ ] Write vitest tests for AI tool integrations
+- [ ] Write vitest tests for bias detection flows
+- [ ] Update user documentation
+- [ ] Create checkpoint with all features

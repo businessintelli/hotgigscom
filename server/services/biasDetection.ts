@@ -1,5 +1,5 @@
 import { invokeLLM } from "../_core/llm";
-import { db } from "../_core/db";
+import { getDb } from "../db";
 import { biasDetectionLogs, diversityMetrics } from "../../drizzle/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 
@@ -99,6 +99,7 @@ Return a JSON analysis with detected issues and recommendations.`
 
     // Log detected biases to database
     if (result.hasBias && result.detectedIssues.length > 0) {
+      const db = getDb();
       for (const issue of result.detectedIssues) {
         await db.insert(biasDetectionLogs).values({
           entityType: "resume",
@@ -215,6 +216,7 @@ Return a JSON analysis with detected issues and recommendations for more inclusi
 
     // Log detected biases
     if (result.hasBias && result.detectedIssues.length > 0) {
+      const db = getDb();
       for (const issue of result.detectedIssues) {
         await db.insert(biasDetectionLogs).values({
           entityType: "job_description",
@@ -325,6 +327,7 @@ Return analysis of potential bias in the matching algorithm.`
 
     // Log detected biases
     if (result.hasBias && result.detectedIssues.length > 0) {
+      const db = getDb();
       for (const issue of result.detectedIssues) {
         await db.insert(biasDetectionLogs).values({
           entityType: "match_score",

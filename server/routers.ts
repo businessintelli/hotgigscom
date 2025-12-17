@@ -26,7 +26,8 @@ import * as candidateSearchHelpers from './candidateSearchHelpers';
 import * as emailCampaignHelpers from './emailCampaignHelpers';
 import * as analyticsHelpers from './analyticsHelpers';
 import * as recruiterReportsHelpers from './recruiterReportsHelpers';
-import { candidateCareerCoach, recruiterAssistant } from './services/aiAssistant';
+import { candidateCareerCoach, recruiterAssistant, buildCandidateContext, buildRecruiterContext } from './services/aiAssistant';
+import { formatToolsForLLM, executeQueryTool } from './services/aiDatabaseTools';
 import { resumeProfileRouter } from './resumeProfileRouter';
 import { documentUploadRouter } from './documentUpload';
 import { onboardingRouter } from './onboardingRouter';
@@ -41,6 +42,7 @@ import { generateInterviewRescheduledEmail } from './emails/interviewRescheduled
 import { sendEmail } from './emailService';
 import { invokeLLM } from './_core/llm';
 import { calculateJobMatch, screenAndRankCandidates } from './ai-matching';
+import { detectResumeBias, detectJobDescriptionBias } from './services/biasDetection';
 import { getHiringTrends, getTimeToHireMetrics as getPredictiveTimeToHire, getPipelineHealth, predictSuccessRate } from './predictive-analytics';
 
 // Helper to generate random suffix for file keys
@@ -80,18 +82,73 @@ export const appRouter = router({
     chat: protectedProcedure
       .input(z.object({
         messages: z.array(z.object({
-          role: z.enum(['system', 'user', 'assistant']),
+          role: z.enum(['system', 'user', 'assistant', 'tool']),
           content: z.string(),
+          tool_call_id: z.string().optional(),
         })),
         systemPrompt: z.string().optional(),
+        assistantType: z.enum(['career_coach', 'recruiting_assistant']).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const messages = input.systemPrompt 
           ? [{ role: 'system' as const, content: input.systemPrompt }, ...input.messages]
           : input.messages;
         
-        const response = await invokeLLM({ messages });
-        return response.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+        // Determine user role and available tools
+        const userRole = ctx.user.role as 'candidate' | 'recruiter';
+        const tools = formatToolsForLLM(userRole);
+        
+        // First LLM call with tools
+        const response = await invokeLLM({ 
+          messages, 
+          tools,
+          tool_choice: 'auto'
+        });
+        
+        const assistantMessage = response.choices[0]?.message;
+        
+        // Check if AI wants to call tools
+        if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
+          // Add assistant message with tool calls to conversation
+          const conversationHistory = [...messages, {
+            role: 'assistant' as const,
+            content: assistantMessage.content || '',
+            tool_calls: assistantMessage.tool_calls
+          }];
+          
+          // Execute each tool call
+          for (const toolCall of assistantMessage.tool_calls) {
+            try {
+              const toolResult = await executeQueryTool(
+                toolCall.function.name,
+                JSON.parse(toolCall.function.arguments),
+                ctx.user.id,
+                userRole
+              );
+              
+              // Add tool result to conversation
+              conversationHistory.push({
+                role: 'tool' as const,
+                content: JSON.stringify(toolResult),
+                tool_call_id: toolCall.id
+              });
+            } catch (error) {
+              console.error(`[AI Chat] Tool execution error:`, error);
+              conversationHistory.push({
+                role: 'tool' as const,
+                content: JSON.stringify({ error: 'Failed to execute query' }),
+                tool_call_id: toolCall.id
+              });
+            }
+          }
+          
+          // Get final response from AI with tool results
+          const finalResponse = await invokeLLM({ messages: conversationHistory });
+          return finalResponse.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+        }
+        
+        // No tools needed, return direct response
+        return assistantMessage?.content || 'Sorry, I could not generate a response.';
       }),
     
     generateInterviewPreparationTips: protectedProcedure
@@ -463,7 +520,7 @@ Please be specific and practical.`;
   }),
 
   recruiter: router({
-    // AI Assistant endpoint
+    // AI Assistant endpoint - now uses database tools
     aiAssistant: protectedProcedure
       .input(z.object({
         message: z.string(),
@@ -473,12 +530,100 @@ Please be specific and practical.`;
         })).optional().default([]),
       }))
       .mutation(async ({ ctx, input }) => {
-        const response = await recruiterAssistant(
-          ctx.user.id,
-          input.message,
-          input.conversationHistory
-        );
-        return { response };
+        // Build recruiter context
+        const context = await buildRecruiterContext(ctx.user.id);
+        
+        const systemPrompt = `You are an AI Recruiting Assistant for a recruiter on the HotGigs recruitment platform. You have access to database query tools to answer questions about their pipeline, candidates, and hiring metrics.
+
+**Available Tools:**
+- get_my_jobs: Get recruiter's job postings
+- get_job_applications: Get applications for a specific job
+- get_pipeline_statistics: Get hiring pipeline metrics
+- search_candidates: Find candidates by skills/location/experience
+
+**Your Role:**
+1. Answer questions about pipeline, applications, and candidate statuses
+2. Provide insights on job performance and conversion rates
+3. Help with candidate analysis and comparison
+4. Discuss hiring metrics like time-to-hire and offer acceptance
+5. Suggest process optimizations based on data
+6. Use database tools when user asks specific questions like "How many applications do I have?" or "Show me my pipeline stats"
+
+Here is the recruiter's current summary:
+
+${context}
+
+Be professional, data-driven, and provide actionable insights. Use tools to get real-time data when needed.`;
+        
+        // Convert conversation history to new format
+        const messages = [
+          ...input.conversationHistory.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          { role: 'user' as const, content: input.message }
+        ];
+        
+        // Determine user role and available tools
+        const userRole = 'recruiter';
+        const tools = formatToolsForLLM(userRole);
+        
+        // First LLM call with tools
+        const response = await invokeLLM({ 
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ], 
+          tools,
+          tool_choice: 'auto'
+        });
+        
+        const assistantMessage = response.choices[0]?.message;
+        
+        // Check if AI wants to call tools
+        if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
+          const conversationHistory = [
+            { role: 'system' as const, content: systemPrompt },
+            ...messages,
+            {
+              role: 'assistant' as const,
+              content: assistantMessage.content || '',
+              tool_calls: assistantMessage.tool_calls
+            }
+          ];
+          
+          // Execute each tool call
+          for (const toolCall of assistantMessage.tool_calls) {
+            try {
+              const toolResult = await executeQueryTool(
+                toolCall.function.name,
+                JSON.parse(toolCall.function.arguments),
+                ctx.user.id,
+                userRole
+              );
+              
+              conversationHistory.push({
+                role: 'tool' as const,
+                content: JSON.stringify(toolResult),
+                tool_call_id: toolCall.id
+              });
+            } catch (error) {
+              console.error(`[AI Recruiting Assistant] Tool execution error:`, error);
+              conversationHistory.push({
+                role: 'tool' as const,
+                content: JSON.stringify({ error: 'Failed to execute query' }),
+                tool_call_id: toolCall.id
+              });
+            }
+          }
+          
+          // Get final response from AI with tool results
+          const finalResponse = await invokeLLM({ messages: conversationHistory });
+          return { response: finalResponse.choices[0]?.message?.content || 'Sorry, I could not generate a response.' };
+        }
+        
+        // No tools needed, return direct response
+        return { response: assistantMessage?.content || 'Sorry, I could not generate a response.' };
       }),
 
     getProfile: protectedProcedure.query(async ({ ctx }) => {
@@ -694,7 +839,7 @@ Please be specific and practical.`;
   }),
 
   candidate: router({
-    // AI Career Coach endpoint
+    // AI Career Coach endpoint - now uses ai.chat with database tools
     aiCareerCoach: protectedProcedure
       .input(z.object({
         message: z.string(),
@@ -704,12 +849,99 @@ Please be specific and practical.`;
         })).optional().default([]),
       }))
       .mutation(async ({ ctx, input }) => {
-        const response = await candidateCareerCoach(
-          ctx.user.id,
-          input.message,
-          input.conversationHistory
-        );
-        return { response };
+        // Build candidate context
+        const context = await buildCandidateContext(ctx.user.id);
+        
+        const systemPrompt = `You are an AI Career Coach for a job seeker on the HotGigs recruitment platform. You have access to database query tools to answer questions about their applications, interviews, and job search.
+
+**Available Tools:**
+- get_my_applications: Get user's job applications with status
+- get_my_interviews: Get scheduled interviews
+- get_application_statistics: Get application metrics
+- search_jobs: Find available jobs
+
+**Your Role:**
+1. Answer questions about application status, interview schedules
+2. Provide career advice and job search strategies
+3. Help with rejection analysis and improvement suggestions
+4. Advise on offer negotiation and interview preparation
+5. Use database tools when user asks specific questions like "How many applications do I have?" or "When is my next interview?"
+
+Here is the candidate's current summary:
+
+${context}
+
+Be helpful, encouraging, and provide specific advice. Use tools to get real-time data when needed.`;
+        
+        // Convert conversation history to new format
+        const messages = [
+          ...input.conversationHistory.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          { role: 'user' as const, content: input.message }
+        ];
+        
+        // Determine user role and available tools
+        const userRole = 'candidate';
+        const tools = formatToolsForLLM(userRole);
+        
+        // First LLM call with tools
+        const response = await invokeLLM({ 
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ], 
+          tools,
+          tool_choice: 'auto'
+        });
+        
+        const assistantMessage = response.choices[0]?.message;
+        
+        // Check if AI wants to call tools
+        if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
+          const conversationHistory = [
+            { role: 'system' as const, content: systemPrompt },
+            ...messages,
+            {
+              role: 'assistant' as const,
+              content: assistantMessage.content || '',
+              tool_calls: assistantMessage.tool_calls
+            }
+          ];
+          
+          // Execute each tool call
+          for (const toolCall of assistantMessage.tool_calls) {
+            try {
+              const toolResult = await executeQueryTool(
+                toolCall.function.name,
+                JSON.parse(toolCall.function.arguments),
+                ctx.user.id,
+                userRole
+              );
+              
+              conversationHistory.push({
+                role: 'tool' as const,
+                content: JSON.stringify(toolResult),
+                tool_call_id: toolCall.id
+              });
+            } catch (error) {
+              console.error(`[AI Career Coach] Tool execution error:`, error);
+              conversationHistory.push({
+                role: 'tool' as const,
+                content: JSON.stringify({ error: 'Failed to execute query' }),
+                tool_call_id: toolCall.id
+              });
+            }
+          }
+          
+          // Get final response from AI with tool results
+          const finalResponse = await invokeLLM({ messages: conversationHistory });
+          return { response: finalResponse.choices[0]?.message?.content || 'Sorry, I could not generate a response.' };
+        }
+        
+        // No tools needed, return direct response
+        return { response: assistantMessage?.content || 'Sorry, I could not generate a response.' };
       }),
 
     getProfile: protectedProcedure.query(async ({ ctx }) => {
@@ -777,10 +1009,14 @@ Please be specific and practical.`;
         
         // Parse resume if autoFill is enabled
         let parsedData = null;
+        let biasDetectionResult = null;
         if (autoFill) {
           try {
             // Extract text from PDF/DOCX
             const resumeText = await extractResumeText(buffer, mimeType);
+            
+            // Run bias detection on resume text
+            biasDetectionResult = await detectResumeBias(resumeText, candidateId);
             
             // Parse with AI (new advanced parser)
             parsedData = await parseResumeWithAI(resumeText);
@@ -829,7 +1065,7 @@ Please be specific and practical.`;
           });
         }
         
-        return { success: true, url, parsedData };
+        return { success: true, url, parsedData, biasDetection: biasDetectionResult };
       }),
     
     getByUserId: protectedProcedure
@@ -1432,11 +1668,28 @@ Please be specific and practical.`;
         isPublic: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Create the job first
         const result = await db.createJob({
           ...input,
           postedBy: ctx.user.id,
         });
-        return { success: true, id: result.insertId };
+        
+        const jobId = result.insertId;
+        
+        // Run bias detection on job description and requirements
+        let biasDetectionResult = null;
+        try {
+          biasDetectionResult = await detectJobDescriptionBias(
+            input.description,
+            input.requirements || '',
+            jobId
+          );
+        } catch (error) {
+          console.error('Job bias detection failed:', error);
+          // Don't fail the job creation if bias detection fails
+        }
+        
+        return { success: true, id: jobId, biasDetection: biasDetectionResult };
       }),
     
     update: protectedProcedure
