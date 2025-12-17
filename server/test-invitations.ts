@@ -71,7 +71,7 @@ export async function getInvitationByToken(token: string) {
     LIMIT 1
   `);
 
-  return result.rows[0] || null;
+  return result[0] || null;
 }
 
 /**
@@ -188,7 +188,7 @@ export async function sendReminderEmail(invitationId: number) {
     LIMIT 1
   `);
 
-  const invitation: any = result.rows[0];
+  const invitation: any = result[0];
   if (!invitation || invitation.reminder_sent) return false;
 
   // Send reminder email (similar to invitation email but with "Reminder" in subject)
