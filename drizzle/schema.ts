@@ -1113,3 +1113,80 @@ export const applicationLogs = mysqlTable("application_logs", {
 
 export type ApplicationLog = typeof applicationLogs.$inferSelect;
 export type InsertApplicationLog = typeof applicationLogs.$inferInsert;
+
+/**
+ * Profile completion badges - awarded at milestones
+ */
+export const profileBadges = mysqlTable("profileBadges", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(), // e.g., "Profile Starter", "Profile Pro", "Profile Master"
+  description: text("description").notNull(),
+  icon: varchar("icon", { length: 100 }).notNull(), // Icon name or emoji
+  color: varchar("color", { length: 50 }).notNull(), // Badge color
+  milestone: int("milestone").notNull(), // Percentage threshold (50, 75, 100)
+  points: int("points").notNull().default(0), // Points awarded
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProfileBadge = typeof profileBadges.$inferSelect;
+export type InsertProfileBadge = typeof profileBadges.$inferInsert;
+
+/**
+ * User badges - tracks which badges users have earned
+ */
+export const userBadges = mysqlTable("userBadges", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  badgeId: int("badgeId").notNull().references(() => profileBadges.id),
+  earnedAt: timestamp("earnedAt").defaultNow().notNull(),
+  viewed: boolean("viewed").default(false).notNull(), // For showing "new badge" notification
+});
+
+export type UserBadge = typeof userBadges.$inferSelect;
+export type InsertUserBadge = typeof userBadges.$inferInsert;
+
+/**
+ * User points - tracks gamification points for profile completion
+ */
+export const userPoints = mysqlTable("userPoints", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id).unique(),
+  totalPoints: int("totalPoints").notNull().default(0),
+  level: int("level").notNull().default(1), // Calculated from total points
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserPoints = typeof userPoints.$inferSelect;
+export type InsertUserPoints = typeof userPoints.$inferInsert;
+
+/**
+ * Profile completion reminders - tracks when reminders were sent
+ */
+export const profileReminders = mysqlTable("profileReminders", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  reminderType: varchar("reminderType", { length: 50 }).notNull(), // '3-day', '7-day'
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  profilePercentage: int("profilePercentage").notNull(), // Profile completion % when reminder was sent
+});
+
+export type ProfileReminder = typeof profileReminders.$inferSelect;
+export type InsertProfileReminder = typeof profileReminders.$inferInsert;
+
+/**
+ * Profile completion analytics - tracks historical completion data
+ */
+export const profileCompletionAnalytics = mysqlTable("profileCompletionAnalytics", {
+  id: int("id").autoincrement().primaryKey(),
+  date: date("date").notNull().unique(), // Daily snapshot
+  totalCandidates: int("totalCandidates").notNull().default(0),
+  completedProfiles: int("completedProfiles").notNull().default(0), // 100% complete
+  partialProfiles: int("partialProfiles").notNull().default(0), // 50-99% complete
+  incompleteProfiles: int("incompleteProfiles").notNull().default(0), // <50% complete
+  averageCompletion: int("averageCompletion").notNull().default(0), // Average percentage
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProfileCompletionAnalytics = typeof profileCompletionAnalytics.$inferSelect;
+export type InsertProfileCompletionAnalytics = typeof profileCompletionAnalytics.$inferInsert;

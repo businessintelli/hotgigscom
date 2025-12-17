@@ -37,6 +37,7 @@ import {
 import { toast } from "sonner";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileCompletionAnalytics } from "@/components/ProfileCompletionAnalytics";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
 import {
   DndContext,
@@ -874,6 +875,11 @@ function RecruiterDashboardContent() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+
+            {/* Profile Completion Analytics */}
+            <div className="mb-6">
+              <ProfileCompletionAnalytics />
             </div>
 
             {/* Jobs Panel */}

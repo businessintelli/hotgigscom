@@ -31,6 +31,8 @@ import { resumeProfileRouter } from './resumeProfileRouter';
 import { documentUploadRouter } from './documentUpload';
 import { onboardingRouter } from './onboardingRouter';
 import { profileCompletionRouter } from './profileCompletionRouter';
+import { gamificationRouter } from './gamificationRouter';
+import { profileAnalyticsRouter } from './profileAnalyticsRouter';
 import { createVideoMeeting } from './videoMeetingService';
 import { panelPublicRouter } from './panelPublicRouter';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
@@ -68,6 +70,8 @@ export const appRouter = router({
   resumeProfile: resumeProfileRouter,
   onboarding: onboardingRouter,
   profileCompletion: profileCompletionRouter,
+  gamification: gamificationRouter,
+  profileAnalytics: profileAnalyticsRouter,
   panelPublic: panelPublicRouter,
   document: documentUploadRouter,
   

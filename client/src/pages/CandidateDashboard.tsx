@@ -78,6 +78,7 @@ import CandidateOnboarding from "@/components/CandidateOnboarding";
 // VideoIntroduction moved to dedicated page
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
+import { BadgeDisplay } from "@/components/BadgeDisplay";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 
 export default function CandidateDashboard() {
@@ -708,6 +709,9 @@ function CandidateDashboardContent() {
 
               {/* Sidebar Column */}
               <div className="space-y-6">
+                {/* Gamification - Badges and Points */}
+                <BadgeDisplay />
+
                 {/* Upcoming Interviews */}
                 <Card>
                   <CardHeader>
