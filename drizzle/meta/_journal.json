@@ -274,6 +274,13 @@
       "when": 1765962877663,
       "tag": "0038_lonely_black_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1765967657158,
+      "tag": "0039_normal_blade",
+      "breakpoints": true
     }
   ]
 }

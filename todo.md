@@ -2352,3 +2352,20 @@
 - [x] Show recruiter-added candidates in Candidates tab
 - [x] Return recruiter to original page after successful submission
 - [x] Handle duplicate candidate detection (by email)
+
+## Extended Candidate Information Collection
+- [x] Add work authorization fields (status, end date, W2 employer, nationality)
+- [x] Add personal information fields (gender, DOB)
+- [x] Add education details (highest degree, specialization, start/end dates)
+- [x] Add employment history with support for multiple entries (company, address, start/end dates)
+- [x] Add language proficiency fields (read, speak, write) with multi-select
+- [x] Add identification fields (passport, SIN last 4, LinkedIn, zip code)
+- [x] Add document upload fields (passport/visa/green card copy, DL copy)
+- [x] Update database schema to store new fields
+- [x] Update candidate application form to collect new fields
+- [x] Update recruiter Apply on Behalf form to collect new fields
+- [ ] Update AI resume parser to extract new fields when possible
+
+## Navigation Cleanup
+- [x] Remove redundant dashboard/back icons from all pages
+- [x] Ensure home page redirects based on user role after login

@@ -23,6 +23,7 @@ import {
   GraduationCap,
   Code
 } from "lucide-react";
+import ExtendedCandidateInfoForm, { ExtendedCandidateInfo } from "@/components/ExtendedCandidateInfoForm";
 
 interface ParsedResume {
   personalInfo: {
@@ -64,6 +65,7 @@ export default function ApplyOnBehalf() {
   const [candidateData, setCandidateData] = useState<ParsedResume | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
   const [returnUrl, setReturnUrl] = useState("/recruiter/applications");
+  const [extendedInfo, setExtendedInfo] = useState<ExtendedCandidateInfo>({});
 
   const { data: job } = trpc.job.getById.useQuery({ id: jobId }, { enabled: !!jobId });
   const parseResumeMutation = trpc.application.parseResumeForRecruiter.useMutation();
@@ -156,6 +158,7 @@ export default function ApplyOnBehalf() {
           },
           coverLetter,
           returnUrl,
+          extendedInfo,
         });
 
         if (result.success) {
@@ -457,6 +460,15 @@ export default function ApplyOnBehalf() {
             {/* Step 3: Submit */}
             {step === "submit" && candidateData && (
               <div className="space-y-6">
+                {/* Extended Candidate Information */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Additional Information Required</h3>
+                  <ExtendedCandidateInfoForm
+                    data={extendedInfo}
+                    onChange={setExtendedInfo}
+                  />
+                </div>
+
                 <div>
                   <Label htmlFor="coverLetter">Cover Letter (Optional)</Label>
                   <Textarea

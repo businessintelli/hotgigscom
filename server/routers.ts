@@ -28,6 +28,7 @@ import * as analyticsHelpers from './analyticsHelpers';
 import * as recruiterReportsHelpers from './recruiterReportsHelpers';
 import { candidateCareerCoach, recruiterAssistant } from './services/aiAssistant';
 import { resumeProfileRouter } from './resumeProfileRouter';
+import { documentUploadRouter } from './documentUpload';
 import { onboardingRouter } from './onboardingRouter';
 import { profileCompletionRouter } from './profileCompletionRouter';
 import { createVideoMeeting } from './videoMeetingService';
@@ -68,6 +69,7 @@ export const appRouter = router({
   onboarding: onboardingRouter,
   profileCompletion: profileCompletionRouter,
   panelPublic: panelPublicRouter,
+  document: documentUploadRouter,
   
   // AI Chat router for career coach and recruiting assistant
   ai: router({
@@ -1366,8 +1368,62 @@ Please be specific and practical.`;
         resumeFilename: z.string().optional(),
         resumeProfileId: z.number().optional(),
         videoIntroductionId: z.number().optional(),
+        // Extended candidate information
+        extendedInfo: z.object({
+          workAuthorization: z.string().optional(),
+          workAuthorizationEndDate: z.string().optional(),
+          w2EmployerName: z.string().optional(),
+          nationality: z.string().optional(),
+          gender: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          highestEducation: z.string().optional(),
+          specialization: z.string().optional(),
+          highestDegreeStartDate: z.string().optional(),
+          highestDegreeEndDate: z.string().optional(),
+          employmentHistory: z.array(z.object({
+            company: z.string(),
+            address: z.string().optional(),
+            startDate: z.string(),
+            endDate: z.string().optional(),
+          })).optional(),
+          languagesRead: z.array(z.string()).optional(),
+          languagesSpeak: z.array(z.string()).optional(),
+          languagesWrite: z.array(z.string()).optional(),
+          currentResidenceZipCode: z.string().optional(),
+          passportNumber: z.string().optional(),
+          sinLast4: z.string().optional(),
+          linkedinId: z.string().optional(),
+          passportCopyUrl: z.string().optional(),
+          dlCopyUrl: z.string().optional(),
+        }).optional(),
       }))
       .mutation(async ({ input }) => {
+        // Update candidate profile with extended information if provided
+        if (input.extendedInfo) {
+          await db.updateCandidate(input.candidateId, {
+            workAuthorization: input.extendedInfo.workAuthorization,
+            workAuthorizationEndDate: input.extendedInfo.workAuthorizationEndDate ? new Date(input.extendedInfo.workAuthorizationEndDate) : undefined,
+            w2EmployerName: input.extendedInfo.w2EmployerName,
+            nationality: input.extendedInfo.nationality,
+            gender: input.extendedInfo.gender,
+            dateOfBirth: input.extendedInfo.dateOfBirth ? new Date(input.extendedInfo.dateOfBirth) : undefined,
+            highestEducation: input.extendedInfo.highestEducation,
+            specialization: input.extendedInfo.specialization,
+            highestDegreeStartDate: input.extendedInfo.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
+            highestDegreeEndDate: input.extendedInfo.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
+            employmentHistory: input.extendedInfo.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+            languagesRead: input.extendedInfo.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+            languagesSpeak: input.extendedInfo.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+            languagesWrite: input.extendedInfo.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
+            currentResidenceZipCode: input.extendedInfo.currentResidenceZipCode,
+            passportNumber: input.extendedInfo.passportNumber,
+            sinLast4: input.extendedInfo.sinLast4,
+            linkedinId: input.extendedInfo.linkedinId,
+            passportCopyUrl: input.extendedInfo.passportCopyUrl,
+            dlCopyUrl: input.extendedInfo.dlCopyUrl,
+          });
+        }
+        
         const appResult = await db.createApplication(input);
         const applicationId = appResult.insertId;
         
@@ -1782,6 +1838,33 @@ Please be specific and practical.`;
         }),
         coverLetter: z.string().optional(),
         returnUrl: z.string().optional(), // URL to return to after submission
+        extendedInfo: z.object({
+          workAuthorization: z.string().optional(),
+          workAuthorizationEndDate: z.string().optional(),
+          w2EmployerName: z.string().optional(),
+          nationality: z.string().optional(),
+          gender: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          highestEducation: z.string().optional(),
+          specialization: z.string().optional(),
+          highestDegreeStartDate: z.string().optional(),
+          highestDegreeEndDate: z.string().optional(),
+          employmentHistory: z.array(z.object({
+            company: z.string(),
+            address: z.string().optional(),
+            startDate: z.string(),
+            endDate: z.string().optional(),
+          })).optional(),
+          languagesRead: z.array(z.string()).optional(),
+          languagesSpeak: z.array(z.string()).optional(),
+          languagesWrite: z.array(z.string()).optional(),
+          currentResidenceZipCode: z.string().optional(),
+          passportNumber: z.string().optional(),
+          sinLast4: z.string().optional(),
+          linkedinId: z.string().optional(),
+          passportCopyUrl: z.string().optional(),
+          dlCopyUrl: z.string().optional(),
+        }).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const recruiter = await db.getRecruiterByUserId(ctx.user.id);
@@ -1817,6 +1900,29 @@ Please be specific and practical.`;
               resumeUploadedAt: new Date(),
               totalExperienceYears: input.candidateData.totalExperienceYears,
               seniorityLevel: input.candidateData.seniorityLevel,
+              // Extended info
+              ...(input.extendedInfo && {
+                workAuthorization: input.extendedInfo.workAuthorization,
+                workAuthorizationEndDate: input.extendedInfo.workAuthorizationEndDate ? new Date(input.extendedInfo.workAuthorizationEndDate) : undefined,
+                w2EmployerName: input.extendedInfo.w2EmployerName,
+                nationality: input.extendedInfo.nationality,
+                gender: input.extendedInfo.gender,
+                dateOfBirth: input.extendedInfo.dateOfBirth ? new Date(input.extendedInfo.dateOfBirth) : undefined,
+                highestEducation: input.extendedInfo.highestEducation,
+                specialization: input.extendedInfo.specialization,
+                highestDegreeStartDate: input.extendedInfo.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
+                highestDegreeEndDate: input.extendedInfo.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
+                employmentHistory: input.extendedInfo.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+                languagesRead: input.extendedInfo.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+                languagesSpeak: input.extendedInfo.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+                languagesWrite: input.extendedInfo.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
+                currentResidenceZipCode: input.extendedInfo.currentResidenceZipCode,
+                passportNumber: input.extendedInfo.passportNumber,
+                sinLast4: input.extendedInfo.sinLast4,
+                linkedinId: input.extendedInfo.linkedinId,
+                passportCopyUrl: input.extendedInfo.passportCopyUrl,
+                dlCopyUrl: input.extendedInfo.dlCopyUrl,
+              }),
             });
             candidate = await db.getCandidateById(candidateResult.insertId);
           } else {
@@ -1849,6 +1955,29 @@ Please be specific and practical.`;
             resumeUploadedAt: new Date(),
             totalExperienceYears: input.candidateData.totalExperienceYears,
             seniorityLevel: input.candidateData.seniorityLevel,
+            // Extended info
+            ...(input.extendedInfo && {
+              workAuthorization: input.extendedInfo.workAuthorization,
+              workAuthorizationEndDate: input.extendedInfo.workAuthorizationEndDate ? new Date(input.extendedInfo.workAuthorizationEndDate) : undefined,
+              w2EmployerName: input.extendedInfo.w2EmployerName,
+              nationality: input.extendedInfo.nationality,
+              gender: input.extendedInfo.gender,
+              dateOfBirth: input.extendedInfo.dateOfBirth ? new Date(input.extendedInfo.dateOfBirth) : undefined,
+              highestEducation: input.extendedInfo.highestEducation,
+              specialization: input.extendedInfo.specialization,
+              highestDegreeStartDate: input.extendedInfo.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
+              highestDegreeEndDate: input.extendedInfo.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
+              employmentHistory: input.extendedInfo.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+              languagesRead: input.extendedInfo.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+              languagesSpeak: input.extendedInfo.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+              languagesWrite: input.extendedInfo.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
+              currentResidenceZipCode: input.extendedInfo.currentResidenceZipCode,
+              passportNumber: input.extendedInfo.passportNumber,
+              sinLast4: input.extendedInfo.sinLast4,
+              linkedinId: input.extendedInfo.linkedinId,
+              passportCopyUrl: input.extendedInfo.passportCopyUrl,
+              dlCopyUrl: input.extendedInfo.dlCopyUrl,
+            }),
           });
           
           candidate = await db.getCandidateById(candidateResult.insertId);

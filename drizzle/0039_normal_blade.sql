@@ -1,0 +1,20 @@
+ALTER TABLE `candidates` ADD `workAuthorization` varchar(100);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `workAuthorizationEndDate` date;--> statement-breakpoint
+ALTER TABLE `candidates` ADD `w2EmployerName` varchar(255);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `nationality` varchar(100);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `gender` varchar(50);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `dateOfBirth` date;--> statement-breakpoint
+ALTER TABLE `candidates` ADD `highestEducation` varchar(255);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `specialization` varchar(255);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `highestDegreeStartDate` date;--> statement-breakpoint
+ALTER TABLE `candidates` ADD `highestDegreeEndDate` date;--> statement-breakpoint
+ALTER TABLE `candidates` ADD `employmentHistory` text;--> statement-breakpoint
+ALTER TABLE `candidates` ADD `languagesRead` text;--> statement-breakpoint
+ALTER TABLE `candidates` ADD `languagesSpeak` text;--> statement-breakpoint
+ALTER TABLE `candidates` ADD `languagesWrite` text;--> statement-breakpoint
+ALTER TABLE `candidates` ADD `currentResidenceZipCode` varchar(20);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `passportNumber` varchar(100);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `sinLast4` varchar(4);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `linkedinId` varchar(255);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `passportCopyUrl` varchar(500);--> statement-breakpoint
+ALTER TABLE `candidates` ADD `dlCopyUrl` varchar(500);

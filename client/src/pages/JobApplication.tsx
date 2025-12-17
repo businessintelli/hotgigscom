@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { ResumePreviewModal } from "@/components/ResumePreviewModal";
 import SkillMatrixForm, { SkillRating, validateSkillMatrix } from "@/components/SkillMatrixForm";
+import ExtendedCandidateInfoForm, { ExtendedCandidateInfo } from "@/components/ExtendedCandidateInfoForm";
 
 export default function JobApplication() {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ export default function JobApplication() {
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [skillRatings, setSkillRatings] = useState<SkillRating[]>([]);
   const [showSkillValidation, setShowSkillValidation] = useState(false);
+  const [extendedInfo, setExtendedInfo] = useState<ExtendedCandidateInfo>({});
   
   // Upload resume mutation
   const uploadResumeMutation = trpc.candidate.uploadResume.useMutation();
@@ -224,6 +226,7 @@ export default function JobApplication() {
         resumeFilename: resumeFilename || undefined,
         resumeProfileId: selectedResumeProfileId || undefined,
         videoIntroductionId: selectedVideoId || undefined,
+        extendedInfo,
       });
     } catch (error: any) {
       setIsSubmitting(false);
@@ -574,8 +577,17 @@ export default function JobApplication() {
                   />
                 )}
 
+                {/* Extended Candidate Information */}
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-4">Additional Information Required</h3>
+                  <ExtendedCandidateInfoForm
+                    data={extendedInfo}
+                    onChange={setExtendedInfo}
+                  />
+                </div>
+
                 {/* Cover Letter */}
-                <div>
+                <div className="mt-6">
                   <div className="flex justify-between items-center mb-2">
                     <Label htmlFor="coverLetter">
                       Cover Letter <span className="text-gray-500">(Optional)</span>

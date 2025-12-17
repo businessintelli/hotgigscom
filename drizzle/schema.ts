@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index, date } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -78,6 +78,27 @@ export const candidates = mysqlTable("candidates", {
   expectedSalaryMax: int("expectedSalaryMax"),
   noticePeriod: varchar("noticePeriod", { length: 50 }), // 'immediate', '2-weeks', '1-month', '2-months', '3-months'
   willingToRelocate: boolean("willingToRelocate").default(false),
+  // Extended candidate information
+  workAuthorization: varchar("workAuthorization", { length: 100 }), // 'citizen', 'green-card', 'h1b', 'opt', 'cpt', etc.
+  workAuthorizationEndDate: date("workAuthorizationEndDate"),
+  w2EmployerName: varchar("w2EmployerName", { length: 255 }),
+  nationality: varchar("nationality", { length: 100 }),
+  gender: varchar("gender", { length: 50 }), // 'male', 'female', 'non-binary', 'prefer-not-to-say'
+  dateOfBirth: date("dateOfBirth"),
+  highestEducation: varchar("highestEducation", { length: 255 }), // 'High School', 'Bachelor', 'Master', 'PhD', etc.
+  specialization: varchar("specialization", { length: 255 }),
+  highestDegreeStartDate: date("highestDegreeStartDate"),
+  highestDegreeEndDate: date("highestDegreeEndDate"),
+  employmentHistory: text("employmentHistory"), // JSON array of {company, address, startDate, endDate}
+  languagesRead: text("languagesRead"), // JSON array of languages
+  languagesSpeak: text("languagesSpeak"), // JSON array of languages
+  languagesWrite: text("languagesWrite"), // JSON array of languages
+  currentResidenceZipCode: varchar("currentResidenceZipCode", { length: 20 }),
+  passportNumber: varchar("passportNumber", { length: 100 }),
+  sinLast4: varchar("sinLast4", { length: 4 }), // Last 4 digits of SIN
+  linkedinId: varchar("linkedinId", { length: 255 }),
+  passportCopyUrl: varchar("passportCopyUrl", { length: 500 }), // S3 URL for passport/visa/green card
+  dlCopyUrl: varchar("dlCopyUrl", { length: 500 }), // S3 URL for driver's license
   profileCompleted: boolean("profileCompleted").default(false).notNull(),
   profileCompletionStep: int("profileCompletionStep").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

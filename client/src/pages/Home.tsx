@@ -1,9 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Briefcase, Target } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useEffect } from "react";
 
 export default function Home() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirect logged-in users to their dashboard
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'recruiter') {
+        setLocation('/recruiter/dashboard');
+      } else if (user.role === 'candidate') {
+        setLocation('/candidate-dashboard');
+      }
+    }
+  }, [user, setLocation]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
