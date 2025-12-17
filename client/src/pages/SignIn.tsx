@@ -56,6 +56,9 @@ export default function SignIn() {
         if (result.role === 'admin') {
           console.log('Redirecting to admin dashboard');
           window.location.href = '/admin/dashboard';
+        } else if (result.role === 'company_admin') {
+          console.log('Redirecting to company admin dashboard');
+          window.location.href = '/company-admin/dashboard';
         } else if (result.role === 'recruiter') {
           console.log('Redirecting to recruiter dashboard');
           window.location.href = '/recruiter/dashboard';

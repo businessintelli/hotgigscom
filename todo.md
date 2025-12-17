@@ -3145,3 +3145,10 @@
 - [x] Fix AI assistant error: "Cannot read properties of undefined (reading '0')"
 - [x] Add RecruiterLayout sidebar to sourcing-campaigns page
 - [x] Add RecruiterLayout sidebar to integrations page
+
+## Company Admin Role Assignment Fix (URGENT)
+- [x] Check pratap@businessintelli.com user role in database
+- [x] Update role to company_admin if not set correctly
+- [x] Fix redirect logic in SignIn.tsx to handle company_admin role
+- [x] Update auth callback to properly detect existing company_admin users
+- [x] Test login flow for pratap@businessintelli.com

@@ -20,14 +20,14 @@ export interface AuthUser {
   id: number;
   email: string;
   name: string;
-  role: 'recruiter' | 'candidate' | 'admin' | 'user';
+  role: 'recruiter' | 'candidate' | 'admin' | 'company_admin' | 'user';
   emailVerified: boolean;
 }
 
 export interface SessionData {
   userId: number;
   email: string;
-  role: 'recruiter' | 'candidate' | 'admin' | 'user';
+  role: 'recruiter' | 'candidate' | 'admin' | 'company_admin' | 'user';
   expiry: string;
   rememberMe: boolean;
 }
@@ -148,11 +148,14 @@ export async function signIn(data: SignInData): Promise<{ success: boolean; user
   // Update last signed in
   await updateUserById(user.id, { lastSignedIn: new Date() });
 
-  // Determine user role
-  let role: 'recruiter' | 'candidate' | 'admin' | 'user' = user.role as any || 'user';
+  // Determine user role - use the role from database directly
+  let role: 'recruiter' | 'candidate' | 'admin' | 'company_admin' | 'user' = user.role as any || 'user';
   
-  // Double-check role by looking at profiles
-  if (role === 'user') {
+  // If role is already set in database (admin or company_admin), use it
+  if (role === 'admin' || role === 'company_admin') {
+    // Keep the role as is
+  } else if (role === 'user') {
+    // Double-check role by looking at profiles for users without explicit role
     const recruiter = await db.getRecruiterByUserId(user.id);
     const candidate = await db.getCandidateByUserId(user.id);
     
