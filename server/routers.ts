@@ -816,6 +816,75 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         const db = getDb();
         return await db.select().from(sourcedCandidates).where(eq(sourcedCandidates.campaignId, input.campaignId));
       }),
+    
+    // Email Outreach Campaigns
+    createEmailCampaign: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        sourcingCampaignId: z.number(),
+        subject: z.string(),
+        body: z.string(),
+        useAiPersonalization: z.boolean().optional().default(true),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = getDb();
+        const result = await db.insert(emailCampaigns).values({
+          name: input.name,
+          sourcingCampaignId: input.sourcingCampaignId,
+          subject: input.subject,
+          body: input.body,
+          useAiPersonalization: input.useAiPersonalization,
+          status: 'draft',
+          createdBy: ctx.user.id,
+        });
+        return { success: true, id: result.insertId };
+      }),
+    
+    sendEmailCampaign: protectedProcedure
+      .input(z.object({ campaignId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { processCampaign } = await import('./services/emailOutreach');
+        // Run in background
+        processCampaign(input.campaignId).catch(error => {
+          console.error('Email campaign failed:', error);
+        });
+        return { success: true, message: 'Email campaign started' };
+      }),
+    
+    sendOutreachToCandidate: protectedProcedure
+      .input(z.object({
+        sourcedCandidateId: z.number(),
+        campaignId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const { sendOutreachEmail } = await import('./services/emailOutreach');
+        await sendOutreachEmail(input.sourcedCandidateId, input.campaignId);
+        return { success: true };
+      }),
+    
+    // Predictive Success Scoring
+    predictApplicationSuccess: protectedProcedure
+      .input(z.object({ applicationId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { predictApplicationSuccess } = await import('./services/predictiveScoring');
+        const prediction = await predictApplicationSuccess(input.applicationId);
+        return prediction;
+      }),
+    
+    batchPredictSuccess: protectedProcedure
+      .input(z.object({ applicationIds: z.array(z.number()) }))
+      .mutation(async ({ input }) => {
+        const { batchPredictSuccess } = await import('./services/predictiveScoring');
+        await batchPredictSuccess(input.applicationIds);
+        return { success: true };
+      }),
+    
+    getRankedApplications: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        const { getRankedApplications } = await import('./services/predictiveScoring');
+        return await getRankedApplications(input.jobId);
+      }),
 
     getAnalytics: protectedProcedure
       .input(z.object({ days: z.number().optional().default(30) }))

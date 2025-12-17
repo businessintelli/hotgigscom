@@ -2549,12 +2549,31 @@
 - [ ] Implement automated reminder system
 
 ### Recruiter Automation UI
-- [ ] Create sourcing campaigns dashboard page
+- [x] Create sourcing campaigns dashboard page
+- [x] Build campaign creation form with criteria inputs
+- [x] Display discovered candidates table with enrichment data
+- [x] Add campaign metrics cards (found, enriched, added)
 - [ ] Build email campaign management interface
 - [ ] Add predictive scoring visualization to applications
 - [ ] Create automated scheduling settings page
 - [ ] Build automation analytics dashboard
 - [ ] Add campaign performance metrics
+
+### AI Email Outreach (Priority)
+- [x] Build email personalization service using LLM
+- [x] Create email sequence automation workflow
+- [x] Add email template variables (name, company, skills, job)
+- [ ] Implement email tracking (opens, clicks, replies)
+- [x] Build smart follow-up logic based on engagement
+- [x] Add API endpoints for email campaign management
+
+### Predictive Success Scoring (Priority)
+- [x] Create success prediction algorithm using application data
+- [x] Implement feature engineering (skills match, experience fit)
+- [x] Build scoring API endpoint for real-time predictions
+- [x] Add success score to application records in database
+- [ ] Display score badges in application lists
+- [x] Add score-based sorting and filtering
 
 ### Testing & Documentation
 - [ ] Write vitest tests for sourcing automation

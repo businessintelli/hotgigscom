@@ -36,6 +36,7 @@ import AdvancedCandidateSearch from "./pages/AdvancedCandidateSearch";
 import EmailTemplateManager from "./pages/EmailTemplateManager";
 import CampaignBuilder from "./pages/CampaignBuilder";
 import FollowUpSequenceBuilder from './pages/FollowUpSequenceBuilder';
+import RecruiterSourcingCampaigns from './pages/RecruiterSourcingCampaigns';
 import Unsubscribe from './pages/Unsubscribe';
 import ResumeUploadReview from './pages/ResumeUploadReview';
 import EmailProviderSettings from "./pages/EmailProviderSettings";
@@ -123,6 +124,7 @@ function Router() {
       <Route path="/recruiter/email-templates" component={EmailTemplateManager} />
       <Route path="/recruiter/campaigns" component={CampaignBuilder} />
       <Route path="/recruiter/sequences" component={FollowUpSequenceBuilder} />
+      <Route path="/recruiter/sourcing-campaigns" component={RecruiterSourcingCampaigns} />
       <Route path="/unsubscribe/:trackingId" component={Unsubscribe} />
       <Route path="/recruiter/challenges" component={ChallengeLibrary} />
       <Route path="/recruiter/associates" component={RecruiterAssociates} />
