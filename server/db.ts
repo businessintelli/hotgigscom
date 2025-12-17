@@ -22,7 +22,6 @@ import {
   taskAssignments, InsertTaskAssignment,
   taskReminders, InsertTaskReminder,
   taskTemplates, InsertTaskTemplate,
-  applicationFeedback, InsertApplicationFeedback,
   rescheduleRequests, InsertRescheduleRequest,
   jobSkillRequirements, InsertJobSkillRequirement,
   candidateSkillRatings, InsertCandidateSkillRating,
@@ -1312,6 +1311,8 @@ export async function deleteVideoIntroduction(id: number) {
 
 
 // Application Feedback Functions
+// Commented out - applicationFeedback table not in schema
+/*
 export async function createApplicationFeedback(data: InsertApplicationFeedback) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -1353,6 +1354,7 @@ export async function deleteApplicationFeedback(id: number) {
   
   await db.delete(applicationFeedback).where(eq(applicationFeedback.id, id));
 }
+*/
 
 
 // Reschedule Request Functions

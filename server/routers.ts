@@ -5292,6 +5292,228 @@ Please be specific and practical.`;
         return { templateId };
       }),
   }),
+
+  // Question Bank Management
+  questionBank: router({
+    // Create question
+    createQuestion: protectedProcedure
+      .input(z.object({
+        questionText: z.string(),
+        questionType: z.enum(['coding', 'multiple-choice', 'text', 'personality', 'technical']),
+        difficulty: z.enum(['easy', 'medium', 'hard', 'expert']),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        correctAnswer: z.string().optional(),
+        codeTemplate: z.string().optional(),
+        testCases: z.array(z.object({
+          input: z.string(),
+          expectedOutput: z.string(),
+        })).optional(),
+        timeLimit: z.number().optional(),
+        memoryLimit: z.number().optional(),
+        points: z.number().optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+
+        const { createQuestion } = await import('./question-bank');
+        await createQuestion(recruiter.id, input);
+        return { success: true };
+      }),
+
+    // Get questions
+    getMyQuestions: protectedProcedure
+      .input(z.object({
+        questionType: z.string().optional(),
+        difficulty: z.string().optional(),
+        category: z.string().optional(),
+        searchTerm: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) return [];
+
+        const { getQuestionsByRecruiter } = await import('./question-bank');
+        return await getQuestionsByRecruiter(recruiter.id, input);
+      }),
+
+    // Update question
+    updateQuestion: protectedProcedure
+      .input(z.object({
+        questionId: z.number(),
+        questionText: z.string().optional(),
+        difficulty: z.enum(['easy', 'medium', 'hard', 'expert']).optional(),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        correctAnswer: z.string().optional(),
+        codeTemplate: z.string().optional(),
+        testCases: z.array(z.object({
+          input: z.string(),
+          expectedOutput: z.string(),
+        })).optional(),
+        points: z.number().optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+
+        const { updateQuestion } = await import('./question-bank');
+        const { questionId, ...updates } = input;
+        await updateQuestion(questionId, recruiter.id, updates);
+        return { success: true };
+      }),
+
+    // Delete question
+    deleteQuestion: protectedProcedure
+      .input(z.object({ questionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+
+        const { deleteQuestion } = await import('./question-bank');
+        await deleteQuestion(input.questionId, recruiter.id);
+        return { success: true };
+      }),
+  }),
+
+  // Code Execution
+  codeExecution: router({
+    // Execute code
+    executeCode: protectedProcedure
+      .input(z.object({
+        sourceCode: z.string(),
+        language: z.string(),
+        stdin: z.string().optional(),
+        timeLimit: z.number().optional(),
+        memoryLimit: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { executeCode, getLanguageId } = await import('./code-execution');
+        const languageId = getLanguageId(input.language);
+        
+        return await executeCode({
+          sourceCode: input.sourceCode,
+          languageId,
+          stdin: input.stdin,
+          timeLimit: input.timeLimit,
+          memoryLimit: input.memoryLimit,
+        });
+      }),
+
+    // Execute code with test cases
+    executeWithTestCases: protectedProcedure
+      .input(z.object({
+        sourceCode: z.string(),
+        language: z.string(),
+        testCases: z.array(z.object({
+          input: z.string(),
+          expectedOutput: z.string(),
+        })),
+        timeLimit: z.number().optional(),
+        memoryLimit: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { executeCodeWithTestCases, getLanguageId } = await import('./code-execution');
+        const languageId = getLanguageId(input.language);
+        
+        return await executeCodeWithTestCases(
+          input.sourceCode,
+          languageId,
+          input.testCases,
+          input.timeLimit,
+          input.memoryLimit
+        );
+      }),
+  }),
+
+  // Test Invitations
+  testInvitations: router({
+    // Create and send invitation
+    sendInvitation: protectedProcedure
+      .input(z.object({
+        testAssignmentId: z.number(),
+        candidateId: z.number(),
+        expiresInDays: z.number().default(7),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+
+        const { createTestInvitation, sendTestInvitationEmail } = await import('./test-invitations');
+        
+        // Create invitation
+        const token = await createTestInvitation(
+          input.testAssignmentId,
+          input.candidateId,
+          recruiter.id,
+          input.expiresInDays
+        );
+
+        // Get candidate and test details for email
+        const database = await getDb();
+        if (database) {
+          const { sql } = await import('drizzle-orm');
+          const result = await database.execute(sql`
+            SELECT 
+              u.email, u.name,
+              tl.test_name,
+              ti.expires_at
+            FROM test_invitations ti
+            JOIN candidates c ON ti.candidate_id = c.id
+            JOIN users u ON c.user_id = u.id
+            JOIN test_assignments ta ON ti.test_assignment_id = ta.id
+            JOIN test_library tl ON ta.test_id = tl.id
+            WHERE ti.invitation_token = ${token}
+            LIMIT 1
+          `);
+
+          const data: any = (result as any).rows?.[0];
+          if (data) {
+            await sendTestInvitationEmail(
+              data.email,
+              data.name || data.email,
+              data.test_name,
+              token,
+              new Date(data.expires_at)
+            );
+          }
+        }
+
+        return { token, success: true };
+      }),
+
+    // Get invitation by token
+    getInvitation: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const { getInvitationByToken } = await import('./test-invitations');
+        return await getInvitationByToken(input.token);
+      }),
+
+    // Mark invitation as opened
+    markAsOpened: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const { markInvitationAsOpened } = await import('./test-invitations');
+        await markInvitationAsOpened(input.token);
+        return { success: true };
+      }),
+
+    // Send reminder
+    sendReminder: protectedProcedure
+      .input(z.object({ invitationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+
+        const { sendReminderEmail } = await import('./test-invitations');
+        const success = await sendReminderEmail(input.invitationId);
+        return { success };
+      }),
+  }),
 });
 
 

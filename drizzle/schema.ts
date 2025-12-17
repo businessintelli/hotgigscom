@@ -1,1291 +1,1007 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index } from "drizzle-orm/mysql-core";
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, int, mysqlEnum, varchar, text, timestamp, foreignKey, index, json, datetime } from "drizzle-orm/mysql-core"
+import { sql } from "drizzle-orm"
 
-/**
- * Core user table backing auth flow.
- */
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).unique(), // Made nullable for custom auth
-  name: text("name"),
-  email: varchar("email", { length: 320 }).unique(), // Made unique for custom auth
-  passwordHash: varchar("passwordHash", { length: 255 }), // For custom auth
-  loginMethod: varchar("loginMethod", { length: 64 }), // 'oauth' or 'password'
-  role: mysqlEnum("role", ["user", "admin", "recruiter", "candidate", "panelist"]).default("user").notNull(),
-  // Email verification
-  emailVerified: boolean("emailVerified").default(false).notNull(),
-  verificationToken: varchar("verificationToken", { length: 255 }),
-  verificationTokenExpiry: timestamp("verificationTokenExpiry"),
-  // Password reset
-  passwordResetToken: varchar("passwordResetToken", { length: 255 }),
-  passwordResetTokenExpiry: timestamp("passwordResetTokenExpiry"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-});
-
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
-
-/**
- * Recruiter profiles extending user accounts
- */
-export const recruiters = mysqlTable("recruiters", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id),
-  companyName: varchar("companyName", { length: 255 }),
-  phoneNumber: varchar("phoneNumber", { length: 50 }),
-  bio: text("bio"),
-  profileCompleted: boolean("profileCompleted").default(false).notNull(),
-  profileCompletionStep: int("profileCompletionStep").default(0).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Recruiter = typeof recruiters.$inferSelect;
-export type InsertRecruiter = typeof recruiters.$inferInsert;
-
-/**
- * Candidate profiles with resume support
- */
-export const candidates = mysqlTable("candidates", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id),
-  title: varchar("title", { length: 255 }),
-  phoneNumber: varchar("phoneNumber", { length: 50 }),
-  location: varchar("location", { length: 255 }),
-  bio: text("bio"),
-  skills: text("skills"), // JSON array of skills
-  experience: text("experience"),
-  education: text("education"),
-  resumeUrl: varchar("resumeUrl", { length: 500 }),
-  resumeFilename: varchar("resumeFilename", { length: 255 }),
-  resumeUploadedAt: timestamp("resumeUploadedAt"),
-  // Advanced parsed resume data (JSON)
-  parsedResumeData: text("parsedResumeData"), // Full ParsedResume JSON
-  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
-  githubUrl: varchar("githubUrl", { length: 500 }),
-  certifications: text("certifications"), // JSON array
-  languages: text("languages"), // JSON array
-  projects: text("projects"), // JSON array
-  totalExperienceYears: int("totalExperienceYears"),
-  seniorityLevel: varchar("seniorityLevel", { length: 50 }),
-  primaryDomain: varchar("primaryDomain", { length: 100 }),
-  skillCategories: text("skillCategories"), // JSON object
-  // Smart filter fields for advanced search
-  availability: varchar("availability", { length: 50 }), // 'immediate', '2-weeks', '1-month', '2-months', 'not-looking'
-  visaStatus: varchar("visaStatus", { length: 100 }), // 'citizen', 'permanent-resident', 'work-visa', 'requires-sponsorship'
-  expectedSalaryMin: int("expectedSalaryMin"),
-  expectedSalaryMax: int("expectedSalaryMax"),
-  noticePeriod: varchar("noticePeriod", { length: 50 }), // 'immediate', '2-weeks', '1-month', '2-months', '3-months'
-  willingToRelocate: boolean("willingToRelocate").default(false),
-  profileCompleted: boolean("profileCompleted").default(false).notNull(),
-  profileCompletionStep: int("profileCompletionStep").default(0).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Candidate = typeof candidates.$inferSelect;
-export type InsertCandidate = typeof candidates.$inferInsert;
-
-/**
- * Resume profiles table - allows candidates to maintain up to 5 different resume versions
- */
-export const resumeProfiles = mysqlTable("resumeProfiles", {
-  id: int("id").autoincrement().primaryKey(),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  profileName: varchar("profileName", { length: 255 }).notNull(), // e.g., "Software Engineer", "Full Stack Developer"
-  resumeUrl: varchar("resumeUrl", { length: 500 }).notNull(),
-  resumeFileKey: varchar("resumeFileKey", { length: 500 }).notNull(), // S3 key for file management
-  resumeFilename: varchar("resumeFilename", { length: 255 }).notNull(),
-  parsedData: text("parsedData"), // Full ParsedResume JSON from AI parsing
-  // Ranking and matching scores
-  domainMatchScore: int("domainMatchScore").default(0), // 0-100 percentage
-  skillMatchScore: int("skillMatchScore").default(0), // 0-100 percentage
-  experienceScore: int("experienceScore").default(0), // 0-100 based on years and relevance
-  overallScore: int("overallScore").default(0), // 0-100 weighted average
-  primaryDomain: varchar("primaryDomain", { length: 100 }), // e.g., "Software Development", "Data Science"
-  totalExperienceYears: int("totalExperienceYears").default(0),
-  isDefault: boolean("isDefault").default(false).notNull(),
-  topDomains: json("topDomains"), // Top 5 domains with percentages [{domain: string, percentage: number}]
-  topSkills: json("topSkills"), // Top 5 skills with percentages [{skill: string, percentage: number}]
-  uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type ResumeProfile = typeof resumeProfiles.$inferSelect;
-export type InsertResumeProfile = typeof resumeProfiles.$inferInsert;
-
-/**
- * Video introductions table - stores candidate self-introduction videos (max 15 minutes)
- */
-export const videoIntroductions = mysqlTable("videoIntroductions", {
-  id: int("id").autoincrement().primaryKey(),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  videoUrl: varchar("videoUrl", { length: 500 }).notNull(),
-  videoFileKey: varchar("videoFileKey", { length: 500 }).notNull(), // S3 key for file management
-  thumbnailUrl: varchar("thumbnailUrl", { length: 500 }),
-  duration: int("duration").notNull(), // in seconds, max 900 (15 minutes)
-  fileSize: int("fileSize"), // in bytes
-  mimeType: varchar("mimeType", { length: 100 }),
-  transcription: text("transcription"), // Optional: AI-generated transcription
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type VideoIntroduction = typeof videoIntroductions.$inferSelect;
-export type InsertVideoIntroduction = typeof videoIntroductions.$inferInsert;
-
-/**
- * Customer/Client companies
- */
-export const customers = mysqlTable("customers", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  industry: varchar("industry", { length: 255 }),
-  website: varchar("website", { length: 500 }),
-  description: text("description"),
-  contactEmail: varchar("contactEmail", { length: 320 }),
-  contactPhone: varchar("contactPhone", { length: 50 }),
-  address: text("address"),
-  createdBy: int("createdBy").notNull().references(() => users.id),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Customer = typeof customers.$inferSelect;
-export type InsertCustomer = typeof customers.$inferInsert;
-
-/**
- * Customer contacts
- */
-export const customerContacts = mysqlTable("customerContacts", {
-  id: int("id").autoincrement().primaryKey(),
-  customerId: int("customerId").notNull().references(() => customers.id),
-  name: varchar("name", { length: 255 }).notNull(),
-  title: varchar("title", { length: 255 }),
-  email: varchar("email", { length: 320 }),
-  phone: varchar("phone", { length: 50 }),
-  isPrimary: boolean("isPrimary").default(false),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type CustomerContact = typeof customerContacts.$inferSelect;
-export type InsertCustomerContact = typeof customerContacts.$inferInsert;
-
-/**
- * Job postings
- */
-export const jobs = mysqlTable("jobs", {
-  id: int("id").autoincrement().primaryKey(),
-  title: varchar("title", { length: 255 }).notNull(),
-  companyName: varchar("companyName", { length: 255 }),
-  description: text("description").notNull(),
-  requirements: text("requirements"),
-  responsibilities: text("responsibilities"),
-  location: varchar("location", { length: 255 }),
-  employmentType: mysqlEnum("employmentType", ["full-time", "part-time", "contract", "temporary", "internship"]).default("full-time"),
-  salaryMin: int("salaryMin"),
-  salaryMax: int("salaryMax"),
-  salaryCurrency: varchar("salaryCurrency", { length: 10 }).default("USD"),
-  customerId: int("customerId").references(() => customers.id),
-  contactId: int("contactId").references(() => customerContacts.id),
-  status: mysqlEnum("status", ["draft", "active", "closed", "filled"]).default("draft"),
-  isPublic: boolean("isPublic").default(false),
-  postedBy: int("postedBy").notNull().references(() => users.id),
-  applicationDeadline: timestamp("applicationDeadline"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  closedAt: timestamp("closedAt"),
-});
-
-export type Job = typeof jobs.$inferSelect;
-export type InsertJob = typeof jobs.$inferInsert;
-
-/**
- * Job applications
- */
-export const applications = mysqlTable("applications", {
-  id: int("id").autoincrement().primaryKey(),
-  jobId: int("jobId").notNull().references(() => jobs.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  resumeProfileId: int("resumeProfileId").references(() => resumeProfiles.id), // Selected resume profile for this application
-  videoIntroductionId: int("videoIntroductionId").references(() => videoIntroductions.id), // Optional video introduction
-  coverLetter: text("coverLetter"),
-  resumeUrl: varchar("resumeUrl", { length: 500 }),
-  resumeFilename: varchar("resumeFilename", { length: 255 }),
-  status: mysqlEnum("status", ["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]).default("submitted"),
-  aiScore: int("aiScore"), // AI matching score 0-100
-  notes: text("notes"),
-  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Application = typeof applications.$inferSelect;
-export type InsertApplication = typeof applications.$inferInsert;
-
-/**
- * Interviews table for scheduling and tracking candidate interviews
- */
-export const interviews = mysqlTable("interviews", {
-  id: int("id").autoincrement().primaryKey(),
-  applicationId: int("applicationId").notNull().references(() => applications.id),
-  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  jobId: int("jobId").notNull().references(() => jobs.id),
-  scheduledAt: timestamp("scheduledAt").notNull(),
-  duration: int("duration").notNull().default(60), // in minutes
-  type: mysqlEnum("type", ["phone", "video", "in-person", "ai-interview"]).notNull().default("video"),
-  status: mysqlEnum("status", ["scheduled", "in-progress", "completed", "cancelled", "no-show"]).notNull().default("scheduled"),
-  meetingLink: text("meetingLink"),
-  location: text("location"),
-  notes: text("notes"),
-  recordingUrl: text("recordingUrl"),
-  aiEvaluationScore: int("aiEvaluationScore"), // 0-100
-  aiEvaluationReport: text("aiEvaluationReport"),
-  interviewerNotes: text("interviewerNotes"),
-  candidateFeedback: text("candidateFeedback"),
-  videoMeetingId: varchar("videoMeetingId", { length: 255 }),
-  videoJoinUrl: text("videoJoinUrl"),
-  videoStartUrl: text("videoStartUrl"),
-  videoPassword: varchar("videoPassword", { length: 255 }),
-  videoProvider: mysqlEnum("videoProvider", ["zoom", "teams", "none"]).default("none"),
-  // Candidate reminder tracking
-  candidateReminder24hSent: boolean("candidateReminder24hSent").default(false),
-  candidateReminder1hSent: boolean("candidateReminder1hSent").default(false),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Interview = typeof interviews.$inferSelect;
-export type InsertInterview = typeof interviews.$inferInsert;
-
-/**
- * Interview questions table for storing AI-generated questions
- */
-export const interviewQuestions = mysqlTable("interviewQuestions", {
-  id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").notNull().references(() => interviews.id),
-  questionText: text("questionText").notNull(),
-  questionType: mysqlEnum("questionType", ["technical", "behavioral", "situational", "experience"]).notNull(),
-  orderIndex: int("orderIndex").notNull(),
-  expectedDuration: int("expectedDuration").default(120), // seconds
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type InterviewQuestion = typeof interviewQuestions.$inferSelect;
-export type InsertInterviewQuestion = typeof interviewQuestions.$inferInsert;
-
-/**
- * Interview responses table for storing candidate answers
- */
-export const interviewResponses = mysqlTable("interviewResponses", {
-  id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").notNull().references(() => interviews.id),
-  questionId: int("questionId").notNull().references(() => interviewQuestions.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  audioUrl: text("audioUrl"),
-  videoUrl: text("videoUrl"),
-  transcription: text("transcription"),
-  duration: int("duration"), // seconds
-  aiScore: int("aiScore"), // 0-100
-  aiEvaluation: text("aiEvaluation"),
-  strengths: text("strengths"),
-  weaknesses: text("weaknesses"),
-  recommendations: text("recommendations"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type InterviewResponse = typeof interviewResponses.$inferSelect;
-export type InsertInterviewResponse = typeof interviewResponses.$inferInsert;
-
-/**
- * Saved searches for recruiters with email alert configuration
- */
-export const savedSearches = mysqlTable("savedSearches", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id),
-  name: varchar("name", { length: 255 }).notNull(),
-  searchType: mysqlEnum("searchType", ["candidate", "job"]).notNull().default("candidate"),
-  // Search criteria stored as JSON
-  keyword: text("keyword"),
-  location: text("location"),
-  experienceLevel: varchar("experienceLevel", { length: 50 }),
-  skills: text("skills"), // JSON array
-  // Email alert configuration
-  emailAlerts: boolean("emailAlerts").default(false).notNull(),
-  alertFrequency: mysqlEnum("alertFrequency", ["immediate", "daily", "weekly"]).default("daily"),
-  lastAlertSent: timestamp("lastAlertSent"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type SavedSearch = typeof savedSearches.$inferSelect;
-export type InsertSavedSearch = typeof savedSearches.$inferInsert;
-
-/**
- * Saved jobs for candidates to bookmark interesting positions
- */
-export const savedJobs = mysqlTable("savedJobs", {
-  id: int("id").autoincrement().primaryKey(),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  jobId: int("jobId").notNull().references(() => jobs.id),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type SavedJob = typeof savedJobs.$inferSelect;
-export type InsertSavedJob = typeof savedJobs.$inferInsert;
-
-/**
- * Fraud detection events table for tracking suspicious behavior during AI interviews
- */
-export const fraudDetectionEvents = mysqlTable("fraudDetectionEvents", {
-  id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").notNull().references(() => interviews.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  eventType: mysqlEnum("eventType", [
-    "no_face_detected",
-    "multiple_faces_detected",
-    "tab_switch",
-    "window_blur",
-    "audio_anomaly",
-    "suspicious_behavior"
-  ]).notNull(),
-  severity: mysqlEnum("severity", ["low", "medium", "high"]).notNull().default("medium"),
-  description: text("description"),
-  metadata: text("metadata"), // JSON data with additional details
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
-  questionId: int("questionId").references(() => interviewQuestions.id),
-});
-
-export type FraudDetectionEvent = typeof fraudDetectionEvents.$inferSelect;
-export type InsertFraudDetectionEvent = typeof fraudDetectionEvents.$inferInsert;
-
-
-/**
- * Coding interview challenges table
- */
-export const codingChallenges = mysqlTable("codingChallenges", {
-  id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").references(() => interviews.id), // Optional: for interview-specific challenges
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description").notNull(),
-  language: mysqlEnum("language", ["python", "javascript", "java", "cpp"]).notNull(),
-  starterCode: text("starterCode"),
-  testCases: text("testCases"), // JSON array of test cases
-  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).notNull(),
-  timeLimit: int("timeLimit"), // seconds
-  createdBy: int("createdBy").references(() => users.id), // User who created the challenge
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type CodingChallenge = typeof codingChallenges.$inferSelect;
-export type InsertCodingChallenge = typeof codingChallenges.$inferInsert;
-
-/**
- * Coding interview submissions table
- */
-export const codingSubmissions = mysqlTable("codingSubmissions", {
-  id: int("id").autoincrement().primaryKey(),
-  challengeId: int("challengeId").notNull().references(() => codingChallenges.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  code: text("code").notNull(),
-  language: varchar("language", { length: 50 }).notNull(),
-  status: mysqlEnum("status", ["pending", "running", "passed", "failed", "error"]).notNull().default("pending"),
-  testResults: text("testResults"), // JSON array of test results
-  executionTime: int("executionTime"), // milliseconds
-  score: int("score"), // 0-100
-  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
-});
-
-export type CodingSubmission = typeof codingSubmissions.$inferSelect;
-export type InsertCodingSubmission = typeof codingSubmissions.$inferInsert;
-
-
-/**
- * Skill assessments table
- */
-export const skillAssessments = mysqlTable("skillAssessments", {
-  id: int("id").autoincrement().primaryKey(),
-  jobId: int("jobId").references(() => jobs.id), // Optional: link to specific job
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description"),
-  duration: int("duration"), // minutes
-  passingScore: int("passingScore").notNull().default(70), // percentage
-  createdBy: int("createdBy").notNull().references(() => users.id),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type SkillAssessment = typeof skillAssessments.$inferSelect;
-export type InsertSkillAssessment = typeof skillAssessments.$inferInsert;
-
-/**
- * Assessment questions table
- */
-export const assessmentQuestions = mysqlTable("assessmentQuestions", {
-  id: int("id").autoincrement().primaryKey(),
-  assessmentId: int("assessmentId").notNull().references(() => skillAssessments.id),
-  questionText: text("questionText").notNull(),
-  questionType: mysqlEnum("questionType", ["multiple_choice", "true_false", "short_answer"]).notNull(),
-  options: text("options"), // JSON array for multiple choice
-  correctAnswer: text("correctAnswer").notNull(),
-  points: int("points").notNull().default(1),
-  orderIndex: int("orderIndex").notNull(),
-});
-
-export type AssessmentQuestion = typeof assessmentQuestions.$inferSelect;
-export type InsertAssessmentQuestion = typeof assessmentQuestions.$inferInsert;
-
-/**
- * Assessment attempts table
- */
-export const assessmentAttempts = mysqlTable("assessmentAttempts", {
-  id: int("id").autoincrement().primaryKey(),
-  assessmentId: int("assessmentId").notNull().references(() => skillAssessments.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  applicationId: int("applicationId").references(() => applications.id), // Optional: link to application
-  score: int("score"), // percentage
-  totalPoints: int("totalPoints"),
-  earnedPoints: int("earnedPoints"),
-  passed: boolean("passed"),
-  startedAt: timestamp("startedAt").defaultNow().notNull(),
-  completedAt: timestamp("completedAt"),
-  timeSpent: int("timeSpent"), // seconds
-});
-
-export type AssessmentAttempt = typeof assessmentAttempts.$inferSelect;
-export type InsertAssessmentAttempt = typeof assessmentAttempts.$inferInsert;
-
-/**
- * Assessment answers table
- */
-export const assessmentAnswers = mysqlTable("assessmentAnswers", {
-  id: int("id").autoincrement().primaryKey(),
-  attemptId: int("attemptId").notNull().references(() => assessmentAttempts.id),
-  questionId: int("questionId").notNull().references(() => assessmentQuestions.id),
-  answer: text("answer").notNull(),
-  isCorrect: boolean("isCorrect"),
-  pointsEarned: int("pointsEarned"),
-});
-
-export type AssessmentAnswer = typeof assessmentAnswers.$inferSelect;
-export type InsertAssessmentAnswer = typeof assessmentAnswers.$inferInsert;
-
-/**
- * Notifications table for real-time user notifications
- */
-export const notifications = mysqlTable("notifications", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id),
-  type: varchar("type", { length: 50 }).notNull(), // 'application', 'interview', 'status_change', 'message', etc.
-  title: varchar("title", { length: 255 }).notNull(),
-  message: text("message").notNull(),
-  isRead: boolean("isRead").default(false).notNull(),
-  relatedEntityType: varchar("relatedEntityType", { length: 50 }), // 'job', 'application', 'interview', etc.
-  relatedEntityId: int("relatedEntityId"), // ID of the related entity
-  actionUrl: varchar("actionUrl", { length: 500 }), // URL to navigate when clicked
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type Notification = typeof notifications.$inferSelect;
-export type InsertNotification = typeof notifications.$inferInsert;
-
-/**
- * Skills Testing Platform Tables
- */
-
-// Test categories and types
-export const testLibrary = mysqlTable("testLibrary", {
-  id: int("id").autoincrement().primaryKey(),
-  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
-  testName: varchar("testName", { length: 255 }).notNull(),
-  testType: mysqlEnum("testType", ["coding", "personality", "domain-specific", "aptitude", "technical"]).notNull(),
-  category: varchar("category", { length: 100 }), // e.g., "JavaScript", "Big Five", "Sales", "Math"
-  description: text("description"),
-  duration: int("duration").notNull(), // in minutes
-  passingScore: int("passingScore").notNull(), // percentage
-  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard", "expert"]).notNull(),
-  isPublic: boolean("isPublic").default(false).notNull(), // shared in platform library
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type TestLibrary = typeof testLibrary.$inferSelect;
-export type InsertTestLibrary = typeof testLibrary.$inferInsert;
-
-// Test questions for coding, aptitude, and technical tests
-export const testQuestions = mysqlTable("testQuestions", {
-  id: int("id").autoincrement().primaryKey(),
-  testId: int("testId").notNull().references(() => testLibrary.id),
-  questionText: text("questionText").notNull(),
-  questionType: mysqlEnum("questionType", ["multiple-choice", "coding", "essay", "true-false"]).notNull(),
-  options: text("options"), // JSON array for multiple choice
-  correctAnswer: text("correctAnswer"), // For auto-grading
-  points: int("points").default(10).notNull(),
-  // For coding questions
-  starterCode: text("starterCode"),
-  testCases: text("testCases"), // JSON array of test cases
-  language: varchar("language", { length: 50 }), // "python", "javascript", "java", "cpp"
-  timeLimit: int("timeLimit"), // seconds for code execution
-  order: int("order").notNull(), // question order in test
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type TestQuestion = typeof testQuestions.$inferSelect;
-export type InsertTestQuestion = typeof testQuestions.$inferInsert;
-
-// Personality assessment questions (Big Five, DISC, etc.)
-export const personalityQuestions = mysqlTable("personalityQuestions", {
-  id: int("id").autoincrement().primaryKey(),
-  testId: int("testId").notNull().references(() => testLibrary.id),
-  questionText: text("questionText").notNull(),
-  trait: varchar("trait", { length: 100 }).notNull(), // "openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"
-  isReversed: boolean("isReversed").default(false).notNull(), // reverse scoring
-  order: int("order").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type PersonalityQuestion = typeof personalityQuestions.$inferSelect;
-export type InsertPersonalityQuestion = typeof personalityQuestions.$inferInsert;
-
-// Test assignments to candidates
-export const testAssignments = mysqlTable("testAssignments", {
-  id: int("id").autoincrement().primaryKey(),
-  testId: int("testId").notNull().references(() => testLibrary.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  applicationId: int("applicationId").references(() => applications.id), // optional: linked to job application
-  assignedBy: int("assignedBy").notNull().references(() => recruiters.id),
-  status: mysqlEnum("status", ["assigned", "in-progress", "completed", "expired", "cancelled"]).default("assigned").notNull(),
-  dueDate: timestamp("dueDate"),
-  startedAt: timestamp("startedAt"),
-  completedAt: timestamp("completedAt"),
-  score: int("score"), // percentage
-  passed: boolean("passed"),
-  timeSpent: int("timeSpent"), // in seconds
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type TestAssignment = typeof testAssignments.$inferSelect;
-export type InsertTestAssignment = typeof testAssignments.$inferInsert;
-
-// Test responses/answers from candidates
-export const testResponses = mysqlTable("testResponses", {
-  id: int("id").autoincrement().primaryKey(),
-  assignmentId: int("assignmentId").notNull().references(() => testAssignments.id),
-  questionId: int("questionId").notNull().references(() => testQuestions.id),
-  candidateAnswer: text("candidateAnswer").notNull(),
-  isCorrect: boolean("isCorrect"),
-  pointsEarned: int("pointsEarned").default(0).notNull(),
-  // For coding questions
-  codeOutput: text("codeOutput"),
-  executionTime: int("executionTime"), // milliseconds
-  testCasesPassed: int("testCasesPassed"),
-  testCasesTotal: int("testCasesTotal"),
-  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
-});
-
-export type TestResponse = typeof testResponses.$inferSelect;
-export type InsertTestResponse = typeof testResponses.$inferInsert;
-
-// Personality test results
-export const personalityResults = mysqlTable("personalityResults", {
-  id: int("id").autoincrement().primaryKey(),
-  assignmentId: int("assignmentId").notNull().references(() => testAssignments.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  testType: varchar("testType", { length: 50 }).notNull(), // "big-five", "disc", "mbti"
-  // Big Five scores (0-100)
-  openness: int("openness"),
-  conscientiousness: int("conscientiousness"),
-  extraversion: int("extraversion"),
-  agreeableness: int("agreeableness"),
-  neuroticism: int("neuroticism"),
-  // DISC scores (0-100)
-  dominance: int("dominance"),
-  influence: int("influence"),
-  steadiness: int("steadiness"),
-  compliance: int("compliance"),
-  // Results summary
-  primaryTrait: varchar("primaryTrait", { length: 100 }),
-  traitProfile: text("traitProfile"), // JSON with detailed breakdown
-  interpretation: text("interpretation"), // AI-generated interpretation
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type PersonalityResult = typeof personalityResults.$inferSelect;
-export type InsertPersonalityResult = typeof personalityResults.$inferInsert;
-
-/**
- * Candidate tags table for organizing candidates
- */
-export const candidateTags = mysqlTable("candidateTags", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  color: varchar("color", { length: 50 }).default("blue"), // badge color
-  userId: int("userId").notNull().references(() => users.id), // recruiter who created the tag
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type CandidateTag = typeof candidateTags.$inferSelect;
-export type InsertCandidateTag = typeof candidateTags.$inferInsert;
-
-/**
- * Candidate tag assignments (many-to-many relationship)
- */
-export const candidateTagAssignments = mysqlTable("candidateTagAssignments", {
-  id: int("id").autoincrement().primaryKey(),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  tagId: int("tagId").notNull().references(() => candidateTags.id),
-  assignedBy: int("assignedBy").notNull().references(() => users.id),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type CandidateTagAssignment = typeof candidateTagAssignments.$inferSelect;
-export type InsertCandidateTagAssignment = typeof candidateTagAssignments.$inferInsert;
-
-/**
- * Messaging System Tables
- */
-
-// Conversations between recruiters and candidates
-export const conversations = mysqlTable("conversations", {
-  id: int("id").autoincrement().primaryKey(),
-  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  applicationId: int("applicationId").references(() => applications.id), // optional: linked to specific application
-  jobId: int("jobId").references(() => jobs.id), // optional: linked to specific job
-  subject: varchar("subject", { length: 255 }),
-  lastMessageAt: timestamp("lastMessageAt").defaultNow().notNull(),
-  isArchived: boolean("isArchived").default(false).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Conversation = typeof conversations.$inferSelect;
-export type InsertConversation = typeof conversations.$inferInsert;
-
-// Messages within conversations
-export const messages = mysqlTable("messages", {
-  id: int("id").autoincrement().primaryKey(),
-  conversationId: int("conversationId").notNull().references(() => conversations.id),
-  senderId: int("senderId").notNull().references(() => users.id),
-  senderType: mysqlEnum("senderType", ["recruiter", "candidate"]).notNull(),
-  content: text("content").notNull(),
-  isRead: boolean("isRead").default(false).notNull(),
-  readAt: timestamp("readAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type Message = typeof messages.$inferSelect;
-export type InsertMessage = typeof messages.$inferInsert;
-
-// Message attachments (files, images, documents)
-export const messageAttachments = mysqlTable("messageAttachments", {
-  id: int("id").autoincrement().primaryKey(),
-  messageId: int("messageId").notNull().references(() => messages.id),
-  fileName: varchar("fileName", { length: 255 }).notNull(),
-  fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
-  fileKey: varchar("fileKey", { length: 500 }).notNull(), // S3 key
-  fileSize: int("fileSize").notNull(), // bytes
-  mimeType: varchar("mimeType", { length: 100 }).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type MessageAttachment = typeof messageAttachments.$inferSelect;
-export type InsertMessageAttachment = typeof messageAttachments.$inferInsert;
-
-// Message templates for recruiters
-export const messageTemplates = mysqlTable("messageTemplates", {
-  id: int("id").autoincrement().primaryKey(),
-  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
-  templateName: varchar("templateName", { length: 255 }).notNull(),
-  subject: varchar("subject", { length: 255 }),
-  content: text("content").notNull(),
-  category: varchar("category", { length: 100 }), // "interview-invitation", "rejection", "follow-up", "offer"
-  isPublic: boolean("isPublic").default(false).notNull(), // shared with team
-  usageCount: int("usageCount").default(0).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type MessageTemplate = typeof messageTemplates.$inferSelect;
-export type InsertMessageTemplate = typeof messageTemplates.$inferInsert;
-
-// Typing indicators for real-time chat
-export const typingIndicators = mysqlTable("typingIndicators", {
-  id: int("id").autoincrement().primaryKey(),
-  conversationId: int("conversationId").notNull().references(() => conversations.id),
-  userId: int("userId").notNull().references(() => users.id),
-  isTyping: boolean("isTyping").default(false).notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-/**
- * Email templates for bulk campaigns
- */
-export const emailTemplates = mysqlTable("emailTemplates", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  subject: varchar("subject", { length: 500 }).notNull(),
-  body: text("body").notNull(), // HTML content with variables like {{name}}, {{jobTitle}}
-  category: varchar("category", { length: 100 }), // 'outreach', 'follow-up', 'interview-invite', etc.
-  userId: int("userId").notNull().references(() => users.id), // creator
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type EmailTemplate = typeof emailTemplates.$inferSelect;
-export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
-
-/**
- * Email campaigns for bulk candidate outreach
- */
-export const emailCampaigns = mysqlTable("emailCampaigns", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  templateId: int("templateId").references(() => emailTemplates.id),
-  subject: varchar("subject", { length: 500 }).notNull(), // can override template subject
-  body: text("body").notNull(), // can override template body
-  userId: int("userId").notNull().references(() => users.id), // campaign creator
-  status: varchar("status", { length: 50 }).default("draft").notNull(), // 'draft', 'scheduled', 'sending', 'sent', 'paused'
-  scheduledAt: timestamp("scheduledAt"), // when to send
-  sentAt: timestamp("sentAt"), // when actually sent
-  totalRecipients: int("totalRecipients").default(0),
-  sentCount: int("sentCount").default(0),
-  openedCount: int("openedCount").default(0),
-  clickedCount: int("clickedCount").default(0),
-  bouncedCount: int("bouncedCount").default(0),
-  repliedCount: int("repliedCount").default(0),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type EmailCampaign = typeof emailCampaigns.$inferSelect;
-export type InsertEmailCampaign = typeof emailCampaigns.$inferInsert;
-
-/**
- * Campaign recipients and tracking
- */
-export const campaignRecipients = mysqlTable("campaignRecipients", {
-  id: int("id").autoincrement().primaryKey(),
-  campaignId: int("campaignId").notNull().references(() => emailCampaigns.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  email: varchar("email", { length: 255 }).notNull(),
-  personalizedSubject: varchar("personalizedSubject", { length: 500 }),
-  personalizedBody: text("personalizedBody"),
-  status: varchar("status", { length: 50 }).default("pending").notNull(), // 'pending', 'sent', 'opened', 'clicked', 'bounced', 'replied'
-  sentAt: timestamp("sentAt"),
-  openedAt: timestamp("openedAt"),
-  clickedAt: timestamp("clickedAt"),
-  bouncedAt: timestamp("bouncedAt"),
-  repliedAt: timestamp("repliedAt"),
-  trackingId: varchar("trackingId", { length: 100 }), // unique ID for tracking opens/clicks
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
-export type InsertCampaignRecipient = typeof campaignRecipients.$inferInsert;
-
-/**
- * Automated follow-up sequences
- */
-export const followUpSequences = mysqlTable("followUpSequences", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  userId: int("userId").notNull().references(() => users.id),
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type FollowUpSequence = typeof followUpSequences.$inferSelect;
-export type InsertFollowUpSequence = typeof followUpSequences.$inferInsert;
-
-/**
- * Steps in a follow-up sequence
- */
-export const sequenceSteps = mysqlTable("sequenceSteps", {
-  id: int("id").autoincrement().primaryKey(),
-  sequenceId: int("sequenceId").notNull().references(() => followUpSequences.id),
-  stepNumber: int("stepNumber").notNull(), // order in sequence (1, 2, 3...)
-  delayDays: int("delayDays").notNull(), // days after previous step (0 for first step)
-  templateId: int("templateId").references(() => emailTemplates.id),
-  subject: varchar("subject", { length: 500 }).notNull(),
-  body: text("body").notNull(),
-  condition: varchar("condition", { length: 100 }), // 'no_response', 'not_opened', 'always', etc.
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type SequenceStep = typeof sequenceSteps.$inferSelect;
-export type InsertSequenceStep = typeof sequenceSteps.$inferInsert;
-
-/**
- * Sequence enrollments (candidates enrolled in sequences)
- */
-export const sequenceEnrollments = mysqlTable("sequenceEnrollments", {
-  id: int("id").autoincrement().primaryKey(),
-  sequenceId: int("sequenceId").notNull().references(() => followUpSequences.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  currentStep: int("currentStep").default(0), // which step they're on
-  status: varchar("status", { length: 50 }).default("active").notNull(), // 'active', 'completed', 'paused', 'unsubscribed'
-  enrolledAt: timestamp("enrolledAt").defaultNow().notNull(),
-  completedAt: timestamp("completedAt"),
-  nextStepAt: timestamp("nextStepAt"), // when to send next email
-});
-
-export type SequenceEnrollment = typeof sequenceEnrollments.$inferSelect;
-export type InsertSequenceEnrollment = typeof sequenceEnrollments.$inferInsert;
-
-/**
- * Email unsubscribes table
- */
-export const emailUnsubscribes = mysqlTable("emailUnsubscribes", {
-  id: int("id").autoincrement().primaryKey(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  trackingId: varchar("trackingId", { length: 100 }),
-  reason: text("reason"),
-  unsubscribedAt: timestamp("unsubscribedAt").defaultNow().notNull(),
-});
-
-export type EmailUnsubscribe = typeof emailUnsubscribes.$inferSelect;
-export type InsertEmailUnsubscribe = typeof emailUnsubscribes.$inferInsert;
-
-/**
- * System settings table for application configuration
- */
-export const systemSettings = mysqlTable("systemSettings", {
-  id: int("id").autoincrement().primaryKey(),
-  settingKey: varchar("settingKey", { length: 100 }).notNull().unique(),
-  settingValue: text("settingValue"),
-  description: text("description"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type SystemSetting = typeof systemSettings.$inferSelect;
-export type InsertSystemSetting = typeof systemSettings.$inferInsert;
-
-/**
- * Email delivery events from webhooks
- */
-export const emailDeliveryEvents = mysqlTable("emailDeliveryEvents", {
-  id: int("id").autoincrement().primaryKey(),
-  campaignRecipientId: int("campaignRecipientId"),
-  eventType: varchar("eventType", { length: 50 }).notNull(),
-  provider: varchar("provider", { length: 20 }).notNull(),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
-  messageId: varchar("messageId", { length: 255 }),
-  email: varchar("email", { length: 255 }).notNull(),
-  reason: text("reason"),
-  metadata: json("metadata"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({
-  emailIdx: index("idx_email").on(table.email),
-  eventTypeIdx: index("idx_event_type").on(table.eventType),
-  providerIdx: index("idx_provider").on(table.provider),
-  timestampIdx: index("idx_timestamp").on(table.timestamp),
-}));
-
-/**
- * Webhook logs for debugging
- */
-export const emailWebhookLogs = mysqlTable("emailWebhookLogs", {
-  id: int("id").autoincrement().primaryKey(),
-  provider: varchar("provider", { length: 20 }).notNull(),
-  eventType: varchar("eventType", { length: 50 }),
-  payload: json("payload").notNull(),
-  signature: text("signature"),
-  verified: boolean("verified").default(false),
-  processed: boolean("processed").default(false),
-  error: text("error"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({
-  providerIdx: index("idx_provider").on(table.provider),
-  createdIdx: index("idx_created").on(table.createdAt),
-}));
-
-export type EmailDeliveryEvent = typeof emailDeliveryEvents.$inferSelect;
-export type InsertEmailDeliveryEvent = typeof emailDeliveryEvents.$inferInsert;
-export type EmailWebhookLog = typeof emailWebhookLogs.$inferSelect;
-export type InsertEmailWebhookLog = typeof emailWebhookLogs.$inferInsert;
-
-
-/**
- * Associates table - Onboarded employees/candidates
- */
-export const associates = mysqlTable("associates", {
-  id: int("id").autoincrement().primaryKey(),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  employeeId: varchar("employeeId", { length: 100 }), // Company employee ID
-  jobTitle: varchar("jobTitle", { length: 255 }).notNull(),
-  department: varchar("department", { length: 255 }),
-  startDate: timestamp("startDate").notNull(),
-  endDate: timestamp("endDate"), // null if currently employed
-  status: mysqlEnum("status", ["active", "onboarding", "offboarding", "terminated"]).default("onboarding").notNull(),
-  managerId: int("managerId").references(() => recruiters.id), // Reporting manager
-  onboardedBy: int("onboardedBy").notNull().references(() => recruiters.id),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Associate = typeof associates.$inferSelect;
-export type InsertAssociate = typeof associates.$inferInsert;
-
-/**
- * Onboarding/Offboarding processes
- */
-export const onboardingProcesses = mysqlTable("onboardingProcesses", {
-  id: int("id").autoincrement().primaryKey(),
-  associateId: int("associateId").notNull().references(() => associates.id),
-  processType: mysqlEnum("processType", ["onboarding", "offboarding"]).notNull(),
-  status: mysqlEnum("status", ["pending", "in_progress", "completed", "cancelled"]).default("pending").notNull(),
-  startedBy: int("startedBy").notNull().references(() => recruiters.id),
-  completedAt: timestamp("completedAt"),
-  dueDate: timestamp("dueDate"),
-  notes: text("notes"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type OnboardingProcess = typeof onboardingProcesses.$inferSelect;
-export type InsertOnboardingProcess = typeof onboardingProcesses.$inferInsert;
-
-/**
- * Tasks within onboarding/offboarding processes
- */
-export const onboardingTasks = mysqlTable("onboardingTasks", {
-  id: int("id").autoincrement().primaryKey(),
-  processId: int("processId").notNull().references(() => onboardingProcesses.id),
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description"),
-  taskType: varchar("taskType", { length: 100 }), // e.g., 'documentation', 'equipment', 'training', 'system_access'
-  status: mysqlEnum("status", ["pending", "in_progress", "completed", "blocked"]).default("pending").notNull(),
-  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
-  dueDate: timestamp("dueDate"),
-  completedAt: timestamp("completedAt"),
-  completedBy: int("completedBy").references(() => recruiters.id),
-  orderIndex: int("orderIndex").default(0).notNull(), // For task ordering
-  dependsOnTaskId: int("dependsOnTaskId"), // Task dependency (self-reference)
-  notes: text("notes"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type OnboardingTask = typeof onboardingTasks.$inferSelect;
-export type InsertOnboardingTask = typeof onboardingTasks.$inferInsert;
-
-/**
- * Task assignments - assign tasks to specific recruiters
- */
-export const taskAssignments = mysqlTable("taskAssignments", {
-  id: int("id").autoincrement().primaryKey(),
-  taskId: int("taskId").notNull().references(() => onboardingTasks.id),
-  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
-  assignedBy: int("assignedBy").notNull().references(() => recruiters.id),
-  assignedAt: timestamp("assignedAt").defaultNow().notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type TaskAssignment = typeof taskAssignments.$inferSelect;
-export type InsertTaskAssignment = typeof taskAssignments.$inferInsert;
-
-/**
- * Task reminders - track reminder emails sent for pending tasks
- */
-export const taskReminders = mysqlTable("taskReminders", {
-  id: int("id").autoincrement().primaryKey(),
-  taskId: int("taskId").notNull().references(() => onboardingTasks.id),
-  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
-  reminderType: mysqlEnum("reminderType", ["due_soon", "overdue", "manual"]).notNull(),
-  sentAt: timestamp("sentAt").defaultNow().notNull(),
-  emailStatus: varchar("emailStatus", { length: 50 }), // 'sent', 'delivered', 'failed'
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type TaskReminder = typeof taskReminders.$inferSelect;
-export type InsertTaskReminder = typeof taskReminders.$inferInsert;
-
-/**
- * Task templates - predefined task lists for onboarding/offboarding
- */
-export const taskTemplates = mysqlTable("taskTemplates", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
-  processType: mysqlEnum("processType", ["onboarding", "offboarding"]).notNull(),
-  description: text("description"),
-  tasks: text("tasks").notNull(), // JSON array of task definitions
-  isDefault: boolean("isDefault").default(false).notNull(),
-  createdBy: int("createdBy").notNull().references(() => recruiters.id),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type TaskTemplate = typeof taskTemplates.$inferSelect;
-export type InsertTaskTemplate = typeof taskTemplates.$inferInsert;
-
-/**
- * Application feedback table - private notes and ratings from recruiters
- */
-export const applicationFeedback = mysqlTable("applicationFeedback", {
-  id: int("id").autoincrement().primaryKey(),
-  applicationId: int("applicationId").notNull().references(() => applications.id),
-  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
-  rating: int("rating"), // 1-5 stars
-  notes: text("notes"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type ApplicationFeedback = typeof applicationFeedback.$inferSelect;
-export type InsertApplicationFeedback = typeof applicationFeedback.$inferInsert;
-
-
-/**
- * Interview feedback from candidates (post-interview experience ratings)
- */
-export const interviewFeedback = mysqlTable("interview_feedback", {
-  id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").notNull().references(() => interviews.id),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  overallRating: int("overallRating").notNull(),
-  interviewerRating: int("interviewerRating"),
-  processRating: int("processRating"),
-  communicationRating: int("communicationRating"),
-  positiveAspects: text("positiveAspects"),
-  areasForImprovement: text("areasForImprovement"),
-  additionalComments: text("additionalComments"),
-  wouldRecommend: boolean("wouldRecommend"),
-  isAnonymous: boolean("isAnonymous").default(false).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type InterviewFeedback = typeof interviewFeedback.$inferSelect;
-export type InsertInterviewFeedback = typeof interviewFeedback.$inferInsert;
-
-/**
- * Interview panel members - additional interviewers invited to participate
- */
-export const interviewPanelists = mysqlTable("interview_panelists", {
-  id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").notNull().references(() => interviews.id),
-  userId: int("userId").notNull().references(() => users.id),
-  email: varchar("email", { length: 255 }).notNull(),
-  name: varchar("name", { length: 255 }),
-  role: varchar("role", { length: 100 }), // e.g., 'Technical Lead', 'HR Manager', 'Team Member'
-  status: mysqlEnum("status", ["invited", "accepted", "declined", "attended"]).default("invited").notNull(),
-  invitedAt: timestamp("invitedAt").defaultNow().notNull(),
-  respondedAt: timestamp("respondedAt"),
-  attendedAt: timestamp("attendedAt"),
-  reminder24hSent: boolean("reminder24hSent").default(false).notNull(),
-  reminder1hSent: boolean("reminder1hSent").default(false).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type InterviewPanelist = typeof interviewPanelists.$inferSelect;
-export type InsertInterviewPanelist = typeof interviewPanelists.$inferInsert;
-
-/**
- * Panel member feedback - feedback submitted by interview panel members
- */
-export const panelistFeedback = mysqlTable("panelist_feedback", {
-  id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").notNull().references(() => interviews.id),
-  panelistId: int("panelistId").notNull().references(() => interviewPanelists.id),
-  userId: int("userId").notNull().references(() => users.id),
-  overallRating: int("overallRating").notNull(), // 1-5
-  technicalSkills: int("technicalSkills"), // 1-5
-  communicationSkills: int("communicationSkills"), // 1-5
-  problemSolving: int("problemSolving"), // 1-5
-  cultureFit: int("cultureFit"), // 1-5
-  strengths: text("strengths"),
-  weaknesses: text("weaknesses"),
-  notes: text("notes"),
-  recommendation: mysqlEnum("recommendation", ["strong_hire", "hire", "no_hire", "strong_no_hire"]),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type PanelistFeedback = typeof panelistFeedback.$inferSelect;
-export type InsertPanelistFeedback = typeof panelistFeedback.$inferInsert;
-
-/**
- * Recruiter notification preferences
- */
-export const recruiterNotificationPreferences = mysqlTable("recruiter_notification_preferences", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id),
-  // Application notifications
-  newApplications: boolean("newApplications").default(true).notNull(),
-  applicationStatusChanges: boolean("applicationStatusChanges").default(true).notNull(),
-  applicationFrequency: mysqlEnum("applicationFrequency", ["immediate", "daily", "weekly"]).default("immediate").notNull(),
-  // Interview notifications
-  interviewScheduled: boolean("interviewScheduled").default(true).notNull(),
-  interviewReminders: boolean("interviewReminders").default(true).notNull(),
-  interviewCompleted: boolean("interviewCompleted").default(true).notNull(),
-  panelistResponses: boolean("panelistResponses").default(true).notNull(),
-  // Feedback notifications
-  candidateFeedback: boolean("candidateFeedback").default(true).notNull(),
-  panelistFeedbackSubmitted: boolean("panelistFeedbackSubmitted").default(true).notNull(),
-  // Other notifications
-  weeklyDigest: boolean("weeklyDigest").default(true).notNull(),
-  systemUpdates: boolean("systemUpdates").default(false).notNull(),
-  marketingEmails: boolean("marketingEmails").default(false).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type RecruiterNotificationPreferences = typeof recruiterNotificationPreferences.$inferSelect;
-export type InsertRecruiterNotificationPreferences = typeof recruiterNotificationPreferences.$inferInsert;
-
-
-/**
- * Panel action tokens for one-time email-based actions (accept/decline/reschedule/feedback)
- */
-export const panelActionTokens = mysqlTable("panel_action_tokens", {
-  id: int("id").autoincrement().primaryKey(),
-  panelistId: int("panelistId").notNull(),
-  interviewId: int("interviewId").notNull(),
-  token: varchar("token", { length: 255 }).notNull().unique(),
-  actionType: mysqlEnum("actionType", ["accept", "decline", "reschedule", "feedback"]).notNull(),
-  usedAt: timestamp("usedAt"),
-  expiresAt: timestamp("expiresAt").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type PanelActionToken = typeof panelActionTokens.$inferSelect;
-export type InsertPanelActionToken = typeof panelActionTokens.$inferInsert;
-
-
-/**
- * Reschedule requests from panel members
- */
-export const rescheduleRequests = mysqlTable("reschedule_requests", {
-  id: int("id").autoincrement().primaryKey(),
-  interviewId: int("interviewId").notNull().references(() => interviews.id),
-  panelistId: int("panelistId").notNull().references(() => interviewPanelists.id),
-  requestedBy: int("requestedBy").references(() => users.id), // null for non-registered panelists
-  reason: text("reason"),
-  preferredDates: text("preferredDates"), // JSON array of preferred date/time slots
-  status: mysqlEnum("status", ["pending", "approved", "rejected", "resolved", "alternative_proposed"]).default("pending").notNull(),
-  resolvedAt: timestamp("resolvedAt"),
-  resolvedBy: int("resolvedBy").references(() => users.id),
-  newInterviewTime: timestamp("newInterviewTime"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type RescheduleRequest = typeof rescheduleRequests.$inferSelect;
-export type InsertRescheduleRequest = typeof rescheduleRequests.$inferInsert;
-
-/**
- * Job skill requirements - mandatory skills for job applications
- */
-export const jobSkillRequirements = mysqlTable("job_skill_requirements", {
-  id: int("id").autoincrement().primaryKey(),
-  jobId: int("jobId").notNull().references(() => jobs.id),
-  skillName: varchar("skillName", { length: 255 }).notNull(),
-  isMandatory: boolean("isMandatory").default(true).notNull(),
-  orderIndex: int("orderIndex").default(0).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type JobSkillRequirement = typeof jobSkillRequirements.$inferSelect;
-export type InsertJobSkillRequirement = typeof jobSkillRequirements.$inferInsert;
-
-/**
- * Candidate skill ratings - skill matrix submitted with job applications
- */
-export const candidateSkillRatings = mysqlTable("candidate_skill_ratings", {
-  id: int("id").autoincrement().primaryKey(),
-  applicationId: int("applicationId").notNull().references(() => applications.id),
-  skillRequirementId: int("skillRequirementId").notNull().references(() => jobSkillRequirements.id),
-  skillName: varchar("skillName", { length: 255 }).notNull(),
-  rating: int("rating").notNull(), // 1-5 scale
-  yearsExperience: int("yearsExperience").notNull(), // years of experience
-  lastUsedYear: int("lastUsedYear").notNull(), // e.g., 2024, 2023
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-
-export type CandidateSkillRating = typeof candidateSkillRatings.$inferSelect;
-export type InsertCandidateSkillRating = typeof candidateSkillRatings.$inferInsert;
-
-
-/**
- * Candidate profile sharing - secure links for sharing profiles with clients
- */
-export const candidateProfileShares = mysqlTable("candidate_profile_shares", {
-  id: int("id").autoincrement().primaryKey(),
-  candidateId: int("candidateId").notNull().references(() => candidates.id),
-  sharedByUserId: int("sharedByUserId").notNull().references(() => users.id),
-  shareToken: varchar("shareToken", { length: 64 }).notNull().unique(),
-  recipientEmail: varchar("recipientEmail", { length: 320 }),
-  recipientName: varchar("recipientName", { length: 255 }),
-  customerId: int("customerId").references(() => customers.id), // Optional: link to client
-  jobId: int("jobId").references(() => jobs.id), // Optional: context for which job
-  matchScore: int("matchScore"), // Optional: include match score
-  includeResume: boolean("includeResume").default(true).notNull(),
-  includeVideo: boolean("includeVideo").default(true).notNull(),
-  includeContact: boolean("includeContact").default(false).notNull(), // Whether to show contact info
-  viewCount: int("viewCount").default(0).notNull(),
-  lastViewedAt: timestamp("lastViewedAt"),
-  expiresAt: timestamp("expiresAt"), // Optional expiration
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type CandidateProfileShare = typeof candidateProfileShares.$inferSelect;
-export type InsertCandidateProfileShare = typeof candidateProfileShares.$inferInsert;
-
-
-/**
- * Environment variables configuration - editable settings stored in database
- * Stores current and previous values for rollback capability
- */
-export const environmentVariables = mysqlTable("environment_variables", {
-  id: int("id").autoincrement().primaryKey(),
-  key: varchar("key", { length: 255 }).notNull().unique(),
-  currentValue: text("currentValue").notNull(),
-  previousValue: text("previousValue"), // For rollback capability
-  description: varchar("description", { length: 500 }),
-  category: varchar("category", { length: 100 }), // e.g., 'App Config', 'Email', 'Video'
-  isEditable: boolean("isEditable").default(true).notNull(),
-  isSensitive: boolean("isSensitive").default(false).notNull(),
-  updatedBy: int("updatedBy").references(() => users.id),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type EnvironmentVariable = typeof environmentVariables.$inferSelect;
-export type InsertEnvironmentVariable = typeof environmentVariables.$inferInsert;
-
-/**
- * Application logs - store critical application events and errors
- */
 export const applicationLogs = mysqlTable("application_logs", {
-  id: int("id").autoincrement().primaryKey(),
-  level: mysqlEnum("level", ["debug", "info", "warn", "error", "critical"]).notNull(),
-  source: varchar("source", { length: 255 }).notNull(), // e.g., 'auth', 'api', 'database', 'email'
-  message: text("message").notNull(),
-  details: text("details"), // JSON string with additional context
-  userId: int("userId").references(() => users.id), // Optional: associated user
-  requestId: varchar("requestId", { length: 64 }), // For tracing requests
-  ipAddress: varchar("ipAddress", { length: 45 }),
-  userAgent: text("userAgent"),
-  stackTrace: text("stackTrace"), // For errors
-  resolved: boolean("resolved").default(false).notNull(),
-  resolvedBy: int("resolvedBy").references(() => users.id),
-  resolvedAt: timestamp("resolvedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+	id: int().autoincrement().notNull(),
+	level: mysqlEnum(['debug','info','warn','error','critical']).notNull(),
+	source: varchar({ length: 255 }).notNull(),
+	message: text().notNull(),
+	details: text(),
+	userId: int(),
+	requestId: varchar({ length: 64 }),
+	ipAddress: varchar({ length: 45 }),
+	userAgent: text(),
+	stackTrace: text(),
+	resolved: tinyint().default(0).notNull(),
+	resolvedBy: int(),
+	resolvedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 });
 
-export type ApplicationLog = typeof applicationLogs.$inferSelect;
-export type InsertApplicationLog = typeof applicationLogs.$inferInsert;
+export const applications = mysqlTable("applications", {
+	id: int().autoincrement().notNull(),
+	jobId: int().notNull().references(() => jobs.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	coverLetter: text(),
+	resumeUrl: varchar({ length: 500 }),
+	resumeFilename: varchar({ length: 255 }),
+	status: mysqlEnum(['submitted','reviewing','shortlisted','interviewing','offered','rejected','withdrawn']).default('submitted'),
+	aiScore: int(),
+	notes: text(),
+	submittedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	resumeProfileId: int().references(() => resumeProfiles.id),
+	videoIntroductionId: int().references(() => videoIntroductions.id),
+});
+
+export const assessmentAnswers = mysqlTable("assessmentAnswers", {
+	id: int().autoincrement().notNull(),
+	attemptId: int().notNull().references(() => assessmentAttempts.id),
+	questionId: int().notNull().references(() => assessmentQuestions.id),
+	answer: text().notNull(),
+	isCorrect: tinyint(),
+	pointsEarned: int(),
+});
+
+export const assessmentAttempts = mysqlTable("assessmentAttempts", {
+	id: int().autoincrement().notNull(),
+	assessmentId: int().notNull().references(() => skillAssessments.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	applicationId: int().references(() => applications.id),
+	score: int(),
+	totalPoints: int(),
+	earnedPoints: int(),
+	passed: tinyint(),
+	startedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	completedAt: timestamp({ mode: 'string' }),
+	timeSpent: int(),
+});
+
+export const assessmentQuestions = mysqlTable("assessmentQuestions", {
+	id: int().autoincrement().notNull(),
+	assessmentId: int().notNull().references(() => skillAssessments.id),
+	questionText: text().notNull(),
+	questionType: mysqlEnum(['multiple_choice','true_false','short_answer']).notNull(),
+	options: text(),
+	correctAnswer: text().notNull(),
+	points: int().default(1).notNull(),
+	orderIndex: int().notNull(),
+});
+
+export const associates = mysqlTable("associates", {
+	id: int().autoincrement().notNull(),
+	candidateId: int().notNull().references(() => candidates.id),
+	employeeId: varchar({ length: 100 }),
+	jobTitle: varchar({ length: 255 }).notNull(),
+	department: varchar({ length: 255 }),
+	startDate: timestamp({ mode: 'string' }).notNull(),
+	endDate: timestamp({ mode: 'string' }),
+	status: mysqlEnum(['active','onboarding','offboarding','terminated']).default('onboarding').notNull(),
+	managerId: int().references(() => recruiters.id),
+	onboardedBy: int().notNull().references(() => recruiters.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const campaignRecipients = mysqlTable("campaignRecipients", {
+	id: int().autoincrement().notNull(),
+	campaignId: int().notNull().references(() => emailCampaigns.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	email: varchar({ length: 255 }).notNull(),
+	personalizedSubject: varchar({ length: 500 }),
+	personalizedBody: text(),
+	status: varchar({ length: 50 }).default('pending').notNull(),
+	sentAt: timestamp({ mode: 'string' }),
+	openedAt: timestamp({ mode: 'string' }),
+	clickedAt: timestamp({ mode: 'string' }),
+	bouncedAt: timestamp({ mode: 'string' }),
+	repliedAt: timestamp({ mode: 'string' }),
+	trackingId: varchar({ length: 100 }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const candidateTagAssignments = mysqlTable("candidateTagAssignments", {
+	id: int().autoincrement().notNull(),
+	candidateId: int().notNull().references(() => candidates.id),
+	tagId: int().notNull().references(() => candidateTags.id),
+	assignedBy: int().notNull().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const candidateTags = mysqlTable("candidateTags", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 100 }).notNull(),
+	color: varchar({ length: 50 }).default('blue'),
+	userId: int().notNull().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const candidateProfileShares = mysqlTable("candidate_profile_shares", {
+	id: int().autoincrement().notNull(),
+	candidateId: int().notNull(),
+	sharedByUserId: int().notNull(),
+	shareToken: varchar({ length: 64 }).notNull(),
+	recipientEmail: varchar({ length: 320 }),
+	recipientName: varchar({ length: 255 }),
+	customerId: int(),
+	jobId: int(),
+	matchScore: int(),
+	includeResume: tinyint().default(1).notNull(),
+	includeVideo: tinyint().default(1).notNull(),
+	includeContact: tinyint().default(0).notNull(),
+	viewCount: int().default(0).notNull(),
+	lastViewedAt: timestamp({ mode: 'string' }),
+	expiresAt: timestamp({ mode: 'string' }),
+	isActive: tinyint().default(1).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("shareToken").on(table.shareToken),
+]);
+
+export const candidateSkillRatings = mysqlTable("candidate_skill_ratings", {
+	id: int().autoincrement().notNull(),
+	applicationId: int().notNull().references(() => applications.id),
+	skillRequirementId: int().notNull().references(() => jobSkillRequirements.id),
+	skillName: varchar({ length: 255 }).notNull(),
+	rating: int().notNull(),
+	yearsExperience: int().notNull(),
+	lastUsedYear: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const candidates = mysqlTable("candidates", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	title: varchar({ length: 255 }),
+	phoneNumber: varchar({ length: 50 }),
+	location: varchar({ length: 255 }),
+	bio: text(),
+	skills: text(),
+	experience: text(),
+	education: text(),
+	resumeUrl: varchar({ length: 500 }),
+	resumeFilename: varchar({ length: 255 }),
+	resumeUploadedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	parsedResumeData: text(),
+	linkedinUrl: varchar({ length: 500 }),
+	githubUrl: varchar({ length: 500 }),
+	certifications: text(),
+	languages: text(),
+	projects: text(),
+	totalExperienceYears: int(),
+	seniorityLevel: varchar({ length: 50 }),
+	primaryDomain: varchar({ length: 100 }),
+	skillCategories: text(),
+	availability: varchar({ length: 50 }),
+	visaStatus: varchar({ length: 100 }),
+	expectedSalaryMin: int(),
+	expectedSalaryMax: int(),
+	noticePeriod: varchar({ length: 50 }),
+	willingToRelocate: tinyint().default(0),
+	profileCompleted: tinyint().default(0).notNull(),
+	profileCompletionStep: int().default(0).notNull(),
+});
+
+export const codingChallenges = mysqlTable("codingChallenges", {
+	id: int().autoincrement().notNull(),
+	interviewId: int().references(() => interviews.id),
+	title: varchar({ length: 255 }).notNull(),
+	description: text().notNull(),
+	language: mysqlEnum(['python','javascript','java','cpp']).notNull(),
+	starterCode: text(),
+	testCases: text(),
+	difficulty: mysqlEnum(['easy','medium','hard']).notNull(),
+	timeLimit: int(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	createdBy: int(),
+});
+
+export const codingSubmissions = mysqlTable("codingSubmissions", {
+	id: int().autoincrement().notNull(),
+	challengeId: int().notNull().references(() => codingChallenges.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	code: text().notNull(),
+	language: varchar({ length: 50 }).notNull(),
+	status: mysqlEnum(['pending','running','passed','failed','error']).default('pending').notNull(),
+	testResults: text(),
+	executionTime: int(),
+	score: int(),
+	submittedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const companyProfiles = mysqlTable("company_profiles", {
+	id: int().autoincrement().notNull(),
+	companyName: varchar({ length: 255 }).notNull(),
+	industry: varchar({ length: 255 }),
+	description: text(),
+	culture: text(),
+	interviewProcess: text(),
+	commonQuestions: text(),
+	tips: text(),
+	website: varchar({ length: 500 }),
+	logoUrl: varchar({ length: 500 }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("companyName").on(table.companyName),
+]);
+
+export const conversations = mysqlTable("conversations", {
+	id: int().autoincrement().notNull(),
+	recruiterId: int().notNull(),
+	candidateId: int().notNull(),
+	applicationId: int(),
+	jobId: int(),
+	subject: varchar({ length: 255 }),
+	lastMessageAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	isArchived: tinyint().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const customerContacts = mysqlTable("customerContacts", {
+	id: int().autoincrement().notNull(),
+	customerId: int().notNull().references(() => customers.id),
+	name: varchar({ length: 255 }).notNull(),
+	title: varchar({ length: 255 }),
+	email: varchar({ length: 320 }),
+	phone: varchar({ length: 50 }),
+	isPrimary: tinyint().default(0),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const customers = mysqlTable("customers", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	industry: varchar({ length: 255 }),
+	website: varchar({ length: 500 }),
+	description: text(),
+	contactEmail: varchar({ length: 320 }),
+	contactPhone: varchar({ length: 50 }),
+	address: text(),
+	createdBy: int().notNull().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const emailCampaigns = mysqlTable("emailCampaigns", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	templateId: int().references(() => emailTemplates.id),
+	subject: varchar({ length: 500 }).notNull(),
+	body: text().notNull(),
+	userId: int().notNull().references(() => users.id),
+	status: varchar({ length: 50 }).default('draft').notNull(),
+	scheduledAt: timestamp({ mode: 'string' }),
+	sentAt: timestamp({ mode: 'string' }),
+	totalRecipients: int().default(0),
+	sentCount: int().default(0),
+	openedCount: int().default(0),
+	clickedCount: int().default(0),
+	bouncedCount: int().default(0),
+	repliedCount: int().default(0),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const emailDeliveryEvents = mysqlTable("emailDeliveryEvents", {
+	id: int().autoincrement().notNull(),
+	campaignRecipientId: int(),
+	eventType: varchar({ length: 50 }).notNull(),
+	provider: varchar({ length: 20 }).notNull(),
+	timestamp: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	messageId: varchar({ length: 255 }),
+	email: varchar({ length: 255 }).notNull(),
+	reason: text(),
+	metadata: json(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("idx_email").on(table.email),
+	index("idx_event_type").on(table.eventType),
+	index("idx_provider").on(table.provider),
+	index("idx_timestamp").on(table.timestamp),
+]);
+
+export const emailTemplates = mysqlTable("emailTemplates", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	subject: varchar({ length: 500 }).notNull(),
+	body: text().notNull(),
+	category: varchar({ length: 100 }),
+	userId: int().notNull().references(() => users.id),
+	isActive: tinyint().default(1).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const emailUnsubscribes = mysqlTable("emailUnsubscribes", {
+	id: int().autoincrement().notNull(),
+	email: varchar({ length: 255 }).notNull(),
+	trackingId: varchar({ length: 100 }),
+	reason: text(),
+	unsubscribedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("emailUnsubscribes_email_unique").on(table.email),
+]);
+
+export const emailWebhookLogs = mysqlTable("emailWebhookLogs", {
+	id: int().autoincrement().notNull(),
+	provider: varchar({ length: 20 }).notNull(),
+	eventType: varchar({ length: 50 }),
+	payload: json().notNull(),
+	signature: text(),
+	verified: tinyint().default(0),
+	processed: tinyint().default(0),
+	error: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("idx_provider").on(table.provider),
+	index("idx_created").on(table.createdAt),
+]);
+
+export const environmentVariables = mysqlTable("environment_variables", {
+	id: int().autoincrement().notNull(),
+	key: varchar({ length: 255 }).notNull(),
+	currentValue: text().notNull(),
+	previousValue: text(),
+	description: varchar({ length: 500 }),
+	category: varchar({ length: 100 }),
+	isEditable: tinyint().default(1).notNull(),
+	isSensitive: tinyint().default(0).notNull(),
+	updatedBy: int(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("environment_variables_key_unique").on(table.key),
+]);
+
+export const followUpSequences = mysqlTable("followUpSequences", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	userId: int().notNull().references(() => users.id),
+	isActive: tinyint().default(1).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const fraudDetectionEvents = mysqlTable("fraudDetectionEvents", {
+	id: int().autoincrement().notNull(),
+	interviewId: int().notNull().references(() => interviews.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	eventType: mysqlEnum(['no_face_detected','multiple_faces_detected','tab_switch','window_blur','audio_anomaly','suspicious_behavior']).notNull(),
+	severity: mysqlEnum(['low','medium','high']).default('medium').notNull(),
+	description: text(),
+	metadata: text(),
+	timestamp: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	questionId: int().references(() => interviewQuestions.id),
+});
+
+export const interviewQuestions = mysqlTable("interviewQuestions", {
+	id: int().autoincrement().notNull(),
+	interviewId: int().notNull().references(() => interviews.id),
+	questionText: text().notNull(),
+	questionType: mysqlEnum(['technical','behavioral','situational','experience']).notNull(),
+	orderIndex: int().notNull(),
+	expectedDuration: int().default(120),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const interviewResponses = mysqlTable("interviewResponses", {
+	id: int().autoincrement().notNull(),
+	interviewId: int().notNull().references(() => interviews.id),
+	questionId: int().notNull().references(() => interviewQuestions.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	audioUrl: text(),
+	videoUrl: text(),
+	transcription: text(),
+	duration: int(),
+	aiScore: int(),
+	aiEvaluation: text(),
+	strengths: text(),
+	weaknesses: text(),
+	recommendations: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const interviewFeedback = mysqlTable("interview_feedback", {
+	id: int().autoincrement().notNull(),
+	interviewId: int().notNull().references(() => interviews.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	overallRating: int().notNull(),
+	interviewerRating: int(),
+	processRating: int(),
+	communicationRating: int(),
+	positiveAspects: text(),
+	areasForImprovement: text(),
+	additionalComments: text(),
+	wouldRecommend: tinyint(),
+	isAnonymous: tinyint().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const interviewPanelists = mysqlTable("interview_panelists", {
+	id: int().autoincrement().notNull(),
+	interviewId: int().notNull(),
+	userId: int().notNull(),
+	email: varchar({ length: 255 }).notNull(),
+	name: varchar({ length: 255 }),
+	role: varchar({ length: 100 }),
+	status: mysqlEnum(['invited','accepted','declined','attended']).default('invited').notNull(),
+	invitedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	respondedAt: timestamp({ mode: 'string' }),
+	attendedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	reminder24HSent: tinyint().default(0).notNull(),
+	reminder1HSent: tinyint().default(0).notNull(),
+},
+(table) => [
+	index("interviewId").on(table.interviewId),
+	index("userId").on(table.userId),
+]);
+
+export const interviewPrepQuestions = mysqlTable("interview_prep_questions", {
+	id: int().autoincrement().notNull(),
+	role: varchar({ length: 255 }).notNull(),
+	category: varchar({ length: 255 }).notNull(),
+	question: text().notNull(),
+	sampleAnswer: text(),
+	difficulty: mysqlEnum(['easy','medium','hard']).default('medium'),
+	tags: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const interviews = mysqlTable("interviews", {
+	id: int().autoincrement().notNull(),
+	applicationId: int().notNull().references(() => applications.id),
+	recruiterId: int().notNull().references(() => recruiters.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	jobId: int().notNull().references(() => jobs.id),
+	scheduledAt: timestamp({ mode: 'string' }).notNull(),
+	duration: int().default(60).notNull(),
+	type: mysqlEnum(['phone','video','in-person','ai-interview']).default('video').notNull(),
+	status: mysqlEnum(['scheduled','in-progress','completed','cancelled','no-show']).default('scheduled').notNull(),
+	meetingLink: text(),
+	location: text(),
+	notes: text(),
+	recordingUrl: text(),
+	aiEvaluationScore: int(),
+	aiEvaluationReport: text(),
+	interviewerNotes: text(),
+	candidateFeedback: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	videoMeetingId: varchar({ length: 255 }),
+	videoJoinUrl: text(),
+	videoStartUrl: text(),
+	videoPassword: varchar({ length: 255 }),
+	videoProvider: mysqlEnum(['zoom','teams','none']).default('none'),
+	reminder24HSent: tinyint().default(0).notNull(),
+	reminder1HSent: tinyint().default(0).notNull(),
+	candidateReminder24HSent: tinyint().default(0),
+	candidateReminder1HSent: tinyint().default(0),
+});
+
+export const jobSkillRequirements = mysqlTable("job_skill_requirements", {
+	id: int().autoincrement().notNull(),
+	jobId: int().notNull().references(() => jobs.id),
+	skillName: varchar({ length: 255 }).notNull(),
+	isMandatory: tinyint().default(1).notNull(),
+	orderIndex: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const jobs = mysqlTable("jobs", {
+	id: int().autoincrement().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	companyName: varchar({ length: 255 }),
+	description: text().notNull(),
+	requirements: text(),
+	responsibilities: text(),
+	location: varchar({ length: 255 }),
+	employmentType: mysqlEnum(['full-time','part-time','contract','temporary','internship']).default('full-time'),
+	salaryMin: int(),
+	salaryMax: int(),
+	salaryCurrency: varchar({ length: 10 }).default('USD'),
+	customerId: int().references(() => customers.id),
+	contactId: int().references(() => customerContacts.id),
+	status: mysqlEnum(['draft','active','closed','filled']).default('draft'),
+	isPublic: tinyint().default(0),
+	postedBy: int().notNull().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	closedAt: timestamp({ mode: 'string' }),
+	applicationDeadline: timestamp({ mode: 'string' }),
+});
+
+export const messageAttachments = mysqlTable("messageAttachments", {
+	id: int().autoincrement().notNull(),
+	messageId: int().notNull(),
+	fileName: varchar({ length: 255 }).notNull(),
+	fileUrl: varchar({ length: 500 }).notNull(),
+	fileKey: varchar({ length: 500 }).notNull(),
+	fileSize: int().notNull(),
+	mimeType: varchar({ length: 100 }).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const messageTemplates = mysqlTable("messageTemplates", {
+	id: int().autoincrement().notNull(),
+	recruiterId: int().notNull(),
+	templateName: varchar({ length: 255 }).notNull(),
+	subject: varchar({ length: 255 }),
+	content: text().notNull(),
+	category: varchar({ length: 100 }),
+	isPublic: tinyint().default(0).notNull(),
+	usageCount: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const messages = mysqlTable("messages", {
+	id: int().autoincrement().notNull(),
+	conversationId: int().notNull(),
+	senderId: int().notNull(),
+	senderType: mysqlEnum(['recruiter','candidate']).notNull(),
+	content: text().notNull(),
+	isRead: tinyint().default(0).notNull(),
+	readAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const notificationPreferences = mysqlTable("notification_preferences", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	statusUpdatesEnabled: tinyint().default(1).notNull(),
+	statusUpdatesFrequency: mysqlEnum(['immediate','daily','weekly']).default('immediate').notNull(),
+	interviewRemindersEnabled: tinyint().default(1).notNull(),
+	interviewReminder24H: tinyint().default(1).notNull(),
+	interviewReminder1H: tinyint().default(1).notNull(),
+	jobRecommendationsEnabled: tinyint().default(1).notNull(),
+	jobRecommendationsFrequency: mysqlEnum(['immediate','daily','weekly']).default('weekly').notNull(),
+	marketingEmailsEnabled: tinyint().default(0).notNull(),
+	weeklyDigestEnabled: tinyint().default(1).notNull(),
+	messageNotificationsEnabled: tinyint().default(1).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("userId").on(table.userId),
+]);
+
+export const notifications = mysqlTable("notifications", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull(),
+	type: varchar({ length: 50 }).notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	message: text().notNull(),
+	link: varchar({ length: 500 }),
+	isRead: tinyint().default(0),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP'),
+	relatedEntityType: varchar({ length: 50 }),
+	relatedEntityId: int(),
+	actionUrl: varchar({ length: 500 }),
+},
+(table) => [
+	index("idx_userId").on(table.userId),
+	index("idx_isRead").on(table.isRead),
+	index("idx_createdAt").on(table.createdAt),
+]);
+
+export const onboardingProcesses = mysqlTable("onboardingProcesses", {
+	id: int().autoincrement().notNull(),
+	associateId: int().notNull().references(() => associates.id),
+	processType: mysqlEnum(['onboarding','offboarding']).notNull(),
+	status: mysqlEnum(['pending','in_progress','completed','cancelled']).default('pending').notNull(),
+	startedBy: int().notNull().references(() => recruiters.id),
+	completedAt: timestamp({ mode: 'string' }),
+	dueDate: timestamp({ mode: 'string' }),
+	notes: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const onboardingTasks = mysqlTable("onboardingTasks", {
+	id: int().autoincrement().notNull(),
+	processId: int().notNull().references(() => onboardingProcesses.id),
+	title: varchar({ length: 255 }).notNull(),
+	description: text(),
+	taskType: varchar({ length: 100 }),
+	status: mysqlEnum(['pending','in_progress','completed','blocked']).default('pending').notNull(),
+	priority: mysqlEnum(['low','medium','high','urgent']).default('medium').notNull(),
+	dueDate: timestamp({ mode: 'string' }),
+	completedAt: timestamp({ mode: 'string' }),
+	completedBy: int().references(() => recruiters.id),
+	orderIndex: int().default(0).notNull(),
+	dependsOnTaskId: int(),
+	notes: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const panelActionTokens = mysqlTable("panel_action_tokens", {
+	id: int().autoincrement().notNull(),
+	panelistId: int("panelist_id").notNull(),
+	interviewId: int("interview_id").notNull(),
+	token: varchar({ length: 255 }).notNull(),
+	actionType: mysqlEnum("action_type", ['accept','decline','reschedule','feedback']).notNull(),
+	usedAt: datetime("used_at", { mode: 'string'}),
+	expiresAt: datetime("expires_at", { mode: 'string'}).notNull(),
+	createdAt: datetime("created_at", { mode: 'string'}).default('CURRENT_TIMESTAMP'),
+},
+(table) => [
+	index("idx_token").on(table.token),
+	index("idx_panelist").on(table.panelistId),
+	index("idx_interview").on(table.interviewId),
+	index("token").on(table.token),
+]);
+
+export const panelistFeedback = mysqlTable("panelist_feedback", {
+	id: int().autoincrement().notNull(),
+	interviewId: int().notNull(),
+	panelistId: int().notNull(),
+	userId: int().notNull(),
+	overallRating: int().notNull(),
+	technicalSkills: int(),
+	communicationSkills: int(),
+	problemSolving: int(),
+	cultureFit: int(),
+	strengths: text(),
+	weaknesses: text(),
+	notes: text(),
+	recommendation: mysqlEnum(['strong_hire','hire','no_hire','strong_no_hire']),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("interviewId").on(table.interviewId),
+	index("panelistId").on(table.panelistId),
+	index("userId").on(table.userId),
+]);
+
+export const personalityQuestions = mysqlTable("personalityQuestions", {
+	id: int().autoincrement().notNull(),
+	testId: int().notNull(),
+	questionText: text().notNull(),
+	trait: varchar({ length: 100 }).notNull(),
+	isReversed: tinyint().default(0).notNull(),
+	order: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const personalityResults = mysqlTable("personalityResults", {
+	id: int().autoincrement().notNull(),
+	assignmentId: int().notNull(),
+	candidateId: int().notNull(),
+	testType: varchar({ length: 50 }).notNull(),
+	openness: int(),
+	conscientiousness: int(),
+	extraversion: int(),
+	agreeableness: int(),
+	neuroticism: int(),
+	dominance: int(),
+	influence: int(),
+	steadiness: int(),
+	compliance: int(),
+	primaryTrait: varchar({ length: 100 }),
+	traitProfile: text(),
+	interpretation: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const questionBank = mysqlTable("question_bank", {
+	id: int().autoincrement().notNull(),
+	recruiterId: int("recruiter_id").notNull().references(() => recruiters.id),
+	questionText: text("question_text").notNull(),
+	questionType: mysqlEnum("question_type", ['coding','multiple-choice','text','personality','technical']).notNull(),
+	difficulty: mysqlEnum(['easy','medium','hard','expert']).notNull(),
+	category: varchar({ length: 100 }),
+	tags: json(),
+	correctAnswer: text("correct_answer"),
+	codeTemplate: text("code_template"),
+	testCases: json("test_cases"),
+	timeLimit: int("time_limit").default(300),
+	memoryLimit: int("memory_limit").default(256),
+	points: int().default(10),
+	usageCount: int("usage_count").default(0),
+	isPublic: tinyint("is_public").default(0),
+	createdAt: timestamp("created_at", { mode: 'string' }).default('CURRENT_TIMESTAMP'),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow(),
+});
+
+export const recruiterNotificationPreferences = mysqlTable("recruiter_notification_preferences", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull(),
+	newApplications: tinyint().default(1).notNull(),
+	applicationStatusChanges: tinyint().default(1).notNull(),
+	applicationFrequency: mysqlEnum(['immediate','daily','weekly']).default('immediate').notNull(),
+	interviewScheduled: tinyint().default(1).notNull(),
+	interviewReminders: tinyint().default(1).notNull(),
+	interviewCompleted: tinyint().default(1).notNull(),
+	panelistResponses: tinyint().default(1).notNull(),
+	candidateFeedback: tinyint().default(1).notNull(),
+	panelistFeedbackSubmitted: tinyint().default(1).notNull(),
+	weeklyDigest: tinyint().default(1).notNull(),
+	systemUpdates: tinyint().default(0).notNull(),
+	marketingEmails: tinyint().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("userId").on(table.userId),
+]);
+
+export const recruiters = mysqlTable("recruiters", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	companyName: varchar({ length: 255 }),
+	phoneNumber: varchar({ length: 50 }),
+	bio: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	profileCompleted: tinyint().default(0).notNull(),
+	profileCompletionStep: int().default(0).notNull(),
+	emailDigestFrequency: mysqlEnum(['never','daily','weekly']).default('weekly'),
+	lastDigestSentAt: timestamp({ mode: 'string' }),
+});
+
+export const rescheduleRequests = mysqlTable("reschedule_requests", {
+	id: int().autoincrement().notNull(),
+	interviewId: int().notNull().references(() => interviews.id),
+	panelistId: int().notNull().references(() => interviewPanelists.id),
+	requestedBy: int(),
+	reason: text(),
+	preferredDates: text(),
+	status: mysqlEnum(['pending','approved','rejected','resolved','alternative_proposed']).default('pending').notNull(),
+	resolvedAt: timestamp({ mode: 'string' }),
+	resolvedBy: int(),
+	newInterviewTime: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const resumeProfiles = mysqlTable("resumeProfiles", {
+	id: int().autoincrement().notNull(),
+	candidateId: int().notNull().references(() => candidates.id),
+	profileName: varchar({ length: 255 }).notNull(),
+	resumeUrl: varchar({ length: 500 }).notNull(),
+	resumeFileKey: varchar({ length: 500 }).notNull(),
+	resumeFilename: varchar({ length: 255 }).notNull(),
+	parsedData: text(),
+	isDefault: tinyint().default(0).notNull(),
+	uploadedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	domainMatchScore: int().default(0),
+	skillMatchScore: int().default(0),
+	experienceScore: int().default(0),
+	overallScore: int().default(0),
+	primaryDomain: varchar({ length: 100 }),
+	totalExperienceYears: int().default(0),
+	topDomains: json(),
+	topSkills: json(),
+});
+
+export const savedJobs = mysqlTable("savedJobs", {
+	id: int().autoincrement().notNull(),
+	candidateId: int().notNull().references(() => candidates.id),
+	jobId: int().notNull().references(() => jobs.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("unique_saved_job").on(table.candidateId, table.jobId),
+]);
+
+export const savedSearches = mysqlTable("savedSearches", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	name: varchar({ length: 255 }).notNull(),
+	searchType: mysqlEnum(['candidate','job']).default('candidate').notNull(),
+	keyword: text(),
+	location: text(),
+	experienceLevel: varchar({ length: 50 }),
+	skills: text(),
+	emailAlerts: tinyint().default(0).notNull(),
+	alertFrequency: mysqlEnum(['immediate','daily','weekly']).default('daily'),
+	lastAlertSent: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const sequenceEnrollments = mysqlTable("sequenceEnrollments", {
+	id: int().autoincrement().notNull(),
+	sequenceId: int().notNull().references(() => followUpSequences.id),
+	candidateId: int().notNull().references(() => candidates.id),
+	currentStep: int().default(0),
+	status: varchar({ length: 50 }).default('active').notNull(),
+	enrolledAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	completedAt: timestamp({ mode: 'string' }),
+	nextStepAt: timestamp({ mode: 'string' }),
+});
+
+export const sequenceSteps = mysqlTable("sequenceSteps", {
+	id: int().autoincrement().notNull(),
+	sequenceId: int().notNull().references(() => followUpSequences.id),
+	stepNumber: int().notNull(),
+	delayDays: int().notNull(),
+	templateId: int().references(() => emailTemplates.id),
+	subject: varchar({ length: 500 }).notNull(),
+	body: text().notNull(),
+	condition: varchar({ length: 100 }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const skillAssessments = mysqlTable("skillAssessments", {
+	id: int().autoincrement().notNull(),
+	jobId: int().references(() => jobs.id),
+	title: varchar({ length: 255 }).notNull(),
+	description: text(),
+	duration: int(),
+	passingScore: int().default(70).notNull(),
+	createdBy: int().notNull().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const systemSettings = mysqlTable("systemSettings", {
+	id: int().autoincrement().notNull(),
+	settingKey: varchar({ length: 100 }).notNull(),
+	settingValue: text(),
+	description: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("systemSettings_settingKey_unique").on(table.settingKey),
+]);
+
+export const taskAssignments = mysqlTable("taskAssignments", {
+	id: int().autoincrement().notNull(),
+	taskId: int().notNull().references(() => onboardingTasks.id),
+	recruiterId: int().notNull().references(() => recruiters.id),
+	assignedBy: int().notNull().references(() => recruiters.id),
+	assignedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const taskReminders = mysqlTable("taskReminders", {
+	id: int().autoincrement().notNull(),
+	taskId: int().notNull().references(() => onboardingTasks.id),
+	recruiterId: int().notNull().references(() => recruiters.id),
+	reminderType: mysqlEnum(['due_soon','overdue','manual']).notNull(),
+	sentAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	emailStatus: varchar({ length: 50 }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const taskTemplates = mysqlTable("taskTemplates", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	processType: mysqlEnum(['onboarding','offboarding']).notNull(),
+	description: text(),
+	tasks: text().notNull(),
+	isDefault: tinyint().default(0).notNull(),
+	createdBy: int().notNull().references(() => recruiters.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const testAssignments = mysqlTable("testAssignments", {
+	id: int().autoincrement().notNull(),
+	testId: int().notNull(),
+	candidateId: int().notNull(),
+	applicationId: int(),
+	assignedBy: int().notNull(),
+	status: mysqlEnum(['assigned','in-progress','completed','expired','cancelled']).default('assigned').notNull(),
+	dueDate: timestamp({ mode: 'string' }),
+	startedAt: timestamp({ mode: 'string' }),
+	completedAt: timestamp({ mode: 'string' }),
+	score: int(),
+	passed: tinyint(),
+	timeSpent: int(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const testLibrary = mysqlTable("testLibrary", {
+	id: int().autoincrement().notNull(),
+	recruiterId: int().notNull(),
+	testName: varchar({ length: 255 }).notNull(),
+	testType: mysqlEnum(['coding','personality','domain-specific','aptitude','technical']).notNull(),
+	category: varchar({ length: 100 }),
+	description: text(),
+	duration: int().notNull(),
+	passingScore: int().notNull(),
+	difficulty: mysqlEnum(['easy','medium','hard','expert']).notNull(),
+	isPublic: tinyint().default(0).notNull(),
+	isActive: tinyint().default(1).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const testQuestions = mysqlTable("testQuestions", {
+	id: int().autoincrement().notNull(),
+	testId: int().notNull(),
+	questionText: text().notNull(),
+	questionType: mysqlEnum(['multiple-choice','coding','essay','true-false']).notNull(),
+	options: text(),
+	correctAnswer: text(),
+	points: int().default(10).notNull(),
+	starterCode: text(),
+	testCases: text(),
+	language: varchar({ length: 50 }),
+	timeLimit: int(),
+	order: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const testResponses = mysqlTable("testResponses", {
+	id: int().autoincrement().notNull(),
+	assignmentId: int().notNull(),
+	questionId: int().notNull(),
+	candidateAnswer: text().notNull(),
+	isCorrect: tinyint(),
+	pointsEarned: int().default(0).notNull(),
+	codeOutput: text(),
+	executionTime: int(),
+	testCasesPassed: int(),
+	testCasesTotal: int(),
+	submittedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export const typingIndicators = mysqlTable("typingIndicators", {
+	id: int().autoincrement().notNull(),
+	conversationId: int().notNull(),
+	userId: int().notNull(),
+	isTyping: tinyint().default(0).notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const users = mysqlTable("users", {
+	id: int().autoincrement().notNull(),
+	openId: varchar({ length: 64 }),
+	name: text(),
+	email: varchar({ length: 320 }),
+	loginMethod: varchar({ length: 64 }),
+	role: mysqlEnum(['user','admin','recruiter','candidate']).default('user').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	lastSignedIn: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	passwordHash: varchar({ length: 255 }),
+	emailVerified: tinyint().default(0).notNull(),
+	verificationToken: varchar({ length: 255 }),
+	verificationTokenExpiry: timestamp({ mode: 'string' }),
+	passwordResetToken: varchar({ length: 255 }),
+	passwordResetTokenExpiry: timestamp({ mode: 'string' }),
+},
+(table) => [
+	index("users_openId_unique").on(table.openId),
+]);
+
+export const videoIntroductions = mysqlTable("videoIntroductions", {
+	id: int().autoincrement().notNull(),
+	candidateId: int().notNull().references(() => candidates.id),
+	videoUrl: varchar({ length: 500 }).notNull(),
+	videoFileKey: varchar({ length: 500 }).notNull(),
+	thumbnailUrl: varchar({ length: 500 }),
+	duration: int().notNull(),
+	fileSize: int(),
+	mimeType: varchar({ length: 100 }),
+	transcription: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
