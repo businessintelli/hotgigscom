@@ -37,6 +37,8 @@ import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, gener
 import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
 import { sendEmail } from './emailService';
 import { invokeLLM } from './_core/llm';
+import { calculateJobMatch, screenAndRankCandidates } from './ai-matching';
+import { getHiringTrends, getTimeToHireMetrics as getPredictiveTimeToHire, getPipelineHealth, predictSuccessRate } from './predictive-analytics';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -1662,6 +1664,64 @@ Please be specific and practical.`;
         
         // Filter to only recruiter's jobs
         return placedApps.filter(app => jobIds.includes(app.jobId));
+      }),
+    
+    // AI-Powered Smart Matching
+    calculateSmartMatch: protectedProcedure
+      .input(z.object({
+        candidateId: z.number(),
+        jobId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const candidate = await db.getCandidateById(input.candidateId);
+        const job = await db.getJobById(input.jobId);
+        
+        if (!candidate || !job) {
+          throw new Error("Candidate or job not found");
+        }
+        
+        const matchScore = await calculateJobMatch(candidate, job);
+        
+        // Update application with AI score
+        const applications = await db.getApplicationsByJob(input.jobId);
+        const application = applications.find(app => app.candidateId === input.candidateId);
+        if (application) {
+          await db.updateApplication(application.id, { aiScore: matchScore.overallScore });
+        }
+        
+        return matchScore;
+      }),
+    
+    // Screen and Rank All Candidates for a Job
+    screenAndRank: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        const job = await db.getJobById(input.jobId);
+        if (!job) throw new Error("Job not found");
+        
+        const applications = await db.getApplicationsByJob(input.jobId);
+        
+        // Get full candidate details
+        const applicationsWithCandidates = await Promise.all(
+          applications.map(async (app: any) => {
+            const candidate = await db.getCandidateById(app.candidateId);
+            return { ...app, candidate };
+          })
+        );
+        
+        const rankings = await screenAndRankCandidates(
+          applicationsWithCandidates.filter(app => app.candidate),
+          job
+        );
+        
+        // Update applications with AI scores
+        for (const ranking of rankings) {
+          await db.updateApplication(ranking.applicationId, {
+            aiScore: ranking.matchScore.overallScore,
+          });
+        }
+        
+        return rankings;
       }),
   }),
   
@@ -4000,6 +4060,59 @@ Please be specific and practical.`;
         const startDate = input.startDate ? new Date(input.startDate) : undefined;
         const endDate = input.endDate ? new Date(input.endDate) : undefined;
         return await analyticsHelpers.getRecruiterPerformance(input.recruiterId, startDate, endDate);
+      }),
+    
+    // Predictive Analytics - Hiring Trends
+    getHiringTrends: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        
+        const endDate = input.endDate ? new Date(input.endDate) : new Date();
+        const startDate = input.startDate ? new Date(input.startDate) : new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000); // 90 days default
+        
+        return await getHiringTrends(recruiter.id, startDate, endDate);
+      }),
+    
+    // Predictive Analytics - Time to Hire
+    getPredictiveTimeToHire: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        
+        const endDate = input.endDate ? new Date(input.endDate) : new Date();
+        const startDate = input.startDate ? new Date(input.startDate) : new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+        
+        return await getPredictiveTimeToHire(recruiter.id, startDate, endDate);
+      }),
+    
+    // Predictive Analytics - Pipeline Health
+    getPipelineHealth: protectedProcedure
+      .query(async ({ ctx }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        
+        return await getPipelineHealth(recruiter.id);
+      }),
+    
+    // Predictive Analytics - Success Rate Prediction
+    getSuccessRatePrediction: protectedProcedure
+      .input(z.object({
+        historicalMonths: z.number().optional().default(6),
+      }))
+      .query(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+        
+        return await predictSuccessRate(recruiter.id, input.historicalMonths);
       }),
   }),
 
