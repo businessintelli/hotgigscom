@@ -93,7 +93,7 @@ export default function CandidateDashboard() {
 }
 
 // Sidebar navigation items for candidates with sections
-const sidebarItems = [
+const sidebarItems: SidebarItem[] = [
   // Core
   { icon: LayoutDashboard, label: "Dashboard", path: "/candidate-dashboard", badge: null },
   { icon: FileText, label: "My Resume", path: "/candidate/my-resumes", badge: null },
@@ -116,6 +116,10 @@ const sidebarItems = [
 ];
 
 type SortOption = 'date_desc' | 'date_asc' | 'match_desc' | 'match_asc' | 'salary_desc' | 'salary_asc';
+
+type SidebarItem = 
+  | { type: 'divider'; label: string }
+  | { icon: React.ComponentType<{ className?: string }>; label: string; path: string | null; badge: string | number | null; isCalendar?: boolean };
 
 // Helper function to get missing profile fields
 function getMissingFields(candidate: any): string[] {
@@ -408,6 +412,7 @@ function CandidateDashboardContent() {
                 }
                 
                 const isActive = item.path ? location === item.path : false;
+                const Icon = item.icon;
                 return (
                   <Tooltip key={item.label} delayDuration={0}>
                     <TooltipTrigger asChild>
@@ -425,7 +430,7 @@ function CandidateDashboardContent() {
                             : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                         } ${sidebarCollapsed ? 'justify-center' : ''}`}
                       >
-                        <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-emerald-600' : ''}`} />
+                        <Icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-emerald-600' : ''}`} />
                         {!sidebarCollapsed && (
                           <>
                             <span className="flex-1 text-left text-sm">{item.label}</span>
@@ -463,8 +468,19 @@ function CandidateDashboardContent() {
             </SheetHeader>
             <ScrollArea className="flex-1 py-4">
               <nav className="px-2 space-y-1">
-                {sidebarItems.map((item) => {
+                {sidebarItems.map((item, index) => {
+                  if (item.type === 'divider') {
+                    return (
+                      <div key={`divider-${index}`} className="pt-4 pb-2 px-3">
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          {item.label}
+                        </h3>
+                      </div>
+                    );
+                  }
+                  
                   const isActive = item.path ? location === item.path : false;
+                  const Icon = item.icon;
                   return (
                     <button
                       key={item.label}
@@ -482,7 +498,7 @@ function CandidateDashboardContent() {
                           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                     >
-                      <item.icon className={`h-5 w-5 ${isActive ? 'text-emerald-600' : ''}`} />
+                      <Icon className={`h-5 w-5 ${isActive ? 'text-emerald-600' : ''}`} />
                       <span className="flex-1 text-left text-sm">{item.label}</span>
                     </button>
                   );
