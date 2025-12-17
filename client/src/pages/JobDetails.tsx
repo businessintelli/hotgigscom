@@ -7,9 +7,14 @@ import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2 } from "luci
 import { useLocation, useRoute } from "wouter";
 
 export default function JobDetails() {
-  const [, params] = useRoute("/jobs/:id");
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  
+  // Try both route patterns
+  const [matchJobs, paramsJobs] = useRoute("/jobs/:id");
+  const [matchRecruiter, paramsRecruiter] = useRoute("/recruiter/jobs/:id");
+  
+  const params = matchJobs ? paramsJobs : paramsRecruiter;
   const jobId = parseInt(params?.id || "0");
 
   const { data: job, isLoading } = trpc.job.getById.useQuery(

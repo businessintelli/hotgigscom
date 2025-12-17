@@ -1,0 +1,53 @@
+{
+  "query": "SHOW CREATE TABLE interviews;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SHOW CREATE TABLE interviews;",
+  "rows": [
+    {
+      "Table": "interviews",
+      "Create Table": "CREATE TABLE `interviews` ("
+    }
+  ],
+  "messages": [
+    "  `id` int(11) NOT NULL AUTO_INCREMENT,",
+    "  `applicationId` int(11) NOT NULL,",
+    "  `recruiterId` int(11) NOT NULL,",
+    "  `candidateId` int(11) NOT NULL,",
+    "  `jobId` int(11) NOT NULL,",
+    "  `scheduledAt` timestamp NOT NULL,",
+    "  `duration` int(11) NOT NULL DEFAULT '60',",
+    "  `type` enum('phone','video','in-person','ai-interview') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'video',",
+    "  `status` enum('scheduled','in-progress','completed','cancelled','no-show') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'scheduled',",
+    "  `meetingLink` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `location` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `recordingUrl` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `aiEvaluationScore` int(11) DEFAULT NULL,",
+    "  `aiEvaluationReport` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `interviewerNotes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `candidateFeedback` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  `videoMeetingId` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `videoJoinUrl` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `videoStartUrl` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `videoPassword` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,",
+    "  `videoProvider` enum('zoom','teams','none') COLLATE utf8mb4_unicode_ci DEFAULT 'none',",
+    "  `reminder24hSent` tinyint(1) NOT NULL DEFAULT '0',",
+    "  `reminder1hSent` tinyint(1) NOT NULL DEFAULT '0',",
+    "  `candidateReminder24hSent` tinyint(1) DEFAULT '0',",
+    "  `candidateReminder1hSent` tinyint(1) DEFAULT '0',",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,",
+    "  KEY `interviews_applicationId_applications_id_fk` (`applicationId`),",
+    "  KEY `interviews_recruiterId_recruiters_id_fk` (`recruiterId`),",
+    "  KEY `interviews_candidateId_candidates_id_fk` (`candidateId`),",
+    "  KEY `interviews_jobId_jobs_id_fk` (`jobId`),",
+    "  CONSTRAINT `interviews_applicationId_applications_id_fk` FOREIGN KEY (`applicationId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`applications` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,",
+    "  CONSTRAINT `interviews_recruiterId_recruiters_id_fk` FOREIGN KEY (`recruiterId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`recruiters` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,",
+    "  CONSTRAINT `interviews_candidateId_candidates_id_fk` FOREIGN KEY (`candidateId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`candidates` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,",
+    "  CONSTRAINT `interviews_jobId_jobs_id_fk` FOREIGN KEY (`jobId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`jobs` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30001"
+  ],
+  "stdout": "Table\tCreate Table\ninterviews\tCREATE TABLE `interviews` (\n  `id` int(11) NOT NULL AUTO_INCREMENT,\n  `applicationId` int(11) NOT NULL,\n  `recruiterId` int(11) NOT NULL,\n  `candidateId` int(11) NOT NULL,\n  `jobId` int(11) NOT NULL,\n  `scheduledAt` timestamp NOT NULL,\n  `duration` int(11) NOT NULL DEFAULT '60',\n  `type` enum('phone','video','in-person','ai-interview') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'video',\n  `status` enum('scheduled','in-progress','completed','cancelled','no-show') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'scheduled',\n  `meetingLink` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `location` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `recordingUrl` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `aiEvaluationScore` int(11) DEFAULT NULL,\n  `aiEvaluationReport` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `interviewerNotes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `candidateFeedback` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  `videoMeetingId` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `videoJoinUrl` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `videoStartUrl` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `videoPassword` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `videoProvider` enum('zoom','teams','none') COLLATE utf8mb4_unicode_ci DEFAULT 'none',\n  `reminder24hSent` tinyint(1) NOT NULL DEFAULT '0',\n  `reminder1hSent` tinyint(1) NOT NULL DEFAULT '0',\n  `candidateReminder24hSent` tinyint(1) DEFAULT '0',\n  `candidateReminder1hSent` tinyint(1) DEFAULT '0',\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  KEY `interviews_applicationId_applications_id_fk` (`applicationId`),\n  KEY `interviews_recruiterId_recruiters_id_fk` (`recruiterId`),\n  KEY `interviews_candidateId_candidates_id_fk` (`candidateId`),\n  KEY `interviews_jobId_jobs_id_fk` (`jobId`),\n  CONSTRAINT `interviews_applicationId_applications_id_fk` FOREIGN KEY (`applicationId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`applications` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,\n  CONSTRAINT `interviews_recruiterId_recruiters_id_fk` FOREIGN KEY (`recruiterId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`recruiters` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,\n  CONSTRAINT `interviews_candidateId_candidates_id_fk` FOREIGN KEY (`candidateId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`candidates` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,\n  CONSTRAINT `interviews_jobId_jobs_id_fk` FOREIGN KEY (`jobId`) REFERENCES `myxzroeDB4HgZWmTgbS8PA`.`jobs` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30001\n",
+  "stderr": "",
+  "execution_time_ms": 1525
+}

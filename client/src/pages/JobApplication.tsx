@@ -270,7 +270,21 @@ export default function JobApplication() {
               <Button onClick={() => setLocation("/jobs")} variant="outline" className="flex-1">
                 Browse More Jobs
               </Button>
-              <Button onClick={() => setLocation("/candidate-dashboard")} className="flex-1">
+              <Button 
+                onClick={() => {
+                  // Redirect based on user role
+                  const role = user?.role;
+                  if (role === 'recruiter') {
+                    setLocation("/recruiter/dashboard");
+                  } else if (role === 'candidate') {
+                    setLocation("/candidate-dashboard");
+                  } else {
+                    // Fallback to home if role is unknown
+                    setLocation("/");
+                  }
+                }} 
+                className="flex-1"
+              >
                 Go to Dashboard
               </Button>
             </div>

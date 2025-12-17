@@ -260,6 +260,20 @@
       "when": 1765813245466,
       "tag": "0036_third_leo",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1765955592475,
+      "tag": "0037_medical_supernaut",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1765962877663,
+      "tag": "0038_lonely_black_queen",
+      "breakpoints": true
     }
   ]
 }

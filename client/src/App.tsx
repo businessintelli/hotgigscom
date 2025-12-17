@@ -170,6 +170,7 @@ function Router() {
       <Route path="/jobs" component={JobBrowser} />
       <Route path={"/jobs/search"} component={AdvancedJobSearch} />
       <Route path={"/jobs/:id"} component={JobDetails} />
+      <Route path={"/recruiter/jobs/:id"} component={JobDetails} />
       <Route path={"/apply/:id"} component={JobApplication} />
       <Route path="/ai-interview" component={AIInterviewPage} />
       <Route path="/recommendations" component={Recommendations} />

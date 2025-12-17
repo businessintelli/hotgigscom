@@ -637,6 +637,7 @@ export async function getAllApplications() {
     .select()
     .from(applications)
     .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
     .leftJoin(jobs, eq(applications.jobId, jobs.id))
     .leftJoin(videoIntroductions, eq(applications.videoIntroductionId, videoIntroductions.id))
     .leftJoin(resumeProfiles, eq(applications.resumeProfileId, resumeProfiles.id))
@@ -644,7 +645,11 @@ export async function getAllApplications() {
   
   return results.map((row: any) => ({
     ...row.applications,
-    candidate: row.candidates,
+    candidate: row.candidates ? {
+      ...row.candidates,
+      fullName: row.users?.name || 'Anonymous Candidate',
+      email: row.users?.email,
+    } : null,
     job: row.jobs,
     videoIntroduction: row.videoIntroductions,
     resumeProfile: row.resumeProfiles,
