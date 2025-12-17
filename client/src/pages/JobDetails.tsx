@@ -1,9 +1,10 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2 } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2, Users, FileCheck, Video, Gift, CheckCircle, XCircle, UserX } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 
 export default function JobDetails() {
@@ -16,10 +17,16 @@ export default function JobDetails() {
   
   const params = matchJobs ? paramsJobs : paramsRecruiter;
   const jobId = parseInt(params?.id || "0");
+  const isRecruiterView = matchRecruiter;
 
   const { data: job, isLoading } = trpc.job.getById.useQuery(
     { id: jobId },
     { enabled: !!jobId }
+  );
+
+  const { data: stats } = trpc.recruiter.getJobApplicationStats.useQuery(
+    { jobId },
+    { enabled: !!jobId && isRecruiterView }
   );
 
   if (isLoading) {
@@ -48,12 +55,26 @@ export default function JobDetails() {
     );
   }
 
-  return (
+  const handleStatClick = (status: string) => {
+    setLocation(`/recruiter/applications?jobId=${jobId}&status=${status}`);
+  };
+
+  const statItems = stats ? [
+    { label: "Applied", value: stats.submitted, icon: Users, color: "text-blue-600", bgColor: "bg-blue-50", status: "submitted" },
+    { label: "Screening", value: stats.reviewing, icon: FileCheck, color: "text-yellow-600", bgColor: "bg-yellow-50", status: "reviewing" },
+    { label: "Interview", value: stats.interviewing, icon: Video, color: "text-purple-600", bgColor: "bg-purple-50", status: "interviewing" },
+    { label: "Shortlisted", value: stats.shortlisted, icon: CheckCircle, color: "text-green-600", bgColor: "bg-green-50", status: "shortlisted" },
+    { label: "Offered", value: stats.offered, icon: Gift, color: "text-indigo-600", bgColor: "bg-indigo-50", status: "offered" },
+    { label: "Rejected", value: stats.rejected, icon: XCircle, color: "text-red-600", bgColor: "bg-red-50", status: "rejected" },
+    { label: "Withdrawn", value: stats.withdrawn, icon: UserX, color: "text-gray-600", bgColor: "bg-gray-50", status: "withdrawn" },
+  ] : [];
+
+  const content = (
     <div className="min-h-screen bg-gray-50">
-      <div className="container max-w-4xl py-8">
+      <div className="container max-w-5xl py-8">
         <Button
           variant="ghost"
-          onClick={() => setLocation("/jobs")}
+          onClick={() => setLocation(isRecruiterView ? "/recruiter/jobs" : "/jobs")}
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -104,6 +125,29 @@ export default function JobDetails() {
               </div>
             </div>
 
+            {/* Application Stats Bar (only for recruiters) */}
+            {isRecruiterView && stats && (
+              <div className="border-t border-b border-gray-200 py-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Application Pipeline</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                  {statItems.map((stat) => {
+                    const Icon = stat.icon;
+                    return (
+                      <button
+                        key={stat.status}
+                        onClick={() => handleStatClick(stat.status)}
+                        className={`${stat.bgColor} rounded-lg p-3 text-center transition-all hover:shadow-md hover:scale-105 cursor-pointer`}
+                      >
+                        <Icon className={`w-5 h-5 ${stat.color} mx-auto mb-1`} />
+                        <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                        <p className="text-xs text-gray-600">{stat.label}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Description */}
             <div>
               <h3 className="text-lg font-semibold mb-2">Job Description</h3>
@@ -125,8 +169,6 @@ export default function JobDetails() {
                 <p className="text-gray-700 whitespace-pre-wrap">{job.responsibilities}</p>
               </div>
             )}
-
-
 
             {/* Apply Button */}
             <div className="pt-4 border-t">
@@ -163,4 +205,11 @@ export default function JobDetails() {
       </div>
     </div>
   );
+
+  // Wrap with RecruiterLayout only for recruiter view
+  if (isRecruiterView) {
+    return <RecruiterLayout title={job.title}>{content}</RecruiterLayout>;
+  }
+
+  return content;
 }

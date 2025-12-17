@@ -27,6 +27,8 @@ export default function ApplicationManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [jobSearchQuery, setJobSearchQuery] = useState("");
+  const [showJobDropdown, setShowJobDropdown] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [interviewType, setInterviewType] = useState<"ai-interview" | "phone" | "video" | "in-person">("ai-interview");
@@ -103,6 +105,39 @@ export default function ApplicationManagement() {
       toast.error(`Failed to schedule interview: ${error.message}`);
     },
   });
+
+  // Handle URL parameters for job and status filtering
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const jobId = params.get('jobId');
+    const status = params.get('status');
+    
+    if (jobId) {
+      const id = parseInt(jobId);
+      setSelectedJobId(id);
+      // Set job search query to the job title
+      const job = jobs.find((j: any) => j.id === id);
+      if (job) {
+        setJobSearchQuery(job.title);
+      }
+    }
+    if (status) {
+      setStatusFilter(status);
+    }
+  }, [jobs]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.job-search-container')) {
+        setShowJobDropdown(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Redirect to home if not authenticated - MUST be before any early returns
   useEffect(() => {
@@ -377,21 +412,80 @@ export default function ApplicationManagement() {
                   />
                 </div>
               </div>
-              <div>
+              <div className="job-search-container">
                 <label className="text-sm font-medium mb-2 block">Filter by Job</label>
-                <Select value={selectedJobId?.toString() || "all"} onValueChange={(value) => setSelectedJobId(value === "all" ? null : parseInt(value))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Jobs" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Jobs</SelectItem>
-                    {jobs.map((job: any) => (
-                      <SelectItem key={job.id} value={job.id.toString()}>
-                        {job.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search jobs by title..."
+                    value={jobSearchQuery}
+                    onChange={(e) => {
+                      setJobSearchQuery(e.target.value);
+                      setShowJobDropdown(true);
+                    }}
+                    onFocus={() => setShowJobDropdown(true)}
+                    className="pl-10"
+                  />
+                  {selectedJobId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 px-2"
+                      onClick={() => {
+                        setSelectedJobId(null);
+                        setJobSearchQuery("");
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  )}
+                  {showJobDropdown && (
+                    <Card className="absolute z-50 w-full mt-1 max-h-64 overflow-y-auto shadow-lg">
+                      <CardContent className="p-0">
+                        <div
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b"
+                          onClick={() => {
+                            setSelectedJobId(null);
+                            setJobSearchQuery("");
+                            setShowJobDropdown(false);
+                          }}
+                        >
+                          <p className="font-medium">All Jobs</p>
+                        </div>
+                        {jobs
+                          .filter((job: any) =>
+                            job.title.toLowerCase().includes(jobSearchQuery.toLowerCase())
+                          )
+                          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                          .map((job: any) => (
+                            <div
+                              key={job.id}
+                              className={`px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 ${
+                                selectedJobId === job.id ? 'bg-blue-50' : ''
+                              }`}
+                              onClick={() => {
+                                setSelectedJobId(job.id);
+                                setJobSearchQuery(job.title);
+                                setShowJobDropdown(false);
+                              }}
+                            >
+                              <p className="font-medium text-sm">{job.title}</p>
+                              <p className="text-xs text-gray-500">
+                                Posted {new Date(job.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          ))}
+                        {jobs.filter((job: any) =>
+                          job.title.toLowerCase().includes(jobSearchQuery.toLowerCase())
+                        ).length === 0 && jobSearchQuery && (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            No jobs found
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Filter by Status</label>

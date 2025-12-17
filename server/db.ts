@@ -1799,3 +1799,41 @@ export async function updateReportExecution(executionId: number, data: Partial<I
     .set(data)
     .where(eq(reportExecutions.id, executionId));
 }
+
+// ============================================================================
+// Job Application Stats Helpers
+// ============================================================================
+
+/**
+ * Get application statistics by status for a specific job
+ */
+export async function getJobApplicationStats(jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const apps = await db.select({
+    status: applications.status,
+  })
+    .from(applications)
+    .where(eq(applications.jobId, jobId));
+  
+  // Count applications by status
+  const stats = {
+    submitted: 0,
+    reviewing: 0,
+    shortlisted: 0,
+    interviewing: 0,
+    offered: 0,
+    rejected: 0,
+    withdrawn: 0,
+    total: apps.length,
+  };
+  
+  apps.forEach((app) => {
+    if (app.status && stats.hasOwnProperty(app.status)) {
+      stats[app.status as keyof typeof stats]++;
+    }
+  });
+  
+  return stats;
+}

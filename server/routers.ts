@@ -675,6 +675,12 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       return await db.getJobsByRecruiter(ctx.user.id);
     }),
     
+    getJobApplicationStats: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getJobApplicationStats(input.jobId);
+      }),
+    
     getSubmissions: protectedProcedure.query(async ({ ctx }) => {
       // For now, return empty array since submissions tracking is not yet implemented in DB
       // This will be populated when submission tracking feature is added

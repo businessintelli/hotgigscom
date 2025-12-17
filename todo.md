@@ -3344,3 +3344,17 @@
 - [x] Add vertical scrolling to recruiter AI assistant chat window
 - [x] Add vertical scrolling to candidate AI career coach chat window
 - [x] Fix getCompanyStats database query errors (recruiterId vs postedBy)
+
+
+## Completed - Job Details & Application Management Enhancements
+- [x] Add RecruiterLayout with collapsible sidebar to job details page
+- [x] Add stats bar under job title showing applicant counts by stage (Applied, Screening, Interview, Offer, Hired, Rejected)
+- [x] Make stats clickable to navigate to Application Management filtered by job and stage
+- [x] Replace job dropdown filter with searchable autocomplete in Application Management
+- [x] Show job title in autocomplete results
+- [x] Sort autocomplete results by job created date (latest first)
+- [x] Implement instant search matching as user types
+- [x] Add backend procedure getJobApplicationStats to get application counts by status
+- [x] Handle URL parameters (jobId and status) to pre-filter applications
+- [x] Add clear button to reset job filter
+- [x] Close dropdown when clicking outside or selecting a job
