@@ -330,6 +330,13 @@
       "when": 1765979657998,
       "tag": "0046_curved_red_ghost",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1765981952501,
+      "tag": "0047_common_stature",
+      "breakpoints": true
     }
   ]
 }

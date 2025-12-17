@@ -2734,7 +2734,7 @@
 - [x] Tested Scheduling tab - Calendly and Cal.com options displayed
 - [x] Verified integration status displays correctly in AutomationAnalytics
 - [x] Verified navigation link in RecruiterLayout sidebar
-- [ ] Save final checkpoint
+- [x] Save final checkpoint
 
 
 ## Phase 9B: Hybrid Integration Approach (Admin + Individual)
@@ -2788,4 +2788,81 @@
 - [x] Template creation tested successfully in browser
 - [x] Admin settings page fully functional
 - [x] Credit tracking system operational
+- [x] Save final checkpoint
+
+
+## Phase 10: Multi-Tenant SaaS Architecture
+
+### Role Hierarchy Definition
+- [ ] Admin (application-level) - info@hotgigs.com - Platform owner, manages entire system
+- [ ] Company Admin - pratap@businessintelli.com - Controls company settings, manages recruiters
+- [ ] Recruiter - bhimireddy@gmail.com - Works under company admin with granted permissions
+- [ ] Candidate - pathmaker@gmail.com - Job applicant or onboarded employee
+
+### Database Schema Changes
+- [x] Create companies table (id, name, domain, settings, createdAt)
+- [x] Add companyId to users table
+- [x] Update user role enum: 'admin' | 'company_admin' | 'recruiter' | 'candidate'
+- [ ] Add companyId to jobs, candidates, linkedin_profiles, inmail_templates tables
+- [ ] Create company_permissions table (companyId, recruiterId, permissions JSON)
+- [ ] Add domain-based company detection logic
+- [ ] Push database schema changes
+
+### User Account Setup
+- [x] Create application admin account (info@hotgigs.com, password: india143, role: admin)
+- [x] Update pratap@businessintelli.com role from 'admin' to 'company_admin'
+- [x] Create/update company record for businessintelli.com domain
+- [x] Link existing users to their companies based on email domain
+- [x] Update bhimireddy@gmail.com role to 'recruiter' with companyId
+- [x] Update pathmaker@gmail.com role to 'candidate'
+
+### Company Detection System
+- [x] Extract domain from email address
+- [x] Auto-assign users to companies based on email domain
+- [x] Handle new user registration with company detection
+- [x] Add manual company assignment for non-domain emails
+
+### Company Admin Dashboard
+- [x] Create CompanyAdminLayout.tsx component
+- [x] Create /company-admin/dashboard route
+- [x] Create /company-admin/users page (manage recruiters)
+- [x] Add user invitation system (invite recruiters by email)
+- [x] Create /company-admin/linkedin-settings page (reuse from admin)
+- [x] Create /company-admin/inmail-templates page (reuse from admin)
+- [ ] Create /company-admin/settings page (company-level settings)
+- [ ] Create /company-admin/permissions page (set recruiter permissions)
+- [ ] Add recruiter permission management UI
+
+### Application Admin Dashboard
+- [ ] Keep existing /admin/dashboard for application admin
+- [ ] Add company management page (/admin/companies)
+- [ ] Add system-wide analytics
+- [ ] Add platform settings management
+- [ ] Restrict admin routes to role === 'admin' only
+
+### Access Control Updates
+- [x] Create companyAdmin router in routers.ts
+- [x] Company admin procedures check role === 'company_admin'
+- [x] Admin procedures check role === 'admin' (application admin only)
+- [ ] Add company isolation middleware (users only see their company data)
+- [ ] Update all queries to filter by companyId
+- [ ] Add permission checking for recruiter actions
+- [ ] Prevent cross-company data access
+
+### Data Migration
+- [ ] Identify existing companies from user email domains
+- [ ] Create company records for each unique domain
+- [ ] Assign companyId to all existing users
+- [ ] Assign companyId to all existing jobs, candidates, profiles
+- [ ] Set default permissions for existing recruiters
+
+### Testing
+- [ ] Test application admin can access /admin routes
+- [ ] Test company admin can access /company-admin routes
+- [ ] Test company admin can manage recruiters
+- [ ] Test recruiters only see their company's data
+- [ ] Test candidates only see their applications
+- [ ] Test cross-company data isolation
+- [ ] Test domain-based company detection
+- [ ] Test permission system works correctly
 - [ ] Save final checkpoint

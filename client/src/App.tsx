@@ -57,6 +57,8 @@ import CandidateResumeView from "./pages/CandidateResumeView";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import { CompanyAdminDashboard } from "./pages/CompanyAdminDashboard";
+import { CompanyAdminUsers } from "./pages/CompanyAdminUsers";
 import CandidateCareerCoach from "./pages/CandidateCareerCoach";
 import CandidateCalendar from "./pages/CandidateCalendar";
 import RecruiterAIAssistant from "./pages/RecruiterAIAssistant";
@@ -163,6 +165,14 @@ function Router() {
       
       {/* Panelist Dashboard (for registered panelists) */}
       <Route path="/panelist/dashboard" component={PanelistDashboard} />
+      
+      {/* Company Admin Routes */}
+      <Route path="/company-admin/dashboard" component={CompanyAdminDashboard} />
+      <Route path="/company-admin/users" component={CompanyAdminUsers} />
+      <Route path="/company-admin/linkedin-settings" component={AdminLinkedInSettings} />
+      <Route path="/company-admin/inmail-templates" component={AdminInMailTemplates} />
+      
+      {/* Application Admin Routes */}
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={UserManagement} />
       <Route path="/admin/health" component={SystemHealth} />

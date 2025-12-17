@@ -1,6 +1,7 @@
 import { eq, and, desc, sql, or, like, gte, lte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
+  companies, InsertCompany,
   InsertUser, users, 
   recruiters, InsertRecruiter,
   candidates, InsertCandidate,
@@ -2257,4 +2258,143 @@ export async function incrementTemplateUsage(id: number) {
       updatedAt: new Date()
     })
     .where(eq(inmailTemplates.id, id));
+}
+
+// ============================================================================
+// Company Management Functions
+// ============================================================================
+
+/**
+ * Extract domain from email address
+ */
+export function extractDomainFromEmail(email: string): string {
+  const parts = email.split('@');
+  return parts.length === 2 ? parts[1].toLowerCase() : '';
+}
+
+/**
+ * Get company by domain
+ */
+export async function getCompanyByDomain(domain: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [company] = await db.select()
+    .from(companies)
+    .where(eq(companies.domain, domain.toLowerCase()));
+  
+  return company || null;
+}
+
+/**
+ * Get company by ID
+ */
+export async function getCompanyById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [company] = await db.select()
+    .from(companies)
+    .where(eq(companies.id, id));
+  
+  return company || null;
+}
+
+/**
+ * Create a new company
+ */
+export async function createCompany(data: { name: string; domain: string; settings?: any }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [company] = await db.insert(companies)
+    .values({
+      name: data.name,
+      domain: data.domain.toLowerCase(),
+      settings: data.settings || null
+    })
+    .returning();
+  
+  return company;
+}
+
+/**
+ * Auto-detect and assign company to user based on email domain
+ */
+export async function autoAssignCompanyToUser(userId: number, email: string) {
+  const domain = extractDomainFromEmail(email);
+  if (!domain) return null;
+  
+  // Skip generic email domains
+  const genericDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+  if (genericDomains.includes(domain)) return null;
+  
+  // Find or create company
+  let company = await getCompanyByDomain(domain);
+  if (!company) {
+    // Create company with domain as name (can be updated later)
+    const companyName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
+    company = await createCompany({
+      name: companyName,
+      domain: domain
+    });
+  }
+  
+  // Assign company to user
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(users)
+    .set({ companyId: company.id })
+    .where(eq(users.id, userId));
+  
+  return company;
+}
+
+/**
+ * Get all users in a company
+ */
+export async function getCompanyUsers(companyId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+    emailVerified: users.emailVerified,
+    createdAt: users.createdAt,
+    lastSignedIn: users.lastSignedIn
+  })
+    .from(users)
+    .where(eq(users.companyId, companyId))
+    .orderBy(users.createdAt);
+}
+
+/**
+ * Get all companies (admin only)
+ */
+export async function getAllCompanies() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select()
+    .from(companies)
+    .orderBy(companies.createdAt);
+}
+
+/**
+ * Update company settings
+ */
+export async function updateCompanySettings(companyId: number, settings: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(companies)
+    .set({ 
+      settings: settings,
+      updatedAt: new Date()
+    })
+    .where(eq(companies.id, companyId));
 }

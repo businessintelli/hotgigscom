@@ -4738,6 +4738,243 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       }),
   }),
 
+  // Company Admin router for company-level administration
+  companyAdmin: router({    // Get company dashboard stats
+    getDashboardStats: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'company_admin') {
+        throw new Error('Unauthorized: Company admin access required');
+      }
+      
+      if (!ctx.user.companyId) {
+        throw new Error('User not associated with a company');
+      }
+      
+      const database = await db.getDb();
+      if (!database) throw new Error("Database not available");
+      
+      const { count, sql } = await import("drizzle-orm");
+      const { users, jobs, candidates } = await import("../drizzle/schema");
+      
+      // Get company-specific counts
+      const [totalRecruitersResult] = await database.select({ count: count() })
+        .from(users)
+        .where(sql`${users.companyId} = ${ctx.user.companyId} AND ${users.role} = 'recruiter'`);
+      
+      const [activeJobsResult] = await database.select({ count: count() })
+        .from(jobs)
+        .where(sql`${jobs.companyId} = ${ctx.user.companyId} AND ${jobs.status} = 'open'`);
+      
+      const [totalCandidatesResult] = await database.select({ count: count() })
+        .from(candidates)
+        .where(sql`${candidates.companyId} = ${ctx.user.companyId}`);
+      
+      // Get LinkedIn credit usage
+      const creditUsage = await db.getLinkedInCreditUsage();
+      const companyCredits = creditUsage.filter((c: any) => c.companyId === ctx.user.companyId);
+      const creditsUsed = companyCredits.reduce((sum: number, c: any) => sum + c.creditsUsed, 0);
+      
+      return {
+        totalRecruiters: totalRecruitersResult.count,
+        activeJobs: activeJobsResult.count,
+        totalCandidates: totalCandidatesResult.count,
+        creditsUsed,
+        remainingCredits: 100 - creditsUsed, // Mock value
+        recentActivity: []
+      };
+    }),
+    
+    // Get all users in company
+    getCompanyUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'company_admin') {
+        throw new Error('Unauthorized: Company admin access required');
+      }
+      
+      if (!ctx.user.companyId) {
+        throw new Error('User not associated with a company');
+      }
+      
+      return await db.getCompanyUsers(ctx.user.companyId);
+    }),
+    
+    // Invite new recruiter
+    inviteRecruiter: protectedProcedure
+      .input(z.object({ email: z.string().email(), name: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        if (!ctx.user.companyId) {
+          throw new Error('User not associated with a company');
+        }
+        
+        // Check if user already exists
+        const existingUser = await db.getUserByEmail(input.email);
+        if (existingUser) {
+          throw new Error('User with this email already exists');
+        }
+        
+        // Create user account with recruiter role
+        const verificationToken = generateVerificationToken();
+        const tokenExpiry = generateTokenExpiry();
+        
+        const user = await db.createUser({
+          email: input.email,
+          name: input.name,
+          role: 'recruiter',
+          companyId: ctx.user.companyId,
+          emailVerified: false,
+          verificationToken,
+          verificationTokenExpiry: tokenExpiry,
+          loginMethod: 'password'
+        });
+        
+        // Send invitation email
+        await sendVerificationEmail(input.email, verificationToken);
+        
+        return { success: true, userId: user.id };
+      }),
+    
+    // Get LinkedIn settings (company-level)
+    getLinkedInSettings: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'company_admin') {
+        throw new Error('Unauthorized: Company admin access required');
+      }
+      
+      const apiKey = await db.getSystemSetting('linkedin_api_key');
+      const clientId = await db.getSystemSetting('linkedin_client_id');
+      const clientSecret = await db.getSystemSetting('linkedin_client_secret');
+      
+      return {
+        apiKey: apiKey || '',
+        clientId: clientId || '',
+        clientSecret: clientSecret || ''
+      };
+    }),
+    
+    // Save LinkedIn settings
+    saveLinkedInSettings: protectedProcedure
+      .input(z.object({
+        apiKey: z.string(),
+        clientId: z.string(),
+        clientSecret: z.string()
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        await db.setSystemSetting('linkedin_api_key', input.apiKey);
+        await db.setSystemSetting('linkedin_client_id', input.clientId);
+        await db.setSystemSetting('linkedin_client_secret', input.clientSecret);
+        
+        return { success: true };
+      }),
+    
+    // Get LinkedIn credit usage
+    getLinkedInCreditUsage: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'company_admin') {
+        throw new Error('Unauthorized: Company admin access required');
+      }
+      
+      return await db.getLinkedInCreditUsage();
+    }),
+    
+    // Get recruiter credit limits
+    getRecruiterCreditLimits: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'company_admin') {
+        throw new Error('Unauthorized: Company admin access required');
+      }
+      
+      return await db.getRecruiterCreditLimits();
+    }),
+    
+    // Update recruiter credit limit
+    updateRecruiterCreditLimit: protectedProcedure
+      .input(z.object({ recruiterId: z.number(), monthlyLimit: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        await db.setRecruiterCreditLimit(input.recruiterId, input.monthlyLimit);
+        return { success: true };
+      }),
+    
+    // Get InMail templates
+    getInMailTemplates: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'company_admin') {
+        throw new Error('Unauthorized: Company admin access required');
+      }
+      
+      return await db.getAllInMailTemplates();
+    }),
+    
+    // Create InMail template
+    createInMailTemplate: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        category: z.string(),
+        subject: z.string(),
+        body: z.string()
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        const template = await db.createInMailTemplate({
+          ...input,
+          createdBy: ctx.user.id
+        });
+        
+        return template;
+      }),
+    
+    // Update InMail template
+    updateInMailTemplate: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        category: z.string().optional(),
+        subject: z.string().optional(),
+        body: z.string().optional()
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        const { id, ...data } = input;
+        await db.updateInMailTemplate(id, data);
+        return { success: true };
+      }),
+    
+    // Delete InMail template
+    deleteInMailTemplate: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        await db.deleteInMailTemplate(input.id);
+        return { success: true };
+      }),
+    
+    // Toggle InMail template status
+    toggleInMailTemplateStatus: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Unauthorized: Company admin access required');
+        }
+        
+        await db.toggleInMailTemplateStatus(input.id);
+        return { success: true };
+      }),
+  }),
+
   // Resume Ranking Router
   ranking: router({
     // Rank candidates for a specific job

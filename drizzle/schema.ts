@@ -1,6 +1,21 @@
 import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index, date, decimal } from "drizzle-orm/mysql-core";
 
 /**
+ * Companies table for multi-tenant architecture
+ */
+export const companies = mysqlTable("companies", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  domain: varchar("domain", { length: 255 }).notNull().unique(),
+  settings: json("settings"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = typeof companies.$inferInsert;
+
+/**
  * Core user table backing auth flow.
  */
 export const users = mysqlTable("users", {
@@ -10,7 +25,8 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }).unique(), // Made unique for custom auth
   passwordHash: varchar("passwordHash", { length: 255 }), // For custom auth
   loginMethod: varchar("loginMethod", { length: 64 }), // 'oauth' or 'password'
-  role: mysqlEnum("role", ["user", "admin", "recruiter", "candidate", "panelist"]).default("user").notNull(),
+  role: mysqlEnum("role", ["admin", "company_admin", "recruiter", "candidate"]).default("candidate").notNull(),
+  companyId: int("companyId").references(() => companies.id, { onDelete: "set null" }),
   // Email verification
   emailVerified: boolean("emailVerified").default(false).notNull(),
   verificationToken: varchar("verificationToken", { length: 255 }),
