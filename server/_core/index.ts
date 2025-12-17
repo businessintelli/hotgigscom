@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleSendGridWebhook, handleResendWebhook } from "../emailWebhooks";
+import webhookRoutes from "../webhooks/routes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -40,6 +41,9 @@ async function startServer() {
   // Email webhook endpoints (public, no auth required)
   app.post("/api/webhooks/sendgrid", handleSendGridWebhook);
   app.post("/api/webhooks/resend", handleResendWebhook);
+  
+  // Candidate tracking webhook endpoints (public, no auth required)
+  app.use("/api", webhookRoutes);
   // tRPC API
   app.use(
     "/api/trpc",

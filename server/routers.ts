@@ -45,6 +45,7 @@ import { invokeLLM } from './_core/llm';
 import { calculateJobMatch, screenAndRankCandidates } from './ai-matching';
 import { detectResumeBias, detectJobDescriptionBias } from './services/biasDetection';
 import { getHiringTrends, getTimeToHireMetrics as getPredictiveTimeToHire, getPipelineHealth, predictSuccessRate } from './predictive-analytics';
+import { getAutomationAnalytics } from './services/automationAnalytics';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -1003,6 +1004,16 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
           topJobs,
           candidateSources,
         };
+      }),
+
+    // Get automation analytics
+    getAutomationAnalytics: protectedProcedure
+      .input(z.object({
+        days: z.number().default(30)
+      }))
+      .query(async ({ ctx, input }) => {
+        const analytics = await getAutomationAnalytics(ctx.user.id, input.days);
+        return analytics;
       }),
   }),
 

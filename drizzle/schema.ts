@@ -1448,3 +1448,42 @@ export const candidateSuccessPredictions = mysqlTable("candidate_success_predict
 
 export type CandidateSuccessPrediction = typeof candidateSuccessPredictions.$inferSelect;
 export type InsertCandidateSuccessPrediction = typeof candidateSuccessPredictions.$inferInsert;
+
+/**
+ * Candidate Interactions - Track engagement with emails, calendar links, etc.
+ * Used to improve prediction models and measure automation effectiveness
+ */
+export const candidateInteractions = mysqlTable("candidate_interactions", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").references(() => candidates.id),
+  applicationId: int("applicationId"), // Optional - may not have applied yet
+  interviewId: int("interviewId"), // Optional - for interview-related interactions
+  
+  // Interaction type
+  interactionType: mysqlEnum("interactionType", [
+    "email_opened",
+    "email_clicked", 
+    "email_replied",
+    "calendar_link_clicked",
+    "interview_booked",
+    "interview_rescheduled",
+    "interview_cancelled",
+    "application_submitted",
+    "profile_viewed"
+  ]).notNull(),
+  
+  // Context
+  emailCampaignId: int("emailCampaignId"), // If from email campaign
+  sourcingCampaignId: int("sourcingCampaignId"), // If from sourcing campaign
+  linkUrl: varchar("linkUrl", { length: 500 }), // The link that was clicked
+  
+  // Metadata
+  metadata: text("metadata"), // JSON for additional context
+  userAgent: varchar("userAgent", { length: 500 }),
+  ipAddress: varchar("ipAddress", { length: 50 }),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CandidateInteraction = typeof candidateInteractions.$inferSelect;
+export type InsertCandidateInteraction = typeof candidateInteractions.$inferInsert;

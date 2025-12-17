@@ -11,6 +11,7 @@ import RecruiterDashboard from "./pages/RecruiterDashboard";
 import RecruiterNotificationPreferences from "./pages/RecruiterNotificationPreferences";
 import RecruiterAnalytics from "./pages/RecruiterAnalytics";
 import PredictiveAnalytics from "./pages/PredictiveAnalytics";
+import AutomationAnalytics from "./pages/recruiter/AutomationAnalytics";
 import CandidateDashboard from "./pages/CandidateDashboard";
 import JobBrowser from "./pages/JobBrowser";
 import AdvancedJobSearch from "./pages/AdvancedJobSearch";
@@ -104,6 +105,7 @@ function Router() {
       <Route path={"/recruiter/dashboard"} component={RecruiterDashboard} />
       <Route path="/recruiter/analytics" component={RecruiterAnalytics} />
       <Route path="/recruiter/predictive-analytics" component={PredictiveAnalytics} />
+      <Route path="/recruiter/automation-analytics" component={AutomationAnalytics} />
       <Route path="/recruiter/create-job" component={CreateJob} />
       <Route path="/recruiter/jobs/create" component={CreateJob} />
       <Route path="/recruiter/jobs" component={JobManagement} />

@@ -2609,3 +2609,41 @@
 - [x] Integrate with existing interview scheduling system
 - [ ] Add settings page for auto-schedule thresholds
 - [x] Log auto-schedule actions for audit trail
+
+
+## Phase 8: Navigation & Analytics Enhancements (NEW)
+
+### Navigation Links
+- [x] Add "Sourcing Campaigns" menu item to RecruiterLayout sidebar
+- [x] Add "Email Campaigns" menu item to RecruiterLayout sidebar (already existed at /recruiter/campaigns)
+- [x] Add "Automation Analytics" menu item to RecruiterLayout sidebar
+- [ ] Verify all automation features are discoverable
+
+### Unified Automation Analytics Dashboard
+- [x] Create AutomationAnalytics page component
+- [x] Add sourcing campaign ROI metrics (cost per candidate, conversion rates)
+- [x] Add email campaign performance metrics (open rates, reply rates, click rates)
+- [x] Add auto-scheduling success rates (interviews booked, attendance rates)
+- [x] Add prediction accuracy trends over time
+- [x] Add date range filters and export functionality
+- [x] Add route to App.tsx
+- [x] Add navigation link in RecruiterLayout (already added in Phase 1)
+- [x] Create backend API endpoint for analytics data
+- [ ] Note: Using mock data until automation features are fully implemented
+
+### Candidate Response Tracking
+- [x] Create webhook endpoint for calendar link clicks
+- [x] Create webhook endpoint for interview booking confirmations
+- [x] Create webhook endpoint for email reply tracking
+- [x] Create candidate_interactions database table
+- [x] Add interaction logging service
+- [x] Integrate interaction data with success prediction model
+- [x] Add feedback loop to improve prediction accuracy
+- [x] Create predictionFeedback service for engagement scoring
+- [x] Integrate webhooks with Express server routes
+
+### Testing & Deployment
+- [x] Test navigation links work correctly (verified in browser - all 3 links visible and working)
+- [x] Test analytics dashboard displays correctly (verified - shows all metrics, charts, and insights)
+- [x] Webhook endpoints created and integrated with Express server
+- [ ] Save final checkpoint
