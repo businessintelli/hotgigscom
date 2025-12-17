@@ -29,7 +29,10 @@ import {
   interviewPanelists, panelistFeedback, notifications,
   candidateProfileShares, InsertCandidateProfileShare,
   environmentVariables, InsertEnvironmentVariable,
-  applicationLogs, InsertApplicationLog
+  applicationLogs, InsertApplicationLog,
+  systemSettings,
+  linkedinCreditUsage, InsertLinkedinCreditUsage,
+  inmailTemplates, InsertInmailTemplate
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2030,4 +2033,228 @@ export async function cleanupOldLogs(): Promise<{ deletedCount: number }> {
   }
   
   return { deletedCount };
+}
+
+
+// LinkedIn Settings helpers
+export async function getSystemSetting(key: string): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [setting] = await db
+    .select()
+    .from(systemSettings)
+    .where(eq(systemSettings.settingKey, key))
+    .limit(1);
+  
+  return setting?.settingValue || null;
+}
+
+export async function setSystemSetting(key: string, value: string, description?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await db
+    .select()
+    .from(systemSettings)
+    .where(eq(systemSettings.settingKey, key))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    await db.update(systemSettings)
+      .set({
+        settingValue: value,
+        updatedAt: new Date()
+      })
+      .where(eq(systemSettings.settingKey, key));
+  } else {
+    await db.insert(systemSettings).values({
+      settingKey: key,
+      settingValue: value,
+      description: description || `System setting for ${key}`
+    });
+  }
+}
+
+export async function getLinkedInCreditUsage() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { desc } = await import("drizzle-orm");
+  
+  return await db
+    .select()
+    .from(linkedinCreditUsage)
+    .orderBy(desc(linkedinCreditUsage.createdAt))
+    .limit(100);
+}
+
+export async function getRecruiterCreditLimits() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { sql } = await import("drizzle-orm");
+  
+  // Get aggregated credit usage per recruiter with their limits
+  const result = await db.execute(sql`
+    SELECT 
+      r.id as recruiterId,
+      u.name as recruiterName,
+      COALESCE(SUM(lcu.creditsUsed), 0) as currentUsage,
+      MAX(lcu.creditLimit) as creditLimit
+    FROM recruiters r
+    INNER JOIN users u ON r.userId = u.id
+    LEFT JOIN linkedin_credit_usage lcu ON lcu.recruiterId = r.id
+      AND MONTH(lcu.createdAt) = MONTH(CURRENT_DATE())
+      AND YEAR(lcu.createdAt) = YEAR(CURRENT_DATE())
+    GROUP BY r.id, u.name
+  `);
+  
+  return result as any[];
+}
+
+export async function updateRecruiterCreditLimit(recruiterId: number, creditLimit: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Update or insert credit limit for recruiter
+  // This will be stored in the next credit usage record
+  // For now, we'll use a system setting approach
+  await setSystemSetting(`recruiter_${recruiterId}_credit_limit`, creditLimit.toString());
+}
+
+export async function trackLinkedInCreditUsage(data: InsertLinkedinCreditUsage): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(linkedinCreditUsage).values(data);
+}
+
+export async function checkRecruiterCreditLimit(recruiterId: number): Promise<{ allowed: boolean; remaining: number }> {
+  const db = await getDb();
+  if (!db) return { allowed: true, remaining: 999 };
+  
+  // Get recruiter's credit limit
+  const limitStr = await getSystemSetting(`recruiter_${recruiterId}_credit_limit`);
+  const limit = limitStr ? parseInt(limitStr) : null;
+  
+  if (!limit) {
+    return { allowed: true, remaining: 999 }; // No limit set
+  }
+  
+  // Get current month usage
+  const { sql } = await import("drizzle-orm");
+  const [usage] = await db.execute(sql`
+    SELECT COALESCE(SUM(creditsUsed), 0) as used
+    FROM linkedin_credit_usage
+    WHERE recruiterId = ${recruiterId}
+      AND MONTH(createdAt) = MONTH(CURRENT_DATE())
+      AND YEAR(createdAt) = YEAR(CURRENT_DATE())
+  `) as any[];
+  
+  const used = usage?.used || 0;
+  const remaining = limit - used;
+  
+  return {
+    allowed: remaining > 0,
+    remaining: Math.max(0, remaining)
+  };
+}
+
+
+// InMail Template helpers
+export async function getInMailTemplates() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { desc } = await import("drizzle-orm");
+  
+  return await db
+    .select()
+    .from(inmailTemplates)
+    .orderBy(desc(inmailTemplates.createdAt));
+}
+
+export async function getActiveInMailTemplates() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { desc } = await import("drizzle-orm");
+  
+  return await db
+    .select()
+    .from(inmailTemplates)
+    .where(eq(inmailTemplates.isActive, true))
+    .orderBy(desc(inmailTemplates.timesUsed));
+}
+
+export async function getInMailTemplateById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [template] = await db
+    .select()
+    .from(inmailTemplates)
+    .where(eq(inmailTemplates.id, id))
+    .limit(1);
+  
+  return template || null;
+}
+
+export async function createInMailTemplate(data: InsertInmailTemplate) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(inmailTemplates).values(data);
+  return result;
+}
+
+export async function updateInMailTemplate(id: number, data: Partial<InsertInmailTemplate>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(inmailTemplates)
+    .set({
+      ...data,
+      updatedAt: new Date()
+    })
+    .where(eq(inmailTemplates.id, id));
+}
+
+export async function deleteInMailTemplate(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(inmailTemplates)
+    .where(eq(inmailTemplates.id, id));
+}
+
+export async function toggleInMailTemplateStatus(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const template = await getInMailTemplateById(id);
+  if (!template) throw new Error("Template not found");
+  
+  await db.update(inmailTemplates)
+    .set({
+      isActive: !template.isActive,
+      updatedAt: new Date()
+    })
+    .where(eq(inmailTemplates.id, id));
+}
+
+export async function incrementTemplateUsage(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { sql } = await import("drizzle-orm");
+  
+  await db.update(inmailTemplates)
+    .set({
+      timesUsed: sql`${inmailTemplates.timesUsed} + 1`,
+      lastUsedAt: new Date(),
+      updatedAt: new Date()
+    })
+    .where(eq(inmailTemplates.id, id));
 }

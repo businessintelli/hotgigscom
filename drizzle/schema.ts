@@ -1685,3 +1685,64 @@ export const schedulingLinks = mysqlTable("scheduling_links", {
 
 export type SchedulingLink = typeof schedulingLinks.$inferSelect;
 export type InsertSchedulingLink = typeof schedulingLinks.$inferInsert;
+
+
+/**
+ * LinkedIn Credit Usage - Track InMail credit usage per recruiter
+ */
+export const linkedinCreditUsage = mysqlTable("linkedin_credit_usage", {
+  id: int("id").autoincrement().primaryKey(),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  
+  // Credit tracking
+  creditsUsed: int("creditsUsed").default(1).notNull(),
+  creditsRemaining: int("creditsRemaining"),
+  creditLimit: int("creditLimit"), // Per-recruiter monthly limit
+  
+  // Usage details
+  usageType: mysqlEnum("usageType", ["inmail", "profile_view", "search"]).notNull(),
+  linkedinInmailId: int("linkedinInmailId").references(() => linkedinInmails.id),
+  linkedinProfileId: int("linkedinProfileId").references(() => linkedinProfiles.id),
+  
+  // Metadata
+  description: varchar("description", { length: 500 }),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LinkedinCreditUsage = typeof linkedinCreditUsage.$inferSelect;
+export type InsertLinkedinCreditUsage = typeof linkedinCreditUsage.$inferInsert;
+
+/**
+ * InMail Templates - Team-level email templates for LinkedIn outreach
+ */
+export const inmailTemplates = mysqlTable("inmail_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Template details
+  name: varchar("name", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(),
+  
+  // Variables supported in template
+  variables: text("variables"), // JSON array: ["firstName", "lastName", "company", "title", "skills"]
+  
+  // Template metadata
+  category: varchar("category", { length: 100 }), // e.g., "initial_outreach", "follow_up", "interview_invite"
+  isActive: boolean("isActive").default(true).notNull(),
+  
+  // Usage tracking
+  timesUsed: int("timesUsed").default(0).notNull(),
+  responseRate: decimal("responseRate", { precision: 5, scale: 2 }), // Percentage
+  
+  // Audit
+  createdBy: int("createdBy").notNull().references(() => users.id),
+  lastUsedAt: timestamp("lastUsedAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InmailTemplate = typeof inmailTemplates.$inferSelect;
+export type InsertInmailTemplate = typeof inmailTemplates.$inferInsert;

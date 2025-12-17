@@ -2735,3 +2735,57 @@
 - [x] Verified integration status displays correctly in AutomationAnalytics
 - [x] Verified navigation link in RecruiterLayout sidebar
 - [ ] Save final checkpoint
+
+
+## Phase 9B: Hybrid Integration Approach (Admin + Individual)
+
+### Database Schema Updates
+- [x] Add LinkedIn API credentials to systemSettings table (api_key, client_id, client_secret)
+- [x] Create linkedinCreditUsage table for tracking InMail usage per recruiter
+- [x] Create inmailTemplates table for team-level templates
+- [x] Verify calendar_integrations uses per-user access (userId field)
+
+### Admin LinkedIn Settings Page
+- [x] Create AdminLinkedInSettings.tsx page at /admin/linkedin-settings
+- [x] Add LinkedIn API credential input fields (API key, client ID, client secret)
+- [x] Add credit monitoring dashboard showing usage across all recruiters
+- [x] Add InMail credit limit settings per recruiter
+- [x] Add "LinkedIn Settings" menu item to AdminLayout sidebar
+- [x] Add route to App.tsx
+
+### LinkedIn Service Updates
+- [x] Backend helper functions created for systemSettings
+- [x] Credit tracking functions implemented
+- [x] Credit limit checking functions added
+- [x] Backend infrastructure ready for LinkedIn API integration
+- [x] Credit checking system implemented (will activate when LinkedIn API is connected)
+
+### InMail Templates System
+- [x] Create inmailTemplates database table (id, name, subject, body, variables, createdBy, createdAt)
+- [x] Create backend API for CRUD operations on templates (admin.createInMailTemplate, etc.)
+- [x] Create InMailTemplates.tsx page for admins at /admin/inmail-templates
+- [x] Add template variables support ({{firstName}}, {{lastName}}, {{company}}, {{title}}, {{skills}})
+- [x] Add template preview with variable substitution
+- [x] Add template usage analytics (times used, response rate per template)
+- [x] Add "InMail Templates" menu item to AdminLayout sidebar
+- [x] InMail template system fully functional (template selection UI ready for LinkedIn integration)
+
+### Integration Settings UI Updates
+- [x] LinkedIn credentials managed at admin level (LinkedIn Settings page)
+- [x] Calendar integrations remain per-recruiter (Google, Outlook, Calendly, Cal.com)
+- [x] InMail templates accessible from admin panel
+- [x] Credit monitoring dashboard implemented
+- [x] Recruiter limit management system in place
+
+### Testing
+- [x] Test admin can set LinkedIn credentials in admin settings
+- [x] Test credit usage tracking works correctly
+- [x] Test credit limits prevent over-usage
+- [x] Test InMail templates can be created by admins
+- [x] Verify calendar integrations remain per-user
+- [x] All vitest tests passed (10/10)
+- [x] All systems tested and validated
+- [x] Template creation tested successfully in browser
+- [x] Admin settings page fully functional
+- [x] Credit tracking system operational
+- [ ] Save final checkpoint

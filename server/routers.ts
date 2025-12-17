@@ -4613,6 +4613,129 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         ];
         return { tables, connectionStatus: 'connected' };
       }),
+
+    // LinkedIn Settings
+    getLinkedInSettings: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        const apiKey = await db.getSystemSetting('linkedin_api_key');
+        const clientId = await db.getSystemSetting('linkedin_client_id');
+        return {
+          configured: !!(apiKey && clientId),
+        };
+      }),
+
+    saveLinkedInSettings: protectedProcedure
+      .input(z.object({
+        apiKey: z.string(),
+        clientId: z.string(),
+        clientSecret: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        await db.setSystemSetting('linkedin_api_key', input.apiKey);
+        await db.setSystemSetting('linkedin_client_id', input.clientId);
+        await db.setSystemSetting('linkedin_client_secret', input.clientSecret);
+        return { success: true };
+      }),
+
+    getLinkedInCreditUsage: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        return await db.getLinkedInCreditUsage();
+      }),
+
+    getRecruiterCreditLimits: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        return await db.getRecruiterCreditLimits();
+      }),
+
+    updateRecruiterCreditLimit: protectedProcedure
+      .input(z.object({
+        recruiterId: z.number(),
+        creditLimit: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        await db.updateRecruiterCreditLimit(input.recruiterId, input.creditLimit);
+        return { success: true };
+      }),
+
+    // InMail Templates
+    getInMailTemplates: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        return await db.getInMailTemplates();
+      }),
+
+    createInMailTemplate: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        subject: z.string(),
+        body: z.string(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        await db.createInMailTemplate({
+          ...input,
+          createdBy: ctx.user.id,
+          variables: JSON.stringify(['firstName', 'lastName', 'company', 'title', 'skills']),
+        });
+        return { success: true };
+      }),
+
+    updateInMailTemplate: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string(),
+        subject: z.string(),
+        body: z.string(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        const { id, ...data } = input;
+        await db.updateInMailTemplate(id, data);
+        return { success: true };
+      }),
+
+    deleteInMailTemplate: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        await db.deleteInMailTemplate(input.id);
+        return { success: true };
+      }),
+
+    toggleInMailTemplateStatus: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        await db.toggleInMailTemplateStatus(input.id);
+        return { success: true };
+      }),
   }),
 
   // Resume Ranking Router

@@ -29,7 +29,9 @@ import {
   Bell,
   BarChart3,
   Server,
-  ScrollText
+  ScrollText,
+  Linkedin,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_TITLE } from "@/const";
@@ -51,6 +53,8 @@ const sidebarItems = [
   { title: "Email Settings", href: "/admin/email-settings", icon: Mail },
   { title: "Video Settings", href: "/admin/video-settings", icon: Video },
   { title: "Email Delivery", href: "/admin/email-delivery", icon: TrendingUp },
+  { title: "LinkedIn Settings", href: "/admin/linkedin-settings", icon: Linkedin },
+  { title: "InMail Templates", href: "/admin/inmail-templates", icon: MessageSquare },
   { title: "Database", href: "/admin/database", icon: Database },
 ];
 
