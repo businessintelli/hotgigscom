@@ -496,6 +496,8 @@ export async function getAllApplications() {
       fullName: row.users?.name || row.candidates.fullName,
       email: row.users?.email || row.candidates.email,
       phone: row.candidates.phone,
+      expectedSalaryMin: row.candidates.expectedSalaryMin,
+      expectedSalaryMax: row.candidates.expectedSalaryMax,
     } : null,
     job: row.jobs,
     resumeProfile: row.resume_profiles,

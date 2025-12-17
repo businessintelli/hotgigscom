@@ -365,6 +365,13 @@
       "when": 1765996899741,
       "tag": "0051_plain_night_thrasher",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1765998239242,
+      "tag": "0052_cute_tinkerer",
+      "breakpoints": true
     }
   ]
 }

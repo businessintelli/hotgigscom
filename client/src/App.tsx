@@ -73,6 +73,7 @@ import CompanyAdminProfileSettings from "./pages/company-admin/CompanyAdminProfi
 import CompanyAdminAIAssistant from "./pages/company-admin/CompanyAdminAIAssistant";
 import CandidateCareerCoach from "./pages/CandidateCareerCoach";
 import CandidateCalendar from "./pages/CandidateCalendar";
+import NotificationPreferences from "./pages/NotificationPreferences";
 import RecruiterAIAssistant from "./pages/RecruiterAIAssistant";
 import AdminReports from "./pages/AdminReports";
 import AdminEnvironment from "./pages/AdminEnvironment";
@@ -235,6 +236,7 @@ function Router() {
       <Route path="/candidate/calendar" component={CandidateCalendar} />
       <Route path="/candidate/associates" component={CandidateAssociates} />
       <Route path="/candidate/settings" component={CandidateSettings} />
+      <Route path="/candidate/notification-preferences" component={NotificationPreferences} />
       <Route path="/candidate/messages" component={Messages} />
       <Route path="/recruiter/ai-assistant" component={RecruiterAIAssistant} />
       <Route path="/recruiter/settings" component={RecruiterSettings} />

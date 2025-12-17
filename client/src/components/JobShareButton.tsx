@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Share2, Link2, Mail, MessageCircle, Check } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 interface JobShareButtonProps {
   jobId: number;
@@ -43,6 +44,9 @@ export function JobShareButton({
   const [emailMessage, setEmailMessage] = useState("");
   const [copied, setCopied] = useState(false);
 
+  // Track share mutation
+  const trackShareMutation = trpc.job.trackShare.useMutation();
+
   // Generate shareable URL
   const getJobUrl = () => {
     const baseUrl = window.location.origin;
@@ -56,6 +60,8 @@ export function JobShareButton({
       setCopied(true);
       toast.success("Link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
+      // Track the share
+      trackShareMutation.mutate({ jobId, channel: "copy" });
     } catch (error) {
       toast.error("Failed to copy link");
     }
@@ -73,6 +79,8 @@ export function JobShareButton({
       setEmailDialogOpen(false);
       setRecipientEmail("");
       setEmailMessage("");
+      // Track the share
+      trackShareMutation.mutate({ jobId, channel: "email" });
     } else {
       toast.error("Please enter a recipient email address");
     }
@@ -84,6 +92,8 @@ export function JobShareButton({
     const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
     window.open(linkedInUrl, "_blank", "width=600,height=600");
     toast.success("Opening LinkedIn...");
+    // Track the share
+    trackShareMutation.mutate({ jobId, channel: "linkedin" });
   };
 
   // Share on Twitter
@@ -93,6 +103,8 @@ export function JobShareButton({
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
     window.open(twitterUrl, "_blank", "width=600,height=600");
     toast.success("Opening Twitter...");
+    // Track the share
+    trackShareMutation.mutate({ jobId, channel: "twitter" });
   };
 
   // Share on Facebook
@@ -101,6 +113,8 @@ export function JobShareButton({
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
     window.open(facebookUrl, "_blank", "width=600,height=600");
     toast.success("Opening Facebook...");
+    // Track the share
+    trackShareMutation.mutate({ jobId, channel: "facebook" });
   };
 
   // Share on WhatsApp
@@ -109,6 +123,8 @@ export function JobShareButton({
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
     toast.success("Opening WhatsApp...");
+    // Track the share
+    trackShareMutation.mutate({ jobId, channel: "whatsapp" });
   };
 
   return (

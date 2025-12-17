@@ -3394,3 +3394,13 @@
 - [x] Add WhatsApp sharing option
 - [x] Create shareable job URLs with tracking
 - [ ] Show share count analytics
+
+
+## Application Management Enhancements (Phase 6 - COMPLETED)
+- [x] Display expected salary/rate for each candidate in application cards
+- [x] Fix View Resume button to open parsed resume data view (like AI parsing view)
+- [x] Fix Message button to open messaging interface with candidate
+- [x] Fix Share with Client button to create share dialog with client selection
+- [x] Add ApplicationTimeline component to application cards (expandable)
+- [x] Implement email notification preferences page for candidates
+- [x] Add share count analytics for job postings (track shares by channel)

@@ -2185,6 +2185,49 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       });
       return Array.from(templateMap.values()).slice(0, 10);
     }),
+
+    // Track job share analytics
+    trackShare: publicProcedure
+      .input(z.object({
+        jobId: z.number(),
+        channel: z.enum(["email", "linkedin", "twitter", "facebook", "whatsapp", "copy"]),
+      }))
+      .mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) throw new Error("Database not available");
+        
+        const job = await db.getJobById(input.jobId);
+        if (!job) throw new Error("Job not found");
+        
+        // Increment the appropriate counter
+        const updates: any = {
+          shareCount: (job.shareCount || 0) + 1,
+        };
+        
+        switch (input.channel) {
+          case "email":
+            updates.emailShares = (job.emailShares || 0) + 1;
+            break;
+          case "linkedin":
+            updates.linkedinShares = (job.linkedinShares || 0) + 1;
+            break;
+          case "twitter":
+            updates.twitterShares = (job.twitterShares || 0) + 1;
+            break;
+          case "facebook":
+            updates.facebookShares = (job.facebookShares || 0) + 1;
+            break;
+          case "whatsapp":
+            updates.whatsappShares = (job.whatsappShares || 0) + 1;
+            break;
+          case "copy":
+            updates.linkCopies = (job.linkCopies || 0) + 1;
+            break;
+        }
+        
+        await db.updateJob(input.jobId, updates);
+        return { success: true };
+      }),
   }),
 
   application: router({

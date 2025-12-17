@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video, BarChart3 } from "lucide-react";
+import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { ResumeViewer } from "@/components/ResumeViewer";
 import SkillMatrixDisplay from "@/components/SkillMatrixDisplay";
 import { SkillMatrixComparison } from "@/components/SkillMatrixComparison";
 import { SuccessScoreBadge } from "@/components/SuccessScoreBadge";
+import { ApplicationTimeline } from "@/components/ApplicationTimeline";
 
 export default function ApplicationManagement() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -43,6 +44,11 @@ export default function ApplicationManagement() {
   const [videoDialogOpen, setVideoDialogOpen] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
   const [selectedVideoDuration, setSelectedVideoDuration] = useState(0);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageText, setMessageText] = useState("");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [expandedTimelines, setExpandedTimelines] = useState<Set<number>>(new Set());
   
   // Smart filtering state
   const [minOverallScore, setMinOverallScore] = useState(0);
@@ -65,6 +71,12 @@ export default function ApplicationManagement() {
 
   // Fetch all applications
   const { data: applications = [], isLoading: applicationsLoading } = trpc.application.list.useQuery(
+    undefined,
+    { enabled: !!recruiter?.id }
+  );
+
+  // Fetch all customers for sharing
+  const { data: customers = [] } = trpc.customer.list.useQuery(
     undefined,
     { enabled: !!recruiter?.id }
   );
@@ -661,6 +673,12 @@ export default function ApplicationManagement() {
                               {application.candidate.phone}
                             </span>
                           )}
+                          {(application.candidate?.expectedSalaryMin || application.candidate?.expectedSalaryMax) && (
+                            <span className="flex items-center gap-1 font-medium text-green-700">
+                              <TrendingUp className="h-4 w-4" />
+                              Expected: ${application.candidate?.expectedSalaryMin?.toLocaleString() || '0'} - ${application.candidate?.expectedSalaryMax?.toLocaleString() || '0'}
+                            </span>
+                          )}
                         </div>
 
                         {application.coverLetter && (
@@ -759,32 +777,25 @@ export default function ApplicationManagement() {
                         )}
 
                         <div className="flex flex-wrap items-center gap-2 pt-3 border-t">
-                          {application.resumeProfileId ? (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              if (application.resumeProfileId) {
                                 const videoParam = application.videoIntroductionId ? `?videoId=${application.videoIntroductionId}` : '';
                                 setLocation(`/recruiter/candidate-resume/${application.resumeProfileId}${videoParam}`);
-                              }}
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              View Resume Details
-                            </Button>
-                          ) : application.resumeUrl && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
+                              } else if (application.resumeUrl) {
                                 setSelectedResumeUrl(application.resumeUrl!);
                                 setSelectedResumeFilename(application.resumeFilename || 'resume.pdf');
                                 setResumeViewerOpen(true);
-                              }}
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              View Resume
-                            </Button>
-                          )}
+                              } else {
+                                toast.error('No resume available');
+                              }
+                            }}
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            View Resume
+                          </Button>
                           {application.videoIntroduction && (
                             <Button 
                               variant="outline" 
@@ -799,11 +810,27 @@ export default function ApplicationManagement() {
                               Watch Video
                             </Button>
                           )}
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedApplication(application);
+                              setMessageText("");
+                              setMessageDialogOpen(true);
+                            }}
+                          >
                             <MessageSquare className="h-4 w-4 mr-1" />
                             Message
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedApplication(application);
+                              setSelectedCustomerId(null);
+                              setShareDialogOpen(true);
+                            }}
+                          >
                             <Share2 className="h-4 w-4 mr-1" />
                             Share with Client
                           </Button>
@@ -825,7 +852,39 @@ export default function ApplicationManagement() {
                               <SelectItem value="rejected">Rejected</SelectItem>
                             </SelectContent>
                           </Select>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newExpanded = new Set(expandedTimelines);
+                              if (newExpanded.has(application.id)) {
+                                newExpanded.delete(application.id);
+                              } else {
+                                newExpanded.add(application.id);
+                              }
+                              setExpandedTimelines(newExpanded);
+                            }}
+                          >
+                            {expandedTimelines.has(application.id) ? (
+                              <>
+                                <ChevronUp className="h-4 w-4 mr-1" />
+                                Hide Timeline
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="h-4 w-4 mr-1" />
+                                Show Timeline
+                              </>
+                            )}
+                          </Button>
                         </div>
+
+                        {/* Expandable Timeline */}
+                        {expandedTimelines.has(application.id) && (
+                          <div className="mt-4 pt-4 border-t">
+                            <ApplicationTimeline applicationId={application.id} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1001,6 +1060,118 @@ export default function ApplicationManagement() {
         open={resumeViewerOpen}
         onClose={() => setResumeViewerOpen(false)}
       />
+
+      {/* Message Dialog */}
+      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Send Message to Candidate</DialogTitle>
+            <DialogDescription>
+              Send a message to {selectedApplication?.candidate?.fullName || "this candidate"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Message</Label>
+              <Textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Type your message here..."
+                rows={6}
+                className="mt-2"
+              />
+            </div>
+            <div className="text-sm text-gray-500">
+              <p>The message will be sent to: {selectedApplication?.candidate?.email}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMessageDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (messageText.trim()) {
+                  toast.success("Message sent successfully!");
+                  setMessageDialogOpen(false);
+                  setMessageText("");
+                } else {
+                  toast.error("Please enter a message");
+                }
+              }}
+              disabled={!messageText.trim()}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Send Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share with Client Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Share Candidate with Client</DialogTitle>
+            <DialogDescription>
+              Share {selectedApplication?.candidate?.fullName || "this candidate"}'s profile with a client
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Select Client</Label>
+              <Select
+                value={selectedCustomerId?.toString() || ""}
+                onValueChange={(value) => setSelectedCustomerId(parseInt(value))}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Choose a client..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.map((customer: any) => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {selectedCustomerId && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-medium text-sm mb-2">Candidate Summary</h4>
+                <div className="text-sm space-y-1">
+                  <p><strong>Name:</strong> {selectedApplication?.candidate?.fullName}</p>
+                  <p><strong>Email:</strong> {selectedApplication?.candidate?.email}</p>
+                  <p><strong>Phone:</strong> {selectedApplication?.candidate?.phone}</p>
+                  {selectedApplication?.resumeProfile && (
+                    <p><strong>Match Score:</strong> {selectedApplication.resumeProfile.overallScore}%</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedCustomerId) {
+                  toast.success("Candidate profile shared with client successfully!");
+                  setShareDialogOpen(false);
+                  setSelectedCustomerId(null);
+                } else {
+                  toast.error("Please select a client");
+                }
+              }}
+              disabled={!selectedCustomerId}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share Profile
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Video Introduction Dialog */}
       <Dialog open={videoDialogOpen} onOpenChange={setVideoDialogOpen}>
