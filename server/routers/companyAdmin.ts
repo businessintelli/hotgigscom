@@ -140,6 +140,27 @@ export const companyAdminRouter = router({
     return await db.getCompanyStats(ctx.user.companyId);
   }),
   
+  getDashboardStats: companyAdminProcedure.query(async ({ ctx }) => {
+    if (!ctx.user.companyId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'User is not associated with a company',
+      });
+    }
+    
+    const stats = await db.getCompanyStats(ctx.user.companyId);
+    const recentActivity = await db.getCompanyActivityLogs(ctx.user.companyId, 5);
+    
+    return {
+      ...stats,
+      recentActivity: recentActivity.map(log => ({
+        action: log.action,
+        user: log.userName || 'Unknown User',
+        time: new Date(log.createdAt).toLocaleString(),
+      })),
+    };
+  }),
+  
   getRecruiterPerformance: companyAdminProcedure.query(async ({ ctx }) => {
     if (!ctx.user.companyId) {
       throw new TRPCError({
@@ -153,6 +174,94 @@ export const companyAdminRouter = router({
   
   // ============================================
   // MASTER LISTS
+  // ============================================
+  
+  getCompanyCandidates: companyAdminProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      limit: z.number().default(50),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      const candidates = await db.getCompanyCandidatesForMasterList(ctx.user.companyId, input.search, input.limit);
+      return candidates;
+    }),
+  
+  getCompanyJobs: companyAdminProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      limit: z.number().default(50),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      const jobs = await db.getCompanyJobsForMasterList(ctx.user.companyId, input.search, input.limit);
+      return jobs;
+    }),
+  
+  getCompanyAssociates: companyAdminProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      limit: z.number().default(50),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      const associates = await db.getCompanyAssociatesForMasterList(ctx.user.companyId, input.search, input.limit);
+      return associates;
+    }),
+  
+  inviteRecruiter: companyAdminProcedure
+    .input(z.object({
+      email: z.string().email(),
+      name: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      // Create invitation record
+      await db.createRecruiterInvitation({
+        companyId: ctx.user.companyId,
+        email: input.email,
+        name: input.name,
+        invitedBy: ctx.user.id,
+      });
+      
+      // Log the activity
+      await db.logUserActivity({
+        userId: ctx.user.id,
+        companyId: ctx.user.companyId,
+        action: 'invite_recruiter',
+        resource: 'user',
+        details: { email: input.email, name: input.name },
+      });
+      
+      return { success: true };
+    }),
+  
+  // ============================================
+  // MASTER LISTS (Legacy)
   // ============================================
   
   getAllCandidates: companyAdminProcedure

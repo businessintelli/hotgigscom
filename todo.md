@@ -2829,7 +2829,9 @@
 - [x] Add user invitation system (invite recruiters by email)
 - [x] Create /company-admin/linkedin-settings page (reuse from admin)
 - [x] Create /company-admin/inmail-templates page (reuse from admin)
-- [ ] Create /company-admin/settings page (company-level settings)
+- [x] Create /company-admin/settings page (company-level settings)
+- [x] Create /company-admin/reports page (reports & analytics)
+- [x] Create /company-admin/master-lists page (candidates, jobs, associates)
 - [ ] Create /company-admin/permissions page (set recruiter permissions)
 - [ ] Add recruiter permission management UI
 
@@ -3083,9 +3085,12 @@
   - [ ] Subscription management
 
 ### Company Admin Dashboard Layout
-- [ ] Create company admin sidebar navigation
-  - [ ] Dashboard (executive overview)
-  - [ ] Reports & Analytics
+- [x] Create company admin sidebar navigation
+  - [x] Dashboard (executive overview)
+  - [x] Reports & Analytics
+  - [x] Master Lists (candidates, jobs, associates)
+  - [x] Company Settings
+  - [x] User Management
   - [ ] Master Lists (Candidates, Associates, Jobs, Clients)
   - [ ] User Management
   - [ ] Company Settings

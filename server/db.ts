@@ -1215,3 +1215,172 @@ export async function getCompanyActivityLogs(companyId: number, limit: number = 
   .orderBy(desc(userActivityLogs.createdAt))
   .limit(limit);
 }
+
+/**
+ * Get company candidates for master list (simplified format)
+ */
+export async function getCompanyCandidatesForMasterList(companyId: number, search?: string, limit: number = 50) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Get all recruiters in the company
+  const companyUsers = await db.select({ id: users.id, name: users.name })
+    .from(users)
+    .where(eq(users.companyId, companyId));
+  
+  const recruiterIds = companyUsers.map(u => u.id);
+  if (recruiterIds.length === 0) return [];
+  
+  // Get all resume profiles created by company recruiters
+  let query = db.select({
+    id: resumeProfiles.id,
+    resumeProfileId: resumeProfiles.id,
+    candidateName: resumeProfiles.name,
+    candidateEmail: resumeProfiles.email,
+    title: resumeProfiles.title,
+    yearsOfExperience: resumeProfiles.yearsOfExperience,
+    location: resumeProfiles.location,
+    recruiterId: resumeProfiles.recruiterId,
+    recruiterName: users.name,
+    createdAt: resumeProfiles.createdAt,
+  })
+  .from(resumeProfiles)
+  .innerJoin(users, eq(resumeProfiles.recruiterId, users.id))
+  .where(inArray(resumeProfiles.recruiterId, recruiterIds));
+  
+  const results = await query.limit(limit);
+  
+  // Apply search filter if provided
+  if (search) {
+    const searchLower = search.toLowerCase();
+    return results.filter(r => 
+      r.candidateName?.toLowerCase().includes(searchLower) ||
+      r.candidateEmail?.toLowerCase().includes(searchLower) ||
+      r.title?.toLowerCase().includes(searchLower) ||
+      r.location?.toLowerCase().includes(searchLower)
+    );
+  }
+  
+  return results;
+}
+
+/**
+ * Get company jobs for master list (simplified format)
+ */
+export async function getCompanyJobsForMasterList(companyId: number, search?: string, limit: number = 50) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Get all recruiters in the company
+  const companyUsers = await db.select({ id: users.id })
+    .from(users)
+    .where(eq(users.companyId, companyId));
+  
+  const recruiterIds = companyUsers.map(u => u.id);
+  if (recruiterIds.length === 0) return [];
+  
+  // Get all jobs created by company recruiters
+  let query = db.select({
+    id: jobs.id,
+    title: jobs.title,
+    companyName: jobs.companyName,
+    location: jobs.location,
+    employmentType: jobs.employmentType,
+    status: jobs.status,
+    recruiterId: jobs.recruiterId,
+    recruiterName: users.name,
+    createdAt: jobs.createdAt,
+    applicationCount: sql<number>`(SELECT COUNT(*) FROM ${applications} WHERE ${applications.jobId} = ${jobs.id})`,
+  })
+  .from(jobs)
+  .innerJoin(users, eq(jobs.recruiterId, users.id))
+  .where(inArray(jobs.recruiterId, recruiterIds));
+  
+  const results = await query.limit(limit);
+  
+  // Apply search filter if provided
+  if (search) {
+    const searchLower = search.toLowerCase();
+    return results.filter(r => 
+      r.title?.toLowerCase().includes(searchLower) ||
+      r.companyName?.toLowerCase().includes(searchLower) ||
+      r.location?.toLowerCase().includes(searchLower)
+    );
+  }
+  
+  return results;
+}
+
+/**
+ * Get company associates for master list (simplified format)
+ */
+export async function getCompanyAssociatesForMasterList(companyId: number, search?: string, limit: number = 50) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Get all recruiters in the company
+  const companyUsers = await db.select({ id: users.id })
+    .from(users)
+    .where(eq(users.companyId, companyId));
+  
+  const recruiterIds = companyUsers.map(u => u.id);
+  if (recruiterIds.length === 0) return [];
+  
+  // Get all associates placed by company recruiters
+  let query = db.select({
+    id: associates.id,
+    candidateName: sql<string>`(SELECT name FROM ${candidates} WHERE ${candidates.id} = ${associates.candidateId})`,
+    candidateEmail: sql<string>`(SELECT email FROM ${users} WHERE ${users.id} = (SELECT userId FROM ${candidates} WHERE ${candidates.id} = ${associates.candidateId}))`,
+    jobTitle: associates.jobTitle,
+    companyName: associates.companyName,
+    startDate: associates.startDate,
+    recruiterId: associates.recruiterId,
+    recruiterName: users.name,
+    createdAt: associates.createdAt,
+  })
+  .from(associates)
+  .innerJoin(users, eq(associates.recruiterId, users.id))
+  .where(inArray(associates.recruiterId, recruiterIds));
+  
+  const results = await query.limit(limit);
+  
+  // Apply search filter if provided
+  if (search) {
+    const searchLower = search.toLowerCase();
+    return results.filter(r => 
+      r.candidateName?.toLowerCase().includes(searchLower) ||
+      r.candidateEmail?.toLowerCase().includes(searchLower) ||
+      r.jobTitle?.toLowerCase().includes(searchLower) ||
+      r.companyName?.toLowerCase().includes(searchLower)
+    );
+  }
+  
+  return results;
+}
+
+/**
+ * Create recruiter invitation (simplified - just check for existing user)
+ */
+export async function createRecruiterInvitation(invitation: {
+  companyId: number;
+  email: string;
+  name: string;
+  invitedBy: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Check if user already exists with this email
+  const existing = await db.select()
+    .from(users)
+    .where(eq(users.email, invitation.email))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    throw new Error("User with this email already exists");
+  }
+  
+  // In a real implementation, this would send an invitation email
+  // For now, we just return success
+  return { success: true, message: "Invitation would be sent to " + invitation.email };
+}
