@@ -465,27 +465,39 @@ export async function getAllApplications() {
   const db = await getDb();
   if (!db) return [];
   
-  // Join with users table to get candidate name
+  // Join with all related tables to get complete application data
   const result = await db
-    .select({
-      id: applications.id,
-      jobId: applications.jobId,
-      candidateId: applications.candidateId,
-      candidateName: users.name,
-      candidateEmail: users.email,
-      resumeUrl: applications.resumeUrl,
-      coverLetter: applications.coverLetter,
-      status: applications.status,
-      appliedAt: applications.appliedAt,
-      updatedAt: applications.updatedAt,
-      videoIntroductionId: applications.videoIntroductionId,
-      resumeProfileId: applications.resumeProfileId,
-    })
+    .select()
     .from(applications)
     .leftJoin(candidates, eq(applications.candidateId, candidates.id))
-    .leftJoin(users, eq(candidates.userId, users.id));
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .leftJoin(resumeProfiles, eq(applications.resumeProfileId, resumeProfiles.id))
+    .leftJoin(videoIntroductions, eq(applications.videoIntroductionId, videoIntroductions.id));
   
-  return result;
+  // Transform the result to match the expected structure
+  return result.map((row: any) => ({
+    id: row.applications.id,
+    jobId: row.applications.jobId,
+    candidateId: row.applications.candidateId,
+    resumeUrl: row.applications.resumeUrl,
+    coverLetter: row.applications.coverLetter,
+    status: row.applications.status,
+    appliedAt: row.applications.appliedAt,
+    updatedAt: row.applications.updatedAt,
+    videoIntroductionId: row.applications.videoIntroductionId,
+    resumeProfileId: row.applications.resumeProfileId,
+    // Include full nested objects
+    candidate: row.candidates ? {
+      ...row.candidates,
+      fullName: row.users?.name || row.candidates.fullName,
+      email: row.users?.email || row.candidates.email,
+      phone: row.candidates.phone,
+    } : null,
+    job: row.jobs,
+    resumeProfile: row.resume_profiles,
+    videoIntroduction: row.video_introductions,
+  }));
 }
 
 export async function updateApplication(id: number, updates: Partial<InsertApplication>) {
@@ -1414,23 +1426,31 @@ export async function getDashboardStats(userId: number) {
     };
   }
   
+  // Applications are linked to jobs, and jobs are posted by users
+  // So we need to JOIN applications with jobs to filter by recruiter
   const [applicationsResult] = await db.select({ count: count() })
     .from(applications)
-    .where(eq(applications.recruiterId, recruiterId));
+    .innerJoin(jobs, eq(applications.jobId, jobs.id))
+    .where(eq(jobs.postedBy, userId));
   
   const [interviewsResult] = await db.select({ count: count() })
     .from(interviews)
     .where(eq(interviews.recruiterId, recruiterId));
   
-  const [candidatesResult] = await db.select({ count: count() })
-    .from(candidates)
-    .where(eq(candidates.recruiterId, recruiterId));
+  // Candidates table doesn't have recruiterId either
+  // Count unique candidates who applied to this recruiter's jobs
+  const candidatesForJobsResult = await db.selectDistinct({ candidateId: applications.candidateId })
+    .from(applications)
+    .innerJoin(jobs, eq(applications.jobId, jobs.id))
+    .where(eq(jobs.postedBy, userId));
+  
+  const totalCandidates = candidatesForJobsResult.length;
   
   return {
     totalJobs: jobsResult?.count || 0,
     totalApplications: applicationsResult?.count || 0,
     totalInterviews: interviewsResult?.count || 0,
-    totalCandidates: candidatesResult?.count || 0,
+    totalCandidates: totalCandidates,
   };
 }
 

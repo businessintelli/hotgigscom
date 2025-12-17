@@ -104,6 +104,14 @@ export default function ApplicationManagement() {
     },
   });
 
+  // Redirect to home if not authenticated - MUST be before any early returns
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setLocation("/");
+    }
+  }, [authLoading, isAuthenticated, setLocation]);
+
+  // Early returns for loading states - MUST be after all hooks
   if (authLoading || applicationsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -111,13 +119,6 @@ export default function ApplicationManagement() {
       </div>
     );
   }
-
-  // Redirect to home if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      setLocation("/");
-    }
-  }, [authLoading, isAuthenticated, setLocation]);
   
   if (!isAuthenticated) {
     return null;
