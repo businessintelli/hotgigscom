@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE candidates \nADD COLUMN currentSalary DECIMAL(10,2) DEFAULT NULL,\nADD COLUMN currentHourlyRate DECIMAL(10,2) DEFAULT NULL,\nADD COLUMN expectedSalary DECIMAL(10,2) DEFAULT NULL,\nADD COLUMN expectedHourlyRate DECIMAL(10,2) DEFAULT NULL,\nADD COLUMN salaryType ENUM('salary', 'hourly') DEFAULT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE candidates \nADD COLUMN currentSalary DECIMAL(10,2) DEFAULT NULL,\nADD COLUMN currentHourlyRate DECIMAL(10,2) DEFAULT NULL,\nADD COLUMN expectedSalary DECIMAL(10,2) DEFAULT NULL,\nADD COLUMN expectedHourlyRate DECIMAL(10,2) DEFAULT NULL,\nADD COLUMN salaryType ENUM('salary', 'hourly') DEFAULT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3029
+}

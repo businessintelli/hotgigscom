@@ -99,6 +99,12 @@ export const candidates = mysqlTable("candidates", {
   linkedinId: varchar("linkedinId", { length: 255 }),
   passportCopyUrl: varchar("passportCopyUrl", { length: 500 }), // S3 URL for passport/visa/green card
   dlCopyUrl: varchar("dlCopyUrl", { length: 500 }), // S3 URL for driver's license
+  // Salary information
+  currentSalary: int("currentSalary"), // Annual salary in USD
+  currentHourlyRate: int("currentHourlyRate"), // Hourly rate in USD
+  expectedSalary: int("expectedSalary"), // Expected annual salary in USD
+  expectedHourlyRate: int("expectedHourlyRate"), // Expected hourly rate in USD
+  salaryType: mysqlEnum("salaryType", ["salary", "hourly"]), // Preferred compensation type
   profileCompleted: boolean("profileCompleted").default(false).notNull(),
   profileCompletionStep: int("profileCompletionStep").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

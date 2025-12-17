@@ -281,6 +281,13 @@
       "when": 1765967657158,
       "tag": "0039_normal_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1765968369777,
+      "tag": "0040_silly_amphibian",
+      "breakpoints": true
     }
   ]
 }

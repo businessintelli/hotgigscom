@@ -16,6 +16,12 @@ export interface EmploymentEntry {
 }
 
 export interface ExtendedCandidateInfo {
+  // Salary information
+  currentSalary?: number;
+  currentHourlyRate?: number;
+  expectedSalary?: number;
+  expectedHourlyRate?: number;
+  salaryType?: 'salary' | 'hourly';
   workAuthorization?: string;
   workAuthorizationEndDate?: string;
   w2EmployerName?: string;
@@ -184,6 +190,82 @@ export default function ExtendedCandidateInfoForm({ data, onChange }: ExtendedCa
 
   return (
     <div className="space-y-6">
+      {/* Salary Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Compensation Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="salaryType">Compensation Type *</Label>
+              <Select
+                value={data.salaryType || ''}
+                onValueChange={(value) => updateField('salaryType', value as 'salary' | 'hourly')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="salary">Annual Salary</SelectItem>
+                  <SelectItem value="hourly">Hourly Rate</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {data.salaryType === 'salary' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="currentSalary">Current Annual Salary (USD)</Label>
+                <Input
+                  id="currentSalary"
+                  type="number"
+                  placeholder="e.g., 80000"
+                  value={data.currentSalary || ''}
+                  onChange={(e) => updateField('currentSalary', parseInt(e.target.value) || undefined)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="expectedSalary">Expected Annual Salary (USD) *</Label>
+                <Input
+                  id="expectedSalary"
+                  type="number"
+                  placeholder="e.g., 95000"
+                  value={data.expectedSalary || ''}
+                  onChange={(e) => updateField('expectedSalary', parseInt(e.target.value) || undefined)}
+                />
+              </div>
+            </div>
+          )}
+          
+          {data.salaryType === 'hourly' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="currentHourlyRate">Current Hourly Rate (USD)</Label>
+                <Input
+                  id="currentHourlyRate"
+                  type="number"
+                  placeholder="e.g., 45"
+                  value={data.currentHourlyRate || ''}
+                  onChange={(e) => updateField('currentHourlyRate', parseInt(e.target.value) || undefined)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="expectedHourlyRate">Expected Hourly Rate (USD) *</Label>
+                <Input
+                  id="expectedHourlyRate"
+                  type="number"
+                  placeholder="e.g., 55"
+                  value={data.expectedHourlyRate || ''}
+                  onChange={(e) => updateField('expectedHourlyRate', parseInt(e.target.value) || undefined)}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Work Authorization */}
       <Card>
         <CardHeader>

@@ -2369,3 +2369,35 @@
 ## Navigation Cleanup
 - [x] Remove redundant dashboard/back icons from all pages
 - [x] Ensure home page redirects based on user role after login
+
+## Bulk Candidate Import Feature
+- [x] Create CSV/Excel template with all candidate fields
+- [x] Build file upload UI for recruiters
+- [x] Implement CSV/Excel parsing backend
+- [x] Add validation for bulk import data
+- [x] Create preview step before final import
+- [x] Handle duplicate detection during bulk import
+- [ ] Send batch invitation emails to imported candidates
+
+## Enhanced Candidate Profile
+- [x] Add current salary/hourly rate fields to database schema
+- [x] Add expected salary/hourly rate fields to database schema
+- [x] Create comprehensive candidate profile creation/edit form
+- [x] Include all extended info fields in profile form
+- [ ] Auto-prefill application form from candidate profile data
+- [ ] Update candidate dashboard to show profile completion percentage
+
+## Application Progress Tracking
+- [x] Design progress indicator component
+- [x] Track completion status for each section (resume, extended info, cover letter, skills)
+- [ ] Show visual progress bar in application form (component created, integration pending)
+- [x] Add section validation indicators (complete/incomplete/optional)
+- [ ] Save progress automatically as user fills form
+
+## Branded Email Templates
+- [ ] Design HTML email template for candidate invitations
+- [ ] Include job details in invitation email
+- [ ] Add company branding and logo to email
+- [ ] Include clear registration instructions
+- [ ] Add direct links to job and registration page
+- [ ] Create email preview functionality for recruiters

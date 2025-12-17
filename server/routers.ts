@@ -1049,6 +1049,172 @@ Please be specific and practical.`;
         await db.deactivateProfileShare(input.shareToken, ctx.user.id);
         return { success: true };
       }),
+
+    // Bulk import procedures
+    parseImportFile: protectedProcedure
+      .input(z.object({
+        content: z.string(),
+        filename: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const lines = input.content.split('\n').filter(line => line.trim());
+          if (lines.length < 2) {
+            return { success: false, error: 'File must contain header row and at least one data row' };
+          }
+
+          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+          const data: any[] = [];
+
+          for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+            const row: any = {};
+            const errors: string[] = [];
+
+            headers.forEach((header, index) => {
+              row[header] = values[index] || undefined;
+            });
+
+            // Validation
+            if (!row.name || row.name.length < 2) {
+              errors.push('Name is required');
+            }
+            if (!row.email || !row.email.includes('@')) {
+              errors.push('Valid email is required');
+            }
+
+            row.validation = {
+              isValid: errors.length === 0,
+              errors,
+            };
+
+            // Parse numeric fields
+            if (row.currentSalary) row.currentSalary = parseInt(row.currentSalary);
+            if (row.expectedSalary) row.expectedSalary = parseInt(row.expectedSalary);
+
+            data.push(row);
+          }
+
+          return { success: true, data };
+        } catch (error: any) {
+          return { success: false, error: error.message };
+        }
+      }),
+
+    bulkImport: protectedProcedure
+      .input(z.object({
+        candidates: z.array(z.object({
+          name: z.string(),
+          email: z.string(),
+          phone: z.string().optional(),
+          location: z.string().optional(),
+          skills: z.string().optional(),
+          workAuthorization: z.string().optional(),
+          nationality: z.string().optional(),
+          gender: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          currentSalary: z.number().optional(),
+          expectedSalary: z.number().optional(),
+          salaryType: z.string().optional(),
+          highestEducation: z.string().optional(),
+          specialization: z.string().optional(),
+          currentResidenceZipCode: z.string().optional(),
+          linkedinId: z.string().optional(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        let successCount = 0;
+        let failedCount = 0;
+        const errors: string[] = [];
+
+        for (const candidateData of input.candidates) {
+          try {
+            // Check if user exists with this email
+            let user = await db.getUserByEmail(candidateData.email);
+            
+            if (!user) {
+              // Create new user
+              const userResult = await db.createUser({
+                email: candidateData.email,
+                name: candidateData.name,
+                role: 'candidate',
+                loginMethod: 'password',
+                emailVerified: false,
+              });
+              user = await db.getUserById(userResult.insertId);
+            }
+
+            if (!user) {
+              errors.push(`Failed to create user for ${candidateData.email}`);
+              failedCount++;
+              continue;
+            }
+
+            // Check if candidate profile exists
+            let candidate = await db.getCandidateByUserId(user.id);
+
+            if (!candidate) {
+              // Create candidate profile
+              await db.createCandidate({
+                userId: user.id,
+                phoneNumber: candidateData.phone,
+                location: candidateData.location,
+                skills: candidateData.skills,
+                workAuthorization: candidateData.workAuthorization,
+                nationality: candidateData.nationality,
+                gender: candidateData.gender,
+                dateOfBirth: candidateData.dateOfBirth ? new Date(candidateData.dateOfBirth) : undefined,
+                currentSalary: candidateData.currentSalary,
+                expectedSalary: candidateData.expectedSalary,
+                salaryType: candidateData.salaryType as 'salary' | 'hourly' | undefined,
+                highestEducation: candidateData.highestEducation,
+                specialization: candidateData.specialization,
+                currentResidenceZipCode: candidateData.currentResidenceZipCode,
+                linkedinId: candidateData.linkedinId,
+              });
+            } else {
+              // Update existing candidate
+              await db.updateCandidate(candidate.id, {
+                phoneNumber: candidateData.phone,
+                location: candidateData.location,
+                skills: candidateData.skills,
+                workAuthorization: candidateData.workAuthorization,
+                nationality: candidateData.nationality,
+                gender: candidateData.gender,
+                dateOfBirth: candidateData.dateOfBirth ? new Date(candidateData.dateOfBirth) : undefined,
+                currentSalary: candidateData.currentSalary,
+                expectedSalary: candidateData.expectedSalary,
+                salaryType: candidateData.salaryType as 'salary' | 'hourly' | undefined,
+                highestEducation: candidateData.highestEducation,
+                specialization: candidateData.specialization,
+                currentResidenceZipCode: candidateData.currentResidenceZipCode,
+                linkedinId: candidateData.linkedinId,
+              });
+            }
+
+            // Send invitation email if user is not verified
+            if (!user.emailVerified) {
+              try {
+                // TODO: Send invitation email
+                // await sendInvitationEmail(user.email, user.name);
+              } catch (emailError) {
+                console.error('Failed to send invitation email:', emailError);
+              }
+            }
+
+            successCount++;
+          } catch (error: any) {
+            errors.push(`${candidateData.email}: ${error.message}`);
+            failedCount++;
+          }
+        }
+
+        return {
+          successCount,
+          failedCount,
+          errors,
+        };
+      }),
   }),
 
   customer: router({
@@ -1370,6 +1536,12 @@ Please be specific and practical.`;
         videoIntroductionId: z.number().optional(),
         // Extended candidate information
         extendedInfo: z.object({
+          // Salary information
+          currentSalary: z.number().optional(),
+          currentHourlyRate: z.number().optional(),
+          expectedSalary: z.number().optional(),
+          expectedHourlyRate: z.number().optional(),
+          salaryType: z.enum(['salary', 'hourly']).optional(),
           workAuthorization: z.string().optional(),
           workAuthorizationEndDate: z.string().optional(),
           w2EmployerName: z.string().optional(),
@@ -1401,6 +1573,12 @@ Please be specific and practical.`;
         // Update candidate profile with extended information if provided
         if (input.extendedInfo) {
           await db.updateCandidate(input.candidateId, {
+            // Salary information
+            currentSalary: input.extendedInfo.currentSalary,
+            currentHourlyRate: input.extendedInfo.currentHourlyRate,
+            expectedSalary: input.extendedInfo.expectedSalary,
+            expectedHourlyRate: input.extendedInfo.expectedHourlyRate,
+            salaryType: input.extendedInfo.salaryType,
             workAuthorization: input.extendedInfo.workAuthorization,
             workAuthorizationEndDate: input.extendedInfo.workAuthorizationEndDate ? new Date(input.extendedInfo.workAuthorizationEndDate) : undefined,
             w2EmployerName: input.extendedInfo.w2EmployerName,
@@ -1839,6 +2017,12 @@ Please be specific and practical.`;
         coverLetter: z.string().optional(),
         returnUrl: z.string().optional(), // URL to return to after submission
         extendedInfo: z.object({
+          // Salary information
+          currentSalary: z.number().optional(),
+          currentHourlyRate: z.number().optional(),
+          expectedSalary: z.number().optional(),
+          expectedHourlyRate: z.number().optional(),
+          salaryType: z.enum(['salary', 'hourly']).optional(),
           workAuthorization: z.string().optional(),
           workAuthorizationEndDate: z.string().optional(),
           w2EmployerName: z.string().optional(),
@@ -1902,6 +2086,12 @@ Please be specific and practical.`;
               seniorityLevel: input.candidateData.seniorityLevel,
               // Extended info
               ...(input.extendedInfo && {
+                // Salary information
+                currentSalary: input.extendedInfo.currentSalary,
+                currentHourlyRate: input.extendedInfo.currentHourlyRate,
+                expectedSalary: input.extendedInfo.expectedSalary,
+                expectedHourlyRate: input.extendedInfo.expectedHourlyRate,
+                salaryType: input.extendedInfo.salaryType,
                 workAuthorization: input.extendedInfo.workAuthorization,
                 workAuthorizationEndDate: input.extendedInfo.workAuthorizationEndDate ? new Date(input.extendedInfo.workAuthorizationEndDate) : undefined,
                 w2EmployerName: input.extendedInfo.w2EmployerName,

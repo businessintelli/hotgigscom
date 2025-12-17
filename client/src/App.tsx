@@ -27,6 +27,7 @@ import InterviewCalendar from "@/pages/InterviewCalendar";
 import AIInterviewPage from "@/pages/AIInterviewPage";
 import ResumeRankingDashboard from "@/pages/ResumeRankingDashboard";
 import BulkResumeUpload from "@/pages/BulkResumeUpload";
+import BulkCandidateImport from "@/pages/BulkCandidateImport";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
 import ApplyOnBehalf from "./pages/ApplyOnBehalf";
@@ -109,6 +110,7 @@ function Router() {
       <Route path="/reschedule/confirm" component={RescheduleConfirmation} />
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path="/recruiter/bulk-upload" component={BulkResumeUpload} />
+      <Route path="/recruiter/bulk-import" component={BulkCandidateImport} />
        <Route path="/recruiter/interview-calendar" component={InterviewCalendar} />
       <Route path="/recruiter/resume-ranking" component={ResumeRankingDashboard} />
       <Route path="/recruiter/customers" component={CustomerManagement} />

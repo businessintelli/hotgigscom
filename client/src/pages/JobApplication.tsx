@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ResumePreviewModal } from "@/components/ResumePreviewModal";
 import SkillMatrixForm, { SkillRating, validateSkillMatrix } from "@/components/SkillMatrixForm";
 import ExtendedCandidateInfoForm, { ExtendedCandidateInfo } from "@/components/ExtendedCandidateInfoForm";
+import ApplicationProgressTracker, { ProgressSection } from "@/components/ApplicationProgressTracker";
 
 export default function JobApplication() {
   const { user } = useAuth();
@@ -33,6 +34,7 @@ export default function JobApplication() {
   const [skillRatings, setSkillRatings] = useState<SkillRating[]>([]);
   const [showSkillValidation, setShowSkillValidation] = useState(false);
   const [extendedInfo, setExtendedInfo] = useState<ExtendedCandidateInfo>({});
+  const [currentSection, setCurrentSection] = useState<string>("resume");
   
   // Upload resume mutation
   const uploadResumeMutation = trpc.candidate.uploadResume.useMutation();
