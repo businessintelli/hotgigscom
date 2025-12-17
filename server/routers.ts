@@ -4619,6 +4619,269 @@ Please be specific and practical.`;
         return await recruiterReportsHelpers.getJobPerformanceReport(recruiter.id, input.period, input.customStart, input.customEnd);
       }),
   }),
+
+  // Skills Testing Platform
+  skillsTesting: router({
+    // Test library management
+    createTest: protectedProcedure
+      .input(z.object({
+        testName: z.string(),
+        testType: z.enum(['coding', 'personality', 'domain-specific', 'aptitude', 'technical']),
+        category: z.string().optional(),
+        description: z.string().optional(),
+        duration: z.number(),
+        passingScore: z.number(),
+        difficulty: z.enum(['easy', 'medium', 'hard', 'expert']),
+        isPublic: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        const { testLibrary } = await import('../drizzle/schema');
+        const [newTest] = await database.insert(testLibrary).values({
+          recruiterId: recruiter.id,
+          ...input,
+        }).$returningId();
+
+        return { testId: newTest.id };
+      }),
+
+    getMyTests: protectedProcedure
+      .query(async ({ ctx }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) return [];
+
+        const database = await getDb();
+        if (!database) return [];
+        const { testLibrary } = await import('../drizzle/schema');
+        const { eq, desc } = await import('drizzle-orm');
+        
+        return await database
+          .select()
+          .from(testLibrary)
+          .where(eq(testLibrary.recruiterId, recruiter.id))
+          .orderBy(desc(testLibrary.createdAt));
+      }),
+
+    // Assign test to candidate
+    assignTest: protectedProcedure
+      .input(z.object({
+        testId: z.number(),
+        candidateId: z.number(),
+        applicationId: z.number().optional(),
+        dueDate: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        const { testAssignments } = await import('../drizzle/schema');
+        const [assignment] = await database.insert(testAssignments).values({
+          testId: input.testId,
+          candidateId: input.candidateId,
+          applicationId: input.applicationId,
+          assignedBy: recruiter.id,
+          dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
+          status: 'assigned',
+        }).$returningId();
+
+        return { assignmentId: assignment.id };
+      }),
+
+    // Get assigned tests for candidate
+    getMyAssignedTests: protectedProcedure
+      .query(async ({ ctx }) => {
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+        if (!candidate) return [];
+
+        const database = await getDb();
+        if (!database) return [];
+        const { testAssignments, testLibrary } = await import('../drizzle/schema');
+        const { eq, desc } = await import('drizzle-orm');
+        
+        return await database
+          .select({
+            assignment: testAssignments,
+            test: testLibrary,
+          })
+          .from(testAssignments)
+          .innerJoin(testLibrary, eq(testAssignments.testId, testLibrary.id))
+          .where(eq(testAssignments.candidateId, candidate.id))
+          .orderBy(desc(testAssignments.createdAt));
+      }),
+  }),
+
+  // Messaging System
+  messaging: router({
+    // Get conversations for current user
+    getMyConversations: protectedProcedure
+      .query(async ({ ctx }) => {
+        const database = await getDb();
+        if (!database) return [];
+        const { conversations, users, recruiters, candidates } = await import('../drizzle/schema');
+        const { eq, or, desc } = await import('drizzle-orm');
+
+        // Check if user is recruiter or candidate
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+
+        if (recruiter) {
+          return await database
+            .select({
+              conversation: conversations,
+              candidate: candidates,
+              candidateUser: users,
+            })
+            .from(conversations)
+            .innerJoin(candidates, eq(conversations.candidateId, candidates.id))
+            .innerJoin(users, eq(candidates.userId, users.id))
+            .where(eq(conversations.recruiterId, recruiter.id))
+            .orderBy(desc(conversations.lastMessageAt));
+        } else if (candidate) {
+          return await database
+            .select({
+              conversation: conversations,
+              recruiter: recruiters,
+              recruiterUser: users,
+            })
+            .from(conversations)
+            .innerJoin(recruiters, eq(conversations.recruiterId, recruiters.id))
+            .innerJoin(users, eq(recruiters.userId, users.id))
+            .where(eq(conversations.candidateId, candidate.id))
+            .orderBy(desc(conversations.lastMessageAt));
+        }
+
+        return [];
+      }),
+
+    // Get messages in a conversation
+    getMessages: protectedProcedure
+      .input(z.object({ conversationId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return [];
+        const { messages, messageAttachments } = await import('../drizzle/schema');
+        const { eq, desc } = await import('drizzle-orm');
+        
+        const msgs = await database
+          .select()
+          .from(messages)
+          .where(eq(messages.conversationId, input.conversationId))
+          .orderBy(desc(messages.createdAt));
+
+        // Get attachments for each message
+        const messagesWithAttachments = await Promise.all(
+          msgs.map(async (msg: any) => {
+            const attachments = await database
+              .select()
+              .from(messageAttachments)
+              .where(eq(messageAttachments.messageId, msg.id));
+            return { ...msg, attachments };
+          })
+        );
+
+        return messagesWithAttachments;
+      }),
+
+    // Send a message
+    sendMessage: protectedProcedure
+      .input(z.object({
+        conversationId: z.number().optional(),
+        recipientId: z.number().optional(),
+        content: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const database = await getDb();
+        if (!database) throw new Error('Database not available');
+        const { messages, conversations } = await import('../drizzle/schema');
+        const { sendMessage: sendMsg, getOrCreateConversation } = await import('./messaging');
+
+        // Determine sender type
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+        
+        if (!recruiter && !candidate) {
+          throw new Error('User must be recruiter or candidate');
+        }
+
+        let conversationId = input.conversationId;
+
+        // Create conversation if needed
+        if (!conversationId && input.recipientId) {
+          if (recruiter) {
+            conversationId = await getOrCreateConversation({
+              recruiterId: recruiter.id,
+              candidateId: input.recipientId,
+            });
+          } else if (candidate) {
+            conversationId = await getOrCreateConversation({
+              recruiterId: input.recipientId,
+              candidateId: candidate.id,
+            });
+          }
+        }
+
+        if (!conversationId) {
+          throw new Error('Conversation ID required');
+        }
+
+        const messageId = await sendMsg({
+          conversationId,
+          senderId: ctx.user.id,
+          senderType: recruiter ? 'recruiter' : 'candidate',
+          content: input.content,
+        });
+
+        return { messageId };
+      }),
+
+    // Get message templates
+    getMyTemplates: protectedProcedure
+      .query(async ({ ctx }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) return [];
+
+        const database = await getDb();
+        if (!database) return [];
+        const { messageTemplates } = await import('../drizzle/schema');
+        const { eq, desc } = await import('drizzle-orm');
+        
+        const templates = await database
+          .select()
+          .from(messageTemplates)
+          .where(eq(messageTemplates.recruiterId, recruiter.id))
+          .orderBy(desc(messageTemplates.usageCount));
+        
+        return templates;
+      }),
+
+    // Create message template
+    createTemplate: protectedProcedure
+      .input(z.object({
+        templateName: z.string(),
+        subject: z.string().optional(),
+        content: z.string(),
+        category: z.string().optional(),
+        isPublic: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) throw new Error('Recruiter profile not found');
+
+        const { createMessageTemplate } = await import('./messaging');
+        const templateId = await createMessageTemplate({
+          recruiterId: recruiter.id,
+          ...input,
+        });
+
+        return { templateId };
+      }),
+  }),
 });
 
 

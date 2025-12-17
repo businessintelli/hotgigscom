@@ -494,6 +494,132 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
 
 /**
+ * Skills Testing Platform Tables
+ */
+
+// Test categories and types
+export const testLibrary = mysqlTable("testLibrary", {
+  id: int("id").autoincrement().primaryKey(),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  testName: varchar("testName", { length: 255 }).notNull(),
+  testType: mysqlEnum("testType", ["coding", "personality", "domain-specific", "aptitude", "technical"]).notNull(),
+  category: varchar("category", { length: 100 }), // e.g., "JavaScript", "Big Five", "Sales", "Math"
+  description: text("description"),
+  duration: int("duration").notNull(), // in minutes
+  passingScore: int("passingScore").notNull(), // percentage
+  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard", "expert"]).notNull(),
+  isPublic: boolean("isPublic").default(false).notNull(), // shared in platform library
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TestLibrary = typeof testLibrary.$inferSelect;
+export type InsertTestLibrary = typeof testLibrary.$inferInsert;
+
+// Test questions for coding, aptitude, and technical tests
+export const testQuestions = mysqlTable("testQuestions", {
+  id: int("id").autoincrement().primaryKey(),
+  testId: int("testId").notNull().references(() => testLibrary.id),
+  questionText: text("questionText").notNull(),
+  questionType: mysqlEnum("questionType", ["multiple-choice", "coding", "essay", "true-false"]).notNull(),
+  options: text("options"), // JSON array for multiple choice
+  correctAnswer: text("correctAnswer"), // For auto-grading
+  points: int("points").default(10).notNull(),
+  // For coding questions
+  starterCode: text("starterCode"),
+  testCases: text("testCases"), // JSON array of test cases
+  language: varchar("language", { length: 50 }), // "python", "javascript", "java", "cpp"
+  timeLimit: int("timeLimit"), // seconds for code execution
+  order: int("order").notNull(), // question order in test
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TestQuestion = typeof testQuestions.$inferSelect;
+export type InsertTestQuestion = typeof testQuestions.$inferInsert;
+
+// Personality assessment questions (Big Five, DISC, etc.)
+export const personalityQuestions = mysqlTable("personalityQuestions", {
+  id: int("id").autoincrement().primaryKey(),
+  testId: int("testId").notNull().references(() => testLibrary.id),
+  questionText: text("questionText").notNull(),
+  trait: varchar("trait", { length: 100 }).notNull(), // "openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"
+  isReversed: boolean("isReversed").default(false).notNull(), // reverse scoring
+  order: int("order").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PersonalityQuestion = typeof personalityQuestions.$inferSelect;
+export type InsertPersonalityQuestion = typeof personalityQuestions.$inferInsert;
+
+// Test assignments to candidates
+export const testAssignments = mysqlTable("testAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  testId: int("testId").notNull().references(() => testLibrary.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  applicationId: int("applicationId").references(() => applications.id), // optional: linked to job application
+  assignedBy: int("assignedBy").notNull().references(() => recruiters.id),
+  status: mysqlEnum("status", ["assigned", "in-progress", "completed", "expired", "cancelled"]).default("assigned").notNull(),
+  dueDate: timestamp("dueDate"),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  score: int("score"), // percentage
+  passed: boolean("passed"),
+  timeSpent: int("timeSpent"), // in seconds
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TestAssignment = typeof testAssignments.$inferSelect;
+export type InsertTestAssignment = typeof testAssignments.$inferInsert;
+
+// Test responses/answers from candidates
+export const testResponses = mysqlTable("testResponses", {
+  id: int("id").autoincrement().primaryKey(),
+  assignmentId: int("assignmentId").notNull().references(() => testAssignments.id),
+  questionId: int("questionId").notNull().references(() => testQuestions.id),
+  candidateAnswer: text("candidateAnswer").notNull(),
+  isCorrect: boolean("isCorrect"),
+  pointsEarned: int("pointsEarned").default(0).notNull(),
+  // For coding questions
+  codeOutput: text("codeOutput"),
+  executionTime: int("executionTime"), // milliseconds
+  testCasesPassed: int("testCasesPassed"),
+  testCasesTotal: int("testCasesTotal"),
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+});
+
+export type TestResponse = typeof testResponses.$inferSelect;
+export type InsertTestResponse = typeof testResponses.$inferInsert;
+
+// Personality test results
+export const personalityResults = mysqlTable("personalityResults", {
+  id: int("id").autoincrement().primaryKey(),
+  assignmentId: int("assignmentId").notNull().references(() => testAssignments.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  testType: varchar("testType", { length: 50 }).notNull(), // "big-five", "disc", "mbti"
+  // Big Five scores (0-100)
+  openness: int("openness"),
+  conscientiousness: int("conscientiousness"),
+  extraversion: int("extraversion"),
+  agreeableness: int("agreeableness"),
+  neuroticism: int("neuroticism"),
+  // DISC scores (0-100)
+  dominance: int("dominance"),
+  influence: int("influence"),
+  steadiness: int("steadiness"),
+  compliance: int("compliance"),
+  // Results summary
+  primaryTrait: varchar("primaryTrait", { length: 100 }),
+  traitProfile: text("traitProfile"), // JSON with detailed breakdown
+  interpretation: text("interpretation"), // AI-generated interpretation
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PersonalityResult = typeof personalityResults.$inferSelect;
+export type InsertPersonalityResult = typeof personalityResults.$inferInsert;
+
+/**
  * Candidate tags table for organizing candidates
  */
 export const candidateTags = mysqlTable("candidateTags", {
@@ -520,6 +646,83 @@ export const candidateTagAssignments = mysqlTable("candidateTagAssignments", {
 
 export type CandidateTagAssignment = typeof candidateTagAssignments.$inferSelect;
 export type InsertCandidateTagAssignment = typeof candidateTagAssignments.$inferInsert;
+
+/**
+ * Messaging System Tables
+ */
+
+// Conversations between recruiters and candidates
+export const conversations = mysqlTable("conversations", {
+  id: int("id").autoincrement().primaryKey(),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  applicationId: int("applicationId").references(() => applications.id), // optional: linked to specific application
+  jobId: int("jobId").references(() => jobs.id), // optional: linked to specific job
+  subject: varchar("subject", { length: 255 }),
+  lastMessageAt: timestamp("lastMessageAt").defaultNow().notNull(),
+  isArchived: boolean("isArchived").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = typeof conversations.$inferInsert;
+
+// Messages within conversations
+export const messages = mysqlTable("messages", {
+  id: int("id").autoincrement().primaryKey(),
+  conversationId: int("conversationId").notNull().references(() => conversations.id),
+  senderId: int("senderId").notNull().references(() => users.id),
+  senderType: mysqlEnum("senderType", ["recruiter", "candidate"]).notNull(),
+  content: text("content").notNull(),
+  isRead: boolean("isRead").default(false).notNull(),
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;
+
+// Message attachments (files, images, documents)
+export const messageAttachments = mysqlTable("messageAttachments", {
+  id: int("id").autoincrement().primaryKey(),
+  messageId: int("messageId").notNull().references(() => messages.id),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
+  fileKey: varchar("fileKey", { length: 500 }).notNull(), // S3 key
+  fileSize: int("fileSize").notNull(), // bytes
+  mimeType: varchar("mimeType", { length: 100 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MessageAttachment = typeof messageAttachments.$inferSelect;
+export type InsertMessageAttachment = typeof messageAttachments.$inferInsert;
+
+// Message templates for recruiters
+export const messageTemplates = mysqlTable("messageTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  templateName: varchar("templateName", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 255 }),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 100 }), // "interview-invitation", "rejection", "follow-up", "offer"
+  isPublic: boolean("isPublic").default(false).notNull(), // shared with team
+  usageCount: int("usageCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MessageTemplate = typeof messageTemplates.$inferSelect;
+export type InsertMessageTemplate = typeof messageTemplates.$inferInsert;
+
+// Typing indicators for real-time chat
+export const typingIndicators = mysqlTable("typingIndicators", {
+  id: int("id").autoincrement().primaryKey(),
+  conversationId: int("conversationId").notNull().references(() => conversations.id),
+  userId: int("userId").notNull().references(() => users.id),
+  isTyping: boolean("isTyping").default(false).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
 
 /**
  * Email templates for bulk campaigns

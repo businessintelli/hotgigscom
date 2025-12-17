@@ -98,6 +98,7 @@ const sidebarItems = [
   { icon: CalendarDays, label: "Calendar", path: null, badge: null, isCalendar: true },
   { icon: Users, label: "Associates", path: "/candidate/associates", badge: null },
   { icon: MessageSquare, label: "AI Career Coach", path: "/candidate/career-coach", badge: null },
+  { icon: Mail, label: "Messages", path: "/candidate/messages", badge: null },
   { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
   { icon: BookOpen, label: "Career Resources", path: "/resources", badge: null },
 ];

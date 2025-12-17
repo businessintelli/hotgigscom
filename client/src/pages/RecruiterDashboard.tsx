@@ -95,7 +95,9 @@ import {
   GripVertical,
   MessageSquare,
   Bot,
-  UserCheck
+  UserCheck,
+  Code,
+  Mail as MailIcon
 } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -233,6 +235,8 @@ const sidebarItems = [
   { icon: Video, label: "AI Interviews", path: "/recruiter/interview-playback", badge: null },
   { icon: Target, label: "AI Matching", path: "/recruiter/ai-matching", badge: null },
   { icon: Bot, label: "AI Assistant", path: "/recruiter/ai-assistant", badge: null },
+  { icon: Code, label: "Skills Testing", path: "/recruiter/skills-testing", badge: null },
+  { icon: MessageSquare, label: "Messages", path: "/recruiter/messages", badge: null },
   { icon: Building2, label: "Clients", path: "/recruiter/customers", badge: null },
   { icon: Upload, label: "Bulk Upload", path: "/recruiter/bulk-upload", badge: null },
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/campaigns", badge: null },

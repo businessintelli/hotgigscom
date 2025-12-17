@@ -78,6 +78,8 @@ import PanelDecline from "./pages/PanelDecline";
 import PanelReschedule from "./pages/PanelReschedule";
 import PanelFeedback from "./pages/PanelFeedback";
 import PanelistDashboard from "./pages/PanelistDashboard";
+import SkillsTestingManagement from "./pages/SkillsTestingManagement";
+import Messages from "./pages/Messages";
 import Recommendations from "./pages/Recommendations";
 import CareerResources from "./pages/CareerResources";
 import VideoIntroductionPage from "./pages/VideoIntroductionPage";
@@ -123,6 +125,9 @@ function Router() {
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
       <Route path="/recruiter/notification-preferences" component={RecruiterNotificationPreferences} />
       <Route path="/recruiter/candidate-resume/:id" component={CandidateResumeView} />
+      <Route path="/recruiter/skills-testing" component={SkillsTestingManagement} />
+      <Route path="/recruiter/messages" component={Messages} />
+      <Route path="/candidate/messages" component={Messages} />
       <Route path="/select-role" component={SelectRole} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />
