@@ -1762,3 +1762,88 @@ export const inmailTemplates = mysqlTable("inmail_templates", {
 
 export type InmailTemplate = typeof inmailTemplates.$inferSelect;
 export type InsertInmailTemplate = typeof inmailTemplates.$inferInsert;
+
+
+/**
+ * Company settings for API keys and configuration
+ */
+export const companySettings = mysqlTable("companySettings", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  
+  // API Keys (encrypted)
+  sendgridApiKey: varchar("sendgridApiKey", { length: 500 }),
+  resendApiKey: varchar("resendApiKey", { length: 500 }),
+  openaiApiKey: varchar("openaiApiKey", { length: 500 }),
+  linkedinApiKey: varchar("linkedinApiKey", { length: 500 }),
+  
+  // Email Configuration
+  fromEmail: varchar("fromEmail", { length: 320 }),
+  fromName: varchar("fromName", { length: 255 }),
+  replyToEmail: varchar("replyToEmail", { length: 320 }),
+  
+  // Notification Settings
+  enableEmailNotifications: boolean("enableEmailNotifications").default(true).notNull(),
+  enableSmsNotifications: boolean("enableSmsNotifications").default(false).notNull(),
+  
+  // Branding
+  companyLogo: varchar("companyLogo", { length: 500 }),
+  primaryColor: varchar("primaryColor", { length: 7 }), // Hex color
+  secondaryColor: varchar("secondaryColor", { length: 7 }),
+  
+  // Other Settings (JSON)
+  additionalSettings: json("additionalSettings"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CompanySettings = typeof companySettings.$inferSelect;
+export type InsertCompanySettings = typeof companySettings.$inferInsert;
+
+/**
+ * User activity logs for audit trail
+ */
+export const userActivityLogs = mysqlTable("userActivityLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  companyId: int("companyId").references(() => companies.id, { onDelete: "cascade" }),
+  
+  // Activity Details
+  action: varchar("action", { length: 100 }).notNull(), // e.g., "login", "create_job", "update_candidate"
+  resource: varchar("resource", { length: 100 }), // e.g., "job", "candidate", "application"
+  resourceId: int("resourceId"), // ID of the affected resource
+  
+  // Request Details
+  ipAddress: varchar("ipAddress", { length: 45 }), // IPv6 max length
+  userAgent: text("userAgent"),
+  
+  // Additional Context
+  details: json("details"), // Any additional context about the action
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserActivityLog = typeof userActivityLogs.$inferSelect;
+export type InsertUserActivityLog = typeof userActivityLogs.$inferInsert;
+
+/**
+ * System health metrics for monitoring
+ */
+export const systemHealthMetrics = mysqlTable("systemHealthMetrics", {
+  id: int("id").autoincrement().primaryKey(),
+  
+  // Metric Details
+  metricType: varchar("metricType", { length: 100 }).notNull(), // e.g., "api_response_time", "database_query_time"
+  metricValue: decimal("metricValue", { precision: 10, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 50 }), // e.g., "ms", "count", "percentage"
+  
+  // Context
+  source: varchar("source", { length: 100 }), // e.g., "api", "database", "email_service"
+  details: json("details"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SystemHealthMetric = typeof systemHealthMetrics.$inferSelect;
+export type InsertSystemHealthMetric = typeof systemHealthMetrics.$inferInsert;

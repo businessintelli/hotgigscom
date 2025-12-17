@@ -288,7 +288,7 @@ Return structured JSON.`;
  * Run a sourcing campaign
  */
 export async function runSourcingCampaign(campaignId: number): Promise<void> {
-  const db = getDb();
+  const db = await getDb();
   
   // Get campaign details
   const campaign = await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.id, campaignId)).limit(1);

@@ -37,6 +37,7 @@ import { gamificationRouter } from './gamificationRouter';
 import { profileAnalyticsRouter } from './profileAnalyticsRouter';
 import { createVideoMeeting } from './videoMeetingService';
 import { panelPublicRouter } from './panelPublicRouter';
+import { companyAdminRouter } from './routers/companyAdmin';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
 import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
@@ -78,6 +79,7 @@ export const appRouter = router({
   profileAnalytics: profileAnalyticsRouter,
   panelPublic: panelPublicRouter,
   document: documentUploadRouter,
+  companyAdmin: companyAdminRouter,
   
   // AI Chat router for career coach and recruiting assistant
   ai: router({
@@ -757,7 +759,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         autoAddToPool: z.boolean().optional().default(true),
       }))
       .mutation(async ({ ctx, input }) => {
-        const db = getDb();
+        const db = await getDb();
         const result = await db.insert(sourcingCampaigns).values({
           name: input.name,
           jobId: input.jobId,
@@ -778,14 +780,14 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       }),
     
     getSourcingCampaigns: protectedProcedure.query(async ({ ctx }) => {
-      const db = getDb();
+      const db = await getDb();
       return await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.createdBy, ctx.user.id));
     }),
     
     getSourcingCampaign: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
-        const db = getDb();
+        const db = await getDb();
         const campaign = await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.id, input.id)).limit(1);
         return campaign[0] || null;
       }),
@@ -804,7 +806,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
     pauseSourcingCampaign: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
-        const db = getDb();
+        const db = await getDb();
         await db.update(sourcingCampaigns)
           .set({ status: 'paused' })
           .where(eq(sourcingCampaigns.id, input.id));
@@ -814,7 +816,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
     getSourcedCandidates: protectedProcedure
       .input(z.object({ campaignId: z.number() }))
       .query(async ({ input }) => {
-        const db = getDb();
+        const db = await getDb();
         return await db.select().from(sourcedCandidates).where(eq(sourcedCandidates.campaignId, input.campaignId));
       }),
     
@@ -828,7 +830,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         useAiPersonalization: z.boolean().optional().default(true),
       }))
       .mutation(async ({ ctx, input }) => {
-        const db = getDb();
+        const db = await getDb();
         const result = await db.insert(emailCampaigns).values({
           name: input.name,
           sourcingCampaignId: input.sourcingCampaignId,
@@ -890,7 +892,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
     getApplicationPrediction: protectedProcedure
       .input(z.object({ applicationId: z.number() }))
       .query(async ({ input }) => {
-        const db = getDb();
+        const db = await getDb();
         const predictions = await db.select()
           .from(candidateSuccessPredictions)
           .where(eq(candidateSuccessPredictions.applicationId, input.applicationId))
@@ -900,7 +902,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
     
     getEmailCampaigns: protectedProcedure
       .query(async ({ ctx }) => {
-        const db = getDb();
+        const db = await getDb();
         const campaigns = await db.select()
           .from(emailCampaigns)
           .where(eq(emailCampaigns.createdBy, ctx.user.id));

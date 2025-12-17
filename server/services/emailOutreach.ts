@@ -116,7 +116,7 @@ export async function sendOutreachEmail(
   campaignId: number,
   useAiPersonalization: boolean = true
 ): Promise<void> {
-  const db = getDb();
+  const db = await getDb();
 
   // Get sourced candidate
   const sourcedCandidate = await db.select()
@@ -219,7 +219,7 @@ export async function sendFollowUpEmail(
   recipientId: number,
   followUpTemplate: string
 ): Promise<void> {
-  const db = getDb();
+  const db = await getDb();
 
   // Get recipient details
   const recipient = await db.select()
@@ -270,7 +270,7 @@ export async function sendFollowUpEmail(
  * Process email campaign - send to all sourced candidates
  */
 export async function processCampaign(campaignId: number): Promise<void> {
-  const db = getDb();
+  const db = await getDb();
 
   // Get campaign
   const campaign = await db.select()
@@ -337,7 +337,7 @@ export async function processCampaign(campaignId: number): Promise<void> {
  * Schedule follow-ups for non-responders
  */
 export async function scheduleFollowUps(campaignId: number, daysAfter: number = 3): Promise<void> {
-  const db = getDb();
+  const db = await getDb();
 
   // Get recipients who haven't replied
   const recipients = await db.select()

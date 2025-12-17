@@ -43,7 +43,7 @@ export interface PredictionFeatures {
  * Extract features from application data
  */
 export async function extractFeatures(applicationId: number): Promise<PredictionFeatures> {
-  const db = getDb();
+  const db = await getDb();
   
   // Get application with job and candidate data
   const appData = await db.select()
@@ -265,7 +265,7 @@ export async function predictApplicationSuccess(applicationId: number): Promise<
   factors: string[];
   recommendation: string;
 }> {
-  const db = getDb();
+  const db = await getDb();
   
   // Extract features
   const features = await extractFeatures(applicationId);
@@ -351,7 +351,7 @@ export async function batchPredictSuccess(applicationIds: number[]): Promise<voi
  * Get ranked applications by success score
  */
 export async function getRankedApplications(jobId: number): Promise<any[]> {
-  const db = getDb();
+  const db = await getDb();
   
   // Get all applications for job
   const apps = await db.select()

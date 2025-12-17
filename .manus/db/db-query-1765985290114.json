@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS companySettings (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  companyId INT NOT NULL,\n  sendgridApiKey VARCHAR(500),\n  resendApiKey VARCHAR(500),\n  openaiApiKey VARCHAR(500),\n  linkedinApiKey VARCHAR(500),\n  fromEmail VARCHAR(320),\n  fromName VARCHAR(255),\n  replyToEmail VARCHAR(320),\n  enableEmailNotifications BOOLEAN NOT NULL DEFAULT TRUE,\n  enableSmsNotifications BOOLEAN NOT NULL DEFAULT FALSE,\n  companyLogo VARCHAR(500),\n  primaryColor VARCHAR(7),\n  secondaryColor VARCHAR(7),\n  additionalSettings JSON,\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (companyId) REFERENCES companies(id) ON DELETE CASCADE\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS companySettings (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  companyId INT NOT NULL,\n  sendgridApiKey VARCHAR(500),\n  resendApiKey VARCHAR(500),\n  openaiApiKey VARCHAR(500),\n  linkedinApiKey VARCHAR(500),\n  fromEmail VARCHAR(320),\n  fromName VARCHAR(255),\n  replyToEmail VARCHAR(320),\n  enableEmailNotifications BOOLEAN NOT NULL DEFAULT TRUE,\n  enableSmsNotifications BOOLEAN NOT NULL DEFAULT FALSE,\n  companyLogo VARCHAR(500),\n  primaryColor VARCHAR(7),\n  secondaryColor VARCHAR(7),\n  additionalSettings JSON,\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (companyId) REFERENCES companies(id) ON DELETE CASCADE\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1819
+}

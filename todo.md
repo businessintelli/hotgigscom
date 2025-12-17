@@ -2934,3 +2934,173 @@
 - [x] Add database connectivity check (SELECT 1 query test)
 - [x] Return server uptime and status information
 - [x] Return appropriate HTTP status codes (200 for healthy, 503 for unhealthy)
+
+
+## Company Admin Features (NEW - Current Focus)
+
+### Company Settings & Configuration
+- [x] Database schema for company settings (companySettings table)
+- [x] Backend API for company settings management
+- [ ] Company settings page with API key management
+  - [ ] SendGrid API key configuration
+  - [ ] Resend API key configuration
+  - [ ] OpenAI API key configuration (if applicable)
+  - [ ] Company profile settings (name, logo, domain)
+  - [ ] Email templates configuration
+  - [ ] Notification preferences
+- [ ] Database-level company settings storage
+- [ ] Secure API key encryption and storage
+- [ ] Settings validation and testing interface
+
+### User Management
+- [ ] Company user management dashboard
+  - [ ] View all users in company (recruiters, candidates)
+  - [ ] Add new users to company
+  - [ ] Edit user roles and permissions
+  - [ ] Deactivate/activate user accounts
+  - [ ] Reset user passwords
+  - [ ] View user activity logs
+- [ ] Role-based access control (RBAC)
+  - [ ] Company admin role with full permissions
+  - [ ] Recruiter role with standard permissions
+  - [ ] Custom role creation
+- [ ] User invitation system with email invites
+- [ ] Bulk user import/export
+
+### Company-Level Reports & Analytics
+- [ ] Executive dashboard with company-wide KPIs
+  - [ ] Total active jobs across all recruiters
+  - [ ] Total applications received
+  - [ ] Total candidates in database
+  - [ ] Total placements/hires
+  - [ ] Revenue metrics (if applicable)
+- [ ] Recruitment funnel analytics (company-wide)
+  - [ ] Applications → Screening → Interviews → Offers → Hires
+  - [ ] Conversion rates at each stage
+  - [ ] Bottleneck identification
+- [ ] Time-to-hire metrics
+  - [ ] Average time from job posting to hire
+  - [ ] Time-to-hire by department/role
+  - [ ] Time-to-hire by recruiter
+  - [ ] Trend analysis over time
+- [ ] Cost-per-hire analytics
+  - [ ] Total recruitment costs
+  - [ ] Cost breakdown by source
+  - [ ] Cost per quality hire
+  - [ ] ROI analysis
+- [ ] Source effectiveness tracking
+  - [ ] Applications by source (LinkedIn, Indeed, referrals, etc.)
+  - [ ] Quality of hire by source
+  - [ ] Cost per source
+  - [ ] Conversion rates by source
+- [ ] Recruiter performance metrics
+  - [ ] Jobs posted per recruiter
+  - [ ] Applications per recruiter
+  - [ ] Interviews scheduled per recruiter
+  - [ ] Placements per recruiter
+  - [ ] Time-to-fill per recruiter
+  - [ ] Quality of hire per recruiter
+- [ ] Candidate pipeline health
+  - [ ] Active candidates by stage
+  - [ ] Candidate drop-off rates
+  - [ ] Candidate engagement metrics
+  - [ ] Candidate satisfaction scores
+- [ ] Job performance analytics
+  - [ ] Most popular jobs
+  - [ ] Jobs with highest application rates
+  - [ ] Jobs taking longest to fill
+  - [ ] Job posting effectiveness
+- [ ] Diversity & inclusion metrics
+  - [ ] Candidate demographics
+  - [ ] Hiring diversity metrics
+  - [ ] Bias detection in hiring process
+- [ ] Offer acceptance rate tracking
+  - [ ] Overall acceptance rate
+  - [ ] Acceptance rate by role/department
+  - [ ] Time to decision metrics
+  - [ ] Reasons for offer rejection
+- [ ] Employee retention analytics (post-hire)
+  - [ ] Turnover rates
+  - [ ] Retention by source
+  - [ ] Quality of hire validation
+  - [ ] Performance correlation
+
+### Company-Wide Master Lists
+- [ ] Candidate master list (all recruiters' candidates)
+  - [ ] View all candidates across company
+  - [ ] Advanced search and filtering
+  - [ ] Candidate ownership tracking
+  - [ ] Candidate status across all jobs
+  - [ ] Export candidate data
+  - [ ] Bulk candidate operations
+- [ ] Associate master list (all placed candidates)
+  - [ ] View all associates across all recruiters
+  - [ ] Associate placement history
+  - [ ] Associate performance tracking
+  - [ ] Client assignment tracking
+  - [ ] Associate status (active, inactive, terminated)
+  - [ ] Export associate data
+- [ ] Jobs master list (all company jobs)
+  - [ ] View all jobs across all recruiters
+  - [ ] Job status tracking
+  - [ ] Job performance metrics
+  - [ ] Client/customer tracking
+  - [ ] Job ownership and assignment
+  - [ ] Export job data
+- [ ] Client/customer master list
+  - [ ] View all clients across company
+  - [ ] Client relationship tracking
+  - [ ] Client job history
+  - [ ] Client revenue tracking
+  - [ ] Client satisfaction scores
+  - [ ] Export client data
+
+### Advanced Admin Features
+- [ ] Audit logs and activity tracking
+  - [ ] User activity logs
+  - [ ] Data access logs
+  - [ ] System changes log
+  - [ ] Security event logging
+- [ ] Data export and reporting
+  - [ ] Custom report builder
+  - [ ] Scheduled report generation
+  - [ ] Export to Excel/CSV/PDF
+  - [ ] Email report delivery
+- [ ] System health monitoring
+  - [ ] Database performance metrics
+  - [ ] API usage statistics
+  - [ ] Error rate monitoring
+  - [ ] System uptime tracking
+- [ ] Compliance and security
+  - [ ] GDPR compliance tools
+  - [ ] Data retention policies
+  - [ ] User consent management
+  - [ ] Data anonymization tools
+- [ ] Billing and subscription (if applicable)
+  - [ ] Usage tracking
+  - [ ] Invoice generation
+  - [ ] Payment history
+  - [ ] Subscription management
+
+### Company Admin Dashboard Layout
+- [ ] Create company admin sidebar navigation
+  - [ ] Dashboard (executive overview)
+  - [ ] Reports & Analytics
+  - [ ] Master Lists (Candidates, Associates, Jobs, Clients)
+  - [ ] User Management
+  - [ ] Company Settings
+  - [ ] Audit Logs
+  - [ ] System Health
+- [ ] Company admin can also access all recruiter features
+- [ ] Role-based UI rendering (show admin features only to company_admin role)
+- [ ] Seamless switching between admin and recruiter views
+
+### Database Schema Updates
+- [x] Add company_settings table for API keys and configuration
+- [x] Add user_activity_logs table for audit trail
+- [x] Add system_health_metrics table
+- [x] Backend helper functions for all company admin operations
+- [x] tRPC router for company admin with role-based access control
+- [ ] Update users table with additional admin fields
+- [ ] Add indexes for performance on large datasets
+- [ ] Migration scripts for schema updates

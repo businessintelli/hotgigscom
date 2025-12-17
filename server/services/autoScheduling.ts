@@ -35,7 +35,7 @@ export async function shouldAutoSchedule(applicationId: number, settings: AutoSc
     return false;
   }
 
-  const db = getDb();
+  const db = await getDb();
   
   // Get prediction for application
   const predictions = await db.select()
@@ -147,7 +147,7 @@ export async function autoScheduleInterview(
   recruiterId: number,
   settings: AutoScheduleSettings = DEFAULT_SETTINGS
 ): Promise<{ success: boolean; interviewId?: number; message: string }> {
-  const db = getDb();
+  const db = await getDb();
 
   try {
     // Check if should auto-schedule
@@ -263,7 +263,7 @@ export async function processPendingAutoSchedules(
   recruiterId: number,
   settings: AutoScheduleSettings = DEFAULT_SETTINGS
 ): Promise<{ scheduled: number; skipped: number; failed: number }> {
-  const db = getDb();
+  const db = await getDb();
 
   let scheduled = 0;
   let skipped = 0;
