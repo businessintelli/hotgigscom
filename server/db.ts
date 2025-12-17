@@ -1505,3 +1505,55 @@ export async function getPublicJobs(filters?: {
   
   return await query;
 }
+
+/**
+ * Search jobs with filters
+ */
+export async function searchJobs(filters: {
+  search?: string;
+  location?: string;
+  employmentType?: string;
+  experienceLevel?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  recruiterId?: number;
+  status?: string;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  let query = db.select()
+    .from(jobs)
+    .orderBy(desc(jobs.createdAt))
+    .limit(filters.limit || 50);
+  
+  // Apply filters
+  const conditions = [];
+  
+  if (filters.recruiterId) {
+    conditions.push(eq(jobs.recruiterId, filters.recruiterId));
+  }
+  
+  if (filters.status) {
+    conditions.push(eq(jobs.status, filters.status));
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions));
+  }
+  
+  const results = await query;
+  
+  // Apply text search filter if provided (client-side filtering for simplicity)
+  if (filters.search) {
+    const searchLower = filters.search.toLowerCase();
+    return results.filter(job => 
+      job.title?.toLowerCase().includes(searchLower) ||
+      job.description?.toLowerCase().includes(searchLower) ||
+      job.companyName?.toLowerCase().includes(searchLower)
+    );
+  }
+  
+  return results;
+}

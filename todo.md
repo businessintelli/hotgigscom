@@ -3122,3 +3122,7 @@
 - [x] Fix emailCampaigns undefined error (added to schema imports)
 - [x] Fix Calendly integration not found error (added graceful error handling)
 - [ ] Fix invalid input validation errors (needs investigation)
+
+
+## Bug Fix - Missing searchJobs Function
+- [x] Add db.searchJobs function for job search functionality
