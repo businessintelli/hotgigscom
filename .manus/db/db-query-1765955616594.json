@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `testQuestions` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `testId` int NOT NULL,\n  `questionText` text NOT NULL,\n  `questionType` enum('multiple-choice','coding','essay','true-false') NOT NULL,\n  `options` text,\n  `correctAnswer` text,\n  `points` int NOT NULL DEFAULT 10,\n  `starterCode` text,\n  `testCases` text,\n  `language` varchar(50),\n  `timeLimit` int,\n  `order` int NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `testQuestions_id` PRIMARY KEY(`id`)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `testQuestions` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `testId` int NOT NULL,\n  `questionText` text NOT NULL,\n  `questionType` enum('multiple-choice','coding','essay','true-false') NOT NULL,\n  `options` text,\n  `correctAnswer` text,\n  `points` int NOT NULL DEFAULT 10,\n  `starterCode` text,\n  `testCases` text,\n  `language` varchar(50),\n  `timeLimit` int,\n  `order` int NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `testQuestions_id` PRIMARY KEY(`id`)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1679
-}
