@@ -33,6 +33,7 @@ import {
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -353,7 +354,7 @@ function CandidateDashboardContent() {
   ];
 
   return (
-    <>
+    <TooltipProvider>
       <CandidateOnboarding 
         open={showOnboarding} 
         onComplete={() => setShowOnboarding(false)} 
@@ -1190,7 +1191,6 @@ function CandidateDashboardContent() {
           </div>
         </DialogContent>
       </Dialog>
-
-    </>
+    </TooltipProvider>
   );
 }
