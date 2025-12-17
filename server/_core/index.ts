@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleSendGridWebhook, handleResendWebhook } from "../emailWebhooks";
 import webhookRoutes from "../webhooks/routes";
+import { getDb } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -30,6 +31,15 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  // Initialize database connection before starting server
+  console.log("[Server] Initializing database connection...");
+  const db = await getDb();
+  if (!db) {
+    console.error("[Server] Failed to initialize database connection. Server will start but database operations may fail.");
+  } else {
+    console.log("[Server] Database connection initialized successfully");
+  }
+  
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads

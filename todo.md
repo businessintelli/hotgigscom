@@ -2899,3 +2899,18 @@
 - [x] Improved getDb() function with initialization lock and retry mechanism
 - [x] Added better error logging for database connection issues
 - [x] Tested recruiter jobs page loads without errors
+
+## Bug Fixes - Database & TypeScript Errors (December 17, 2025 - Continued)
+
+### Persistent db2.select Error for Recruiter
+- [x] Investigate which specific query is failing for recruiter user
+- [x] Check server logs for error details
+- [x] Identify the procedure causing the error (race condition during startup)
+- [x] Fix the root cause of null database instance (added DB initialization at server startup)
+
+### TypeScript Type Errors
+- [x] Fix AdminLayout.tsx: Property 'isLoading' does not exist error (changed to 'loading')
+- [x] Fix JobApplication.tsx: requiredSkills property errors (use skillRequirements instead)
+- [x] Fix JobApplication.tsx: candidate variable scope error (moved useEffect after declaration)
+- [ ] Fix other TypeScript errors in remaining files
+- [ ] Verify all TypeScript compilation passes

@@ -41,6 +41,54 @@ export default function JobApplication() {
   
   // Draft key for localStorage
   const draftKey = `job-application-draft-${jobId}`;
+  
+  // Load draft on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(draftKey);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setCoverLetter(draft.coverLetter || "");
+        setUseCustomResume(draft.useCustomResume || false);
+        toast.info("Draft restored", { duration: 2000 });
+      } catch (error) {
+        console.error("Failed to restore draft:", error);
+      }
+    }
+  }, [jobId]);
+  
+  // Auto-save draft
+  useEffect(() => {
+    if (!coverLetter && !useCustomResume) return; // Don't save empty drafts
+    
+    const timeoutId = setTimeout(() => {
+      const draft = {
+        coverLetter,
+        useCustomResume,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      setLastSaved(new Date());
+    }, 1000); // Save 1 second after user stops typing
+    
+    return () => clearTimeout(timeoutId);
+  }, [coverLetter, useCustomResume, draftKey]);
+  
+  // Clear draft on successful submission
+  useEffect(() => {
+    if (isSubmitted) {
+      localStorage.removeItem(draftKey);
+    }
+  }, [isSubmitted, draftKey]);
+
+  // Fetch job details
+  const { data: job, isLoading: jobLoading } = trpc.job.getById.useQuery({ id: jobId });
+
+  // Fetch candidate profile
+  const { data: candidate, isLoading: candidateLoading } = trpc.candidate.getByUserId.useQuery(
+    { userId: user?.id || 0 },
+    { enabled: !!user?.id }
+  );
 
   // Auto-fill extended info from candidate profile
   useEffect(() => {
@@ -102,55 +150,7 @@ export default function JobApplication() {
         toast.success('Profile information auto-filled');
       }
     }
-  }, [candidate]);
-  
-  // Load draft on mount
-  useEffect(() => {
-    const savedDraft = localStorage.getItem(draftKey);
-    if (savedDraft) {
-      try {
-        const draft = JSON.parse(savedDraft);
-        setCoverLetter(draft.coverLetter || "");
-        setUseCustomResume(draft.useCustomResume || false);
-        toast.info("Draft restored", { duration: 2000 });
-      } catch (error) {
-        console.error("Failed to restore draft:", error);
-      }
-    }
-  }, [jobId]);
-  
-  // Auto-save draft
-  useEffect(() => {
-    if (!coverLetter && !useCustomResume) return; // Don't save empty drafts
-    
-    const timeoutId = setTimeout(() => {
-      const draft = {
-        coverLetter,
-        useCustomResume,
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(draftKey, JSON.stringify(draft));
-      setLastSaved(new Date());
-    }, 1000); // Save 1 second after user stops typing
-    
-    return () => clearTimeout(timeoutId);
-  }, [coverLetter, useCustomResume, draftKey]);
-  
-  // Clear draft on successful submission
-  useEffect(() => {
-    if (isSubmitted) {
-      localStorage.removeItem(draftKey);
-    }
-  }, [isSubmitted, draftKey]);
-
-  // Fetch job details
-  const { data: job, isLoading: jobLoading } = trpc.job.getById.useQuery({ id: jobId });
-
-  // Fetch candidate profile
-  const { data: candidate, isLoading: candidateLoading } = trpc.candidate.getByUserId.useQuery(
-    { userId: user?.id || 0 },
-    { enabled: !!user?.id }
-  );
+  }, [candidate, extendedInfo]);
 
   // Fetch resume profiles
   const { data: resumeProfiles = [] } = trpc.resumeProfile.getResumeProfiles.useQuery(
@@ -766,8 +766,8 @@ export default function JobApplication() {
                 {
                   id: 'skills',
                   title: 'Skill Matrix',
-                  isComplete: skillRatings.length > 0 && validateSkillMatrix(skillRatings, job?.requiredSkills || []),
-                  hasError: showSkillValidation && !validateSkillMatrix(skillRatings, job?.requiredSkills || []),
+                  isComplete: skillRatings.length > 0 && validateSkillMatrix(skillRatings, skillRequirements),
+                  hasError: showSkillValidation && !validateSkillMatrix(skillRatings, skillRequirements),
                 },
                 {
                   id: 'extended-info',

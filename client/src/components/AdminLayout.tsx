@@ -60,7 +60,7 @@ const sidebarItems = [
 
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const [location, setLocation] = useLocation();
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, loading } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Load collapsed state from localStorage
@@ -84,7 +84,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   };
 
   // Check if user is admin
-  if (!isLoading && user && user.role !== "admin") {
+  if (!loading && user && user.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
@@ -101,7 +101,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     );
   }
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
