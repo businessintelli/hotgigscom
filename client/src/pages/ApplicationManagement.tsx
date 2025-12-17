@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video, BarChart3 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -112,8 +112,14 @@ export default function ApplicationManagement() {
     );
   }
 
+  // Redirect to home if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setLocation("/");
+    }
+  }, [authLoading, isAuthenticated, setLocation]);
+  
   if (!isAuthenticated) {
-    setLocation("/");
     return null;
   }
 

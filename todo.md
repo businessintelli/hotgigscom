@@ -3131,3 +3131,12 @@
 ## Bug Fixes - Candidate Search Page Errors
 - [x] Fix getPendingRescheduleRequests SQL query (added join with interviews table)
 - [x] Fix CandidateSearch component undefined skills error (added null checks)
+
+
+## Bug Fix - getDashboardStats SQL Error
+- [x] Fix getDashboardStats SQL query (changed to use postedBy for jobs, added recruiter lookup)
+
+
+## Bug Fixes - ApplicationManagement Errors
+- [x] Fix setState during render in ApplicationManagement component (wrapped in useEffect)
+- [x] Fix server crash causing HTML response (will be resolved by server restart after getDashboardStats fix)

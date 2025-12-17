@@ -1388,13 +1388,31 @@ export async function createRecruiterInvitation(invitation: {
 /**
  * Get dashboard stats for recruiter
  */
-export async function getDashboardStats(recruiterId: number) {
+export async function getDashboardStats(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
+  // Jobs are posted by users (postedBy column)
   const [jobsResult] = await db.select({ count: count() })
     .from(jobs)
-    .where(eq(jobs.recruiterId, recruiterId));
+    .where(eq(jobs.postedBy, userId));
+  
+  // Get recruiter ID from user ID
+  const recruiter = await db.select({ id: recruiters.id })
+    .from(recruiters)
+    .where(eq(recruiters.userId, userId))
+    .limit(1);
+  
+  const recruiterId = recruiter[0]?.id;
+  
+  if (!recruiterId) {
+    return {
+      totalJobs: jobsResult?.count || 0,
+      totalApplications: 0,
+      totalInterviews: 0,
+      totalCandidates: 0,
+    };
+  }
   
   const [applicationsResult] = await db.select({ count: count() })
     .from(applications)
