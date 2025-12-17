@@ -299,6 +299,36 @@ export async function predictApplicationSuccess(applicationId: number): Promise<
   
   console.log(`Predicted success for application ${applicationId}: ${prediction.score}/100`);
   
+  // Trigger auto-scheduling if score is high enough
+  if (prediction.score >= 85) {
+    try {
+      const { autoScheduleInterview } = await import('./autoScheduling');
+      // Get recruiter ID from application
+      const appData = await db.select()
+        .from(applications)
+        .where(eq(applications.id, applicationId))
+        .limit(1);
+      
+      if (appData && appData.length > 0) {
+        const application = appData[0];
+        const jobData = await db.select()
+          .from(jobs)
+          .where(eq(jobs.id, application.jobId))
+          .limit(1);
+        
+        if (jobData && jobData.length > 0) {
+          const job = jobData[0];
+          // Auto-schedule in background (don't block prediction response)
+          autoScheduleInterview(applicationId, job.recruiterId).catch(error => {
+            console.error('Auto-scheduling failed:', error);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error triggering auto-schedule:', error);
+    }
+  }
+  
   return prediction;
 }
 

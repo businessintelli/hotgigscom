@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ResumeViewer } from "@/components/ResumeViewer";
 import SkillMatrixDisplay from "@/components/SkillMatrixDisplay";
 import { SkillMatrixComparison } from "@/components/SkillMatrixComparison";
+import { SuccessScoreBadge } from "@/components/SuccessScoreBadge";
 
 export default function ApplicationManagement() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -539,6 +540,7 @@ export default function ApplicationManagement() {
                           </div>
                           <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end gap-2">
                             {getStatusBadge(application.status)}
+                            <SuccessScoreBadge applicationId={application.id} />
                             <p className="text-xs text-gray-500">
                               {new Date(application.appliedAt).toLocaleDateString()}
                             </p>

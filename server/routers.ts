@@ -885,6 +885,26 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         const { getRankedApplications } = await import('./services/predictiveScoring');
         return await getRankedApplications(input.jobId);
       }),
+    
+    getApplicationPrediction: protectedProcedure
+      .input(z.object({ applicationId: z.number() }))
+      .query(async ({ input }) => {
+        const db = getDb();
+        const predictions = await db.select()
+          .from(candidateSuccessPredictions)
+          .where(eq(candidateSuccessPredictions.applicationId, input.applicationId))
+          .limit(1);
+        return predictions[0] || null;
+      }),
+    
+    getEmailCampaigns: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = getDb();
+        const campaigns = await db.select()
+          .from(emailCampaigns)
+          .where(eq(emailCampaigns.createdBy, ctx.user.id));
+        return campaigns;
+      }),
 
     getAnalytics: protectedProcedure
       .input(z.object({ days: z.number().optional().default(30) }))
