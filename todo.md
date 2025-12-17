@@ -2508,3 +2508,58 @@
 - [ ] Write vitest tests for bias detection flows
 - [ ] Update user documentation
 - [ ] Create checkpoint with all features
+
+
+## Phase 6: Advanced Recruitment Automation (Current Focus)
+
+### Automated Candidate Sourcing
+- [x] Create candidate sourcing database schema (sourcing_campaigns, sourced_candidates)
+- [x] Build LinkedIn profile scraper API integration
+- [x] Build GitHub profile scraper API integration
+- [x] Implement AI-powered candidate discovery based on job requirements
+- [x] Create candidate enrichment service (extract skills, experience from profiles)
+- [x] Build sourcing campaign management backend
+- [x] Add sourced candidates to talent pool automatically
+
+### AI-Powered Email Outreach
+- [ ] Create email campaign database schema (email_campaigns, email_sequences, email_logs)
+- [ ] Build AI email personalization engine using LLM
+- [ ] Implement multi-step email sequence automation
+- [ ] Create email template library with variables
+- [ ] Build email tracking (opens, clicks, replies)
+- [ ] Implement smart follow-up logic based on engagement
+- [ ] Add unsubscribe and compliance features
+
+### Predictive Success Scoring
+- [ ] Create ML model training dataset from historical hires
+- [ ] Build success prediction algorithm using application data
+- [ ] Implement feature engineering (skills match, experience fit, education alignment)
+- [ ] Create scoring API endpoint for real-time predictions
+- [ ] Add success score to application records
+- [ ] Build score explanation/reasoning feature
+- [ ] Test and validate prediction accuracy
+
+### Automated Interview Scheduling
+- [ ] Create scheduling preferences database schema
+- [ ] Build calendar availability API integration (Google Calendar, Outlook)
+- [ ] Implement intelligent time slot suggestion algorithm
+- [ ] Create automated scheduling workflow
+- [ ] Build conflict detection and resolution
+- [ ] Add timezone handling for global scheduling
+- [ ] Implement automated reminder system
+
+### Recruiter Automation UI
+- [ ] Create sourcing campaigns dashboard page
+- [ ] Build email campaign management interface
+- [ ] Add predictive scoring visualization to applications
+- [ ] Create automated scheduling settings page
+- [ ] Build automation analytics dashboard
+- [ ] Add campaign performance metrics
+
+### Testing & Documentation
+- [ ] Write vitest tests for sourcing automation
+- [ ] Write vitest tests for email campaign system
+- [ ] Write vitest tests for predictive scoring
+- [ ] Write vitest tests for automated scheduling
+- [ ] Update user documentation
+- [ ] Create checkpoint with all automation features

@@ -13,7 +13,7 @@ import * as authService from "./authService";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
-import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users } from "../drizzle/schema";
+import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 import { storagePut } from "./storage";
@@ -28,6 +28,7 @@ import * as analyticsHelpers from './analyticsHelpers';
 import * as recruiterReportsHelpers from './recruiterReportsHelpers';
 import { candidateCareerCoach, recruiterAssistant, buildCandidateContext, buildRecruiterContext } from './services/aiAssistant';
 import { formatToolsForLLM, executeQueryTool } from './services/aiDatabaseTools';
+import { invokeLLM } from './_core/llm';
 import { resumeProfileRouter } from './resumeProfileRouter';
 import { documentUploadRouter } from './documentUpload';
 import { onboardingRouter } from './onboardingRouter';
@@ -738,6 +739,84 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         return { success: true };
       }),
     
+    // Sourcing Campaigns
+    createSourcingCampaign: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        jobId: z.number().optional(),
+        targetRoles: z.array(z.string()),
+        requiredSkills: z.array(z.string()),
+        locations: z.array(z.string()).optional(),
+        experienceMin: z.number().optional(),
+        experienceMax: z.number().optional(),
+        searchLinkedIn: z.boolean().optional().default(true),
+        searchGitHub: z.boolean().optional().default(true),
+        maxCandidates: z.number().optional().default(100),
+        autoEnrich: z.boolean().optional().default(true),
+        autoAddToPool: z.boolean().optional().default(true),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = getDb();
+        const result = await db.insert(sourcingCampaigns).values({
+          name: input.name,
+          jobId: input.jobId,
+          createdBy: ctx.user.id,
+          targetRoles: JSON.stringify(input.targetRoles),
+          requiredSkills: JSON.stringify(input.requiredSkills),
+          locations: input.locations ? JSON.stringify(input.locations) : null,
+          experienceMin: input.experienceMin,
+          experienceMax: input.experienceMax,
+          searchLinkedIn: input.searchLinkedIn,
+          searchGitHub: input.searchGitHub,
+          maxCandidates: input.maxCandidates,
+          autoEnrich: input.autoEnrich,
+          autoAddToPool: input.autoAddToPool,
+          status: 'draft',
+        });
+        return { success: true, id: result.insertId };
+      }),
+    
+    getSourcingCampaigns: protectedProcedure.query(async ({ ctx }) => {
+      const db = getDb();
+      return await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.createdBy, ctx.user.id));
+    }),
+    
+    getSourcingCampaign: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const db = getDb();
+        const campaign = await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.id, input.id)).limit(1);
+        return campaign[0] || null;
+      }),
+    
+    startSourcingCampaign: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const { runSourcingCampaign } = await import('./services/candidateSourcing');
+        // Run in background (in production, use a job queue)
+        runSourcingCampaign(input.id).catch(error => {
+          console.error('Sourcing campaign failed:', error);
+        });
+        return { success: true, message: 'Campaign started' };
+      }),
+    
+    pauseSourcingCampaign: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = getDb();
+        await db.update(sourcingCampaigns)
+          .set({ status: 'paused' })
+          .where(eq(sourcingCampaigns.id, input.id));
+        return { success: true };
+      }),
+    
+    getSourcedCandidates: protectedProcedure
+      .input(z.object({ campaignId: z.number() }))
+      .query(async ({ input }) => {
+        const db = getDb();
+        return await db.select().from(sourcedCandidates).where(eq(sourcedCandidates.campaignId, input.campaignId));
+      }),
+
     getAnalytics: protectedProcedure
       .input(z.object({ days: z.number().optional().default(30) }))
       .query(async ({ ctx, input }) => {

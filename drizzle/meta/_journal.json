@@ -302,6 +302,13 @@
       "when": 1765973732701,
       "tag": "0042_magenta_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1765974797226,
+      "tag": "0043_fearless_cloak",
+      "breakpoints": true
     }
   ]
 }
