@@ -2441,3 +2441,43 @@
 - [x] Implement section dividers in recruiter sidebar
 - [x] Add section labels/headings for each group
 - [x] Test visual hierarchy and spacing
+
+## LLM Enhancement Features (Current Session)
+
+### Bias Detection System
+- [x] Create bias detection database tables (biasDetectionLogs, diversityMetrics)
+- [x] Implement resume bias detection (gender, age, ethnicity indicators)
+- [x] Add matching algorithm fairness checks
+- [x] Create job description bias analyzer
+- [x] Build diversity report generator for recruiters
+- [ ] Add bias alert notifications
+- [ ] Integrate bias detection with resume upload flow
+- [ ] Add bias detection UI components
+
+### Outcome Tracking Pipeline
+- [x] Create outcome tracking database tables (matchOutcomes, algorithmPerformance)
+- [x] Implement hire outcome tracking
+- [x] Build algorithm performance metrics collection
+- [x] Create feedback loop for match weight adjustment
+- [ ] Add A/B testing framework for matching strategies
+- [ ] Integrate outcome tracking with application status changes
+- [ ] Create performance dashboard for recruiters
+
+### Proactive AI Notifications
+- [x] Create notification preferences database table
+- [x] Implement daily top candidate digest for recruiters
+- [x] Add job match alerts for candidates
+- [x] Create profile improvement suggestions
+- [x] Build notification delivery system
+- [ ] Add notification preferences UI
+- [ ] Create cron job for daily notification processing
+- [ ] Integrate with email service
+
+### Enhanced AI Assistants with Database Access
+- [x] Design database query tool system for AI assistants
+- [x] Implement role-specific database access controls
+- [x] Add candidate-specific query functions (applications, saved jobs, interviews)
+- [x] Add recruiter-specific query functions (jobs, candidates, pipeline metrics)
+- [ ] Integrate database tools with AI assistant conversations
+- [ ] Add query result formatting and presentation
+- [x] Implement safety checks for database queries

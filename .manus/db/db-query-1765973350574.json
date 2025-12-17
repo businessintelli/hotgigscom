@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `biasDetectionLogs` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `entityType` enum('resume','job_description','match_score','interview_evaluation') NOT NULL,\n  `entityId` int NOT NULL,\n  `biasType` enum('gender','age','ethnicity','disability','language','education','location') NOT NULL,\n  `severity` enum('low','medium','high') NOT NULL,\n  `detectedText` text,\n  `recommendation` text,\n  `flaggedBy` varchar(50) NOT NULL,\n  `resolved` boolean NOT NULL DEFAULT false,\n  `resolvedAt` timestamp NULL,\n  `resolvedBy` int NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT `biasDetectionLogs_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `biasDetectionLogs` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `entityType` enum('resume','job_description','match_score','interview_evaluation') NOT NULL,\n  `entityId` int NOT NULL,\n  `biasType` enum('gender','age','ethnicity','disability','language','education','location') NOT NULL,\n  `severity` enum('low','medium','high') NOT NULL,\n  `detectedText` text,\n  `recommendation` text,\n  `flaggedBy` varchar(50) NOT NULL,\n  `resolved` boolean NOT NULL DEFAULT false,\n  `resolvedAt` timestamp NULL,\n  `resolvedBy` int NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT `biasDetectionLogs_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1731
+}

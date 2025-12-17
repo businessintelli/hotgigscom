@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index, date } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index, date, decimal } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -1190,3 +1190,149 @@ export const profileCompletionAnalytics = mysqlTable("profileCompletionAnalytics
 
 export type ProfileCompletionAnalytics = typeof profileCompletionAnalytics.$inferSelect;
 export type InsertProfileCompletionAnalytics = typeof profileCompletionAnalytics.$inferInsert;
+
+/**
+ * Bias Detection Logs - Track potential bias in AI decisions
+ */
+export const biasDetectionLogs = mysqlTable("biasDetectionLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  entityType: mysqlEnum("entityType", ["resume", "job_description", "match_score", "interview_evaluation"]).notNull(),
+  entityId: int("entityId").notNull(), // ID of the resume, job, application, etc.
+  biasType: mysqlEnum("biasType", ["gender", "age", "ethnicity", "disability", "language", "education", "location"]).notNull(),
+  severity: mysqlEnum("severity", ["low", "medium", "high"]).notNull(),
+  detectedText: text("detectedText"), // The specific text that triggered the bias detection
+  recommendation: text("recommendation"), // Suggested action to mitigate bias
+  flaggedBy: varchar("flaggedBy", { length: 50 }).notNull(), // 'ai_system' or user ID
+  resolved: boolean("resolved").default(false).notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+  resolvedBy: int("resolvedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BiasDetectionLog = typeof biasDetectionLogs.$inferSelect;
+export type InsertBiasDetectionLog = typeof biasDetectionLogs.$inferInsert;
+
+/**
+ * Diversity Metrics - Track diversity statistics for reporting
+ */
+export const diversityMetrics = mysqlTable("diversityMetrics", {
+  id: int("id").autoincrement().primaryKey(),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  jobId: int("jobId").references(() => jobs.id), // Null for overall recruiter metrics
+  metricType: mysqlEnum("metricType", ["applications", "interviews", "offers", "hires"]).notNull(),
+  periodStart: date("periodStart").notNull(),
+  periodEnd: date("periodEnd").notNull(),
+  totalCount: int("totalCount").notNull(),
+  // Diversity breakdowns (percentages)
+  genderDiversity: json("genderDiversity"), // { male: 45, female: 50, non_binary: 5 }
+  ethnicityDiversity: json("ethnicityDiversity"),
+  ageDiversity: json("ageDiversity"), // { "18-25": 20, "26-35": 50, "36-45": 25, "46+": 5 }
+  educationDiversity: json("educationDiversity"),
+  locationDiversity: json("locationDiversity"),
+  biasScore: decimal("biasScore", { precision: 5, scale: 2 }), // 0-100, lower is better
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DiversityMetric = typeof diversityMetrics.$inferSelect;
+export type InsertDiversityMetric = typeof diversityMetrics.$inferInsert;
+
+/**
+ * Match Outcomes - Track hiring outcomes for AI match algorithm learning
+ */
+export const matchOutcomes = mysqlTable("matchOutcomes", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  // AI Match Scores at time of application
+  initialMatchScore: decimal("initialMatchScore", { precision: 5, scale: 2 }).notNull(),
+  skillsScore: decimal("skillsScore", { precision: 5, scale: 2 }),
+  experienceScore: decimal("experienceScore", { precision: 5, scale: 2 }),
+  locationScore: decimal("locationScore", { precision: 5, scale: 2 }),
+  salaryScore: decimal("salaryScore", { precision: 5, scale: 2 }),
+  culturalFitScore: decimal("culturalFitScore", { precision: 5, scale: 2 }),
+  // Actual Outcome
+  outcome: mysqlEnum("outcome", ["hired", "rejected", "withdrawn", "no_response", "in_progress"]).notNull(),
+  outcomeDate: timestamp("outcomeDate"),
+  // Performance Tracking (for hired candidates)
+  performanceRating: decimal("performanceRating", { precision: 3, scale: 2 }), // 1-5 scale, collected after 90 days
+  retentionMonths: int("retentionMonths"), // How long the candidate stayed
+  // Feedback
+  recruiterFeedback: text("recruiterFeedback"),
+  recruiterRating: int("recruiterRating"), // 1-5, how well did AI match perform
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MatchOutcome = typeof matchOutcomes.$inferSelect;
+export type InsertMatchOutcome = typeof matchOutcomes.$inferInsert;
+
+/**
+ * Algorithm Performance Metrics - Track AI matching algorithm performance over time
+ */
+export const algorithmPerformance = mysqlTable("algorithmPerformance", {
+  id: int("id").autoincrement().primaryKey(),
+  algorithmVersion: varchar("algorithmVersion", { length: 50 }).notNull(), // e.g., "v1.0", "v1.1-experimental"
+  metricName: varchar("metricName", { length: 100 }).notNull(), // e.g., "precision", "recall", "f1_score"
+  metricValue: decimal("metricValue", { precision: 10, scale: 6 }).notNull(),
+  sampleSize: int("sampleSize").notNull(), // Number of matches evaluated
+  periodStart: date("periodStart").notNull(),
+  periodEnd: date("periodEnd").notNull(),
+  // Breakdown by job category or industry
+  jobCategory: varchar("jobCategory", { length: 100 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AlgorithmPerformance = typeof algorithmPerformance.$inferSelect;
+export type InsertAlgorithmPerformance = typeof algorithmPerformance.$inferInsert;
+
+/**
+ * AI Notification Preferences - User preferences for proactive AI notifications
+ */
+export const aiNotificationPreferences = mysqlTable("aiNotificationPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  // Candidate preferences
+  jobMatchAlerts: boolean("jobMatchAlerts").default(true).notNull(),
+  profileImprovementSuggestions: boolean("profileImprovementSuggestions").default(true).notNull(),
+  applicationStatusUpdates: boolean("applicationStatusUpdates").default(true).notNull(),
+  interviewReminders: boolean("interviewReminders").default(true).notNull(),
+  // Recruiter preferences
+  topCandidateDigest: boolean("topCandidateDigest").default(true).notNull(),
+  digestFrequency: mysqlEnum("digestFrequency", ["daily", "weekly", "realtime"]).default("daily").notNull(),
+  newApplicationAlerts: boolean("newApplicationAlerts").default(true).notNull(),
+  biasAlerts: boolean("biasAlerts").default(true).notNull(),
+  pipelineInsights: boolean("pipelineInsights").default(true).notNull(),
+  // Delivery channels
+  emailNotifications: boolean("emailNotifications").default(true).notNull(),
+  inAppNotifications: boolean("inAppNotifications").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AiNotificationPreference = typeof aiNotificationPreferences.$inferSelect;
+export type InsertAiNotificationPreference = typeof aiNotificationPreferences.$inferInsert;
+
+/**
+ * AI Notification Queue - Queue for proactive AI-generated notifications
+ */
+export const aiNotificationQueue = mysqlTable("aiNotificationQueue", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  notificationType: varchar("notificationType", { length: 100 }).notNull(), // e.g., "job_match", "top_candidate_digest"
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  actionUrl: varchar("actionUrl", { length: 500 }), // Link to relevant page
+  priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium").notNull(),
+  status: mysqlEnum("status", ["pending", "sent", "failed", "cancelled"]).default("pending").notNull(),
+  scheduledFor: timestamp("scheduledFor").notNull(),
+  sentAt: timestamp("sentAt"),
+  readAt: timestamp("readAt"),
+  metadata: json("metadata"), // Additional context data
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AiNotificationQueue = typeof aiNotificationQueue.$inferSelect;
+export type InsertAiNotificationQueue = typeof aiNotificationQueue.$inferInsert;
