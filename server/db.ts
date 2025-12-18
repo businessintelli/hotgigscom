@@ -2669,3 +2669,306 @@ export async function getApplicationsByRecruiterAndDateRange(
     )
   );
 }
+
+// ============================================
+// Company Admin - Aggregated Data Functions
+// ============================================
+
+/**
+ * Get all jobs from all recruiters in a company with pagination
+ */
+export async function getCompanyJobsPaginated(
+  companyId: number,
+  params: PaginationParams & {
+    search?: string;
+    status?: string;
+    employmentType?: string;
+  }
+): Promise<PaginatedResponse<any>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const { limit, offset } = getPaginationLimitOffset(params);
+  
+  // Get all user IDs in the company with recruiter role
+  const companyUsers = await db.select({ id: users.id })
+    .from(users)
+    .where(and(
+      eq(users.companyId, companyId),
+      eq(users.role, 'recruiter')
+    ));
+  
+  const recruiterIds = companyUsers.map(u => u.id);
+  
+  if (recruiterIds.length === 0) {
+    return buildPaginatedResponse([], 0, params);
+  }
+  
+  // Build where conditions
+  const conditions = [inArray(jobs.postedBy, recruiterIds)];
+  
+  if (params.search) {
+    conditions.push(
+      sql`(${jobs.title} LIKE ${`%${params.search}%`} OR ${jobs.description} LIKE ${`%${params.search}%`})`
+    );
+  }
+  
+  if (params.status) {
+    conditions.push(eq(jobs.status, params.status as any));
+  }
+  
+  if (params.employmentType) {
+    conditions.push(eq(jobs.employmentType, params.employmentType as any));
+  }
+  
+  // Get total count
+  const [countResult] = await db.select({ count: sql<number>`count(*)` })
+    .from(jobs)
+    .where(and(...conditions));
+  
+  const total = Number(countResult?.count || 0);
+  
+  // Get paginated results with recruiter info
+  const results = await db.select({
+    job: jobs,
+    recruiter: {
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    },
+    customer: customers,
+  })
+  .from(jobs)
+  .leftJoin(users, eq(jobs.postedBy, users.id))
+  .leftJoin(customers, eq(jobs.customerId, customers.id))
+  .where(and(...conditions))
+  .orderBy(desc(jobs.createdAt))
+  .limit(limit)
+  .offset(offset);
+  
+  return buildPaginatedResponse(results, total, params);
+}
+
+/**
+ * Get all applicants from all jobs in a company with pagination
+ */
+export async function getCompanyApplicantsPaginated(
+  companyId: number,
+  params: PaginationParams & {
+    search?: string;
+    status?: string;
+    jobId?: number;
+  }
+): Promise<PaginatedResponse<any>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const { limit, offset } = getPaginationLimitOffset(params);
+  
+  // Get all user IDs in the company with recruiter role
+  const companyUsers = await db.select({ id: users.id })
+    .from(users)
+    .where(and(
+      eq(users.companyId, companyId),
+      eq(users.role, 'recruiter')
+    ));
+  
+  const recruiterIds = companyUsers.map(u => u.id);
+  
+  if (recruiterIds.length === 0) {
+    return buildPaginatedResponse([], 0, params);
+  }
+  
+  // Build where conditions - applications for jobs posted by company recruiters
+  const conditions = [inArray(jobs.postedBy, recruiterIds)];
+  
+  if (params.status) {
+    conditions.push(eq(applications.status, params.status as any));
+  }
+  
+  if (params.jobId) {
+    conditions.push(eq(applications.jobId, params.jobId));
+  }
+  
+  if (params.search) {
+    conditions.push(
+      sql`(${users.name} LIKE ${`%${params.search}%`} OR ${users.email} LIKE ${`%${params.search}%`})`
+    );
+  }
+  
+  // Get total count
+  const [countResult] = await db.select({ count: sql<number>`count(*)` })
+    .from(applications)
+    .innerJoin(jobs, eq(applications.jobId, jobs.id))
+    .innerJoin(candidates, eq(applications.candidateId, candidates.id))
+    .innerJoin(users, eq(candidates.userId, users.id))
+    .where(and(...conditions));
+  
+  const total = Number(countResult?.count || 0);
+  
+  // Get paginated results
+  const results = await db.select({
+    application: applications,
+    job: {
+      id: jobs.id,
+      title: jobs.title,
+      companyName: jobs.companyName,
+      location: jobs.location,
+      employmentType: jobs.employmentType,
+    },
+    candidate: {
+      id: candidates.id,
+      userId: candidates.userId,
+      title: candidates.title,
+      location: candidates.location,
+      skills: candidates.skills,
+      experience: candidates.experience,
+      resumeUrl: candidates.resumeUrl,
+    },
+    user: {
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    },
+  })
+  .from(applications)
+  .innerJoin(jobs, eq(applications.jobId, jobs.id))
+  .innerJoin(candidates, eq(applications.candidateId, candidates.id))
+  .innerJoin(users, eq(candidates.userId, users.id))
+  .where(and(...conditions))
+  .orderBy(desc(applications.submittedAt))
+  .limit(limit)
+  .offset(offset);
+  
+  return buildPaginatedResponse(results, total, params);
+}
+
+/**
+ * Get all candidates (from applications) in a company with pagination
+ */
+export async function getCompanyCandidatesPaginated(
+  companyId: number,
+  params: PaginationParams & {
+    search?: string;
+    skills?: string;
+    location?: string;
+  }
+): Promise<PaginatedResponse<any>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const { limit, offset } = getPaginationLimitOffset(params);
+  
+  // Get all user IDs in the company with recruiter role
+  const companyUsers = await db.select({ id: users.id })
+    .from(users)
+    .where(and(
+      eq(users.companyId, companyId),
+      eq(users.role, 'recruiter')
+    ));
+  
+  const recruiterIds = companyUsers.map(u => u.id);
+  
+  if (recruiterIds.length === 0) {
+    return buildPaginatedResponse([], 0, params);
+  }
+  
+  // Get unique candidates who applied to company jobs
+  const conditions = [inArray(jobs.postedBy, recruiterIds)];
+  
+  if (params.search) {
+    conditions.push(
+      sql`(${users.name} LIKE ${`%${params.search}%`} OR ${users.email} LIKE ${`%${params.search}%`})`
+    );
+  }
+  
+  if (params.skills) {
+    conditions.push(sql`${candidates.skills} LIKE ${`%${params.skills}%`}`);
+  }
+  
+  if (params.location) {
+    conditions.push(sql`${candidates.location} LIKE ${`%${params.location}%`}`);
+  }
+  
+  // Get unique candidates with their application count
+  const results = await db.select({
+    candidate: candidates,
+    user: {
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    },
+    applicationCount: sql<number>`COUNT(DISTINCT ${applications.id})`,
+    latestApplication: sql<string>`MAX(${applications.submittedAt})`,
+  })
+  .from(candidates)
+  .innerJoin(users, eq(candidates.userId, users.id))
+  .innerJoin(applications, eq(candidates.id, applications.candidateId))
+  .innerJoin(jobs, eq(applications.jobId, jobs.id))
+  .where(and(...conditions))
+  .groupBy(candidates.id, users.id)
+  .orderBy(desc(sql`MAX(${applications.submittedAt})`))
+  .limit(limit)
+  .offset(offset);
+  
+  // Get total count of unique candidates
+  const countResults = await db.select({
+    candidateId: candidates.id,
+  })
+  .from(candidates)
+  .innerJoin(users, eq(candidates.userId, users.id))
+  .innerJoin(applications, eq(candidates.id, applications.candidateId))
+  .innerJoin(jobs, eq(applications.jobId, jobs.id))
+  .where(and(...conditions))
+  .groupBy(candidates.id);
+  
+  const total = countResults.length;
+  
+  return buildPaginatedResponse(results, total, params);
+}
+
+/**
+ * Get all associates (team members) in a company with pagination
+ */
+export async function getCompanyAssociatesPaginated(
+  companyId: number,
+  params: PaginationParams & {
+    search?: string;
+    status?: string;
+  }
+): Promise<PaginatedResponse<any>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const { limit, offset } = getPaginationLimitOffset(params);
+  
+  // Build where conditions
+  const conditions = [eq(associates.companyId, companyId)];
+  
+  if (params.search) {
+    conditions.push(
+      sql`(${associates.name} LIKE ${`%${params.search}%`} OR ${associates.email} LIKE ${`%${params.search}%`})`
+    );
+  }
+  
+  if (params.status) {
+    conditions.push(eq(associates.status, params.status as any));
+  }
+  
+  // Get total count
+  const [countResult] = await db.select({ count: sql<number>`count(*)` })
+    .from(associates)
+    .where(and(...conditions));
+  
+  const total = Number(countResult?.count || 0);
+  
+  // Get paginated results
+  const results = await db.select()
+    .from(associates)
+    .where(and(...conditions))
+    .orderBy(desc(associates.createdAt))
+    .limit(limit)
+    .offset(offset);
+  
+  return buildPaginatedResponse(results, total, params);
+}

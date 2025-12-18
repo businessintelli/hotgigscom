@@ -42,6 +42,11 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     // Core
     { name: "Dashboard", href: "/company-admin/dashboard", icon: BarChart3 },
     { name: "Team Members", href: "/company-admin/team-members", icon: Users },
+    { type: "divider", label: "Recruitment" },
+    { name: "Jobs", href: "/company-admin/jobs", icon: Building2 },
+    { name: "Applicants", href: "/company-admin/applicants", icon: Users },
+    { name: "Candidates", href: "/company-admin/candidates", icon: Users },
+    { name: "Associates", href: "/company-admin/associates", icon: Users },
     { type: "divider", label: "Reports" },
     { name: "Reports", href: "/company-admin/reports", icon: BarChart3 },
     { name: "Custom Reports", href: "/company-admin/custom-reports", icon: BarChart3 },

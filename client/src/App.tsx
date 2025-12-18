@@ -74,6 +74,10 @@ import CustomReportBuilder from "./pages/company-admin/CustomReportBuilder";
 import ReportSchedules from "./pages/company-admin/ReportSchedules";
 import CompanyAdminProfileSettings from "./pages/company-admin/CompanyAdminProfileSettings";
 import CompanyAdminAIAssistant from "./pages/company-admin/CompanyAdminAIAssistant";
+import { CompanyAdminJobs } from "./pages/CompanyAdminJobs";
+import { CompanyAdminApplicants } from "./pages/CompanyAdminApplicants";
+import { CompanyAdminCandidates } from "./pages/CompanyAdminCandidates";
+import { CompanyAdminAssociates } from "./pages/CompanyAdminAssociates";
 import CandidateCareerCoach from "./pages/CandidateCareerCoach";
 import CandidateCalendar from "./pages/CandidateCalendar";
 import NotificationPreferences from "./pages/NotificationPreferences";
@@ -199,6 +203,10 @@ function Router() {
       
       {/* Company Admin Routes */}
       <Route path="/company-admin/dashboard" component={CompanyAdminDashboard} />
+      <Route path="/company-admin/jobs" component={CompanyAdminJobs} />
+      <Route path="/company-admin/applicants" component={CompanyAdminApplicants} />
+      <Route path="/company-admin/candidates" component={CompanyAdminCandidates} />
+      <Route path="/company-admin/associates" component={CompanyAdminAssociates} />
       <Route path="/company-admin/users" component={CompanyAdminUsers} />
       <Route path="/company-admin/team-members" component={CompanyAdminTeamMembers} />
       <Route path="/company-admin/linkedin-settings" component={CompanyAdminLinkedInSettings} />

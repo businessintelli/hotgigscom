@@ -3866,3 +3866,18 @@
 - [ ] Implement backend pagination for high-volume pages (deferred - requires significant refactoring of database queries)
 - [ ] Replace client-side filtering with server-side queries
 - [ ] Add database indexes for pagination performance
+
+## Company Admin Dashboard Improvements
+- [x] Fix company admin dashboard performance (slow loading)
+- [x] Add Jobs menu item to company admin sidebar
+- [x] Add Applicants menu item to company admin sidebar
+- [x] Add Candidates menu item to company admin sidebar
+- [x] Add Associates menu item to company admin sidebar
+- [x] Create company-wide jobs aggregation function (union of all recruiters' jobs)
+- [x] Create company-wide applicants aggregation function
+- [x] Create company-wide candidates aggregation function
+- [x] Create company-wide associates aggregation function
+- [x] Build company admin Jobs page with filters
+- [x] Build company admin Applicants page with filters
+- [x] Build company admin Candidates page with filters
+- [x] Build company admin Associates page with filters

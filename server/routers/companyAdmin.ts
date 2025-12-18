@@ -818,4 +818,83 @@ Provide data-driven, actionable insights based on the company's recruitment oper
       
       return { success: true };
     }),
+  
+  // ============================================
+  // COMPANY-WIDE DATA AGGREGATION
+  // ============================================
+  
+  getCompanyJobs: companyAdminProcedure
+    .input(z.object({
+      page: z.number().default(1),
+      pageSize: z.number().default(20),
+      search: z.string().optional(),
+      status: z.string().optional(),
+      employmentType: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      return await db.getCompanyJobsPaginated(ctx.user.companyId, input);
+    }),
+  
+  getCompanyApplicants: companyAdminProcedure
+    .input(z.object({
+      page: z.number().default(1),
+      pageSize: z.number().default(20),
+      search: z.string().optional(),
+      status: z.string().optional(),
+      jobId: z.number().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      return await db.getCompanyApplicantsPaginated(ctx.user.companyId, input);
+    }),
+  
+  getCompanyCandidates: companyAdminProcedure
+    .input(z.object({
+      page: z.number().default(1),
+      pageSize: z.number().default(20),
+      search: z.string().optional(),
+      skills: z.string().optional(),
+      location: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      return await db.getCompanyCandidatesPaginated(ctx.user.companyId, input);
+    }),
+  
+  getCompanyAssociates: companyAdminProcedure
+    .input(z.object({
+      page: z.number().default(1),
+      pageSize: z.number().default(20),
+      search: z.string().optional(),
+      status: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user.companyId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User is not associated with a company',
+        });
+      }
+      
+      return await db.getCompanyAssociatesPaginated(ctx.user.companyId, input);
+    }),
 });
