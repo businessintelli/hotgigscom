@@ -1151,53 +1151,46 @@ export async function getRecruiterPerformance(companyId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
-  // Get all recruiters in the company
-  const companyRecruiters = await db.select({
+  // Optimized: Get all metrics in a single query using subqueries
+  const performance = await db.select({
     id: users.id,
     name: users.name,
-    email: users.email
+    email: users.email,
+    jobsPosted: sql<number>`(
+      SELECT COUNT(*) FROM ${jobs} 
+      WHERE ${jobs.recruiterId} = ${users.id}
+    )`,
+    applications: sql<number>`(
+      SELECT COUNT(*) FROM ${applications} 
+      WHERE ${applications.recruiterId} = ${users.id}
+    )`,
+    interviews: sql<number>`(
+      SELECT COUNT(*) FROM ${interviews} 
+      WHERE ${interviews.recruiterId} = ${users.id}
+    )`,
+    placements: sql<number>`(
+      SELECT COUNT(*) FROM ${applications} 
+      WHERE ${applications.recruiterId} = ${users.id} 
+      AND ${applications.status} = 'hired'
+    )`
   })
   .from(users)
   .where(and(eq(users.companyId, companyId), eq(users.role, 'recruiter')));
   
-  const performance = [];
-  
-  for (const recruiter of companyRecruiters) {
-    // Count jobs
-    const jobCount = await db.select({ count: count() })
-      .from(jobs)
-      .where(eq(jobs.recruiterId, recruiter.id));
-    
-    // Count applications
-    const appCount = await db.select({ count: count() })
-      .from(applications)
-      .where(eq(applications.recruiterId, recruiter.id));
-    
-    // Count interviews
-    const interviewCount = await db.select({ count: count() })
-      .from(interviews)
-      .where(eq(interviews.recruiterId, recruiter.id));
-    
-    // Count placements
-    const placementCount = await db.select({ count: count() })
-      .from(applications)
-      .where(and(
-        eq(applications.recruiterId, recruiter.id),
-        eq(applications.status, 'hired')
-      ));
-    
-    performance.push({
-      recruiter,
-      metrics: {
-        jobsPosted: jobCount[0]?.count || 0,
-        applications: appCount[0]?.count || 0,
-        interviews: interviewCount[0]?.count || 0,
-        placements: placementCount[0]?.count || 0
-      }
-    });
-  }
-  
-  return performance;
+  // Format to match expected structure
+  return performance.map(p => ({
+    recruiter: {
+      id: p.id,
+      name: p.name,
+      email: p.email
+    },
+    metrics: {
+      jobsPosted: Number(p.jobsPosted) || 0,
+      applications: Number(p.applications) || 0,
+      interviews: Number(p.interviews) || 0,
+      placements: Number(p.placements) || 0
+    }
+  }));
 }
 
 /**
@@ -2471,4 +2464,41 @@ export async function trackApplicationSource(data: {
   if (!db) throw new Error("Database not initialized");
   
   await db.insert(jobApplicationSources).values(data);
+}
+
+/**
+ * Get applications for a recruiter's jobs within a date range (optimized for analytics)
+ */
+export async function getApplicationsByRecruiterAndDateRange(
+  recruiterId: number,
+  startDate: Date,
+  endDate: Date
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Get recruiter's user ID first
+  const recruiterRecord = await db.select({ userId: recruiters.userId })
+    .from(recruiters)
+    .where(eq(recruiters.id, recruiterId))
+    .limit(1);
+  
+  if (!recruiterRecord[0]) return [];
+  
+  const userId = recruiterRecord[0].userId;
+  
+  // Get applications for jobs posted by this user, filtered by date range
+  return await db.select({
+    application: applications,
+    job: jobs
+  })
+  .from(applications)
+  .innerJoin(jobs, eq(applications.jobId, jobs.id))
+  .where(
+    and(
+      eq(jobs.postedBy, userId),
+      sql`${applications.submittedAt} >= ${startDate.toISOString()}`,
+      sql`${applications.submittedAt} <= ${endDate.toISOString()}`
+    )
+  );
 }

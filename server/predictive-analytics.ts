@@ -96,10 +96,10 @@ export async function getHiringTrends(
   startDate: Date,
   endDate: Date
 ): Promise<HiringTrends> {
-  const jobs = await db.getJobsByRecruiter(recruiterId);
-  const jobIds = jobs.map(j => j.id);
+  // Optimized: Get applications with date range filter at SQL level
+  const results = await db.getApplicationsByRecruiterAndDateRange(recruiterId, startDate, endDate);
   
-  if (jobIds.length === 0) {
+  if (results.length === 0) {
     return {
       period: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
       totalApplications: 0,
@@ -111,13 +111,8 @@ export async function getHiringTrends(
     };
   }
   
-  // Get all applications in period
-  const allApplications = await db.getAllApplications();
-  const applications = allApplications.filter(app => 
-    jobIds.includes(app.jobId) &&
-    new Date(app.submittedAt) >= startDate &&
-    new Date(app.submittedAt) <= endDate
-  );
+  const applications = results.map(r => r.application);
+  const jobs = results.map(r => r.job);
   
   // Count hires (offered or onboarded status)
   const hires = applications.filter(app => 
@@ -213,10 +208,10 @@ export async function getTimeToHireMetrics(
   startDate: Date,
   endDate: Date
 ): Promise<TimeToHireMetrics> {
-  const jobs = await db.getJobsByRecruiter(recruiterId);
-  const jobIds = jobs.map(j => j.id);
+  // Optimized: Get applications with date range filter at SQL level
+  const results = await db.getApplicationsByRecruiterAndDateRange(recruiterId, startDate, endDate);
   
-  if (jobIds.length === 0) {
+  if (results.length === 0) {
     return {
       overall: { averageDays: 0, medianDays: 0, minDays: 0, maxDays: 0 },
       byStage: [],
@@ -226,13 +221,10 @@ export async function getTimeToHireMetrics(
     };
   }
   
-  const allApplications = await db.getAllApplications();
-  const hiredApplications = allApplications.filter(app =>
-    jobIds.includes(app.jobId) &&
-    (app.status === 'offered' || app.status === 'onboarded') &&
-    new Date(app.submittedAt) >= startDate &&
-    new Date(app.submittedAt) <= endDate
-  );
+  const hiredApplications = results
+    .filter(r => r.application.status === 'offered' || r.application.status === 'onboarded')
+    .map(r => r.application);
+  const jobs = results.map(r => r.job);
   
   // Calculate time to hire for each
   const timeToHires = hiredApplications.map(app => {

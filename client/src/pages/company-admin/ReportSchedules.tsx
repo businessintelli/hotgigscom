@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,7 +13,7 @@ import { toast } from "sonner";
 import { Plus, Calendar, Clock, Mail, Trash2, Pause, Play, History } from "lucide-react";
 import { format } from "date-fns";
 
-export default function ReportSchedules() {
+function ReportSchedulesContent() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedReportType, setSelectedReportType] = useState("submissions");
   const [frequency, setFrequency] = useState<"daily" | "weekly" | "monthly">("weekly");
@@ -376,5 +377,13 @@ export default function ReportSchedules() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function ReportSchedules() {
+  return (
+    <CompanyAdminLayout>
+      <ReportSchedulesContent />
+    </CompanyAdminLayout>
   );
 }

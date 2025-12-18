@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,7 @@ import { toast } from "sonner";
 import { Plus, FileText, Trash2, Calendar, Edit } from "lucide-react";
 import { format } from "date-fns";
 
-export default function CustomReports() {
+function CustomReportsContent() {
   const { data: reports, isLoading, refetch } = trpc.companyAdmin.getCustomReports.useQuery();
 
   const deleteReportMutation = trpc.companyAdmin.deleteCustomReport.useMutation({
@@ -139,5 +140,13 @@ export default function CustomReports() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function CustomReports() {
+  return (
+    <CompanyAdminLayout>
+      <CustomReportsContent />
+    </CompanyAdminLayout>
   );
 }

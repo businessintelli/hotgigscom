@@ -93,34 +93,37 @@ export default function RecruiterSettings() {
             </Card>
           </TabsContent>
 
-          {/* Company Settings */}
+          {/* Company Settings - Read Only for Recruiters */}
           <TabsContent value="company">
             <Card>
               <CardHeader>
                 <CardTitle>Company Information</CardTitle>
                 <CardDescription>
-                  Manage your company profile and branding
+                  View your company profile (contact your company admin to make changes)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="company-name">Company Name</Label>
-                  <Input id="company-name" placeholder="Your Company Name" />
+                  <Input id="company-name" placeholder="Your Company Name" disabled />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company-website">Company Website</Label>
-                  <Input id="company-website" type="url" placeholder="https://example.com" />
+                  <Input id="company-website" type="url" placeholder="https://example.com" disabled />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company-size">Company Size</Label>
-                  <Input id="company-size" placeholder="e.g., 50-200 employees" />
+                  <Input id="company-size" placeholder="e.g., 50-200 employees" disabled />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="industry">Industry</Label>
-                  <Input id="industry" placeholder="e.g., Technology, Healthcare" />
+                  <Input id="industry" placeholder="e.g., Technology, Healthcare" disabled />
                 </div>
                 <Separator />
-                <Button>Save Company Info</Button>
+                <div className="text-sm text-muted-foreground bg-muted p-4 rounded-md">
+                  <p className="font-medium mb-1">📝 Note:</p>
+                  <p>Company information can only be modified by company administrators. Contact your company admin if you need to update these details.</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

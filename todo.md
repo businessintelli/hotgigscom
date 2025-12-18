@@ -3781,8 +3781,26 @@
 ## Critical Bug Fixes - Company Admin Dashboard
 
 - [x] Fix nested anchor tags in CompanyAdminLayout logo (line 78-79)
+- [x] Fix nested anchor tags in CompanyAdminLayout sidebar navigation (line 125-126)
 - [x] Fix missing useEffect import in CompanyLLMCostTracking.tsx
 - [x] Fix database query error in getDashboardStats (userActivityLogs companyId issue)
 - [x] Fix missing getRecruiterProfile tRPC procedure (404 errors) - replaced with direct user.companyId access
 - [x] Fix "sum is not defined" error in company admin queries - added sum import
 - [ ] Investigate and fix performance issue on CompanyLLMAlerts page
+
+
+## New Bug Fixes - Phase 5
+
+- [ ] Add CompanyAdminLayout to /company-admin/report-schedules page
+- [ ] Add CompanyAdminLayout to /company-admin/custom-reports page
+- [ ] Optimize Company Admin Dashboard performance (slow loading)
+- [ ] Optimize Recruiter Predictive Analytics performance (slow loading)
+- [ ] Make Company tab read-only in Recruiter Settings (only company admin should edit company info)
+
+## Completed Tasks - Phase 5
+
+- [x] Add CompanyAdminLayout to /company-admin/report-schedules page
+- [x] Add CompanyAdminLayout to /company-admin/custom-reports page
+- [x] Optimize Company Admin Dashboard performance (slow loading) - reduced from 41 queries to 1 query
+- [x] Optimize Recruiter Predictive Analytics performance (slow loading) - now uses SQL-level filtering
+- [x] Make Company tab read-only in Recruiter Settings (only company admin should edit company info)
