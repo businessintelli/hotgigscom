@@ -25,15 +25,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function CompanyAdminJobs() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("");
-  const [employmentType, setEmploymentType] = useState<string>("");
+  const [status, setStatus] = useState<string>("all");
+  const [employmentType, setEmploymentType] = useState<string>("all");
 
   const { data, isLoading } = trpc.companyAdmin.getCompanyJobs.useQuery({
     page,
     pageSize: 20,
     search: search || undefined,
-    status: status || undefined,
-    employmentType: employmentType || undefined,
+    status: status === "all" ? undefined : status,
+    employmentType: employmentType === "all" ? undefined : employmentType,
   });
 
   const getStatusColor = (status: string) => {
@@ -95,7 +95,7 @@ export function CompanyAdminJobs() {
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="closed">Closed</SelectItem>
@@ -114,7 +114,7 @@ export function CompanyAdminJobs() {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="full-time">Full-time</SelectItem>
                   <SelectItem value="part-time">Part-time</SelectItem>
                   <SelectItem value="contract">Contract</SelectItem>

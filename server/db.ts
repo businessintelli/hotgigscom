@@ -77,15 +77,24 @@ export async function getDb() {
     try {
       console.log("[Database] Initializing connection...");
       
-      // Create connection pool
-      const connection = await mysql2.createConnection(process.env.DATABASE_URL!);
+      // Create connection pool for better connection management
+      const pool = mysql2.createPool({
+        uri: process.env.DATABASE_URL!,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0
+      });
       
       // Test the connection
+      const connection = await pool.getConnection();
       await connection.execute("SELECT 1");
-      console.log("[Database] Connection test successful");
+      connection.release();
+      console.log("[Database] Connection pool test successful");
       
-      // Create drizzle instance
-      _db = drizzle(connection);
+      // Create drizzle instance with pool
+      _db = drizzle(pool);
       console.log("[Database] Drizzle ORM initialized successfully");
       
       return _db;

@@ -155,7 +155,8 @@
 - [ ] Data backup and recovery
 
 ## Known Issues
-- None currently
+- [x] Fix Select component empty string value error in company admin dashboard
+- [x] Fix database query error for jobs listing
 
 ## Future Enhancements
 - AI-powered candidate sourcing from social media
