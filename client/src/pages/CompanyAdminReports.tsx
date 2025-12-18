@@ -507,7 +507,7 @@ export function CompanyAdminReports() {
               <CardContent>
                 {jobSubmissionsLoading ? (
                   <div className="text-center py-12">Loading job submissions data...</div>
-                ) : jobSubmissionsData && jobSubmissionsData.jobs.length > 0 ? (
+                ) : jobSubmissionsData && jobSubmissionsData.jobs && jobSubmissionsData.jobs.length > 0 ? (
                   <div className="space-y-4">
                     {jobSubmissionsData.jobs.map((job: any) => (
                       <div key={job.jobId} className="p-4 border rounded-lg space-y-3">
@@ -651,7 +651,7 @@ export function CompanyAdminReports() {
               <CardContent>
                 {feedbackLoading ? (
                   <div className="text-center py-12">Loading feedback data...</div>
-                ) : feedbackData && feedbackData.feedback.length > 0 ? (
+                ) : feedbackData && feedbackData.feedback && feedbackData.feedback.length > 0 ? (
                   <div className="space-y-4">
                     {feedbackData.feedback.map((item: any) => (
                       <div key={item.applicationId} className="p-4 border rounded-lg space-y-2">
@@ -700,7 +700,7 @@ export function CompanyAdminReports() {
               <CardContent>
                 {recruiterLoading ? (
                   <div className="text-center py-12">Loading performance data...</div>
-                ) : recruiterPerformance && recruiterPerformance.length > 0 ? (
+                ) : recruiterPerformance && Array.isArray(recruiterPerformance) && recruiterPerformance.length > 0 ? (
                   <div className="space-y-4">
                     {recruiterPerformance.map((recruiter: any) => (
                       <div key={recruiter.recruiterId} className="p-4 border rounded-lg">

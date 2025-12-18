@@ -1231,11 +1231,10 @@ export async function getCompanyStats(companyId: number) {
     .innerJoin(users, eq(candidates.userId, users.id))
     .where(eq(users.companyId, companyId));
   
-  // Count associates (join through recruiters to get company)
+  // Count associates by companyId
   const associateCounts = await db.select({ count: count() })
     .from(associates)
-    .innerJoin(users, eq(associates.onboardedBy, users.id))
-    .where(eq(users.companyId, companyId));
+    .where(eq(associates.companyId, companyId));
   
   // Count interviews for company jobs
   const interviewCounts = await db.select({ count: count() })

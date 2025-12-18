@@ -4113,3 +4113,10 @@
 - [x] Fix CustomReportBuilder missing CompanyAdminLayout wrapper
 - [x] Add stub procedures for missing report endpoints (getRecruitmentOverview, getTotalSubmissionsReport, etc.)
 - [x] Optimize CompanyAdminReports to load data only for active tab instead of all tabs at once
+
+
+## Company Admin Reports Page Errors (Dec 18, 2025 - Evening)
+- [x] Fix SQL query error in associates count (missing WHERE clause field name)
+- [x] Fix undefined length error in CompanyAdminReports component
+- [x] Add proper null checks for all report data arrays
+- [x] Test all report tabs to ensure they load without errors
