@@ -1575,6 +1575,12 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       .query(async ({ input }) => {
         return await db.getRecentlyViewedJobsByCandidateId(input.candidateId, input.limit);
       }),
+
+    clearViewHistory: protectedProcedure
+      .input(z.object({ candidateId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.clearRecentlyViewedJobs(input.candidateId);
+      }),
     
     isJobSaved: protectedProcedure
       .input(z.object({ candidateId: z.number(), jobId: z.number() }))

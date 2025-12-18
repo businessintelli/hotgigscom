@@ -16,12 +16,15 @@ import { FeedbackPDFPreview } from "@/components/FeedbackPDFPreview";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
 
 export default function InterviewManagement() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const ITEMS_PER_PAGE = 10;
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<any>(null);
   const [expandedInterviewId, setExpandedInterviewId] = useState<number | null>(null);
@@ -136,6 +139,13 @@ export default function InterviewManagement() {
     
     return matchesSearch && matchesStatus;
   });
+
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedInterviews,
+    goToPage,
+  } = usePagination(filteredInterviews, ITEMS_PER_PAGE);
 
   // Statistics
   const stats = {
@@ -293,8 +303,9 @@ export default function InterviewManagement() {
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
-                {filteredInterviews.map((item: any) => {
+              <>
+                <div className="space-y-4">
+                {paginatedInterviews.map((item: any) => {
                   const interview = item.interview;
                   const candidate = item.candidate;
                   const job = item.job;
@@ -426,8 +437,20 @@ export default function InterviewManagement() {
                       </CardContent>
                     </Card>
                   );
-                })}
-              </div>
+                 })}
+                </div>
+                {totalPages > 1 && (
+                <div className="mt-6">
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredInterviews.length}
+                    pageSize={ITEMS_PER_PAGE}
+                    onPageChange={goToPage}
+                  />
+                </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

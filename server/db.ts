@@ -754,6 +754,16 @@ export async function getRecentlyViewedJobsByCandidateId(candidateId: number, li
   }));
 }
 
+export async function clearRecentlyViewedJobs(candidateId: number) {
+  const db = await getDb();
+  if (!db) return { success: false };
+  
+  await db.delete(recentlyViewedJobs)
+    .where(eq(recentlyViewedJobs.candidateId, candidateId));
+  
+  return { success: true };
+}
+
 // Fraud Detection Event operations
 export async function createFraudDetectionEvent(event: InsertFraudDetectionEvent) {
   const db = await getDb();

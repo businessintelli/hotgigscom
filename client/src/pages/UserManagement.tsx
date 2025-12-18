@@ -22,11 +22,14 @@ import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { Search, UserCog, Shield, Ban, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
 
 export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const ITEMS_PER_PAGE = 20;
 
   const { data: users, isLoading, refetch } = trpc.admin.getAllUsers.useQuery();
   
@@ -69,7 +72,14 @@ export default function UserManagement() {
       (statusFilter === "inactive" && !user.active);
     
     return matchesSearch && matchesRole && matchesStatus;
-  });
+  }) || [];
+
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedUsers,
+    goToPage,
+  } = usePagination(filteredUsers, ITEMS_PER_PAGE);
 
   if (isLoading) {
     return (
@@ -161,8 +171,8 @@ export default function UserManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers && filteredUsers.length > 0 ? (
-                filteredUsers.map((user: any) => (
+              {paginatedUsers && paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user: any) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name || "N/A"}</TableCell>
                     <TableCell>{user.email || "N/A"}</TableCell>
@@ -226,6 +236,17 @@ export default function UserManagement() {
             </TableBody>
           </Table>
         </CardContent>
+        {totalPages > 1 && (
+          <div className="px-6 pb-4">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredUsers.length}
+              pageSize={ITEMS_PER_PAGE}
+              onPageChange={goToPage}
+            />
+          </div>
+        )}
       </Card>
 
       {/* Statistics */}

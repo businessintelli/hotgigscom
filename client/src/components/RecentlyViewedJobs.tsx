@@ -2,9 +2,21 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, MapPin, DollarSign, Clock, ArrowRight } from "lucide-react";
+import { Briefcase, MapPin, DollarSign, Clock, ArrowRight, Trash2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { BookmarkButton } from "./BookmarkButton";
+import { toast } from "sonner";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface RecentlyViewedJobsProps {
   candidateId: number;
@@ -13,11 +25,28 @@ interface RecentlyViewedJobsProps {
 
 export function RecentlyViewedJobs({ candidateId, limit = 10 }: RecentlyViewedJobsProps) {
   const [, setLocation] = useLocation();
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const utils = trpc.useUtils();
   
   const { data: recentlyViewed, isLoading } = trpc.candidate.getRecentlyViewedJobs.useQuery({
     candidateId,
     limit,
   });
+
+  const clearHistoryMutation = trpc.candidate.clearViewHistory.useMutation({
+    onSuccess: () => {
+      utils.candidate.getRecentlyViewedJobs.invalidate();
+      toast.success("View history cleared successfully");
+      setShowClearDialog(false);
+    },
+    onError: (error) => {
+      toast.error(`Failed to clear history: ${error.message}`);
+    },
+  });
+
+  const handleClearHistory = () => {
+    clearHistoryMutation.mutate({ candidateId });
+  };
 
   if (isLoading) {
     return (
@@ -67,10 +96,21 @@ export function RecentlyViewedJobs({ candidateId, limit = 10 }: RecentlyViewedJo
             <CardTitle>Recently Viewed Jobs</CardTitle>
             <CardDescription>Jobs you've recently browsed</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setLocation("/job-browser")}>
-            View All Jobs
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowClearDialog(true)}
+              disabled={clearHistoryMutation.isPending}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear History
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/job-browser")}>
+              View All Jobs
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -154,6 +194,27 @@ export function RecentlyViewedJobs({ candidateId, limit = 10 }: RecentlyViewedJo
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear View History?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove all recently viewed jobs from your history.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearHistory}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Clear History
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

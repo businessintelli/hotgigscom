@@ -12,11 +12,14 @@ import { Loader2, Search, Plus, Building2, Mail, Phone, Globe, MapPin, Edit, Tra
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
 
 export default function CustomerManagement() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const ITEMS_PER_PAGE = 12;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -152,6 +155,15 @@ export default function CustomerManagement() {
     customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     customer.industry?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedCustomers,
+    goToPage,
+    nextPage,
+    prevPage,
+  } = usePagination(filteredCustomers, ITEMS_PER_PAGE);
 
   return (
     <RecruiterLayout title="Clients">
@@ -353,8 +365,9 @@ export default function CustomerManagement() {
                 )}
               </div>
             ) : (
+              <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredCustomers.map((customer: any) => (
+                {paginatedCustomers.map((customer: any) => (
                   <Card key={customer.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -429,6 +442,16 @@ export default function CustomerManagement() {
                   </Card>
                 ))}
               </div>
+              {totalPages > 1 && (
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredCustomers.length}
+                  pageSize={ITEMS_PER_PAGE}
+                  onPageChange={goToPage}
+                />
+              )}
+              </>
             )}
           </CardContent>
         </Card>
