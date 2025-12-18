@@ -6451,11 +6451,22 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             success: true,
             guestApplicationId: guestAppId,
             parsedData: {
-              name: parsedResume.personalInfo.name || input.name,
-              email: parsedResume.personalInfo.email || input.email,
-              phone: parsedResume.personalInfo.phone || input.phoneNumber,
+              personalInfo: {
+                name: parsedResume.personalInfo.name || input.name,
+                email: parsedResume.personalInfo.email || input.email,
+                phone: parsedResume.personalInfo.phone || input.phoneNumber,
+                location: parsedResume.personalInfo.location,
+                linkedin: parsedResume.personalInfo.linkedin,
+                github: parsedResume.personalInfo.github,
+              },
+              summary: parsedResume.summary,
               skills: parsedResume.skills,
-              experienceYears: parsedResume.metadata.totalExperienceYears,
+              experience: parsedResume.experience,
+              education: parsedResume.education,
+              certifications: parsedResume.certifications,
+              languages: parsedResume.languages,
+              projects: parsedResume.projects,
+              metadata: parsedResume.metadata,
             },
           };
         } catch (error: any) {
@@ -6483,6 +6494,52 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             title: job.title,
             companyName: job.companyName,
             location: job.location,
+          } : null,
+        };
+      }),
+
+    // Get full guest application profile with parsed resume data (for recruiters)
+    getFullProfile: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const guestApp = await db.getGuestApplicationById(input.id);
+        if (!guestApp) {
+          throw new Error('Guest application not found');
+        }
+        
+        // Parse the stored resume data
+        let parsedResume = null;
+        if (guestApp.parsedResumeData) {
+          try {
+            parsedResume = JSON.parse(guestApp.parsedResumeData as string);
+          } catch (error) {
+            console.error('Failed to parse resume data:', error);
+          }
+        }
+        
+        // Get job details
+        const job = await db.getJobById(guestApp.jobId);
+        
+        return {
+          id: guestApp.id,
+          jobId: guestApp.jobId,
+          email: guestApp.email,
+          name: guestApp.name,
+          phoneNumber: guestApp.phoneNumber,
+          resumeUrl: guestApp.resumeUrl,
+          resumeFilename: guestApp.resumeFilename,
+          coverLetter: guestApp.coverLetter,
+          submittedAt: guestApp.submittedAt,
+          claimed: guestApp.claimed,
+          invitationSent: guestApp.invitationSent,
+          invitedAt: guestApp.invitedAt,
+          parsedResume,
+          job: job ? {
+            id: job.id,
+            title: job.title,
+            companyName: job.companyName,
+            location: job.location,
+            description: job.description,
           } : null,
         };
       }),

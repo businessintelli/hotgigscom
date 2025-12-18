@@ -847,7 +847,10 @@ export default function ApplicationManagement() {
                             variant="outline" 
                             size="sm"
                             onClick={() => {
-                              if (application.resumeProfileId) {
+                              if (application.isGuest) {
+                                // For guest applications, navigate to guest profile view
+                                setLocation(`/recruiter/guest-candidate/${application.id}`);
+                              } else if (application.resumeProfileId) {
                                 const videoParam = application.videoIntroductionId ? `?videoId=${application.videoIntroductionId}` : '';
                                 setLocation(`/recruiter/candidate-resume/${application.resumeProfileId}${videoParam}`);
                               } else if (application.resumeUrl) {

@@ -41,9 +41,9 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
       // Pre-fill form with parsed data
       setFormData(prev => ({
         ...prev,
-        name: data.parsedData.name || prev.name,
-        email: data.parsedData.email || prev.email,
-        phoneNumber: data.parsedData.phone || prev.phoneNumber,
+        name: data.parsedData.personalInfo?.name || prev.name,
+        email: data.parsedData.personalInfo?.email || prev.email,
+        phoneNumber: data.parsedData.personalInfo?.phone || prev.phoneNumber,
       }));
       
       setCurrentStep("review");
@@ -232,49 +232,174 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
       </CardHeader>
       <CardContent className="space-y-4">
         {parsedData && (
-          <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <div>
-                <Label className="text-sm font-semibold">Name</Label>
-                <p className="text-sm">{parsedData.name || "Not found"}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-semibold">Email</Label>
-                <p className="text-sm">{parsedData.email || "Not found"}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-semibold">Phone</Label>
-                <p className="text-sm">{parsedData.phone || "Not found"}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-semibold">Experience</Label>
-                <p className="text-sm">
-                  {parsedData.experienceYears
-                    ? `${parsedData.experienceYears} years`
-                    : "Not specified"}
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm font-semibold">Skills</Label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {parsedData.skills && parsedData.skills.length > 0 ? (
-                    parsedData.skills.slice(0, 10).map((skill: string, idx: number) => (
-                      <span
-                        key={idx}
-                        className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
-                      >
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">No skills found</p>
-                  )}
+          <div className="space-y-6">
+            {/* Personal Information */}
+            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+              <h3 className="font-semibold text-base mb-3">Personal Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-semibold">Name</Label>
+                  <p className="text-sm">{parsedData.personalInfo?.name || "Not found"}</p>
                 </div>
+                <div>
+                  <Label className="text-sm font-semibold">Email</Label>
+                  <p className="text-sm">{parsedData.personalInfo?.email || "Not found"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold">Phone</Label>
+                  <p className="text-sm">{parsedData.personalInfo?.phone || "Not found"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold">Location</Label>
+                  <p className="text-sm">{parsedData.personalInfo?.location || "Not specified"}</p>
+                </div>
+                {parsedData.personalInfo?.linkedin && (
+                  <div>
+                    <Label className="text-sm font-semibold">LinkedIn</Label>
+                    <p className="text-sm text-blue-600">{parsedData.personalInfo.linkedin}</p>
+                  </div>
+                )}
+                {parsedData.personalInfo?.github && (
+                  <div>
+                    <Label className="text-sm font-semibold">GitHub</Label>
+                    <p className="text-sm text-blue-600">{parsedData.personalInfo.github}</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <p className="text-sm text-gray-600">
-              You'll be able to review and edit this information in the next step.
+            {/* Professional Summary */}
+            {parsedData.summary && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-base mb-2">Professional Summary</h3>
+                <p className="text-sm text-gray-700">{parsedData.summary}</p>
+              </div>
+            )}
+
+            {/* Experience */}
+            {parsedData.experience && parsedData.experience.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                <h3 className="font-semibold text-base mb-3">Work Experience ({parsedData.metadata?.totalExperienceYears || 0} years total)</h3>
+                <div className="space-y-4">
+                  {parsedData.experience.slice(0, 3).map((exp: any, idx: number) => (
+                    <div key={idx} className="border-l-2 border-blue-500 pl-3">
+                      <p className="font-medium text-sm">{exp.title || "Position"}</p>
+                      <p className="text-sm text-gray-600">{exp.company || "Company"}</p>
+                      <p className="text-xs text-gray-500">
+                        {exp.startDate || ""} - {exp.endDate || "Present"}
+                        {exp.location && ` • ${exp.location}`}
+                      </p>
+                      {exp.description && (
+                        <p className="text-xs text-gray-700 mt-1 line-clamp-2">{exp.description}</p>
+                      )}
+                    </div>
+                  ))}
+                  {parsedData.experience.length > 3 && (
+                    <p className="text-xs text-gray-500 italic">+ {parsedData.experience.length - 3} more positions</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Education */}
+            {parsedData.education && parsedData.education.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                <h3 className="font-semibold text-base mb-3">Education</h3>
+                <div className="space-y-3">
+                  {parsedData.education.map((edu: any, idx: number) => (
+                    <div key={idx}>
+                      <p className="font-medium text-sm">{edu.degree || "Degree"} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}</p>
+                      <p className="text-sm text-gray-600">{edu.institution || "Institution"}</p>
+                      <p className="text-xs text-gray-500">
+                        {edu.graduationDate || ""}
+                        {edu.location && ` • ${edu.location}`}
+                        {edu.gpa && ` • GPA: ${edu.gpa}`}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Skills */}
+            {parsedData.skills && parsedData.skills.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-base mb-3">Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {parsedData.skills.slice(0, 20).map((skill: string, idx: number) => (
+                    <span
+                      key={idx}
+                      className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                  {parsedData.skills.length > 20 && (
+                    <span className="text-xs text-gray-500 italic">+ {parsedData.skills.length - 20} more</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Certifications */}
+            {parsedData.certifications && parsedData.certifications.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-base mb-3">Certifications</h3>
+                <ul className="list-disc list-inside space-y-1">
+                  {parsedData.certifications.map((cert: string, idx: number) => (
+                    <li key={idx} className="text-sm text-gray-700">{cert}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Languages */}
+            {parsedData.languages && parsedData.languages.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-base mb-3">Languages</h3>
+                <div className="flex flex-wrap gap-2">
+                  {parsedData.languages.map((lang: string, idx: number) => (
+                    <span key={idx} className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                      {lang}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Projects */}
+            {parsedData.projects && parsedData.projects.length > 0 && (
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                <h3 className="font-semibold text-base mb-3">Projects</h3>
+                <div className="space-y-3">
+                  {parsedData.projects.map((project: any, idx: number) => (
+                    <div key={idx}>
+                      <p className="font-medium text-sm">{project.name || "Project"}</p>
+                      {project.description && (
+                        <p className="text-xs text-gray-700 mt-1">{project.description}</p>
+                      )}
+                      {project.technologies && project.technologies.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {project.technologies.map((tech: string, techIdx: number) => (
+                            <span key={techIdx} className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded">
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {project.url && (
+                        <a href={project.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                          View Project
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-sm text-gray-600 italic">
+              This information was automatically extracted from your resume. You can confirm your contact details in the next step.
             </p>
           </div>
         )}

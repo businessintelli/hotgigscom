@@ -56,6 +56,7 @@ import SavedJobs from "./pages/SavedJobs";
 import MyResumes from "./pages/MyResumesNew";
 import ResumeDetail from "./pages/ResumeDetail";
 import CandidateResumeView from "./pages/CandidateResumeView";
+import GuestCandidateProfile from "./pages/GuestCandidateProfile";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
 import CodingInterviewPage from "./pages/CodingInterviewPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -182,6 +183,7 @@ function Router() {
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
       <Route path="/recruiter/notification-preferences" component={RecruiterNotificationPreferences} />
       <Route path="/recruiter/candidate-resume/:id" component={CandidateResumeView} />
+      <Route path="/recruiter/guest-candidate/:id" component={GuestCandidateProfile} />
       <Route path="/select-role" component={SelectRole} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />

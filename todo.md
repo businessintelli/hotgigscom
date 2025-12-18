@@ -3922,3 +3922,15 @@
 - [x] Track invitation status in guestApplications table (invitedAt, invitationSent)
 - [x] Implement invitation tracking to prevent duplicate invitations
 - [x] Test complete invitation workflow end-to-end
+
+## Guest Resume Parsing Enhancement (COMPLETED)
+- [x] Review current guest application resume parsing implementation
+- [x] Update resumeParser.ts to extract complete resume data (experience, education, certifications, languages, projects)
+- [x] Update guestApplications table schema to store parsedResumeData JSON field (already existed)
+- [x] Update GuestApplicationWizard to display complete parsed resume data with experience timeline, education, certifications
+- [x] Update ApplicationManagement to show full guest candidate profiles with statistics
+- [x] Create GuestCandidateProfile page for full guest application viewing
+- [x] Add getFullProfile tRPC procedure for guest applications
+- [x] Add route for guest candidate profile in App.tsx
+- [x] Test complete guest application workflow with resume upload and parsing
+- [x] Verify recruiters see complete guest candidate profiles in dashboard
