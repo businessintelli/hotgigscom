@@ -43,6 +43,7 @@ import { createVideoMeeting } from './videoMeetingService';
 import { panelPublicRouter } from './panelPublicRouter';
 import { companyAdminRouter } from './routers/companyAdmin';
 import { llmConfigRouter } from './routers/llmConfig';
+import { llmManagementRouter } from './routers/llmManagement';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
 import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
@@ -86,6 +87,7 @@ export const appRouter = router({
   document: documentUploadRouter,
   companyAdmin: companyAdminRouter,
   llmConfig: llmConfigRouter,
+  llmManagement: llmManagementRouter,
   
   // AI Chat router for career coach and recruiting assistant
   ai: router({

@@ -21,7 +21,9 @@ import {
   Linkedin,
   User,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  DollarSign,
+  Bell
 } from "lucide-react";
 import { useState } from "react";
 
@@ -44,6 +46,8 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     { name: "LinkedIn Settings", href: "/company-admin/linkedin-settings", icon: Linkedin },
     { name: "InMail Templates", href: "/company-admin/inmail-templates", icon: MessageSquare },
     { name: "AI Assistant", href: "/company-admin/ai-assistant", icon: Sparkles },
+    { name: "AI Cost Tracking", href: "/company-admin/llm-cost-tracking", icon: DollarSign },
+    { name: "AI Usage Alerts", href: "/company-admin/llm-alerts", icon: Bell },
     { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },
   ];
 

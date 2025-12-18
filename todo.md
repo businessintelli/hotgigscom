@@ -3419,3 +3419,29 @@
 - [x] Document LLM integration setup
 - [ ] Test Docker build locally
 - [ ] Push to GitHub repository
+
+## LLM Management Enhancements - Phase 2
+
+### Usage Alerts System
+- [x] Create llm_usage_alerts table for alert configuration
+- [x] Create llm_alert_history table for tracking triggered alerts
+- [x] Implement usage threshold monitoring service
+- [x] Add email notification system for usage alerts
+- [x] Build Admin UI for configuring system-wide alerts
+- [x] Build Company Admin UI for company-specific alerts
+
+### Cost Tracking Dashboard
+- [x] Create llm_cost_tracking table for detailed cost records
+- [x] Implement cost calculation service with provider-specific pricing
+- [x] Build Admin Cost Dashboard with system-wide spending trends
+- [x] Build Company Admin Cost Dashboard with company-specific metrics
+- [x] Add monthly projections based on historical usage
+- [x] Add cost per feature breakdown (resume parsing, matching, etc.)
+
+### Provider Fallback Chain
+- [x] Create llm_fallback_config table for fallback priorities
+- [x] Implement automatic failover logic in llm.ts
+- [x] Add health check monitoring for all providers
+- [x] Build Admin UI for configuring fallback priorities
+- [x] Add fallback event logging
+- [x] Test failover scenarios with provider failures

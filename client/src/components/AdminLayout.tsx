@@ -32,7 +32,10 @@ import {
   ScrollText,
   Linkedin,
   MessageSquare,
-  Bot
+  Bot,
+  DollarSign,
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_TITLE } from "@/const";
@@ -57,6 +60,9 @@ const sidebarItems = [
   { title: "LinkedIn Settings", href: "/admin/linkedin-settings", icon: Linkedin },
   { title: "InMail Templates", href: "/admin/inmail-templates", icon: MessageSquare },
   { title: "LLM Settings", href: "/admin/llm-settings", icon: Bot },
+  { title: "LLM Cost Tracking", href: "/admin/llm-cost-tracking", icon: DollarSign },
+  { title: "LLM Alerts", href: "/admin/llm-alerts", icon: AlertTriangle },
+  { title: "LLM Fallback", href: "/admin/llm-fallback", icon: RefreshCw },
   { title: "Database", href: "/admin/database", icon: Database },
 ];
 
