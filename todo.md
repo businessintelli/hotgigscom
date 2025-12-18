@@ -3989,3 +3989,20 @@
 - [x] Update company admin unified view to show all recruiter candidates using addedBy field
 - [ ] Add frontend UI for manual candidate addition
 - [ ] Add frontend UI for single resume upload
+
+## Manual Candidate Entry & Single Resume Upload (Current Session)
+- [x] Create backend API endpoint for manual candidate entry (with optional resume)
+- [x] Implement AI resume parsing for uploaded files
+- [x] Store resume file in S3 and save URL to database
+- [x] Create parsed resume data structure in candidates table
+- [x] Build manual candidate entry form UI in Candidate Search page
+- [x] Add "Add Candidate" button to recruiter dashboard (via QuickResumeUpload widget)
+- [ ] Add "Add Candidate" button to company admin dashboard
+- [x] Create single resume upload widget for recruiter dashboard
+- [x] Implement drag-and-drop resume upload with AI parsing
+- [x] Show parsed data preview before saving
+- [x] Test manual entry without resume
+- [x] Test manual entry with resume upload
+- [x] Test single resume upload widget
+- [x] Verify resume files are stored in S3
+- [x] Verify parsed data is saved to database

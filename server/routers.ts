@@ -713,6 +713,140 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         return await db.searchCandidates(input);
       }),
     
+    // Manual candidate entry with optional resume upload
+    addCandidateManually: protectedProcedure
+      .input(z.object({
+        // Basic candidate information (required)
+        name: z.string().min(1, "Name is required"),
+        email: z.string().email("Valid email is required"),
+        phoneNumber: z.string().optional(),
+        // Optional resume file
+        resumeFile: z.object({
+          fileData: z.string(), // base64 encoded
+          fileName: z.string(),
+          mimeType: z.string(),
+        }).optional(),
+        // Optional manual fields
+        title: z.string().optional(),
+        location: z.string().optional(),
+        skills: z.string().optional(), // Comma-separated
+        experience: z.string().optional(),
+        education: z.string().optional(),
+        linkedinUrl: z.string().optional(),
+        source: z.string().optional(), // e.g., 'job-fair', 'referral', 'networking'
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) {
+          throw new Error("Recruiter profile not found");
+        }
+
+        // Check if user with this email already exists
+        let user = await db.getUserByEmail(input.email);
+        let userId: number;
+        let candidate: any;
+
+        if (user) {
+          userId = user.id;
+          // Check if candidate profile exists
+          candidate = await db.getCandidateByUserId(userId);
+          
+          if (candidate) {
+            // Candidate already exists, optionally update with new info
+            throw new Error("A candidate with this email already exists in the system");
+          }
+        } else {
+          // Create new user account
+          const userResult = await db.createUser({
+            name: input.name,
+            email: input.email,
+            role: 'candidate',
+            emailVerified: false,
+            loginMethod: 'manual', // Manually added by recruiter
+          });
+          userId = userResult.insertId;
+        }
+
+        // Process resume if provided
+        let resumeUrl: string | undefined;
+        let resumeFilename: string | undefined;
+        let parsedData: any = null;
+
+        if (input.resumeFile) {
+          try {
+            // Decode base64 file data
+            const buffer = Buffer.from(input.resumeFile.fileData.split(',')[1] || input.resumeFile.fileData, 'base64');
+            
+            // Upload to S3
+            const fileKey = `resumes/manual-${userId}-${input.resumeFile.fileName}-${randomSuffix()}`;
+            const { url } = await storagePut(fileKey, buffer, input.resumeFile.mimeType);
+            resumeUrl = url;
+            resumeFilename = input.resumeFile.fileName;
+
+            // Extract and parse resume text
+            const resumeText = await extractResumeText(buffer, input.resumeFile.mimeType);
+            parsedData = await parseResumeWithAI(resumeText);
+          } catch (error) {
+            console.error("Error processing resume:", error);
+            // Continue without parsed data if resume processing fails
+          }
+        }
+
+        // Create candidate profile with manual data or parsed data
+        const candidateData: any = {
+          userId,
+          addedBy: recruiter.id,
+          source: input.source || 'recruiter-manual',
+          phoneNumber: input.phoneNumber,
+          resumeUrl,
+          resumeFilename,
+          resumeUploadedAt: resumeUrl ? new Date() : undefined,
+        };
+
+        // If resume was parsed, use parsed data (with manual overrides)
+        if (parsedData) {
+          candidateData.title = input.title || parsedData.personalInfo?.name;
+          candidateData.location = input.location || parsedData.personalInfo?.location;
+          candidateData.linkedinUrl = input.linkedinUrl || parsedData.personalInfo?.linkedin;
+          candidateData.skills = input.skills || (parsedData.skills ? parsedData.skills.join(', ') : undefined);
+          candidateData.experience = input.experience || JSON.stringify(parsedData.experience);
+          candidateData.education = input.education || JSON.stringify(parsedData.education);
+          candidateData.bio = parsedData.summary;
+          candidateData.githubUrl = parsedData.personalInfo?.github;
+          candidateData.certifications = JSON.stringify(parsedData.certifications || []);
+          candidateData.languages = JSON.stringify(parsedData.languages || []);
+          candidateData.projects = JSON.stringify(parsedData.projects || []);
+          candidateData.parsedResumeData = JSON.stringify(parsedData);
+          candidateData.totalExperienceYears = parsedData.metadata?.totalExperienceYears;
+          candidateData.seniorityLevel = parsedData.metadata?.seniorityLevel;
+          candidateData.primaryDomain = parsedData.metadata?.primaryDomain;
+          candidateData.skillCategories = JSON.stringify(parsedData.metadata?.skillCategories || {});
+        } else {
+          // Use only manual data
+          candidateData.title = input.title;
+          candidateData.location = input.location;
+          candidateData.linkedinUrl = input.linkedinUrl;
+          candidateData.skills = input.skills;
+          candidateData.experience = input.experience;
+          candidateData.education = input.education;
+        }
+
+        const candidateResult = await db.createCandidate(candidateData);
+
+        return {
+          success: true,
+          candidateId: candidateResult.insertId,
+          userId,
+          parsed: !!parsedData,
+          parsedData: parsedData ? {
+            skills: parsedData.skills,
+            experience: parsedData.experience,
+            education: parsedData.education,
+            totalExperienceYears: parsedData.metadata?.totalExperienceYears,
+          } : null,
+        };
+      }),
+    
     saveSearch: protectedProcedure
       .input(z.object({
         name: z.string(),

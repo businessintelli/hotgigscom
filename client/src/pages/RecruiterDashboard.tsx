@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import RecruiterOnboarding from "@/components/RecruiterOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileCompletionAnalytics } from "@/components/ProfileCompletionAnalytics";
+import QuickResumeUpload from "@/components/QuickResumeUpload";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
 import {
   DndContext,
@@ -918,6 +919,11 @@ function RecruiterDashboardContent() {
             {/* Profile Completion Analytics */}
             <div className="mb-6">
               <ProfileCompletionAnalytics />
+            </div>
+
+            {/* Quick Resume Upload Widget */}
+            <div className="mb-6">
+              <QuickResumeUpload />
             </div>
 
             {/* Jobs Panel */}
