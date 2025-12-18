@@ -12,6 +12,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 export function CompanyAdminReports() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
   const [dateFilter, setDateFilter] = useState<{
     startDate?: string;
     endDate?: string;
@@ -22,41 +23,49 @@ export function CompanyAdminReports() {
     endDate: new Date().toISOString()
   });
 
-  // Fetch all reports data
-  const { data: overviewData, isLoading: overviewLoading } = trpc.companyAdmin.getRecruitmentOverview.useQuery({
-    dateRange: 30
-  });
+  // Fetch reports data only for active tab
+  const { data: overviewData, isLoading: overviewLoading } = trpc.companyAdmin.getRecruitmentOverview.useQuery(
+    { dateRange: 30 },
+    { enabled: activeTab === 'overview' }
+  );
 
-  const { data: submissionsData, isLoading: submissionsLoading } = trpc.companyAdmin.getTotalSubmissionsReport.useQuery({
-    startDate: dateFilter.startDate,
-    endDate: dateFilter.endDate
-  });
+  const { data: submissionsData, isLoading: submissionsLoading } = trpc.companyAdmin.getTotalSubmissionsReport.useQuery(
+    { startDate: dateFilter.startDate, endDate: dateFilter.endDate },
+    { enabled: activeTab === 'submissions' }
+  );
 
-  const { data: placementsData, isLoading: placementsLoading } = trpc.companyAdmin.getPlacementsReport.useQuery({
-    startDate: dateFilter.startDate,
-    endDate: dateFilter.endDate
-  });
+  const { data: placementsData, isLoading: placementsLoading } = trpc.companyAdmin.getPlacementsReport.useQuery(
+    { startDate: dateFilter.startDate, endDate: dateFilter.endDate },
+    { enabled: activeTab === 'placements' }
+  );
 
-  const { data: jobSubmissionsData, isLoading: jobSubmissionsLoading } = trpc.companyAdmin.getSubmissionsByJobReport.useQuery({
-    startDate: dateFilter.startDate,
-    endDate: dateFilter.endDate
-  });
+  const { data: jobSubmissionsData, isLoading: jobSubmissionsLoading } = trpc.companyAdmin.getSubmissionsByJobReport.useQuery(
+    { startDate: dateFilter.startDate, endDate: dateFilter.endDate },
+    { enabled: activeTab === 'jobSubmissions' }
+  );
 
-  const { data: backedOutData, isLoading: backedOutLoading } = trpc.companyAdmin.getBackedOutReport.useQuery({
-    startDate: dateFilter.startDate,
-    endDate: dateFilter.endDate
-  });
+  const { data: backedOutData, isLoading: backedOutLoading } = trpc.companyAdmin.getBackedOutReport.useQuery(
+    { startDate: dateFilter.startDate, endDate: dateFilter.endDate },
+    { enabled: activeTab === 'backedOut' }
+  );
 
-  const { data: feedbackData, isLoading: feedbackLoading } = trpc.companyAdmin.getFeedbackReport.useQuery({
-    startDate: dateFilter.startDate,
-    endDate: dateFilter.endDate
-  });
+  const { data: feedbackData, isLoading: feedbackLoading } = trpc.companyAdmin.getFeedbackReport.useQuery(
+    { startDate: dateFilter.startDate, endDate: dateFilter.endDate },
+    { enabled: activeTab === 'feedback' }
+  );
 
-  const { data: recruiterPerformance, isLoading: recruiterLoading } = trpc.companyAdmin.getRecruiterPerformance.useQuery({
-    dateRange: 30
-  });
+  const { data: recruiterPerformance, isLoading: recruiterLoading } = trpc.companyAdmin.getRecruiterPerformance.useQuery(
+    { dateRange: 30 },
+    { enabled: activeTab === 'recruiters' }
+  );
 
-  const isLoading = overviewLoading || submissionsLoading || placementsLoading || jobSubmissionsLoading || backedOutLoading || feedbackLoading || recruiterLoading;
+  const isLoading = (activeTab === 'overview' && overviewLoading) || 
+    (activeTab === 'submissions' && submissionsLoading) || 
+    (activeTab === 'placements' && placementsLoading) || 
+    (activeTab === 'jobSubmissions' && jobSubmissionsLoading) || 
+    (activeTab === 'backedOut' && backedOutLoading) || 
+    (activeTab === 'feedback' && feedbackLoading) || 
+    (activeTab === 'recruiters' && recruiterLoading);
 
   if (isLoading) {
     return (
@@ -213,7 +222,7 @@ export function CompanyAdminReports() {
           <DateRangeFilter value={dateFilter} onChange={setDateFilter} />
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="overview" className="space-y-6" onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="submissions">Submissions</TabsTrigger>

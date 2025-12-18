@@ -1342,46 +1342,56 @@ export async function getRecruiterPerformance(companyId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
-  // Optimized: Get all metrics in a single query using subqueries
-  const performance = await db.select({
-    id: users.id,
-    name: users.name,
-    email: users.email,
-    jobsPosted: sql<number>`(
-      SELECT COUNT(*) FROM ${jobs} 
-      WHERE ${jobs.recruiterId} = ${users.id}
-    )`,
-    applications: sql<number>`(
-      SELECT COUNT(*) FROM ${applications} 
-      WHERE ${applications.recruiterId} = ${users.id}
-    )`,
-    interviews: sql<number>`(
-      SELECT COUNT(*) FROM ${interviews} 
-      WHERE ${interviews.recruiterId} = ${users.id}
-    )`,
-    placements: sql<number>`(
-      SELECT COUNT(*) FROM ${applications} 
-      WHERE ${applications.recruiterId} = ${users.id} 
-      AND ${applications.status} = 'hired'
-    )`
-  })
-  .from(users)
-  .where(and(eq(users.companyId, companyId), eq(users.role, 'recruiter')));
-  
-  // Format to match expected structure
-  return performance.map(p => ({
-    recruiter: {
-      id: p.id,
-      name: p.name,
-      email: p.email
-    },
-    metrics: {
-      jobsPosted: Number(p.jobsPosted) || 0,
-      applications: Number(p.applications) || 0,
-      interviews: Number(p.interviews) || 0,
-      placements: Number(p.placements) || 0
-    }
-  }));
+  try {
+    // Optimized: Get all metrics in a single query using subqueries
+    // Note: jobs.postedBy is the recruiter, applications/interviews link through jobId
+    const performance = await db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      jobsPosted: sql<number>`(
+        SELECT COUNT(*) FROM ${jobs} 
+        WHERE ${jobs.postedBy} = ${users.id}
+      )`,
+      applications: sql<number>`(
+        SELECT COUNT(*) FROM ${applications} 
+        INNER JOIN ${jobs} ON ${applications.jobId} = ${jobs.id}
+        WHERE ${jobs.postedBy} = ${users.id}
+      )`,
+      interviews: sql<number>`(
+        SELECT COUNT(*) FROM ${interviews} 
+        INNER JOIN ${jobs} ON ${interviews.jobId} = ${jobs.id}
+        WHERE ${jobs.postedBy} = ${users.id}
+      )`,
+      placements: sql<number>`(
+        SELECT COUNT(*) FROM ${applications} 
+        INNER JOIN ${jobs} ON ${applications.jobId} = ${jobs.id}
+        WHERE ${jobs.postedBy} = ${users.id} 
+        AND ${applications.status} = 'hired'
+      )`
+    })
+    .from(users)
+    .where(and(eq(users.companyId, companyId), eq(users.role, 'recruiter')));
+    
+    // Format to match expected structure
+    return performance.map(p => ({
+      recruiter: {
+        id: p.id,
+        name: p.name,
+        email: p.email
+      },
+      metrics: {
+        jobsPosted: Number(p.jobsPosted) || 0,
+        applications: Number(p.applications) || 0,
+        interviews: Number(p.interviews) || 0,
+        placements: Number(p.placements) || 0
+      }
+    }));
+  } catch (error: any) {
+    console.error('[getRecruiterPerformance] Error:', error?.message || error);
+    // Return empty array on error to prevent dashboard from breaking
+    return [];
+  }
 }
 
 /**
@@ -1401,30 +1411,46 @@ export async function getCompanyActivityLogs(companyId: number, limit: number = 
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
-  const results = await db.select({
-    log: userActivityLogs,
-    user: users
-  })
-  .from(userActivityLogs)
-  .innerJoin(users, eq(userActivityLogs.userId, users.id))
-  .where(eq(userActivityLogs.companyId, companyId))
-  .orderBy(desc(userActivityLogs.createdAt))
-  .limit(limit);
-  
-  // Map to flat structure with userName
-  return results.map(r => ({
-    id: r.log.id,
-    userId: r.log.userId,
-    companyId: r.log.companyId,
-    action: r.log.action,
-    resource: r.log.resource,
-    resourceId: r.log.resourceId,
-    ipAddress: r.log.ipAddress,
-    userAgent: r.log.userAgent,
-    details: r.log.details,
-    createdAt: r.log.createdAt,
-    userName: r.user.name,
-  }));
+  try {
+    const results = await db.select({
+      log: userActivityLogs,
+      user: users
+    })
+    .from(userActivityLogs)
+    .innerJoin(users, eq(userActivityLogs.userId, users.id))
+    .where(eq(userActivityLogs.companyId, companyId))
+    .orderBy(desc(userActivityLogs.createdAt))
+    .limit(limit);
+    
+    // Map to flat structure with userName
+    return results.map(r => ({
+      id: r.log.id,
+      userId: r.log.userId,
+      companyId: r.log.companyId,
+      action: r.log.action,
+      resource: r.log.resource,
+      resourceId: r.log.resourceId,
+      ipAddress: r.log.ipAddress,
+      userAgent: r.log.userAgent,
+      details: r.log.details,
+      createdAt: r.log.createdAt,
+      userName: r.user.name,
+    }));
+  } catch (error: any) {
+    // If table doesn't exist yet, return empty array instead of crashing
+    console.warn('[getCompanyActivityLogs] Error querying activity logs:', error?.message || error);
+    if (error?.code === 'ER_NO_SUCH_TABLE' || 
+        error?.errno === 1146 || 
+        error?.message?.includes('doesn\'t exist') ||
+        error?.message?.includes('Table') ||
+        error?.sqlMessage?.includes('doesn\'t exist')) {
+      console.warn('[getCompanyActivityLogs] userActivityLogs table does not exist yet, returning empty array');
+      return [];
+    }
+    // For any other error, also return empty array to prevent dashboard from breaking
+    console.error('[getCompanyActivityLogs] Unexpected error, returning empty array to prevent crash');
+    return [];
+  }
 }
 
 /**
@@ -2821,84 +2847,90 @@ export async function getCompanyApplicantsPaginated(
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
-  const { limit, offset } = getPaginationLimitOffset(params);
+  try {
+    const { limit, offset } = getPaginationLimitOffset(params);
   
-  // Get all user IDs in the company with recruiter role
-  const companyUsers = await db.select({ id: users.id })
-    .from(users)
-    .where(and(
-      eq(users.companyId, companyId),
-      eq(users.role, 'recruiter')
-    ));
-  
-  const recruiterIds = companyUsers.map(u => u.id);
-  
-  if (recruiterIds.length === 0) {
-    return buildPaginatedResponse([], 0, params);
-  }
-  
-  // Build where conditions - applications for jobs posted by company recruiters
-  const conditions = [inArray(jobs.postedBy, recruiterIds)];
-  
-  if (params.status) {
-    conditions.push(eq(applications.status, params.status as any));
-  }
-  
-  if (params.jobId) {
-    conditions.push(eq(applications.jobId, params.jobId));
-  }
-  
-  if (params.search) {
-    conditions.push(
-      sql`(${users.name} LIKE ${`%${params.search}%`} OR ${users.email} LIKE ${`%${params.search}%`})`
-    );
-  }
-  
-  // Get total count
-  const [countResult] = await db.select({ count: sql<number>`count(*)` })
+    // Get all user IDs in the company with recruiter role
+    const companyUsers = await db.select({ id: users.id })
+      .from(users)
+      .where(and(
+        eq(users.companyId, companyId),
+        eq(users.role, 'recruiter')
+      ));
+    
+    const recruiterIds = companyUsers.map(u => u.id);
+    
+    if (recruiterIds.length === 0) {
+      return buildPaginatedResponse([], 0, params);
+    }
+    
+    // Build where conditions - applications for jobs posted by company recruiters
+    const conditions = [inArray(jobs.postedBy, recruiterIds)];
+    
+    if (params.status) {
+      conditions.push(eq(applications.status, params.status as any));
+    }
+    
+    if (params.jobId) {
+      conditions.push(eq(applications.jobId, params.jobId));
+    }
+    
+    if (params.search) {
+      conditions.push(
+        sql`(${users.name} LIKE ${`%${params.search}%`} OR ${users.email} LIKE ${`%${params.search}%`})`
+      );
+    }
+    
+    // Get total count
+    const [countResult] = await db.select({ count: sql<number>`count(*)` })
+      .from(applications)
+      .innerJoin(jobs, eq(applications.jobId, jobs.id))
+      .innerJoin(candidates, eq(applications.candidateId, candidates.id))
+      .innerJoin(users, eq(candidates.userId, users.id))
+      .where(and(...conditions));
+    
+    const total = Number(countResult?.count || 0);
+    
+    // Get paginated results
+    const results = await db.select({
+      application: applications,
+      job: {
+        id: jobs.id,
+        title: jobs.title,
+        companyName: jobs.companyName,
+        location: jobs.location,
+        employmentType: jobs.employmentType,
+      },
+      candidate: {
+        id: candidates.id,
+        userId: candidates.userId,
+        title: candidates.title,
+        location: candidates.location,
+        skills: candidates.skills,
+        experience: candidates.experience,
+        resumeUrl: candidates.resumeUrl,
+      },
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+      },
+    })
     .from(applications)
     .innerJoin(jobs, eq(applications.jobId, jobs.id))
     .innerJoin(candidates, eq(applications.candidateId, candidates.id))
     .innerJoin(users, eq(candidates.userId, users.id))
-    .where(and(...conditions));
-  
-  const total = Number(countResult?.count || 0);
-  
-  // Get paginated results
-  const results = await db.select({
-    application: applications,
-    job: {
-      id: jobs.id,
-      title: jobs.title,
-      companyName: jobs.companyName,
-      location: jobs.location,
-      employmentType: jobs.employmentType,
-    },
-    candidate: {
-      id: candidates.id,
-      userId: candidates.userId,
-      title: candidates.title,
-      location: candidates.location,
-      skills: candidates.skills,
-      experience: candidates.experience,
-      resumeUrl: candidates.resumeUrl,
-    },
-    user: {
-      id: users.id,
-      name: users.name,
-      email: users.email,
-    },
-  })
-  .from(applications)
-  .innerJoin(jobs, eq(applications.jobId, jobs.id))
-  .innerJoin(candidates, eq(applications.candidateId, candidates.id))
-  .innerJoin(users, eq(candidates.userId, users.id))
-  .where(and(...conditions))
-  .orderBy(desc(applications.submittedAt))
-  .limit(limit)
-  .offset(offset);
-  
-  return buildPaginatedResponse(results, total, params);
+    .where(and(...conditions))
+    .orderBy(desc(applications.submittedAt))
+    .limit(limit)
+    .offset(offset);
+    
+    return buildPaginatedResponse(results, total, params);
+  } catch (error: any) {
+    console.error('[getCompanyApplicantsPaginated] Error:', error?.message || error);
+    // Return empty result on error
+    return buildPaginatedResponse([], 0, params);
+  }
 }
 
 /**

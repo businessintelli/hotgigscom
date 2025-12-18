@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -205,24 +206,25 @@ export default function CustomReportBuilder() {
   const activeField = activeId ? selectedFields.find((f) => f.id === activeId) : null;
 
   return (
-    <div className="container mx-auto py-8 max-w-7xl">
-      <div className="mb-6">
-        <Link href="/company-admin/custom-reports">
-          <Button
-            variant="ghost"
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Reports
-          </Button>
-        </Link>
-        <h1 className="text-3xl font-bold">Custom Report Builder</h1>
-        <p className="text-muted-foreground mt-2">
-          Create custom reports by selecting fields, adding filters, and configuring grouping options
-        </p>
-      </div>
+    <CompanyAdminLayout>
+      <div className="container mx-auto py-8 max-w-7xl">
+        <div className="mb-6">
+          <Link href="/company-admin/custom-reports">
+            <Button
+              variant="ghost"
+              className="mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Reports
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold">Custom Report Builder</h1>
+          <p className="text-muted-foreground mt-2">
+            Create custom reports by selecting fields, adding filters, and configuring grouping options
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel - Report Configuration */}
         <div className="lg:col-span-2 space-y-6">
           {/* Basic Information */}
@@ -478,7 +480,8 @@ export default function CustomReportBuilder() {
             </CardContent>
           </Card>
         </div>
+        </div>
       </div>
-    </div>
+    </CompanyAdminLayout>
   );
 }

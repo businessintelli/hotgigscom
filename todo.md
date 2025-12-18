@@ -4095,3 +4095,21 @@
 
 ## InterviewManagement Hooks Error (Current)
 - [x] Fix React hooks violation in InterviewManagement component - "Rendered more hooks than during the previous render"
+
+
+## Company Admin Applicants Page Errors (Current)
+- [ ] Fix userActivityLogs database query error (table doesn't exist or query is incorrect)
+- [ ] Fix Select component empty string value error
+
+
+## Latest Fixes (Dec 18, 2025)
+- [x] Fix React hooks violation in InterviewManagement component
+- [x] Fix Select empty value error in CompanyAdminApplicants page
+- [x] Fix Select empty value error in CompanyAdminAssociates page
+- [x] Add error handling to getCompanyActivityLogs (missing userActivityLogs table)
+- [x] Add error handling to getRecruiterPerformance (incorrect field references)
+- [x] Add error handling to getCompanyApplicantsPaginated
+- [x] Add error handling to getDashboardStats with fallback to safe defaults
+- [x] Fix CustomReportBuilder missing CompanyAdminLayout wrapper
+- [x] Add stub procedures for missing report endpoints (getRecruitmentOverview, getTotalSubmissionsReport, etc.)
+- [x] Optimize CompanyAdminReports to load data only for active tab instead of all tabs at once

@@ -25,13 +25,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function CompanyAdminAssociates() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState<string>("all");
 
   const { data, isLoading } = trpc.companyAdmin.getCompanyAssociates.useQuery({
     page,
     pageSize: 20,
     search: search || undefined,
-    status: status || undefined,
+    status: status === "all" ? undefined : status,
   });
 
   const getStatusColor = (status: string) => {
@@ -91,7 +91,7 @@ export function CompanyAdminAssociates() {
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
