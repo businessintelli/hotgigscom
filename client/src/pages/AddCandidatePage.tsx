@@ -117,7 +117,7 @@ function AddCandidatePageContent() {
     },
   });
 
-  const parseResumeMutation = trpc.candidates.parseResumeFile.useMutation({
+  const parseResumeMutation = trpc.candidate.parseResumeFile.useMutation({
     onSuccess: (parsed) => {
       // Auto-fill form data from parsed resume
       setFormData(prev => ({

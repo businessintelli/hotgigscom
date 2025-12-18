@@ -4087,3 +4087,7 @@
 
 ## Associates Page Error (Current)
 - [x] Fix React hooks error in ApplicationManagement component - "Rendered fewer hooks than expected"
+
+
+## Resume Parsing Issue (Current)
+- [x] Fix procedure name mismatch - candidates.parseResumeFile not found in backend (changed to candidate.parseResumeFile)
