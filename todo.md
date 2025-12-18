@@ -3935,3 +3935,6 @@ These remaining errors are in advanced LLM management features and can be addres
 - [ ] Run final TypeScript compilation to verify zero errors
 - [ ] Commit all fixes to GitHub
 - [ ] Target: Reduce from 989 errors to 0 errors
+
+## Current Bug Fixes (In Progress)
+- [x] Fix database query error on homepage - jobs table query failing with "Failed query" error

@@ -51,6 +51,7 @@ import {
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: mysql2.Pool | null = null;
 let _initializationPromise: Promise<ReturnType<typeof drizzle> | null> | null = null;
 
 export async function getDb(): Promise<ReturnType<typeof drizzle> | null> {
@@ -74,23 +75,32 @@ export async function getDb(): Promise<ReturnType<typeof drizzle> | null> {
   // Start database initialization
   _initializationPromise = (async () => {
     try {
-      console.log("[Database] Initializing connection...");
+      console.log("[Database] Initializing connection pool...");
       
-      // Create connection pool
-      const connection = await mysql2.createConnection(process.env.DATABASE_URL!);
+      // Create connection pool with proper configuration
+      _pool = mysql2.createPool(process.env.DATABASE_URL!);
       
-      // Test the connection
-      await connection.execute("SELECT 1");
-      console.log("[Database] Connection test successful");
+      // Test the connection using promise wrapper
+      await new Promise<void>((resolve, reject) => {
+        _pool!.query("SELECT 1", (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      console.log("[Database] Connection pool test successful");
       
-      // Create drizzle instance
-      _db = drizzle(connection);
-      console.log("[Database] Drizzle ORM initialized successfully");
+      // Create drizzle instance with the pool
+      _db = drizzle(_pool);
+      console.log("[Database] Drizzle ORM initialized successfully with connection pool");
       
       return _db;
     } catch (error) {
       console.error("[Database] Failed to initialize:", error);
       _db = null;
+      if (_pool) {
+        _pool.end();
+        _pool = null;
+      }
       return null;
     } finally {
       // Clear the initialization promise so future calls can retry if needed
