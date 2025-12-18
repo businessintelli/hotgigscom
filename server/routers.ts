@@ -28,6 +28,7 @@ import { exportCandidatesToExcel, exportCandidatesToCSV } from './resumeExport';
 import * as notificationHelpers from './notificationHelpers';
 import * as candidateSearchHelpers from './candidateSearchHelpers';
 import * as emailCampaignHelpers from './emailCampaignHelpers';
+import { sendApplicationStatusNotification } from "./services/notificationDispatcher.js";
 import * as analyticsHelpers from './analyticsHelpers';
 import * as recruiterReportsHelpers from './recruiterReportsHelpers';
 import { candidateCareerCoach, recruiterAssistant, buildCandidateContext, buildRecruiterContext } from './services/aiAssistant';
@@ -2454,6 +2455,22 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                   relatedEntityId: id,
                   actionUrl: '/my-applications',
                 });
+                
+                // Send Slack/Teams notification to recruiter's company
+                if (recruiter?.companyId) {
+                  try {
+                    await sendApplicationStatusNotification(
+                      recruiter.companyId,
+                      user.name || "Candidate",
+                      job.title,
+                      oldStatus || "new",
+                      input.status,
+                      recruiterUser?.name || "Recruiter"
+                    );
+                  } catch (notifError) {
+                    console.error("Failed to send Slack/Teams notification:", notifError);
+                  }
+                }
               }
             }
           }

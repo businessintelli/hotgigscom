@@ -1,6 +1,7 @@
 import { getDb } from "../db.js";
 import { sendEmail } from "../emailService.js";
 import { sql } from "drizzle-orm";
+import { sendBudgetAlert as sendBudgetNotification } from "./notificationDispatcher.js";
 
 /**
  * Budget Enforcement Service
@@ -132,7 +133,7 @@ export async function trackSpending(companyId: number, cost: number): Promise<vo
       WHERE companyId = ${companyId}
     `);
     
-    // Send warning email
+    // Send warning email and notifications
     await sendBudgetAlert({
       companyId,
       alertType: "warning",
@@ -140,6 +141,15 @@ export async function trackSpending(companyId: number, cost: number): Promise<vo
       currentSpending: status.currentSpending,
       monthlyLimit: status.monthlyLimit
     });
+    
+    // Send to Slack/Teams
+    await sendBudgetNotification(
+      companyId,
+      status.currentSpending,
+      status.monthlyLimit,
+      status.percentageUsed,
+      "warning"
+    );
   }
   
   // Check if alert threshold reached (e.g., 80%)
@@ -161,6 +171,15 @@ export async function trackSpending(companyId: number, cost: number): Promise<vo
         currentSpending: status.currentSpending,
         monthlyLimit: status.monthlyLimit
       });
+      
+      // Send to Slack/Teams
+      await sendBudgetNotification(
+        companyId,
+        status.currentSpending,
+        status.monthlyLimit,
+        status.percentageUsed,
+        "warning"
+      );
       
       await db.execute(sql`
         UPDATE company_budgets
@@ -193,6 +212,15 @@ export async function pauseAIFeatures(companyId: number): Promise<void> {
       currentSpending: status.currentSpending,
       monthlyLimit: status.monthlyLimit
     });
+    
+    // Send to Slack/Teams
+    await sendBudgetNotification(
+      companyId,
+      status.currentSpending,
+      status.monthlyLimit,
+      status.percentageUsed,
+      "paused"
+    );
   }
 }
 

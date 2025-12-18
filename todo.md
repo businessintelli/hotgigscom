@@ -3497,3 +3497,49 @@
 - [ ] Add dependency version locking in package.json (pnpm-lock.yaml exists)
 - [ ] Create Kubernetes manifests for cloud deployment (optional)
 - [ ] Add video walkthrough documentation (optional)
+
+
+## Phase 3C: Notification Integration & Budget System (NEW)
+
+### TypeScript Error Fixes
+- [ ] Analyze and categorize 934 TypeScript errors
+- [ ] Fix critical null handling errors in date fields
+- [ ] Fix type errors blocking functionality
+
+### Centralized Notification Dispatcher
+- [x] Create notificationDispatcher.ts service
+- [x] Add webhook delivery logic for Slack
+- [x] Add webhook delivery logic for Teams
+- [x] Add notification queue system
+- [x] Add retry logic for failed deliveries
+
+### Budget & LLM Integration
+- [x] Track LLM usage in budget enforcement
+- [x] Add cost calculation per LLM call
+- [x] Trigger budget alerts at 80% threshold
+- [x] Send Slack/Teams notifications for budget alerts
+- [ ] Test automatic AI pause when budget exceeded
+
+### Application Status Notifications
+- [x] Wire application status changes to notification dispatcher
+- [x] Send Slack/Teams alerts when status changes
+- [ ] Add recruiter preference checks
+- [ ] Test notification delivery for all status types
+
+### Interview Reminder Notifications
+- [x] Integrate interview reminders with Slack/Teams
+- [x] Send 24-hour reminder notifications
+- [x] Send 1-hour reminder notifications
+- [x] Add meeting link in notifications
+
+### Budget Initialization
+- [x] Run initializeDefaultBudgets for all companies
+- [x] Verify $500/month limits set correctly
+- [ ] Test budget enforcement with sample data
+
+### Testing & Documentation
+- [ ] End-to-end test of notification system
+- [ ] Test Slack webhook delivery
+- [ ] Test Teams webhook delivery
+- [x] Create NOTIFICATION_INTEGRATION.md guide
+- [ ] Update README with notification features

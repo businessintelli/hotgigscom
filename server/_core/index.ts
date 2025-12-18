@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { handleSendGridWebhook, handleResendWebhook } from "../emailWebhooks";
 import webhookRoutes from "../webhooks/routes";
 import { getDb } from "../db";
+import { startInterviewReminderCron } from "../services/interviewReminderCron.js";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -129,6 +130,9 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    
+    // Start interview reminder cron jobs
+    startInterviewReminderCron();
   });
 }
 

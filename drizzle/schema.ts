@@ -1972,3 +1972,47 @@ export const reportExecutions = mysqlTable("report_executions", {
 });
 export type ReportExecution = typeof reportExecutions.$inferSelect;
 export type InsertReportExecution = typeof reportExecutions.$inferInsert;
+
+/**
+ * Integration Settings - Slack/Teams webhook configurations for companies
+ */
+export const integrationSettings = mysqlTable("integration_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  
+  // Integration type
+  provider: mysqlEnum("provider", ["slack", "teams"]).notNull(),
+  webhookUrl: varchar("webhookUrl", { length: 500 }).notNull(),
+  
+  // Configuration
+  isActive: boolean("isActive").default(true).notNull(),
+  notificationTypes: json("notificationTypes"), // Array of enabled notification types
+  
+  // Metadata
+  createdBy: int("createdBy").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type IntegrationSetting = typeof integrationSettings.$inferSelect;
+export type InsertIntegrationSetting = typeof integrationSettings.$inferInsert;
+
+/**
+ * Notification Delivery Logs - Track webhook notification deliveries
+ */
+export const notificationDeliveryLogs = mysqlTable("notification_delivery_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  integrationId: int("integrationId").notNull().references(() => integrationSettings.id, { onDelete: "cascade" }),
+  
+  // Notification details
+  notificationType: varchar("notificationType", { length: 100 }).notNull(),
+  status: mysqlEnum("status", ["delivered", "failed"]).notNull(),
+  errorMessage: text("errorMessage"),
+  deliveryTime: int("deliveryTime"), // milliseconds
+  
+  // Payload
+  payload: text("payload"), // JSON string of notification payload
+  
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+});
+export type NotificationDeliveryLog = typeof notificationDeliveryLogs.$inferSelect;
+export type InsertNotificationDeliveryLog = typeof notificationDeliveryLogs.$inferInsert;
