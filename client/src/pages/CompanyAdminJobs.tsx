@@ -1,0 +1,238 @@
+import { useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Search, Filter, ExternalLink } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function CompanyAdminJobs() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string>("");
+  const [employmentType, setEmploymentType] = useState<string>("");
+
+  const { data, isLoading } = trpc.companyAdmin.getCompanyJobs.useQuery({
+    page,
+    pageSize: 20,
+    search: search || undefined,
+    status: status || undefined,
+    employmentType: employmentType || undefined,
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-500/10 text-green-500 border-green-500/20";
+      case "draft":
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20";
+      case "closed":
+        return "bg-red-500/10 text-red-500 border-red-500/20";
+      case "filled":
+        return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      default:
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20";
+    }
+  };
+
+  return (
+    <CompanyAdminLayout>
+      <div className="container py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Company Jobs</h1>
+          <p className="text-muted-foreground">
+            View and manage all jobs posted by recruiters in your company
+          </p>
+        </div>
+
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search jobs..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="pl-10"
+                />
+              </div>
+
+              <Select
+                value={status}
+                onValueChange={(value) => {
+                  setStatus(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="filled">Filled</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={employmentType}
+                onValueChange={(value) => {
+                  setEmploymentType(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="full-time">Full-time</SelectItem>
+                  <SelectItem value="part-time">Part-time</SelectItem>
+                  <SelectItem value="contract">Contract</SelectItem>
+                  <SelectItem value="temporary">Temporary</SelectItem>
+                  <SelectItem value="internship">Internship</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Jobs Table */}
+        <Card>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-8 text-center text-muted-foreground">
+                Loading jobs...
+              </div>
+            ) : !data?.data || data.data.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                No jobs found
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Job Title</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Posted By</TableHead>
+                        <TableHead>Posted Date</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.data.map((item: any) => (
+                        <TableRow key={item.job.id}>
+                          <TableCell className="font-medium">
+                            {item.job.title}
+                          </TableCell>
+                          <TableCell>
+                            {item.job.companyName || item.customer?.name || "N/A"}
+                          </TableCell>
+                          <TableCell>{item.job.location || "Remote"}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {item.job.employmentType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={`capitalize ${getStatusColor(item.job.status)}`}
+                            >
+                              {item.job.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{item.recruiter?.name || "Unknown"}</TableCell>
+                          <TableCell>
+                            {new Date(item.job.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              asChild
+                            >
+                              <a
+                                href={`/jobs/${item.job.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination */}
+                {data.pagination && data.pagination.totalPages > 1 && (
+                  <div className="flex items-center justify-between p-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {data.pagination.from} to {data.pagination.to} of{" "}
+                      {data.pagination.total} jobs
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(page - 1)}
+                        disabled={page === 1}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(page + 1)}
+                        disabled={page === data.pagination.totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </CompanyAdminLayout>
+  );
+}

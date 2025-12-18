@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as job_count, SUM(CASE WHEN isPublic = 1 AND status = 'active' THEN 1 ELSE 0 END) as public_active_jobs FROM jobs;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SELECT COUNT(*) as job_count, SUM(CASE WHEN isPublic = 1 AND status = 'active' THEN 1 ELSE 0 END) as public_active_jobs FROM jobs;",
+  "rows": [
+    {
+      "job_count": "15",
+      "public_active_jobs": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "job_count\tpublic_active_jobs\n15\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1600
+}

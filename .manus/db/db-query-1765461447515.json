@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `savedSearches` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`name` varchar(255) NOT NULL,\n\t`searchType` enum('candidate','job') NOT NULL DEFAULT 'candidate',\n\t`keyword` text,\n\t`location` text,\n\t`experienceLevel` varchar(50),\n\t`skills` text,\n\t`emailAlerts` boolean NOT NULL DEFAULT false,\n\t`alertFrequency` enum('immediate','daily','weekly') DEFAULT 'daily',\n\t`lastAlertSent` timestamp,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `savedSearches_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `savedSearches_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE `savedSearches` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`name` varchar(255) NOT NULL,\n\t`searchType` enum('candidate','job') NOT NULL DEFAULT 'candidate',\n\t`keyword` text,\n\t`location` text,\n\t`experienceLevel` varchar(50),\n\t`skills` text,\n\t`emailAlerts` boolean NOT NULL DEFAULT false,\n\t`alertFrequency` enum('immediate','daily','weekly') DEFAULT 'daily',\n\t`lastAlertSent` timestamp,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `savedSearches_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `savedSearches_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1844
+}

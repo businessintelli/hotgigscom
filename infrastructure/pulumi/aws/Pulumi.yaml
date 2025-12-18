@@ -1,0 +1,11 @@
+name: hotgigs-aws
+runtime: nodejs
+description: HotGigs AWS Infrastructure
+
+config:
+  aws:region:
+    default: us-east-1
+  hotgigs-aws:environment:
+    default: prod
+  hotgigs-aws:appName:
+    default: hotgigs

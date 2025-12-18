@@ -1,0 +1,42 @@
+{
+  "query": "SELECT * FROM candidates WHERE userId = 2",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SELECT * FROM candidates WHERE userId = 2",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "2",
+      "title": "Software Engineer",
+      "phoneNumber": "+1-555-DEMO",
+      "location": "Remote",
+      "bio": "Demo candidate account for testing the platform",
+      "skills": "[\"JavaScript\",\"React\",\"Node.js\"]",
+      "experience": "[{\"company\":\"Demo Corp\",\"role\":\"Developer\",\"duration\":\"2020-Present\"}]",
+      "education": "[{\"degree\":\"BS Computer Science\",\"school\":\"Demo University\",\"year\":\"2020\"}]",
+      "resumeUrl": "NULL",
+      "resumeFilename": "NULL",
+      "resumeUploadedAt": "NULL",
+      "createdAt": "2025-12-11 09:39:17",
+      "updatedAt": "2025-12-11 09:39:17"
+    },
+    {
+      "id": "30001",
+      "userId": "2",
+      "title": "Full-Stack Developer",
+      "phoneNumber": "+1-555-9999",
+      "location": "San Francisco, CA",
+      "bio": "Experienced full-stack developer with 5 years of experience building web applications.",
+      "skills": "JavaScript, TypeScript, React, Node.js, Python, SQL",
+      "experience": "5 years",
+      "education": "NULL",
+      "resumeUrl": "https://example.com/resume.pdf",
+      "resumeFilename": "test-candidate-resume.pdf",
+      "resumeUploadedAt": "NULL",
+      "createdAt": "2025-12-11 11:18:26",
+      "updatedAt": "2025-12-11 11:18:26"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\ttitle\tphoneNumber\tlocation\tbio\tskills\texperience\teducation\tresumeUrl\tresumeFilename\tresumeUploadedAt\tcreatedAt\tupdatedAt\n1\t2\tSoftware Engineer\t+1-555-DEMO\tRemote\tDemo candidate account for testing the platform\t[\"JavaScript\",\"React\",\"Node.js\"]\t[{\"company\":\"Demo Corp\",\"role\":\"Developer\",\"duration\":\"2020-Present\"}]\t[{\"degree\":\"BS Computer Science\",\"school\":\"Demo University\",\"year\":\"2020\"}]\tNULL\tNULL\tNULL\t2025-12-11 09:39:17\t2025-12-11 09:39:17\n30001\t2\tFull-Stack Developer\t+1-555-9999\tSan Francisco, CA\tExperienced full-stack developer with 5 years of experience building web applications.\tJavaScript, TypeScript, React, Node.js, Python, SQL\t5 years\tNULL\thttps://example.com/resume.pdf\ttest-candidate-resume.pdf\tNULL\t2025-12-11 11:18:26\t2025-12-11 11:18:26\n",
+  "stderr": "",
+  "execution_time_ms": 1539
+}

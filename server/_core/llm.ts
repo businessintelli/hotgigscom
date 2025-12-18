@@ -110,6 +110,9 @@ export type ResponseFormat =
   | { type: "json_object" }
   | { type: "json_schema"; json_schema: JsonSchema };
 
+// LLM Provider Types
+export type LLMProvider = "manus" | "gemini" | "openai" | "ollama";
+
 const ensureArray = (
   value: MessageContent | MessageContent[]
 ): MessageContent[] => (Array.isArray(value) ? value : [value]);
@@ -209,17 +212,6 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
-
-const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
-  }
-};
-
 const normalizeResponseFormat = ({
   responseFormat,
   response_format,
@@ -265,8 +257,71 @@ const normalizeResponseFormat = ({
   };
 };
 
-export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  assertApiKey();
+/**
+ * Detect which LLM provider to use based on database configuration
+ * Falls back to environment variables if database is not configured
+ * Priority order: Database Active Provider → Manus Forge → Google Gemini → OpenAI → Ollama
+ */
+async function detectProvider(): Promise<LLMProvider> {
+  try {
+    // Try to get active provider from database
+    const { getActiveLLMProvider } = await import("../llmConfigHelpers");
+    const activeConfig = await getActiveLLMProvider();
+    
+    if (activeConfig && activeConfig.status !== "error") {
+      console.log(`[LLM] Using ${activeConfig.provider} from database configuration`);
+      return activeConfig.provider as LLMProvider;
+    }
+  } catch (error) {
+    // Database not available or not configured, fall back to environment variables
+    console.log("[LLM] Database configuration not available, falling back to environment variables");
+  }
+
+  // Fallback to environment variable detection
+  // Check for Manus Forge API (only available in Manus platform)
+  if (ENV.forgeApiKey && ENV.forgeApiKey.trim().length > 0) {
+    console.log("[LLM] Using Manus Forge API (from environment)");
+    return "manus";
+  }
+
+  // Check for Google Gemini API
+  const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
+  if (geminiKey && geminiKey.trim().length > 0) {
+    console.log("[LLM] Using Google Gemini API (from environment)");
+    return "gemini";
+  }
+
+  // Check for OpenAI API
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey && openaiKey.trim().length > 0) {
+    console.log("[LLM] Using OpenAI API (from environment)");
+    return "openai";
+  }
+
+  // Check for Ollama (self-hosted)
+  const ollamaUrl = process.env.OLLAMA_API_URL;
+  if (ollamaUrl && ollamaUrl.trim().length > 0) {
+    console.log("[LLM] Using Ollama (self-hosted, from environment)");
+    return "ollama";
+  }
+
+  throw new Error(
+    "No LLM provider configured. Please configure a provider in Admin > LLM Settings or set environment variables."
+  );
+}
+
+/**
+ * Invoke Manus Forge API
+ */
+async function invokeManusForge(params: InvokeParams): Promise<InvokeResult> {
+  if (!ENV.forgeApiKey) {
+    throw new Error("BUILT_IN_FORGE_API_KEY is not configured");
+  }
+
+  const resolveApiUrl = () =>
+    ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
+      ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
+      : "https://forge.manus.im/v1/chat/completions";
 
   const {
     messages,
@@ -296,10 +351,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 32768
+  payload.max_tokens = 32768;
   payload.thinking = {
-    "budget_tokens": 128
-  }
+    budget_tokens: 128,
+  };
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
@@ -324,9 +379,283 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
+      `Manus Forge API failed: ${response.status} ${response.statusText} – ${errorText}`
     );
   }
 
   return (await response.json()) as InvokeResult;
+}
+
+/**
+ * Invoke Google Gemini API
+ */
+async function invokeGemini(params: InvokeParams): Promise<InvokeResult> {
+  const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
+  if (!geminiKey) {
+    throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
+  }
+
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const genAI = new GoogleGenerativeAI(geminiKey);
+
+  // Use Gemini 1.5 Flash by default (best cost/performance for resume parsing)
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const { messages, responseFormat, response_format, outputSchema, output_schema } = params;
+
+  // Convert messages to Gemini format
+  const geminiMessages = messages.map((msg) => {
+    const content = ensureArray(msg.content);
+    const parts = content.map((part) => {
+      if (typeof part === "string") {
+        return { text: part };
+      }
+      if (part.type === "text") {
+        return { text: part.text };
+      }
+      if (part.type === "image_url") {
+        return { inlineData: { mimeType: "image/jpeg", data: part.image_url.url } };
+      }
+      throw new Error("Unsupported content type for Gemini");
+    });
+
+    return {
+      role: msg.role === "assistant" ? "model" : "user",
+      parts,
+    };
+  });
+
+  // Handle structured output
+  const normalizedFormat = normalizeResponseFormat({
+    responseFormat,
+    response_format,
+    outputSchema,
+    output_schema,
+  });
+
+  let generationConfig: any = {};
+  if (normalizedFormat?.type === "json_schema") {
+    generationConfig.responseMimeType = "application/json";
+    generationConfig.responseSchema = normalizedFormat.json_schema.schema;
+  }
+
+  const result = await model.generateContent({
+    contents: geminiMessages,
+    generationConfig,
+  });
+
+  const response = result.response;
+  const text = response.text();
+
+  // Convert Gemini response to standard format
+  return {
+    id: `gemini-${Date.now()}`,
+    created: Math.floor(Date.now() / 1000),
+    model: "gemini-1.5-flash",
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: "assistant",
+          content: text,
+        },
+        finish_reason: "stop",
+      },
+    ],
+    usage: {
+      prompt_tokens: 0, // Gemini doesn't provide token counts in the same way
+      completion_tokens: 0,
+      total_tokens: 0,
+    },
+  };
+}
+
+/**
+ * Invoke OpenAI API
+ */
+async function invokeOpenAI(params: InvokeParams): Promise<InvokeResult> {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    throw new Error("OPENAI_API_KEY is not configured");
+  }
+
+  const {
+    messages,
+    tools,
+    toolChoice,
+    tool_choice,
+    maxTokens,
+    max_tokens,
+    outputSchema,
+    output_schema,
+    responseFormat,
+    response_format,
+  } = params;
+
+  const payload: Record<string, unknown> = {
+    model: modelName, // Use configured model or default
+    messages: messages.map(normalizeMessage),
+  };
+
+  if (tools && tools.length > 0) {
+    payload.tools = tools;
+  }
+
+  const normalizedToolChoice = normalizeToolChoice(
+    toolChoice || tool_choice,
+    tools
+  );
+  if (normalizedToolChoice) {
+    payload.tool_choice = normalizedToolChoice;
+  }
+
+  if (maxTokens || max_tokens) {
+    payload.max_tokens = maxTokens || max_tokens;
+  }
+
+  const normalizedResponseFormat = normalizeResponseFormat({
+    responseFormat,
+    response_format,
+    outputSchema,
+    output_schema,
+  });
+
+  if (normalizedResponseFormat) {
+    payload.response_format = normalizedResponseFormat;
+  }
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${openaiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `OpenAI API failed: ${response.status} ${response.statusText} – ${errorText}`
+    );
+  }
+
+  return (await response.json()) as InvokeResult;
+}
+
+/**
+ * Invoke Ollama (self-hosted)
+ */
+async function invokeOllama(params: InvokeParams): Promise<InvokeResult> {
+  // Try to get configuration from database first
+  let ollamaUrl = process.env.OLLAMA_API_URL || "http://localhost:11434";
+  let ollamaModel = process.env.OLLAMA_MODEL || "deepseek-vl2";
+  
+  try {
+    const { getLLMConfigurationByProvider } = await import("../llmConfigHelpers");
+    const config = await getLLMConfigurationByProvider("ollama");
+    if (config) {
+      if (config.api_url) ollamaUrl = config.api_url;
+      if (config.model_name) ollamaModel = config.model_name;
+    }
+  } catch (error) {
+    // Fall back to environment variables
+  }
+
+  const {
+    messages,
+    outputSchema,
+    output_schema,
+    responseFormat,
+    response_format,
+  } = params;
+
+  const payload: Record<string, unknown> = {
+    model: ollamaModel,
+    messages: messages.map(normalizeMessage),
+    stream: false,
+  };
+
+  // Handle structured output for Ollama
+  const normalizedFormat = normalizeResponseFormat({
+    responseFormat,
+    response_format,
+    outputSchema,
+    output_schema,
+  });
+
+  if (normalizedFormat?.type === "json_schema") {
+    payload.format = "json";
+  }
+
+  const response = await fetch(`${ollamaUrl}/api/chat`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Ollama API failed: ${response.status} ${response.statusText} – ${errorText}`
+    );
+  }
+
+  const result = await response.json();
+
+  // Convert Ollama response to standard format
+  return {
+    id: `ollama-${Date.now()}`,
+    created: Math.floor(Date.now() / 1000),
+    model: ollamaModel,
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: "assistant",
+          content: result.message.content,
+        },
+        finish_reason: "stop",
+      },
+    ],
+    usage: {
+      prompt_tokens: result.prompt_eval_count || 0,
+      completion_tokens: result.eval_count || 0,
+      total_tokens: (result.prompt_eval_count || 0) + (result.eval_count || 0),
+    },
+  };
+}
+
+/**
+ * Main LLM invocation function with automatic provider detection
+ */
+export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
+  const provider = await detectProvider();
+
+  try {
+    switch (provider) {
+      case "manus":
+        return await invokeManusForge(params);
+      case "gemini":
+        return await invokeGemini(params);
+      case "openai":
+        return await invokeOpenAI(params);
+      case "ollama":
+        return await invokeOllama(params);
+      default:
+        throw new Error(`Unknown LLM provider: ${provider}`);
+    }
+  } catch (error) {
+    console.error(`[LLM] Error with provider ${provider}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get the current active LLM provider
+ */
+export async function getCurrentProvider(): Promise<LLMProvider> {
+  return await detectProvider();
 }

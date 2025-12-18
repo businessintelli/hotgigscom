@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO systemSettings (settingKey, settingValue, description, createdAt, updatedAt) \nVALUES ('videoProvider', 'none', 'Active video conferencing provider (zoom, teams, or none)', NOW(), NOW())\nON DUPLICATE KEY UPDATE settingValue = settingValue;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute INSERT INTO systemSettings (settingKey, settingValue, description, createdAt, updatedAt) \nVALUES ('videoProvider', 'none', 'Active video conferencing provider (zoom, teams, or none)', NOW(), NOW())\nON DUPLICATE KEY UPDATE settingValue = settingValue;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 65
+}

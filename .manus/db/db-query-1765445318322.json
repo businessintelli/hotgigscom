@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE users SET email = CONCAT(SUBSTRING_INDEX(email, '@', 1), '+user', id, '@', SUBSTRING_INDEX(email, '@', -1)) WHERE id > (SELECT MIN(id) FROM (SELECT id, email FROM users) AS t WHERE t.email = users.email);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute UPDATE users SET email = CONCAT(SUBSTRING_INDEX(email, '@', 1), '+user', id, '@', SUBSTRING_INDEX(email, '@', -1)) WHERE id > (SELECT MIN(id) FROM (SELECT id, email FROM users) AS t WHERE t.email = users.email);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1657
+}

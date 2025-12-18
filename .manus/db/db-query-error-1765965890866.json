@@ -1,0 +1,8 @@
+{
+  "query": "SELECT a.id, a.candidateId, a.jobId, a.status, a.submittedAt, c.fullName as candidateName, c.userId, u.name as userName, j.title as jobTitle \nFROM applications a \nLEFT JOIN candidates c ON a.candidateId = c.id \nLEFT JOIN users u ON c.userId = u.id\nLEFT JOIN jobs j ON a.jobId = j.id\nORDER BY a.submittedAt DESC \nLIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SELECT a.id, a.candidateId, a.jobId, a.status, a.submittedAt, c.fullName as candidateName, c.userId, u.name as userName, j.title as jobTitle \nFROM applications a \nLEFT JOIN candidates c ON a.candidateId = c.id \nLEFT JOIN users u ON c.userId = u.id\nLEFT JOIN jobs j ON a.jobId = j.id\nORDER BY a.submittedAt DESC \nLIMIT 5",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'c.fullname' in 'field list'"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `taskAssignments` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `taskId` int NOT NULL,\n  `recruiterId` int NOT NULL,\n  `assignedBy` int NOT NULL,\n  `assignedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT `taskAssignments_id` PRIMARY KEY(`id`),\n  CONSTRAINT `taskAssignments_taskId_onboardingTasks_id_fk` FOREIGN KEY (`taskId`) REFERENCES `onboardingTasks`(`id`),\n  CONSTRAINT `taskAssignments_recruiterId_recruiters_id_fk` FOREIGN KEY (`recruiterId`) REFERENCES `recruiters`(`id`),\n  CONSTRAINT `taskAssignments_assignedBy_recruiters_id_fk` FOREIGN KEY (`assignedBy`) REFERENCES `recruiters`(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `taskAssignments` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `taskId` int NOT NULL,\n  `recruiterId` int NOT NULL,\n  `assignedBy` int NOT NULL,\n  `assignedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT `taskAssignments_id` PRIMARY KEY(`id`),\n  CONSTRAINT `taskAssignments_taskId_onboardingTasks_id_fk` FOREIGN KEY (`taskId`) REFERENCES `onboardingTasks`(`id`),\n  CONSTRAINT `taskAssignments_recruiterId_recruiters_id_fk` FOREIGN KEY (`recruiterId`) REFERENCES `recruiters`(`id`),\n  CONSTRAINT `taskAssignments_assignedBy_recruiters_id_fk` FOREIGN KEY (`assignedBy`) REFERENCES `recruiters`(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 487
+}

@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE jobs \nSET applicationDeadline = CASE \n  WHEN id % 3 = 0 THEN DATE_ADD(NOW(), INTERVAL 2 DAY)\n  WHEN id % 3 = 1 THEN DATE_ADD(NOW(), INTERVAL 5 DAY)\n  ELSE DATE_ADD(NOW(), INTERVAL 15 DAY)\nEND\nWHERE id % 4 != 3",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute UPDATE jobs \nSET applicationDeadline = CASE \n  WHEN id % 3 = 0 THEN DATE_ADD(NOW(), INTERVAL 2 DAY)\n  WHEN id % 3 = 1 THEN DATE_ADD(NOW(), INTERVAL 5 DAY)\n  ELSE DATE_ADD(NOW(), INTERVAL 15 DAY)\nEND\nWHERE id % 4 != 3",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1563
+}

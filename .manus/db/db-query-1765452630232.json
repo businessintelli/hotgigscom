@@ -1,0 +1,17 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM users) as users_count,\n  (SELECT COUNT(*) FROM candidates) as candidates_count,\n  (SELECT COUNT(*) FROM jobs) as jobs_count,\n  (SELECT COUNT(*) FROM applications) as applications_count,\n  (SELECT COUNT(*) FROM interviews) as interviews_count;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SELECT \n  (SELECT COUNT(*) FROM users) as users_count,\n  (SELECT COUNT(*) FROM candidates) as candidates_count,\n  (SELECT COUNT(*) FROM jobs) as jobs_count,\n  (SELECT COUNT(*) FROM applications) as applications_count,\n  (SELECT COUNT(*) FROM interviews) as interviews_count;",
+  "rows": [
+    {
+      "users_count": "15",
+      "candidates_count": "15",
+      "jobs_count": "0",
+      "applications_count": "0",
+      "interviews_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "users_count\tcandidates_count\tjobs_count\tapplications_count\tinterviews_count\n15\t15\t0\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1597
+}

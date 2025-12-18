@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, email, name, role, emailVerified, loginMethod FROM users ORDER BY id DESC LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute SELECT id, email, name, role, emailVerified, loginMethod FROM users ORDER BY id DESC LIMIT 5",
+  "rows": [
+    {
+      "id": "510002",
+      "email": "testcandidate@example.com",
+      "name": "Test Candidate",
+      "role": "candidate",
+      "emailVerified": "0",
+      "loginMethod": "email"
+    },
+    {
+      "id": "510001",
+      "email": "testrecruiter@example.com",
+      "name": "Test Recruiter",
+      "role": "recruiter",
+      "emailVerified": "0",
+      "loginMethod": "email"
+    },
+    {
+      "id": "480002",
+      "email": "bhimireddy@gmail.com",
+      "name": "pratap bhimireddy",
+      "role": "recruiter",
+      "emailVerified": "1",
+      "loginMethod": "email"
+    },
+    {
+      "id": "480001",
+      "email": "bhimireddy@gmail.com",
+      "name": "pratap bhimireddy",
+      "role": "recruiter",
+      "emailVerified": "0",
+      "loginMethod": "email"
+    },
+    {
+      "id": "450002",
+      "email": "bhimireddy@gmail.com",
+      "name": "pratap bhimireddy",
+      "role": "recruiter",
+      "emailVerified": "0",
+      "loginMethod": "email"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tname\trole\temailVerified\tloginMethod\n510002\ttestcandidate@example.com\tTest Candidate\tcandidate\t0\temail\n510001\ttestrecruiter@example.com\tTest Recruiter\trecruiter\t0\temail\n480002\tbhimireddy@gmail.com\tpratap bhimireddy\trecruiter\t1\temail\n480001\tbhimireddy@gmail.com\tpratap bhimireddy\trecruiter\t0\temail\n450002\tbhimireddy@gmail.com\tpratap bhimireddy\trecruiter\t0\temail\n",
+  "stderr": "",
+  "execution_time_ms": 1533
+}
