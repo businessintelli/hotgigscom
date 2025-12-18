@@ -4091,3 +4091,7 @@
 
 ## Resume Parsing Issue (Current)
 - [x] Fix procedure name mismatch - candidates.parseResumeFile not found in backend (changed to candidate.parseResumeFile)
+
+
+## InterviewManagement Hooks Error (Current)
+- [x] Fix React hooks violation in InterviewManagement component - "Rendered more hooks than during the previous render"

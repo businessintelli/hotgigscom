@@ -45,6 +45,29 @@ export default function InterviewManagement() {
   // Fetch interviews
   const { data: interviews = [], isLoading: interviewsLoading } = trpc.interview.listByRecruiter.useQuery();
 
+  // Filter interviews (must be done before pagination hook)
+  const filteredInterviews = interviews.filter((item: any) => {
+    const interview = item.interview;
+    const candidate = item.candidate;
+    const job = item.job;
+    
+    const matchesSearch = !searchQuery ||
+      candidate?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job?.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || interview.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Pagination hook - MUST be called before any early returns
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedInterviews,
+    goToPage,
+  } = usePagination(filteredInterviews, ITEMS_PER_PAGE);
+
   // Create interview mutation
   const createMutation = trpc.interview.create.useMutation({
     onSuccess: () => {
@@ -124,28 +147,6 @@ export default function InterviewManagement() {
       deleteMutation.mutate({ id });
     }
   };
-
-  // Filter interviews
-  const filteredInterviews = interviews.filter((item: any) => {
-    const interview = item.interview;
-    const candidate = item.candidate;
-    const job = item.job;
-    
-    const matchesSearch = !searchQuery ||
-      candidate?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job?.title?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || interview.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const {
-    currentPage,
-    totalPages,
-    paginatedItems: paginatedInterviews,
-    goToPage,
-  } = usePagination(filteredInterviews, ITEMS_PER_PAGE);
 
   // Statistics
   const stats = {
