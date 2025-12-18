@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import RecruiterLayout from "@/components/RecruiterLayout";
+import { ReportLoadingSkeleton } from "@/components/ReportLoadingSkeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -140,6 +141,14 @@ export default function RecruiterReports() {
       </span>
     );
   };
+
+  if (isLoading) {
+    return (
+      <RecruiterLayout title="Reports">
+        <ReportLoadingSkeleton />
+      </RecruiterLayout>
+    );
+  }
 
   return (
     <RecruiterLayout title="Reports">

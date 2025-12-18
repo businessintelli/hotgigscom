@@ -1542,7 +1542,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     getSavedJobs: protectedProcedure
       .input(z.object({ candidateId: z.number() }))
       .query(async ({ input }) => {
-        return await db.getSavedJobs(input.candidateId);
+        const { getSavedJobs } = await import('./db-saved-jobs-helper');
+        return await getSavedJobs(input.candidateId);
       }),
     
     isJobSaved: protectedProcedure
@@ -2522,7 +2523,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     getCandidateApplications: protectedProcedure
       .input(z.object({ candidateId: z.number() }))
       .query(async ({ input }) => {
-        return await db.getCandidateApplicationsWithDetails(input.candidateId);
+        const { getCandidateApplicationsWithDetails } = await import('./db-applications-helper');
+        return await getCandidateApplicationsWithDetails(input.candidateId);
       }),
     
     updateStatus: protectedProcedure

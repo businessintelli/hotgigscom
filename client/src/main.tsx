@@ -26,6 +26,9 @@ const queryClient = new QueryClient({
         // Exponential backoff: 1s, 2s, 4s
         return Math.min(1000 * 2 ** attemptIndex, 30000);
       },
+      // Cache dashboard stats for 5 minutes to improve performance on repeat visits
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
     },
     mutations: {
       // Don't retry mutations by default (they may have side effects)

@@ -15,6 +15,9 @@ import RecruiterLayout from "@/components/RecruiterLayout";
 export default function RecruiterSettings() {
   const { user } = useAuth();
   const { data: profile } = trpc.recruiter.getProfile.useQuery();
+  const { data: companyData } = trpc.companyAdmin.getCompanySettings.useQuery(undefined, {
+    enabled: !!user?.companyId,
+  });
   
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [applicationAlerts, setApplicationAlerts] = useState(true);
@@ -105,19 +108,19 @@ export default function RecruiterSettings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="company-name">Company Name</Label>
-                  <Input id="company-name" placeholder="Your Company Name" disabled />
+                  <Input id="company-name" value={companyData?.companyName || profile?.companyName || ""} disabled />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company-website">Company Website</Label>
-                  <Input id="company-website" type="url" placeholder="https://example.com" disabled />
+                  <Input id="company-website" type="url" value={companyData?.companyWebsite || ""} disabled />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company-size">Company Size</Label>
-                  <Input id="company-size" placeholder="e.g., 50-200 employees" disabled />
+                  <Input id="company-size" value={companyData?.companySize || ""} disabled />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="industry">Industry</Label>
-                  <Input id="industry" placeholder="e.g., Technology, Healthcare" disabled />
+                  <Input id="industry" value={companyData?.industry || ""} disabled />
                 </div>
                 <Separator />
                 <div className="text-sm text-muted-foreground bg-muted p-4 rounded-md">

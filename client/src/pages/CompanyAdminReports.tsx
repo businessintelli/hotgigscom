@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { FileText, FileSpreadsheet, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useState } from "react";
 import { DateRangeFilter, DateRangePreset } from "@/components/DateRangeFilter";
+import { ReportLoadingSkeleton } from "@/components/ReportLoadingSkeleton";
 import { exportToPDF, exportToExcel, formatReportData } from "@/lib/reportExport";
 import { useAuth } from "@/_core/hooks/useAuth";
 
@@ -54,6 +55,16 @@ export function CompanyAdminReports() {
   const { data: recruiterPerformance, isLoading: recruiterLoading } = trpc.companyAdmin.getRecruiterPerformance.useQuery({
     dateRange: 30
   });
+
+  const isLoading = overviewLoading || submissionsLoading || placementsLoading || jobSubmissionsLoading || backedOutLoading || feedbackLoading || recruiterLoading;
+
+  if (isLoading) {
+    return (
+      <CompanyAdminLayout>
+        <ReportLoadingSkeleton />
+      </CompanyAdminLayout>
+    );
+  }
 
   // Export handlers
   const handleExportSubmissions = (format: 'pdf' | 'excel') => {
