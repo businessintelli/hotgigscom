@@ -3944,3 +3944,37 @@
 - [x] Test candidate resume upload with AI parsing wizard
 - [x] Test recruiter "apply on behalf" submission with parsed resume data
 - [x] Fix nested anchor tag error in Breadcrumb component
+
+## Guest Application Comprehensive Data Collection (Current Focus)
+- [x] Update applications table schema with comprehensive fields:
+  - [x] Compensation: currentSalary, expectedSalary, currentHourlyRate, expectedHourlyRate, salaryType
+  - [x] Work Authorization: workAuthorization, workAuthorizationEndDate, w2EmployerName
+  - [x] Personal: nationality, gender, dateOfBirth
+  - [x] Education: highestEducation, specialization, highestDegreeStartDate, highestDegreeEndDate
+  - [x] Employment: employmentHistory (JSON)
+  - [x] Languages: languagesRead, languagesSpeak, languagesWrite (JSON arrays)
+  - [x] Address: currentResidenceZipCode
+  - [x] Identification: passportNumber, sinLast4, linkedinId
+  - [x] Documents: passportCopyUrl, dlCopyUrl
+- [x] Enhance AI resume parsing to extract all new fields
+- [x] Create multi-step guest application form with sections:
+  - [x] Step 1: Resume Upload
+  - [x] Step 2: Basic Info (name, email, phone, cover letter)
+  - [x] Step 3: Compensation Details
+  - [x] Step 4: Work Authorization
+  - [x] Step 5: Personal Information
+  - [x] Step 6: Education Details
+  - [x] Step 7: Employment History
+  - [x] Step 8: Language Proficiency
+  - [x] Step 9: Address & Contact
+  - [x] Step 10: Identification & Documents
+  - [x] Step 11: Confirmation
+- [x] Implement file upload for passport and driver's license copies with S3 storage
+- [x] Add form validation for all new fields (required/optional logic)
+- [x] Add progress indicator for multi-step form
+- [x] Pre-populate fields from parsed resume data
+- [x] Allow manual editing of auto-filled fields
+- [x] Update submitGuestApplication procedure to handle all new fields
+- [ ] Test complete guest application flow with resume parsing
+- [ ] Test manual entry for all fields
+- [ ] Verify data storage in database

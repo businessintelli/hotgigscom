@@ -1,1 +1,0 @@
-ALTER TABLE `jobs` ADD `companyName` varchar(255);

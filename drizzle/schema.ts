@@ -269,6 +269,40 @@ export const applications = mysqlTable("applications", {
   status: mysqlEnum("status", ["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]).default("submitted"),
   aiScore: int("aiScore"), // AI matching score 0-100
   notes: text("notes"),
+  // Compensation fields
+  currentSalary: int("currentSalary"),
+  expectedSalary: int("expectedSalary"),
+  currentHourlyRate: int("currentHourlyRate"),
+  expectedHourlyRate: int("expectedHourlyRate"),
+  salaryType: varchar("salaryType", { length: 50 }), // 'annual', 'hourly', 'contract'
+  // Work Authorization fields
+  workAuthorization: varchar("workAuthorization", { length: 100 }), // 'citizen', 'green-card', 'h1b', 'opt', 'cpt', etc.
+  workAuthorizationEndDate: date("workAuthorizationEndDate"),
+  w2EmployerName: varchar("w2EmployerName", { length: 255 }),
+  // Personal Information fields
+  nationality: varchar("nationality", { length: 100 }),
+  gender: varchar("gender", { length: 50 }), // 'male', 'female', 'non-binary', 'prefer-not-to-say'
+  dateOfBirth: date("dateOfBirth"),
+  // Education fields
+  highestEducation: varchar("highestEducation", { length: 255 }), // 'high-school', 'associate', 'bachelor', 'master', 'doctorate'
+  specialization: varchar("specialization", { length: 255 }),
+  highestDegreeStartDate: date("highestDegreeStartDate"),
+  highestDegreeEndDate: date("highestDegreeEndDate"),
+  // Employment History (JSON array)
+  employmentHistory: text("employmentHistory"), // JSON: [{ company, title, startDate, endDate, description }]
+  // Language Proficiency (JSON arrays)
+  languagesRead: text("languagesRead"), // JSON: ['English', 'Spanish', 'French']
+  languagesSpeak: text("languagesSpeak"), // JSON: ['English', 'Spanish']
+  languagesWrite: text("languagesWrite"), // JSON: ['English', 'Spanish']
+  // Address fields
+  currentResidenceZipCode: varchar("currentResidenceZipCode", { length: 20 }),
+  // Identification fields
+  passportNumber: varchar("passportNumber", { length: 100 }),
+  sinLast4: varchar("sinLast4", { length: 4 }), // Last 4 digits of SSN/SIN
+  linkedinId: varchar("linkedinId", { length: 255 }),
+  // Document URLs
+  passportCopyUrl: varchar("passportCopyUrl", { length: 500 }),
+  dlCopyUrl: varchar("dlCopyUrl", { length: 500 }), // Driver's License copy
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

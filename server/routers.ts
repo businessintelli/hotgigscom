@@ -2517,7 +2517,38 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           });
         }
         
-        const appResult = await db.createApplication(input);
+        // Prepare application data with all extended fields
+        const applicationData = {
+          ...input,
+          // Add extended info fields directly to application
+          currentSalary: input.extendedInfo?.currentSalary,
+          expectedSalary: input.extendedInfo?.expectedSalary,
+          currentHourlyRate: input.extendedInfo?.currentHourlyRate,
+          expectedHourlyRate: input.extendedInfo?.expectedHourlyRate,
+          salaryType: input.extendedInfo?.salaryType,
+          workAuthorization: input.extendedInfo?.workAuthorization,
+          workAuthorizationEndDate: input.extendedInfo?.workAuthorizationEndDate,
+          w2EmployerName: input.extendedInfo?.w2EmployerName,
+          nationality: input.extendedInfo?.nationality,
+          gender: input.extendedInfo?.gender,
+          dateOfBirth: input.extendedInfo?.dateOfBirth,
+          highestEducation: input.extendedInfo?.highestEducation,
+          specialization: input.extendedInfo?.specialization,
+          highestDegreeStartDate: input.extendedInfo?.highestDegreeStartDate,
+          highestDegreeEndDate: input.extendedInfo?.highestDegreeEndDate,
+          employmentHistory: input.extendedInfo?.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+          languagesRead: input.extendedInfo?.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+          languagesSpeak: input.extendedInfo?.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+          languagesWrite: input.extendedInfo?.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
+          currentResidenceZipCode: input.extendedInfo?.currentResidenceZipCode,
+          passportNumber: input.extendedInfo?.passportNumber,
+          sinLast4: input.extendedInfo?.sinLast4,
+          linkedinId: input.extendedInfo?.linkedinId,
+          passportCopyUrl: input.extendedInfo?.passportCopyUrl,
+          dlCopyUrl: input.extendedInfo?.dlCopyUrl,
+        };
+        
+        const appResult = await db.createApplication(applicationData);
         const applicationId = appResult.insertId;
         
         // Create notification for recruiter about new application
@@ -6358,6 +6389,49 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           filename: z.string(),
           mimeType: z.string(),
         }),
+        // Comprehensive applicant data
+        extendedInfo: z.object({
+          // Compensation
+          currentSalary: z.number().optional(),
+          expectedSalary: z.number().optional(),
+          currentHourlyRate: z.number().optional(),
+          expectedHourlyRate: z.number().optional(),
+          salaryType: z.enum(['annual', 'hourly', 'contract']).optional(),
+          // Work Authorization
+          workAuthorization: z.string().optional(),
+          workAuthorizationEndDate: z.string().optional(),
+          w2EmployerName: z.string().optional(),
+          // Personal Information
+          nationality: z.string().optional(),
+          gender: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          // Education
+          highestEducation: z.string().optional(),
+          specialization: z.string().optional(),
+          highestDegreeStartDate: z.string().optional(),
+          highestDegreeEndDate: z.string().optional(),
+          // Employment History
+          employmentHistory: z.array(z.object({
+            company: z.string(),
+            title: z.string(),
+            startDate: z.string(),
+            endDate: z.string().optional(),
+            description: z.string().optional(),
+          })).optional(),
+          // Languages
+          languagesRead: z.array(z.string()).optional(),
+          languagesSpeak: z.array(z.string()).optional(),
+          languagesWrite: z.array(z.string()).optional(),
+          // Address
+          currentResidenceZipCode: z.string().optional(),
+          // Identification
+          passportNumber: z.string().optional(),
+          sinLast4: z.string().optional(),
+          linkedinId: z.string().optional(),
+          // Documents
+          passportCopyUrl: z.string().optional(),
+          dlCopyUrl: z.string().optional(),
+        }).optional(),
       }))
       .mutation(async ({ input }) => {
         try {
@@ -6378,7 +6452,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           // Parse resume with AI
           const parsedResume = await parseResumeWithAI(resumeText);
           
-          // Create guest application
+          // Create guest application with comprehensive data
           const result = await db.createGuestApplication({
             jobId: input.jobId,
             email: input.email.toLowerCase(),
@@ -6393,6 +6467,32 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             education: JSON.stringify(parsedResume.education),
             totalExperienceYears: parsedResume.metadata.totalExperienceYears,
             claimed: false,
+            // Add extended info fields
+            currentSalary: input.extendedInfo?.currentSalary,
+            expectedSalary: input.extendedInfo?.expectedSalary,
+            currentHourlyRate: input.extendedInfo?.currentHourlyRate,
+            expectedHourlyRate: input.extendedInfo?.expectedHourlyRate,
+            salaryType: input.extendedInfo?.salaryType,
+            workAuthorization: input.extendedInfo?.workAuthorization,
+            workAuthorizationEndDate: input.extendedInfo?.workAuthorizationEndDate,
+            w2EmployerName: input.extendedInfo?.w2EmployerName,
+            nationality: input.extendedInfo?.nationality,
+            gender: input.extendedInfo?.gender,
+            dateOfBirth: input.extendedInfo?.dateOfBirth,
+            highestEducation: input.extendedInfo?.highestEducation,
+            specialization: input.extendedInfo?.specialization,
+            highestDegreeStartDate: input.extendedInfo?.highestDegreeStartDate,
+            highestDegreeEndDate: input.extendedInfo?.highestDegreeEndDate,
+            employmentHistory: input.extendedInfo?.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+            languagesRead: input.extendedInfo?.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+            languagesSpeak: input.extendedInfo?.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+            languagesWrite: input.extendedInfo?.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
+            currentResidenceZipCode: input.extendedInfo?.currentResidenceZipCode,
+            passportNumber: input.extendedInfo?.passportNumber,
+            sinLast4: input.extendedInfo?.sinLast4,
+            linkedinId: input.extendedInfo?.linkedinId,
+            passportCopyUrl: input.extendedInfo?.passportCopyUrl,
+            dlCopyUrl: input.extendedInfo?.dlCopyUrl,
           });
 
           const guestAppId = result.insertId;
