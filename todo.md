@@ -4083,3 +4083,7 @@
 ## Current Issues (Add Candidate Page)
 - [x] Fix resume parsing error - candidates.parseResumeFile endpoint returning 404
 - [x] Add RecruiterLayout sidebar to AddCandidatePage
+
+
+## Associates Page Error (Current)
+- [x] Fix React hooks error in ApplicationManagement component - "Rendered fewer hooks than expected"

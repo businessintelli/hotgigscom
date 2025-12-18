@@ -163,25 +163,12 @@ export default function ApplicationManagement() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Redirect to home if not authenticated - MUST be before any early returns
+  // Redirect to home if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       setLocation("/");
     }
   }, [authLoading, isAuthenticated, setLocation]);
-
-  // Early returns for loading states - MUST be after all hooks
-  if (authLoading || applicationsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  if (!isAuthenticated) {
-    return null;
-  }
 
   // Filter applications
   const filteredApplications = applications.filter((app: any) => {
@@ -218,6 +205,19 @@ export default function ApplicationManagement() {
     pageSize: 10,
     dependencies: [statusFilter, selectedJobId, searchQuery, minOverallScore, minDomainScore, minSkillScore, minExperienceScore],
   });
+
+  // Early returns for loading states - MUST be after all hooks
+  if (authLoading || applicationsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const handleSelectAll = () => {
     if (selectedApplications.length === filteredApplications.length) {
