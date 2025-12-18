@@ -41,7 +41,7 @@ export default function RecruiterAssociates() {
   const { data: placedCandidates, isLoading } = trpc.application.getPlaced.useQuery();
   
   // Filter candidates based on search and status
-  const filteredCandidates = placedCandidates?.filter(app => {
+  const filteredCandidates = placedCandidates?.filter((app: any) => {
     const matchesSearch = searchQuery === "" || 
       app.candidate?.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.candidate?.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -57,8 +57,8 @@ export default function RecruiterAssociates() {
 
   const stats = {
     total: placedCandidates?.length || 0,
-    onboarded: placedCandidates?.filter(a => a.status === "onboarded").length || 0,
-    offered: placedCandidates?.filter(a => a.status === "offered").length || 0,
+    onboarded: placedCandidates?.filter((a: any) => a.status === "onboarded").length || 0,
+    offered: placedCandidates?.filter((a: any) => a.status === "offered").length || 0,
   };
 
   return (
@@ -126,7 +126,7 @@ export default function RecruiterAssociates() {
             <Input
               placeholder="Search by name, email, job title, or company..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: any) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -150,7 +150,7 @@ export default function RecruiterAssociates() {
         {/* Associates List */}
         {isLoading ? (
           <div className="grid gap-4">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3].map((i: any) => (
               <Card key={i} className="animate-pulse">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
@@ -189,7 +189,7 @@ export default function RecruiterAssociates() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {filteredCandidates.map((app) => (
+            {filteredCandidates.map((app: any) => (
               <Card key={app.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">

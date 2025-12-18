@@ -781,6 +781,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const result = await db.insert(sourcingCampaigns).values({
           name: input.name,
           jobId: input.jobId,
@@ -797,11 +798,12 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
           autoAddToPool: input.autoAddToPool,
           status: 'draft',
         });
-        return { success: true, id: result.insertId };
+        return { success: true, id: Number(result.insertId) };
       }),
     
     getSourcingCampaigns: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       return await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.createdBy, ctx.user.id));
     }),
     
@@ -809,6 +811,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const campaign = await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.id, input.id)).limit(1);
         return campaign[0] || null;
       }),
@@ -828,6 +831,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         await db.update(sourcingCampaigns)
           .set({ status: 'paused' })
           .where(eq(sourcingCampaigns.id, input.id));
@@ -838,6 +842,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       .input(z.object({ campaignId: z.number() }))
       .query(async ({ input }) => {
         const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         return await db.select().from(sourcedCandidates).where(eq(sourcedCandidates.campaignId, input.campaignId));
       }),
     
@@ -852,6 +857,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const result = await db.insert(emailCampaigns).values({
           name: input.name,
           sourcingCampaignId: input.sourcingCampaignId,
@@ -861,7 +867,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
           status: 'draft',
           createdBy: ctx.user.id,
         });
-        return { success: true, id: result.insertId };
+        return { success: true, id: Number(result.insertId) };
       }),
     
     sendEmailCampaign: protectedProcedure
@@ -914,6 +920,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       .input(z.object({ applicationId: z.number() }))
       .query(async ({ input }) => {
         const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const predictions = await db.select()
           .from(candidateSuccessPredictions)
           .where(eq(candidateSuccessPredictions.applicationId, input.applicationId))
@@ -924,6 +931,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
     getEmailCampaigns: protectedProcedure
       .query(async ({ ctx }) => {
         const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const campaigns = await db.select()
           .from(emailCampaigns)
           .where(eq(emailCampaigns.createdBy, ctx.user.id));
@@ -1143,6 +1151,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         const { createGoogleCalendarEvent } = await import('./integrations/googleCalendar');
         const { calendarIntegrations } = await import('../drizzle/schema');
         const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         if (!db) throw new Error('Database connection failed');
         
         // Get user's calendar integration
@@ -1819,7 +1828,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                 loginMethod: 'password',
                 emailVerified: false,
               });
-              user = await db.getUserById(userResult.insertId);
+              user = await db.getUserById(Number(userResult.insertId));
             }
 
             if (!user) {
@@ -2121,7 +2130,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           postedBy: ctx.user.id,
         });
         
-        const jobId = result.insertId;
+        const jobId = Number(result.insertId);
         
         // Run bias detection on job description and requirements
         let biasDetectionResult = null;
@@ -2210,7 +2219,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
               isPublic: false,
               postedBy: ctx.user.id,
             });
-            createdIds.push(result.insertId);
+            createdIds.push(Number(result.insertId));
           }
         }
         return { success: true, createdIds };
@@ -2518,7 +2527,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         }
         
         const appResult = await db.createApplication(input);
-        const applicationId = appResult.insertId;
+        const applicationId = Number(appResult.insertId);
         
         // Create notification for recruiter about new application
         try {
@@ -3211,7 +3220,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                 dlCopyUrl: input.extendedInfo.dlCopyUrl,
               }),
             });
-            candidate = await db.getCandidateById(candidateResult.insertId);
+            candidate = await db.getCandidateById(Number(candidateResult.insertId));
           } else {
             // Update existing candidate with new resume
             await db.updateCandidate(candidate.id, {
@@ -3231,7 +3240,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           });
           
           const candidateResult = await db.createCandidate({
-            userId: userResult.insertId,
+            userId: Number(userResult.insertId),
             phoneNumber: input.candidateData.phone,
             location: input.candidateData.location,
             skills: input.candidateData.skills?.join(', '),
@@ -3267,8 +3276,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             }),
           });
           
-          candidate = await db.getCandidateById(candidateResult.insertId);
-          user = await db.getUserById(userResult.insertId);
+          candidate = await db.getCandidateById(Number(candidateResult.insertId));
+          user = await db.getUserById(Number(userResult.insertId));
         }
         
         if (!candidate) throw new Error("Failed to create candidate");

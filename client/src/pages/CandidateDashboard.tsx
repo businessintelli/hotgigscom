@@ -220,12 +220,12 @@ function CandidateDashboardContent() {
   useEffect(() => {
     if (candidate) {
       setProfileForm({
-        fullName: candidate.fullName || "",
-        email: candidate.email || "",
-        phone: candidate.phone || "",
+        fullName: "", // Not available in candidate schema
+        email: "", // Email is on user object, not candidate
+        phone: candidate.phoneNumber || "",
         location: candidate.location || "",
         skills: candidate.skills || "",
-        experience: candidate.experienceYears?.toString() || "",
+        experience: candidate.experience || "",
         bio: candidate.bio || "",
       });
     }
@@ -397,7 +397,7 @@ function CandidateDashboardContent() {
             <nav className="px-2 space-y-1">
               {sidebarItems.map((item, index) => {
                 // Handle section dividers
-                if (item.type === "divider") {
+                if ('type' in item && item.type === "divider") {
                   return (
                     <div key={`divider-${index}`} className="pt-4 pb-2 px-3">
                       {!sidebarCollapsed && (
@@ -411,6 +411,9 @@ function CandidateDashboardContent() {
                     </div>
                   );
                 }
+                
+                // Type guard ensures we have a regular menu item, not a divider
+                if (!('icon' in item)) return null;
                 
                 const isActive = item.path ? location === item.path : false;
                 const Icon = item.icon;

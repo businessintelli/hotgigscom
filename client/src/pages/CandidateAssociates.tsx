@@ -77,7 +77,7 @@ function CandidateAssociatesContent() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-green-700">
-                    {placedApplications?.filter(a => a.status === 'offered').length || 0}
+                    {placedApplications?.filter((a: any) => a.status === 'offered').length || 0}
                   </p>
                   <p className="text-green-600 text-sm">Successful Placements</p>
                 </div>
@@ -93,7 +93,7 @@ function CandidateAssociatesContent() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-blue-700">
-                    {new Set(placedApplications?.map(a => a.job?.companyName)).size || 0}
+                    {new Set(placedApplications?.map((a: any) => a.job?.companyName)).size || 0}
                   </p>
                   <p className="text-blue-600 text-sm">Companies Worked With</p>
                 </div>
@@ -109,7 +109,7 @@ function CandidateAssociatesContent() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-purple-700">
-                    {placedApplications?.filter(a => a.status === 'offered').length || 0}
+                    {placedApplications?.filter((a: any) => a.status === 'offered').length || 0}
                   </p>
                   <p className="text-purple-600 text-sm">Pending Offers</p>
                 </div>
@@ -123,7 +123,7 @@ function CandidateAssociatesContent() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Placement History</h2>
             
-            {placedApplications.map((application) => (
+            {placedApplications.map((application: any) => (
               <Card key={application.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
