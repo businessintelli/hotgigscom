@@ -6526,11 +6526,134 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             }
           }
           
-          // Create notification for recruiter
+          // Auto-create candidate profile for guest applicant
           if (job) {
             try {
               const recruiter = await db.getRecruiterByUserId(job.postedBy);
               if (recruiter) {
+                // Check if user already exists
+                let user = await db.getUserByEmail(input.email.toLowerCase());
+                let userId: number;
+
+                if (user) {
+                  userId = user.id;
+                  // Check if candidate profile already exists
+                  const existingCandidate = await db.getCandidateByUserId(userId);
+                  if (!existingCandidate) {
+                    // Create candidate profile for existing user
+                    await db.createCandidate({
+                      userId,
+                      addedBy: recruiter.id,
+                      source: 'guest-application',
+                      phoneNumber: input.phoneNumber,
+                      location: parsedResume.personalInfo?.location,
+                      resumeUrl,
+                      resumeFilename: input.resumeFile.filename,
+                      resumeUploadedAt: new Date(),
+                      skills: parsedResume.skills ? parsedResume.skills.join(', ') : undefined,
+                      experience: JSON.stringify(parsedResume.experience),
+                      education: JSON.stringify(parsedResume.education),
+                      certifications: JSON.stringify(parsedResume.certifications),
+                      languages: JSON.stringify(parsedResume.languages),
+                      projects: JSON.stringify(parsedResume.projects),
+                      bio: parsedResume.summary,
+                      linkedinUrl: parsedResume.personalInfo?.linkedin,
+                      githubUrl: parsedResume.personalInfo?.github,
+                      totalExperienceYears: parsedResume.metadata?.totalExperienceYears,
+                      seniorityLevel: parsedResume.metadata?.seniorityLevel,
+                      primaryDomain: parsedResume.metadata?.primaryDomain,
+                      parsedResumeData: JSON.stringify(parsedResume),
+                      // Extended info from guest application
+                      currentSalary: input.extendedInfo?.currentSalary,
+                      expectedSalary: input.extendedInfo?.expectedSalary,
+                      currentHourlyRate: input.extendedInfo?.currentHourlyRate,
+                      expectedHourlyRate: input.extendedInfo?.expectedHourlyRate,
+                      salaryType: input.extendedInfo?.salaryType as 'salary' | 'hourly' | undefined,
+                      workAuthorization: input.extendedInfo?.workAuthorization,
+                      workAuthorizationEndDate: input.extendedInfo?.workAuthorizationEndDate ? new Date(input.extendedInfo.workAuthorizationEndDate) : undefined,
+                      w2EmployerName: input.extendedInfo?.w2EmployerName,
+                      nationality: input.extendedInfo?.nationality,
+                      gender: input.extendedInfo?.gender,
+                      dateOfBirth: input.extendedInfo?.dateOfBirth ? new Date(input.extendedInfo.dateOfBirth) : undefined,
+                      highestEducation: input.extendedInfo?.highestEducation,
+                      specialization: input.extendedInfo?.specialization,
+                      highestDegreeStartDate: input.extendedInfo?.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
+                      highestDegreeEndDate: input.extendedInfo?.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
+                      employmentHistory: input.extendedInfo?.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+                      languagesRead: input.extendedInfo?.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+                      languagesSpeak: input.extendedInfo?.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+                      languagesWrite: input.extendedInfo?.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
+                      currentResidenceZipCode: input.extendedInfo?.currentResidenceZipCode,
+                      passportNumber: input.extendedInfo?.passportNumber,
+                      sinLast4: input.extendedInfo?.sinLast4,
+                      linkedinId: input.extendedInfo?.linkedinId,
+                      passportCopyUrl: input.extendedInfo?.passportCopyUrl,
+                      dlCopyUrl: input.extendedInfo?.dlCopyUrl,
+                    });
+                  }
+                } else {
+                  // Create new user for guest applicant
+                  const userResult = await db.createUser({
+                    email: input.email.toLowerCase(),
+                    name: input.name,
+                    role: 'candidate',
+                    emailVerified: false,
+                  });
+                  userId = userResult.insertId;
+
+                  // Create candidate profile
+                  await db.createCandidate({
+                    userId,
+                    addedBy: recruiter.id,
+                    source: 'guest-application',
+                    phoneNumber: input.phoneNumber,
+                    location: parsedResume.personalInfo?.location,
+                    resumeUrl,
+                    resumeFilename: input.resumeFile.filename,
+                    resumeUploadedAt: new Date(),
+                    skills: parsedResume.skills ? parsedResume.skills.join(', ') : undefined,
+                    experience: JSON.stringify(parsedResume.experience),
+                    education: JSON.stringify(parsedResume.education),
+                    certifications: JSON.stringify(parsedResume.certifications),
+                    languages: JSON.stringify(parsedResume.languages),
+                    projects: JSON.stringify(parsedResume.projects),
+                    bio: parsedResume.summary,
+                    linkedinUrl: parsedResume.personalInfo?.linkedin,
+                    githubUrl: parsedResume.personalInfo?.github,
+                    totalExperienceYears: parsedResume.metadata?.totalExperienceYears,
+                    seniorityLevel: parsedResume.metadata?.seniorityLevel,
+                    primaryDomain: parsedResume.metadata?.primaryDomain,
+                    parsedResumeData: JSON.stringify(parsedResume),
+                    // Extended info
+                    currentSalary: input.extendedInfo?.currentSalary,
+                    expectedSalary: input.extendedInfo?.expectedSalary,
+                    currentHourlyRate: input.extendedInfo?.currentHourlyRate,
+                    expectedHourlyRate: input.extendedInfo?.expectedHourlyRate,
+                    salaryType: input.extendedInfo?.salaryType as 'salary' | 'hourly' | undefined,
+                    workAuthorization: input.extendedInfo?.workAuthorization,
+                    workAuthorizationEndDate: input.extendedInfo?.workAuthorizationEndDate ? new Date(input.extendedInfo.workAuthorizationEndDate) : undefined,
+                    w2EmployerName: input.extendedInfo?.w2EmployerName,
+                    nationality: input.extendedInfo?.nationality,
+                    gender: input.extendedInfo?.gender,
+                    dateOfBirth: input.extendedInfo?.dateOfBirth ? new Date(input.extendedInfo.dateOfBirth) : undefined,
+                    highestEducation: input.extendedInfo?.highestEducation,
+                    specialization: input.extendedInfo?.specialization,
+                    highestDegreeStartDate: input.extendedInfo?.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
+                    highestDegreeEndDate: input.extendedInfo?.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
+                    employmentHistory: input.extendedInfo?.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+                    languagesRead: input.extendedInfo?.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+                    languagesSpeak: input.extendedInfo?.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+                    languagesWrite: input.extendedInfo?.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
+                    currentResidenceZipCode: input.extendedInfo?.currentResidenceZipCode,
+                    passportNumber: input.extendedInfo?.passportNumber,
+                    sinLast4: input.extendedInfo?.sinLast4,
+                    linkedinId: input.extendedInfo?.linkedinId,
+                    passportCopyUrl: input.extendedInfo?.passportCopyUrl,
+                    dlCopyUrl: input.extendedInfo?.dlCopyUrl,
+                  });
+                }
+
+                // Create notification for recruiter
                 await notificationHelpers.createNotification({
                   userId: job.postedBy,
                   type: 'application',
@@ -6543,7 +6666,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                 });
               }
             } catch (error) {
-              console.error('Failed to create notification:', error);
+              console.error('Failed to create candidate profile or notification:', error);
+              // Don't fail the application if this fails
             }
           }
 

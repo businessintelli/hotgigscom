@@ -2908,22 +2908,20 @@ export async function getCompanyCandidatesPaginated(
   
   const { limit, offset } = getPaginationLimitOffset(params);
   
-  // Get all user IDs in the company with recruiter role
-  const companyUsers = await db.select({ id: users.id })
-    .from(users)
-    .where(and(
-      eq(users.companyId, companyId),
-      eq(users.role, 'recruiter')
-    ));
+  // Get all recruiter IDs in the company
+  const companyRecruiters = await db.select({ id: recruiters.id })
+    .from(recruiters)
+    .innerJoin(users, eq(recruiters.userId, users.id))
+    .where(eq(users.companyId, companyId));
   
-  const recruiterIds = companyUsers.map(u => u.id);
+  const recruiterIds = companyRecruiters.map(r => r.id);
   
   if (recruiterIds.length === 0) {
     return buildPaginatedResponse([], 0, params);
   }
   
-  // Get unique candidates who applied to company jobs
-  const conditions = [inArray(jobs.postedBy, recruiterIds)];
+  // Build conditions for filtering candidates added by company recruiters
+  const conditions = [inArray(candidates.addedBy, recruiterIds)];
   
   if (params.search) {
     conditions.push(
@@ -2939,7 +2937,7 @@ export async function getCompanyCandidatesPaginated(
     conditions.push(sql`${candidates.location} LIKE ${`%${params.location}%`}`);
   }
   
-  // Get unique candidates with their application count
+  // Get candidates added by company recruiters with their application count
   const results = await db.select({
     candidate: candidates,
     user: {
@@ -2947,27 +2945,30 @@ export async function getCompanyCandidatesPaginated(
       name: users.name,
       email: users.email,
     },
+    recruiter: {
+      id: recruiters.id,
+      companyName: recruiters.companyName,
+    },
     applicationCount: sql<number>`COUNT(DISTINCT ${applications.id})`,
     latestApplication: sql<string>`MAX(${applications.submittedAt})`,
   })
   .from(candidates)
   .innerJoin(users, eq(candidates.userId, users.id))
-  .innerJoin(applications, eq(candidates.id, applications.candidateId))
-  .innerJoin(jobs, eq(applications.jobId, jobs.id))
+  .leftJoin(recruiters, eq(candidates.addedBy, recruiters.id))
+  .leftJoin(applications, eq(candidates.id, applications.candidateId))
   .where(and(...conditions))
-  .groupBy(candidates.id, users.id)
-  .orderBy(desc(sql`MAX(${applications.submittedAt})`))
+  .groupBy(candidates.id, users.id, recruiters.id)
+  .orderBy(desc(candidates.createdAt))
   .limit(limit)
   .offset(offset);
   
-  // Get total count of unique candidates
+  // Get total count of candidates
   const countResults = await db.select({
     candidateId: candidates.id,
   })
   .from(candidates)
   .innerJoin(users, eq(candidates.userId, users.id))
-  .innerJoin(applications, eq(candidates.id, applications.candidateId))
-  .innerJoin(jobs, eq(applications.jobId, jobs.id))
+  .leftJoin(recruiters, eq(candidates.addedBy, recruiters.id))
   .where(and(...conditions))
   .groupBy(candidates.id);
   

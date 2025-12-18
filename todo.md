@@ -3978,3 +3978,14 @@
 - [ ] Test complete guest application flow with resume parsing
 - [ ] Test manual entry for all fields
 - [ ] Verify data storage in database
+
+## Candidate Management System (Current Session)
+- [x] Add `addedBy` field to candidates table to track which recruiter added them
+- [x] Add `source` field to track how candidate was added (manual, resume, bulk, guest-application)
+- [ ] Implement manual candidate addition form and backend procedure
+- [ ] Implement single resume upload to add candidate
+- [x] Fix bulk upload to properly set addedBy field and create proper user accounts
+- [x] Implement guest applicant auto-conversion to candidates
+- [x] Update company admin unified view to show all recruiter candidates using addedBy field
+- [ ] Add frontend UI for manual candidate addition
+- [ ] Add frontend UI for single resume upload

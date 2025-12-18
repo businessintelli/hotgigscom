@@ -99,29 +99,80 @@ export async function processBulkResumeUpload(
         // Auto-create candidate profile if enabled
         if (options.autoCreateProfiles && parsedData) {
           try {
+            // Get recruiter who uploaded
+            const recruiter = await db.getRecruiterByUserId(options.userId);
+            if (!recruiter) {
+              throw new Error('Recruiter profile not found');
+            }
+
+            // Extract email from parsed data or generate placeholder
+            const candidateEmail = parsedData.personalInfo?.email || `candidate-${Date.now()}-${randomSuffix()}@placeholder.com`;
+            const candidateName = parsedData.personalInfo?.name || filename.replace(/\.[^/.]+$/, '');
+
+            // Check if user exists with this email
+            let user = await db.getUserByEmail(candidateEmail);
+            let userId: number;
+
+            if (user) {
+              userId = user.id;
+              // Check if candidate profile already exists
+              const existingCandidate = await db.getCandidateByUserId(userId);
+              if (existingCandidate) {
+                // Skip this candidate
+                result.candidates.push({
+                  filename,
+                  success: false,
+                  error: 'Candidate profile already exists for this email',
+                });
+                result.failedCount++;
+                continue;
+              }
+            } else {
+              // Create new user
+              const userResult = await db.createUser({
+                email: candidateEmail,
+                name: candidateName,
+                role: 'candidate',
+                emailVerified: false,
+              });
+              userId = userResult.insertId;
+            }
+
             // Create new candidate profile
-            const result = await db.createCandidate({
-                userId: options.userId,
+            const candidateResult = await db.createCandidate({
+                userId,
+                addedBy: recruiter.id,
+                source: 'bulk-upload',
                 phoneNumber: parsedData.personalInfo?.phone,
                 location: parsedData.personalInfo?.location,
                 resumeUrl,
                 resumeFilename: filename,
-                skills: parsedData.skills ? JSON.stringify(parsedData.skills) : undefined,
+                resumeUploadedAt: new Date(),
+                skills: parsedData.skills ? parsedData.skills.join(', ') : undefined,
                 experience: parsedData.experience ? JSON.stringify(parsedData.experience) : undefined,
                 education: parsedData.education ? JSON.stringify(parsedData.education) : undefined,
                 certifications: parsedData.certifications ? JSON.stringify(parsedData.certifications) : undefined,
                 languages: parsedData.languages ? JSON.stringify(parsedData.languages) : undefined,
+                projects: parsedData.projects ? JSON.stringify(parsedData.projects) : undefined,
                 bio: parsedData.summary,
+                linkedinUrl: parsedData.personalInfo?.linkedin,
+                githubUrl: parsedData.personalInfo?.github,
+                totalExperienceYears: parsedData.metadata?.totalExperienceYears,
                 seniorityLevel: parsedData.metadata?.seniorityLevel,
                 primaryDomain: parsedData.metadata?.primaryDomain,
                 parsedResumeData: JSON.stringify(parsedData),
               });
 
-            // Get the inserted ID from the result (Drizzle returns array with insertId)
-            candidateId = (result as any)[0]?.insertId || undefined;
+            candidateId = candidateResult.insertId;
           } catch (createError) {
             console.error(`Failed to create/update candidate profile for ${filename}:`, createError);
-            // Continue even if profile creation fails
+            result.failedCount++;
+            result.candidates.push({
+              filename,
+              success: false,
+              error: createError instanceof Error ? createError.message : 'Failed to create candidate',
+            });
+            continue;
           }
         }
 

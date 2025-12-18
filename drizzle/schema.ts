@@ -66,6 +66,8 @@ export type InsertRecruiter = typeof recruiters.$inferInsert;
 export const candidates = mysqlTable("candidates", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id),
+  addedBy: int("addedBy").references(() => recruiters.id), // Recruiter who added this candidate
+  source: varchar("source", { length: 50 }), // 'self-registered', 'recruiter-manual', 'recruiter-resume', 'bulk-upload', 'guest-application'
   title: varchar("title", { length: 255 }),
   phoneNumber: varchar("phoneNumber", { length: 50 }),
   location: varchar("location", { length: 255 }),
