@@ -3445,3 +3445,55 @@
 - [x] Build Admin UI for configuring fallback priorities
 - [x] Add fallback event logging
 - [x] Test failover scenarios with provider failures
+
+
+## Phase: Budget Management & Enforcement (NEW - Current Focus)
+- [x] Create company_budgets database table with monthly limits
+- [x] Implement budget tracking service with real-time monitoring
+- [x] Add automatic AI feature pause when budget exceeded
+- [x] Build grace period system (24h warning before pause)
+- [x] Create admin override functionality for budget limits
+- [x] Add budget status indicators in Company Admin dashboard
+- [x] Create budget management tRPC router
+- [x] Create Company Admin budget configuration UI
+- [ ] Configure initial $500/month alerts for all companies (API ready, needs execution)
+
+## Phase: Slack/Teams Integration (NEW - Current Focus)
+- [x] Research Slack webhook API and authentication
+- [x] Research Microsoft Teams webhook API and authentication
+- [x] Create integration_settings database table for webhook URLs
+- [x] Create notification_delivery_logs table
+- [x] Build Slack notification service with all notification types
+- [x] Build Microsoft Teams notification service with Adaptive Cards
+- [x] Create integration settings tRPC router
+- [x] Create integration configuration UI (works for both Company Admin and Application Admin)
+- [x] Add test notification button in settings
+- [x] Add notification delivery logs database functions
+- [ ] Integrate notifications into existing features (LLM alerts, applications, interviews, etc.)
+- [ ] Build notification dispatcher service
+- [ ] Add notification preferences to user settings
+
+## Phase: GitHub Sync & CI/CD (COMPLETED)
+- [x] Sync all project changes to GitHub repository (git already initialized)
+- [x] CI/CD pipeline already exists (.github/workflows/ci.yml)
+- [x] Docker support already exists (Dockerfile)
+- [x] Build install.sh script for initial setup
+- [x] Build start.sh script to start all services
+- [x] Build stop.sh script to stop all services
+- [x] Build restart.sh script to restart services
+- [x] Build status.sh script to check service health
+- [x] Create db-init.sh for database initialization
+- [x] Create db-backup.sh for database backups
+- [x] Create db-restore.sh for database restoration
+- [ ] Create database/seed.sql for sample data (optional)
+
+## Phase: Setup Wizard & Deployment (COMPLETED)
+- [x] Create setup-wizard.sh with step-by-step configuration
+- [x] Add environment detection (local vs cloud vs docker)
+- [x] Docker Compose already exists (docker-compose.yml)
+- [x] Build comprehensive INSTALLATION.md guide
+- [x] Create troubleshooting guide (in INSTALLATION.md)
+- [x] Create scripts documentation (scripts/README.md)
+- [ ] Add dependency version locking in package.json (pnpm-lock.yaml exists)
+- [ ] Create Kubernetes manifests for cloud deployment (optional)
+- [ ] Add video walkthrough documentation (optional)

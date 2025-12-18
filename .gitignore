@@ -105,3 +105,21 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Manus internal files
+.manus/
+
+# Temporary SQL scripts
+create_budget_table.sql
+
+# User uploads
+uploads/
+public/uploads/
+
+# Secrets and certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx

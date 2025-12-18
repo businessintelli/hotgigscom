@@ -1839,3 +1839,245 @@ export async function getJobApplicationStats(jobId: number) {
   
   return stats;
 }
+
+
+// Budget management operations
+export async function getCompanyBudget(companyId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const result = await db.execute(sql`
+    SELECT * FROM company_budgets WHERE companyId = ${companyId}
+  `);
+  
+  return result && result.length > 0 ? result[0] : null;
+}
+
+export async function createCompanyBudget(data: {
+  companyId: number;
+  monthlyLimit: number;
+  alertThreshold?: number;
+  gracePeriodHours?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.execute(sql`
+    INSERT INTO company_budgets (companyId, monthlyLimit, alertThreshold, gracePeriodHours)
+    VALUES (${data.companyId}, ${data.monthlyLimit}, ${data.alertThreshold || 80}, ${data.gracePeriodHours || 24})
+  `);
+  
+  return await getCompanyBudget(data.companyId);
+}
+
+export async function updateCompanyBudget(companyId: number, updates: {
+  monthlyLimit?: number;
+  alertThreshold?: number;
+  gracePeriodHours?: number;
+  currentSpending?: number;
+  isPaused?: boolean;
+  overrideEnabled?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const setClauses: string[] = [];
+  const values: any[] = [];
+  
+  if (updates.monthlyLimit !== undefined) {
+    setClauses.push(`monthlyLimit = ?`);
+    values.push(updates.monthlyLimit);
+  }
+  if (updates.alertThreshold !== undefined) {
+    setClauses.push(`alertThreshold = ?`);
+    values.push(updates.alertThreshold);
+  }
+  if (updates.gracePeriodHours !== undefined) {
+    setClauses.push(`gracePeriodHours = ?`);
+    values.push(updates.gracePeriodHours);
+  }
+  if (updates.currentSpending !== undefined) {
+    setClauses.push(`currentSpending = ?`);
+    values.push(updates.currentSpending);
+  }
+  if (updates.isPaused !== undefined) {
+    setClauses.push(`isPaused = ?`);
+    values.push(updates.isPaused);
+  }
+  if (updates.overrideEnabled !== undefined) {
+    setClauses.push(`overrideEnabled = ?`);
+    values.push(updates.overrideEnabled);
+  }
+  
+  if (setClauses.length === 0) return;
+  
+  values.push(companyId);
+  
+  await db.execute(sql.raw(`
+    UPDATE company_budgets
+    SET ${setClauses.join(', ')}
+    WHERE companyId = ?
+  `, values));
+}
+
+export async function getAllCompanyBudgets() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const result = await db.execute(sql`
+    SELECT cb.*, c.name as companyName
+    FROM company_budgets cb
+    JOIN companies c ON cb.companyId = c.id
+    ORDER BY cb.currentSpending DESC
+  `);
+  
+  return result || [];
+}
+
+
+// Integration settings operations
+export async function createIntegrationSetting(data: {
+  companyId?: number;
+  userId?: number;
+  integrationType: 'slack' | 'teams';
+  webhookUrl: string;
+  channelName?: string;
+  enabled?: boolean;
+  notificationTypes?: string[];
+  createdBy: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.execute(sql`
+    INSERT INTO integration_settings (companyId, userId, integrationType, webhookUrl, channelName, enabled, notificationTypes, createdBy)
+    VALUES (
+      ${data.companyId || null},
+      ${data.userId || null},
+      ${data.integrationType},
+      ${data.webhookUrl},
+      ${data.channelName || null},
+      ${data.enabled !== false},
+      ${data.notificationTypes ? JSON.stringify(data.notificationTypes) : null},
+      ${data.createdBy}
+    )
+  `);
+  
+  const result = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
+  const id = (result[0] as any).id;
+  
+  return await getIntegrationSettingById(id);
+}
+
+export async function getIntegrationSettingById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const result = await db.execute(sql`
+    SELECT * FROM integration_settings WHERE id = ${id}
+  `);
+  
+  return result && result.length > 0 ? result[0] : null;
+}
+
+export async function getIntegrationSettingsByCompany(companyId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const result = await db.execute(sql`
+    SELECT * FROM integration_settings WHERE companyId = ${companyId}
+  `);
+  
+  return result || [];
+}
+
+export async function getIntegrationSettingsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const result = await db.execute(sql`
+    SELECT * FROM integration_settings WHERE userId = ${userId}
+  `);
+  
+  return result || [];
+}
+
+export async function updateIntegrationSetting(id: number, updates: {
+  webhookUrl?: string;
+  channelName?: string;
+  enabled?: boolean;
+  notificationTypes?: string[];
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const setClauses: string[] = [];
+  const values: any[] = [];
+  
+  if (updates.webhookUrl !== undefined) {
+    setClauses.push(`webhookUrl = ?`);
+    values.push(updates.webhookUrl);
+  }
+  if (updates.channelName !== undefined) {
+    setClauses.push(`channelName = ?`);
+    values.push(updates.channelName);
+  }
+  if (updates.enabled !== undefined) {
+    setClauses.push(`enabled = ?`);
+    values.push(updates.enabled);
+  }
+  if (updates.notificationTypes !== undefined) {
+    setClauses.push(`notificationTypes = ?`);
+    values.push(JSON.stringify(updates.notificationTypes));
+  }
+  
+  if (setClauses.length === 0) return;
+  
+  values.push(id);
+  
+  await db.execute(sql.raw(`
+    UPDATE integration_settings
+    SET ${setClauses.join(', ')}
+    WHERE id = ?
+  `, values));
+}
+
+export async function deleteIntegrationSetting(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.execute(sql`
+    DELETE FROM integration_settings WHERE id = ${id}
+  `);
+}
+
+export async function logNotificationDelivery(data: {
+  integrationId: number;
+  notificationType: string;
+  notificationTitle: string;
+  notificationMessage: string;
+  deliveryStatus: 'success' | 'failed';
+  errorMessage?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.execute(sql`
+    INSERT INTO notification_delivery_logs (integrationId, notificationType, notificationTitle, notificationMessage, deliveryStatus, errorMessage)
+    VALUES (${data.integrationId}, ${data.notificationType}, ${data.notificationTitle}, ${data.notificationMessage}, ${data.deliveryStatus}, ${data.errorMessage || null})
+  `);
+}
+
+export async function getNotificationDeliveryLogs(integrationId: number, limit: number = 100) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const result = await db.execute(sql`
+    SELECT * FROM notification_delivery_logs
+    WHERE integrationId = ${integrationId}
+    ORDER BY sentAt DESC
+    LIMIT ${limit}
+  `);
+  
+  return result || [];
+}
