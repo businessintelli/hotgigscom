@@ -407,6 +407,19 @@ export type SavedJob = typeof savedJobs.$inferSelect;
 export type InsertSavedJob = typeof savedJobs.$inferInsert;
 
 /**
+ * Recently viewed jobs for candidates to track their browsing history
+ */
+export const recentlyViewedJobs = mysqlTable("recentlyViewedJobs", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").notNull().references(() => candidates.id, { onDelete: "cascade" }),
+  jobId: int("jobId").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  viewedAt: timestamp("viewedAt").defaultNow().notNull(),
+});
+
+export type RecentlyViewedJob = typeof recentlyViewedJobs.$inferSelect;
+export type InsertRecentlyViewedJob = typeof recentlyViewedJobs.$inferInsert;
+
+/**
  * Fraud detection events table for tracking suspicious behavior during AI interviews
  */
 export const fraudDetectionEvents = mysqlTable("fraudDetectionEvents", {

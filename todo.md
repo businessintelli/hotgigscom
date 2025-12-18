@@ -3835,13 +3835,13 @@
 - [ ] Add pagination to company admin Reports page
 
 ### Optimistic Updates
-- [ ] Implement optimistic updates for save/unsave job actions
-- [ ] Add optimistic updates to all job list pages (candidate, recruiter, company admin)
-- [ ] Add loading states and error rollback for failed optimistic updates
+- [x] Implement optimistic updates for save/unsave job actions
+- [x] Add optimistic updates to all job list pages (candidate, recruiter, company admin)
+- [x] Add loading states and error rollback for failed optimistic updates
 
 ### Recently Viewed Jobs
-- [ ] Create database table for recently viewed jobs tracking
-- [ ] Implement backend tracking for job views
-- [ ] Create recently viewed jobs query with optimized joins
+- [x] Create database table for recently viewed jobs tracking
+- [x] Implement backend tracking for job views
+- [x] Create recently viewed jobs query with optimized joins
 - [ ] Add recently viewed jobs widget to candidate dashboard
 - [ ] Add recently viewed jobs section to job browser page

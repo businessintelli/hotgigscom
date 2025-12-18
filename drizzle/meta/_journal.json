@@ -393,6 +393,13 @@
       "when": 1766044297510,
       "tag": "0055_soft_iron_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "5",
+      "when": 1766052212767,
+      "tag": "0056_stormy_blindfold",
+      "breakpoints": true
     }
   ]
 }

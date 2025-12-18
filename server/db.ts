@@ -22,6 +22,7 @@ import {
   interviewResponses, InsertInterviewResponse,
   savedSearches, InsertSavedSearch,
   savedJobs, InsertSavedJob,
+  recentlyViewedJobs, InsertRecentlyViewedJob,
   fraudDetectionEvents, InsertFraudDetectionEvent,
   associates, InsertAssociate,
   onboardingProcesses, InsertOnboardingProcess,
@@ -703,6 +704,54 @@ export async function deleteSavedJob(candidateId: number, jobId: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(savedJobs).where(and(eq(savedJobs.candidateId, candidateId), eq(savedJobs.jobId, jobId)));
+}
+
+// Recently Viewed Jobs operations
+export async function trackRecentlyViewedJob(candidateId: number, jobId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Check if this job was already viewed by this candidate
+  const existing = await db.select()
+    .from(recentlyViewedJobs)
+    .where(and(
+      eq(recentlyViewedJobs.candidateId, candidateId),
+      eq(recentlyViewedJobs.jobId, jobId)
+    ))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    // Update the viewedAt timestamp
+    await db.update(recentlyViewedJobs)
+      .set({ viewedAt: new Date() })
+      .where(eq(recentlyViewedJobs.id, existing[0].id));
+    return existing[0];
+  } else {
+    // Insert new view record
+    const result = await db.insert(recentlyViewedJobs).values({
+      candidateId,
+      jobId,
+    });
+    return result;
+  }
+}
+
+export async function getRecentlyViewedJobsByCandidateId(candidateId: number, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get recently viewed jobs with full job details, ordered by most recent first
+  const results = await db.select()
+    .from(recentlyViewedJobs)
+    .leftJoin(jobs, eq(recentlyViewedJobs.jobId, jobs.id))
+    .where(eq(recentlyViewedJobs.candidateId, candidateId))
+    .orderBy(desc(recentlyViewedJobs.viewedAt))
+    .limit(limit);
+  
+  return results.map(row => ({
+    viewRecord: row.recentlyViewedJobs,
+    job: row.jobs,
+  }));
 }
 
 // Fraud Detection Event operations

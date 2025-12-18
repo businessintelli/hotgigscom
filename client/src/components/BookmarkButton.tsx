@@ -33,31 +33,82 @@ export function BookmarkButton({
     }
   }, [savedStatus]);
 
-  // Save job mutation
+  const utils = trpc.useUtils();
+
+  // Save job mutation with optimistic update
   const saveJobMutation = trpc.candidate.saveJob.useMutation({
-    onSuccess: () => {
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      await utils.candidate.isJobSaved.cancel({ candidateId: candidateId || 0, jobId });
+      
+      // Snapshot the previous value
+      const previousStatus = utils.candidate.isJobSaved.getData({ candidateId: candidateId || 0, jobId });
+      
+      // Optimistically update to saved
       setIsSaved(true);
-      toast.success("Job saved to your bookmarks");
-      refetch();
+      utils.candidate.isJobSaved.setData({ candidateId: candidateId || 0, jobId }, true);
+      
+      // Invalidate saved jobs list to refresh
+      utils.candidate.getSavedJobs.invalidate();
+      utils.candidate.getSavedJobsPaginated.invalidate();
+      
+      return { previousStatus };
     },
-    onError: (error) => {
+    onSuccess: () => {
+      toast.success("Job saved to your bookmarks");
+    },
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previousStatus !== undefined) {
+        setIsSaved(context.previousStatus);
+        utils.candidate.isJobSaved.setData({ candidateId: candidateId || 0, jobId }, context.previousStatus);
+      }
+      
       if (error.message.includes("Duplicate")) {
         toast.info("Job is already saved");
       } else {
         toast.error("Failed to save job");
       }
     },
+    onSettled: () => {
+      // Refetch to ensure consistency
+      utils.candidate.isJobSaved.invalidate({ candidateId: candidateId || 0, jobId });
+    },
   });
 
-  // Unsave job mutation
+  // Unsave job mutation with optimistic update
   const unsaveJobMutation = trpc.candidate.unsaveJob.useMutation({
-    onSuccess: () => {
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      await utils.candidate.isJobSaved.cancel({ candidateId: candidateId || 0, jobId });
+      
+      // Snapshot the previous value
+      const previousStatus = utils.candidate.isJobSaved.getData({ candidateId: candidateId || 0, jobId });
+      
+      // Optimistically update to unsaved
       setIsSaved(false);
-      toast.success("Job removed from bookmarks");
-      refetch();
+      utils.candidate.isJobSaved.setData({ candidateId: candidateId || 0, jobId }, false);
+      
+      // Invalidate saved jobs list to refresh
+      utils.candidate.getSavedJobs.invalidate();
+      utils.candidate.getSavedJobsPaginated.invalidate();
+      
+      return { previousStatus };
     },
-    onError: () => {
+    onSuccess: () => {
+      toast.success("Job removed from bookmarks");
+    },
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previousStatus !== undefined) {
+        setIsSaved(context.previousStatus);
+        utils.candidate.isJobSaved.setData({ candidateId: candidateId || 0, jobId }, context.previousStatus);
+      }
       toast.error("Failed to remove job");
+    },
+    onSettled: () => {
+      // Refetch to ensure consistency
+      utils.candidate.isJobSaved.invalidate({ candidateId: candidateId || 0, jobId });
     },
   });
 

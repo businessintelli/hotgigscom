@@ -1557,6 +1557,25 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return await db.getSavedJobsByCandidatePaginated(candidateId, paginationParams);
       }),
     
+    // Recently Viewed Jobs
+    trackRecentlyViewedJob: protectedProcedure
+      .input(z.object({ 
+        candidateId: z.number(),
+        jobId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.trackRecentlyViewedJob(input.candidateId, input.jobId);
+      }),
+    
+    getRecentlyViewedJobs: protectedProcedure
+      .input(z.object({ 
+        candidateId: z.number(),
+        limit: z.number().optional().default(20),
+      }))
+      .query(async ({ input }) => {
+        return await db.getRecentlyViewedJobsByCandidateId(input.candidateId, input.limit);
+      }),
+    
     isJobSaved: protectedProcedure
       .input(z.object({ candidateId: z.number(), jobId: z.number() }))
       .query(async ({ input }) => {
