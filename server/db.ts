@@ -2012,7 +2012,7 @@ export async function getJobApplicationStats(jobId: number) {
     total: apps.length,
   };
   
-  apps.forEach((app) => {
+  apps.forEach((app: any) => {
     if (app.status && stats.hasOwnProperty(app.status)) {
       stats[app.status as keyof typeof stats]++;
     }

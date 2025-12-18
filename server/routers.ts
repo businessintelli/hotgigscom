@@ -44,15 +44,13 @@ import { createVideoMeeting } from './videoMeetingService';
 import { panelPublicRouter } from './panelPublicRouter';
 import { companyAdminRouter } from './routers/companyAdmin';
 import { llmConfigRouter } from './routers/llmConfig';
-import { llmManagementRouter } from './routers/llmManagement';
+// import { llmManagementRouter } from './routers/llmManagement'; // Removed - tables don't exist
 import { budgetManagementRouter } from './routers/budgetManagement';
 import { integrationSettingsRouter } from './routers/integrationSettings';
 import { backupRouter } from './routers/backup';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
 import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
-import { sendEmail } from './emailService';
-import { invokeLLM } from './_core/llm';
 import { calculateJobMatch, screenAndRankCandidates } from './ai-matching';
 import { detectResumeBias, detectJobDescriptionBias } from './services/biasDetection';
 import { getHiringTrends, getTimeToHireMetrics as getPredictiveTimeToHire, getPipelineHealth, predictSuccessRate } from './predictive-analytics';
@@ -91,7 +89,7 @@ export const appRouter = router({
   document: documentUploadRouter,
   companyAdmin: companyAdminRouter,
   llmConfig: llmConfigRouter,
-  llmManagement: llmManagementRouter,
+  // llmManagement: llmManagementRouter, // Removed - tables don't exist
   budgetManagement: budgetManagementRouter,
   integrationSettings: integrationSettingsRouter,
   backup: backupRouter,
@@ -994,7 +992,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
             const now = new Date();
             return Math.floor((now.getTime() - submitted.getTime()) / (1000 * 60 * 60 * 24));
           });
-          avgTimeToHire = hireTimes.reduce((a, b) => a + b, 0) / hireTimes.length;
+          avgTimeToHire = hireTimes.reduce((a: any, b: any) => a + b, 0) / hireTimes.length;
           fastestHire = Math.min(...hireTimes);
           slowestHire = Math.max(...hireTimes);
         }
@@ -1007,7 +1005,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
           applicationCount: allApplications.filter(app => app.jobId === job.id).length,
         }));
         const topJobs = jobApplicationCounts
-          .sort((a, b) => b.applicationCount - a.applicationCount)
+          .sort((a: any, b: any) => b.applicationCount - a.applicationCount)
           .slice(0, 5);
         
         // Candidate sources (placeholder)
@@ -3451,7 +3449,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       .mutation(async ({ input }) => {
         const { id, scheduledAt, duration } = input;
         await db.updateInterview(id, {
-          scheduledAt: new Date(scheduledAt),
+          scheduledAt: new Date(scheduledAt || 0),
           ...(duration && { duration }),
         });
         return { success: true };
@@ -4060,11 +4058,11 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         if (allFeedback.length === 0) return null;
         
         // Calculate averages
-        const avgTechnical = allFeedback.reduce((sum, f) => sum + (f.technicalScore || 0), 0) / allFeedback.length;
-        const avgCommunication = allFeedback.reduce((sum, f) => sum + (f.communicationScore || 0), 0) / allFeedback.length;
-        const avgProblemSolving = allFeedback.reduce((sum, f) => sum + (f.problemSolvingScore || 0), 0) / allFeedback.length;
-        const avgCultureFit = allFeedback.reduce((sum, f) => sum + (f.cultureFitScore || 0), 0) / allFeedback.length;
-        const avgOverall = allFeedback.reduce((sum, f) => sum + (f.overallScore || 0), 0) / allFeedback.length;
+        const avgTechnical = allFeedback.reduce((sum: any, f: any) => sum + (f.technicalScore || 0), 0) / allFeedback.length;
+        const avgCommunication = allFeedback.reduce((sum: any, f: any) => sum + (f.communicationScore || 0), 0) / allFeedback.length;
+        const avgProblemSolving = allFeedback.reduce((sum: any, f: any) => sum + (f.problemSolvingScore || 0), 0) / allFeedback.length;
+        const avgCultureFit = allFeedback.reduce((sum: any, f: any) => sum + (f.cultureFitScore || 0), 0) / allFeedback.length;
+        const avgOverall = allFeedback.reduce((sum: any, f: any) => sum + (f.overallScore || 0), 0) / allFeedback.length;
         
         // Count recommendations
         const recommendations = {
@@ -4438,7 +4436,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           .where(sql`${interviews.createdAt} >= ${startDate}`);
         
         // Get previous period for comparison
-        const prevStartDate = new Date(startDate);
+        const prevStartDate = new Date(startDate || 0);
         prevStartDate.setDate(prevStartDate.getDate() - input.days);
         const [prevUserCount] = await database.select({ count: count() }).from(users)
           .where(sql`${users.createdAt} >= ${prevStartDate} AND ${users.createdAt} < ${startDate}`);

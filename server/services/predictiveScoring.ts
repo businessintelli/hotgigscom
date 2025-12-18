@@ -374,7 +374,7 @@ export async function getRankedApplications(jobId: number): Promise<any[]> {
   }
   
   // Sort by prediction score (highest first)
-  rankedApps.sort((a, b) => {
+  rankedApps.sort((a: any, b: any) => {
     const scoreA = a.prediction?.predictionScore || 0;
     const scoreB = b.prediction?.predictionScore || 0;
     return scoreB - scoreA;

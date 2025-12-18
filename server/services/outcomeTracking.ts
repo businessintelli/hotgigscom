@@ -241,19 +241,19 @@ export async function analyzeScoreComponents(startDate: Date, endDate: Date) {
 
     // Calculate average scores for each component
     const avgHiredScores = {
-      skills: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.skillsScore || "0")), 0) / hiredCandidates.length,
-      experience: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.experienceScore || "0")), 0) / hiredCandidates.length,
-      location: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.locationScore || "0")), 0) / hiredCandidates.length,
-      salary: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.salaryScore || "0")), 0) / hiredCandidates.length,
-      culturalFit: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.culturalFitScore || "0")), 0) / hiredCandidates.length
+      skills: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.skillsScore || "0")), 0) / hiredCandidates.length,
+      experience: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.experienceScore || "0")), 0) / hiredCandidates.length,
+      location: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.locationScore || "0")), 0) / hiredCandidates.length,
+      salary: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.salaryScore || "0")), 0) / hiredCandidates.length,
+      culturalFit: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.culturalFitScore || "0")), 0) / hiredCandidates.length
     };
 
     const avgRejectedScores = {
-      skills: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.skillsScore || "0")), 0) / rejectedCandidates.length,
-      experience: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.experienceScore || "0")), 0) / rejectedCandidates.length,
-      location: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.locationScore || "0")), 0) / rejectedCandidates.length,
-      salary: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.salaryScore || "0")), 0) / rejectedCandidates.length,
-      culturalFit: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.culturalFitScore || "0")), 0) / rejectedCandidates.length
+      skills: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.skillsScore || "0")), 0) / rejectedCandidates.length,
+      experience: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.experienceScore || "0")), 0) / rejectedCandidates.length,
+      location: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.locationScore || "0")), 0) / rejectedCandidates.length,
+      salary: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.salaryScore || "0")), 0) / rejectedCandidates.length,
+      culturalFit: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.culturalFitScore || "0")), 0) / rejectedCandidates.length
     };
 
     // Calculate predictive power (difference between hired and rejected)
@@ -299,7 +299,7 @@ export async function getSuggestedWeightAdjustments(startDate: Date, endDate: Da
   };
 
   // Calculate suggested weights based on predictive power
-  const totalPredictivePower = Object.values(analysis.predictivePower).reduce((sum, val) => sum + val, 0);
+  const totalPredictivePower = Object.values(analysis.predictivePower).reduce((sum: any, val: any) => sum + val, 0);
   
   const suggestedWeights = {
     skills: (analysis.predictivePower.skills / totalPredictivePower) || currentWeights.skills,
