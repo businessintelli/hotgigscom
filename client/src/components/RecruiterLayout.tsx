@@ -60,6 +60,7 @@ const sidebarItems = [
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/email-campaigns" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: TrendingUp, label: "Predictive Analytics", path: "/recruiter/predictive-analytics" },
+  { icon: FileText, label: "Reports", path: "/recruiter/reports" },
   { type: "divider", label: "Support" },
   { icon: Settings, label: "Settings", path: "/recruiter/settings" },
 ];

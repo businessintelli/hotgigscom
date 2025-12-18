@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,7 +34,8 @@ export default function CompanyAdminAnalytics() {
     : topJobs;
 
   return (
-    <div className="container py-8">
+    <CompanyAdminLayout>
+      <div className="container py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -246,6 +248,7 @@ export default function CompanyAdminAnalytics() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </CompanyAdminLayout>
   );
 }

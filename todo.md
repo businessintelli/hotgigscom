@@ -3754,3 +3754,19 @@
 - [ ] Test manual scripts
 - [ ] Test admin dashboard interface
 - [ ] Verify GitHub sync
+
+
+## Layout Fixes for Company Admin and Recruiter
+
+### Company Admin Layout Issues
+- [x] Add profile icon to top right corner of CompanyAdminLayout
+- [ ] Create CompanyAdminReportSchedules page (does not exist yet)
+- [x] Ensure CompanyAdminLLMCostTracking uses CompanyAdminLayout
+- [x] Ensure CompanyAdminLLMAlerts uses CompanyAdminLayout
+- [x] Ensure CompanyAdminAnalytics uses CompanyAdminLayout
+- [x] Ensure CompanyAdminTemplateShares uses CompanyAdminLayout
+
+### Recruiter Layout Issues
+- [x] Ensure RecruiterSettings page uses RecruiterLayout
+- [x] Add "Reports" menu item to RecruiterLayout sidebar
+- [x] Verify all recruiter pages have consistent left collapsible menu

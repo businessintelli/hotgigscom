@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Settings, User, Bell, Shield, Mail, Building2 } from "lucide-react";
+import RecruiterLayout from "@/components/RecruiterLayout";
 
 export default function RecruiterSettings() {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function RecruiterSettings() {
   const [candidateMatches, setCandidateMatches] = useState(true);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <RecruiterLayout>
       <div className="container max-w-5xl py-8">
         {/* Header */}
         <div className="mb-8">
@@ -280,6 +281,6 @@ export default function RecruiterSettings() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </RecruiterLayout>
   );
 }

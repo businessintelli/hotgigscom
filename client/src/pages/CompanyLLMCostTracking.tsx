@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -122,7 +123,8 @@ export default function CompanyLLMCostTracking() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <CompanyAdminLayout>
+      <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -420,6 +422,7 @@ export default function CompanyLLMCostTracking() {
           </ul>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </CompanyAdminLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +89,8 @@ export default function CompanyAdminTemplateShares() {
   }
 
   return (
-    <div className="container py-8">
+    <CompanyAdminLayout>
+      <div className="container py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Template Share Requests</h1>
         <p className="text-muted-foreground">
@@ -247,6 +249,7 @@ export default function CompanyAdminTemplateShares() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </CompanyAdminLayout>
   );
 }
