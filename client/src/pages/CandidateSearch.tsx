@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useLocation } from "wouter";
-import AddCandidateDialog from "@/components/AddCandidateDialog";
+import { UserPlus } from "lucide-react";
 
 export default function CandidateSearch() {
   const [, navigate] = useLocation();
@@ -110,7 +110,10 @@ export default function CandidateSearch() {
             <p className="text-slate-600">Find the perfect candidates for your open positions</p>
           </div>
           <div className="flex gap-2">
-            <AddCandidateDialog onSuccess={() => utils.recruiter.searchCandidates.invalidate()} />
+            <Button onClick={() => navigate('/recruiter/add-candidate')} className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              Add Candidate
+            </Button>
             <Button
               variant="outline"
               onClick={() => setShowSavedSearches(!showSavedSearches)}

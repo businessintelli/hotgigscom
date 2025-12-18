@@ -719,21 +719,52 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         // Basic candidate information (required)
         name: z.string().min(1, "Name is required"),
         email: z.string().email("Valid email is required"),
-        phoneNumber: z.string().optional(),
+        phone: z.string().optional(),
         // Optional resume file
-        resumeFile: z.object({
-          fileData: z.string(), // base64 encoded
-          fileName: z.string(),
-          mimeType: z.string(),
-        }).optional(),
+        resumeFile: z.any().optional(),
         // Optional manual fields
         title: z.string().optional(),
         location: z.string().optional(),
-        skills: z.string().optional(), // Comma-separated
+        skills: z.string().optional(),
         experience: z.string().optional(),
         education: z.string().optional(),
+        bio: z.string().optional(),
         linkedinUrl: z.string().optional(),
-        source: z.string().optional(), // e.g., 'job-fair', 'referral', 'networking'
+        source: z.string().optional(),
+        // Compensation
+        currentSalary: z.number().optional(),
+        expectedSalary: z.number().optional(),
+        currentHourlyRate: z.number().optional(),
+        expectedHourlyRate: z.number().optional(),
+        salaryType: z.enum(['salary', 'hourly']).optional(),
+        // Work Authorization
+        workAuthorization: z.string().optional(),
+        workAuthorizationEndDate: z.string().optional(),
+        w2EmployerName: z.string().optional(),
+        // Personal Info
+        nationality: z.string().optional(),
+        gender: z.string().optional(),
+        dateOfBirth: z.string().optional(),
+        // Education
+        highestEducation: z.string().optional(),
+        specialization: z.string().optional(),
+        highestDegreeStartDate: z.string().optional(),
+        highestDegreeEndDate: z.string().optional(),
+        // Employment History
+        employmentHistory: z.string().optional(), // JSON string
+        // Languages
+        languagesRead: z.string().optional(), // JSON array
+        languagesSpeak: z.string().optional(), // JSON array
+        languagesWrite: z.string().optional(), // JSON array
+        // Address
+        currentResidenceZipCode: z.string().optional(),
+        // Identification
+        passportNumber: z.string().optional(),
+        sinLast4: z.string().optional(),
+        linkedinId: z.string().optional(),
+        // Documents
+        passportCopyUrl: z.string().optional(),
+        dlCopyUrl: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const recruiter = await db.getRecruiterByUserId(ctx.user.id);
@@ -797,10 +828,36 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
           userId,
           addedBy: recruiter.id,
           source: input.source || 'recruiter-manual',
-          phoneNumber: input.phoneNumber,
+          phoneNumber: input.phone,
           resumeUrl,
           resumeFilename,
           resumeUploadedAt: resumeUrl ? new Date() : undefined,
+          // Extended fields
+          currentSalary: input.currentSalary,
+          expectedSalary: input.expectedSalary,
+          currentHourlyRate: input.currentHourlyRate,
+          expectedHourlyRate: input.expectedHourlyRate,
+          salaryType: input.salaryType,
+          workAuthorization: input.workAuthorization,
+          workAuthorizationEndDate: input.workAuthorizationEndDate,
+          w2EmployerName: input.w2EmployerName,
+          nationality: input.nationality,
+          gender: input.gender,
+          dateOfBirth: input.dateOfBirth,
+          highestEducation: input.highestEducation,
+          specialization: input.specialization,
+          highestDegreeStartDate: input.highestDegreeStartDate,
+          highestDegreeEndDate: input.highestDegreeEndDate,
+          employmentHistory: input.employmentHistory,
+          languagesRead: input.languagesRead,
+          languagesSpeak: input.languagesSpeak,
+          languagesWrite: input.languagesWrite,
+          currentResidenceZipCode: input.currentResidenceZipCode,
+          passportNumber: input.passportNumber,
+          sinLast4: input.sinLast4,
+          linkedinId: input.linkedinId,
+          passportCopyUrl: input.passportCopyUrl,
+          dlCopyUrl: input.dlCopyUrl,
         };
 
         // If resume was parsed, use parsed data (with manual overrides)
@@ -2042,6 +2099,52 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           failedCount,
           errors,
         };
+      }),
+
+    // Parse resume file with AI
+    parseResumeFile: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // base64 encoded
+        filename: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          // Decode base64 file data
+          const buffer = Buffer.from(input.fileData, 'base64');
+          
+          // Extract and parse resume text
+          const resumeText = await extractResumeText(buffer, input.mimeType);
+          const parsedData = await parseResumeWithAI(resumeText);
+          
+          return parsedData;
+        } catch (error) {
+          console.error('Error parsing resume:', error);
+          throw new Error('Failed to parse resume');
+        }
+      }),
+
+    // Upload document (passport, DL) to S3
+    uploadDocument: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // base64 encoded
+        filename: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          // Decode base64 file data
+          const buffer = Buffer.from(input.fileData, 'base64');
+          
+          // Upload to S3
+          const fileKey = `documents/${ctx.user.id}-${input.filename}-${randomSuffix()}`;
+          const { url } = await storagePut(fileKey, buffer, input.mimeType);
+          
+          return { url };
+        } catch (error) {
+          console.error('Error uploading document:', error);
+          throw new Error('Failed to upload document');
+        }
       }),
   }),
 

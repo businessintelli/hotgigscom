@@ -38,6 +38,7 @@ import JobApplication from "./pages/JobApplication";
 import GuestJobApplication from "./pages/GuestJobApplication";
 import ApplyOnBehalf from "./pages/ApplyOnBehalf";
 import CandidateSearch from "./pages/CandidateSearch";
+import AddCandidatePage from "./pages/AddCandidatePage";
 import AdvancedCandidateSearch from "./pages/AdvancedCandidateSearch";
 import EmailTemplateManager from "./pages/EmailTemplateManager";
 import CampaignBuilder from "./pages/CampaignBuilder";
@@ -172,6 +173,7 @@ function Router() {
       <Route path="/recruiter/resume-ranking" component={ResumeRankingDashboard} />
       <Route path="/recruiter/customers" component={CustomerManagement} />
       <Route path="/recruiter/search-candidates" component={CandidateSearch} />
+      <Route path="/recruiter/add-candidate" component={AddCandidatePage} />
       <Route path="/recruiter/advanced-search" component={AdvancedCandidateSearch} />
       <Route path="/recruiter/email-templates" component={EmailTemplateManager} />
       <Route path="/recruiter/campaigns" component={CampaignBuilder} />

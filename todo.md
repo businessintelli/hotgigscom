@@ -4006,3 +4006,74 @@
 - [x] Test single resume upload widget
 - [x] Verify resume files are stored in S3
 - [x] Verify parsed data is saved to database
+
+## Phase 5: Comprehensive Add Candidate Full-Page Form (Current Session - 2 Steps)
+
+### Database Schema Updates
+- [ ] Add compensation fields to candidates table (currentSalary, expectedSalary, currentHourlyRate, expectedHourlyRate, salaryType)
+- [ ] Add work authorization fields (workAuthorization, workAuthorizationEndDate, w2EmployerName)
+- [ ] Add personal info fields (nationality, gender, dateOfBirth)
+- [ ] Add education fields (highestEducation, specialization, highestDegreeStartDate, highestDegreeEndDate)
+- [ ] Add employment history JSON field (employmentHistory)
+- [ ] Add language proficiency JSON arrays (languagesRead, languagesSpeak, languagesWrite)
+- [ ] Add address field (currentResidenceZipCode)
+- [ ] Add identification fields (passportNumber, sinLast4, linkedinId)
+- [ ] Add document URLs (passportCopyUrl, dlCopyUrl)
+- [ ] Run database migration to add all new fields
+
+### AI Resume Parser Enhancement
+- [ ] Update resume parser to extract employment history with dates and descriptions
+- [ ] Add language proficiency extraction from resume
+- [ ] Extract education dates and specialization
+- [ ] Extract nationality and personal information when available
+- [ ] Handle various resume formats (LinkedIn PDFs, European CVs, Asian formats)
+- [ ] Return comprehensive parsed data structure with all new fields
+
+### Full-Page Form UI Component (2 Steps)
+- [ ] Create AddCandidatePage full-page component
+- [ ] Step 1: Entry method selection (Upload Resume OR Manual Entry)
+- [ ] Step 2: Comprehensive form with all fields in organized sections:
+  - [ ] Basic Information section (name, email, phone, title, location)
+  - [ ] Compensation section (salary type, current/expected salary or hourly rates)
+  - [ ] Work Authorization section (status, end date, W2 employer)
+  - [ ] Personal Information section (nationality, gender, DOB)
+  - [ ] Education section (highest level, specialization, dates)
+  - [ ] Employment History section (dynamic list with add/remove)
+  - [ ] Languages section (read/speak/write proficiency matrix)
+  - [ ] Address & Identification section (zip code, passport, SSN, LinkedIn)
+  - [ ] Documents Upload section (passport copy, DL copy)
+  - [ ] Skills & Experience section (skills, experience summary, education summary, bio)
+- [ ] Resume upload with AI parsing auto-fills all sections
+- [ ] Form validation with inline error messages
+- [ ] Save and Cancel buttons
+- [ ] Responsive full-page layout
+
+### File Upload Implementation
+- [ ] Add passport copy file upload with drag-and-drop
+- [ ] Add driver's license copy file upload with drag-and-drop
+- [ ] Implement file validation (image/PDF formats, max 5MB)
+- [ ] Upload files to S3 storage
+- [ ] Show file preview thumbnails after upload
+- [ ] Store document URLs in database
+- [ ] Add file removal functionality
+
+### Backend API Updates
+- [ ] Update addCandidateManually procedure to accept all extended fields
+- [ ] Add file upload handling for passport and DL documents
+- [ ] Update candidate creation to store all new fields in database
+- [ ] Add validation for required vs optional fields
+- [ ] Return comprehensive candidate object with all fields
+- [ ] Handle employment history JSON serialization
+- [ ] Handle language arrays JSON serialization
+
+### Integration & Testing
+- [ ] Replace AddCandidateDialog with AddCandidateWizard in CandidateSearch page
+- [ ] Test resume upload with AI parsing and auto-fill of all fields
+- [ ] Test manual entry path completing all steps
+- [ ] Test file uploads for passport and DL documents
+- [ ] Verify all data is saved correctly to database
+- [ ] Test wizard navigation (back/next buttons)
+- [ ] Test form validation and error handling
+- [ ] Test skipping optional fields
+- [ ] Test editing data in review step
+- [ ] Verify candidate appears in search results after creation

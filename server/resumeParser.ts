@@ -42,6 +42,11 @@ export interface ParsedResume {
     location?: string;
     linkedin?: string;
     github?: string;
+    nationality?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    passportNumber?: string;
+    linkedinId?: string;
   };
   summary?: string;
   skills: string[];
@@ -49,6 +54,7 @@ export interface ParsedResume {
     title?: string;
     company?: string;
     location?: string;
+    address?: string;
     startDate?: string;
     endDate?: string;
     description?: string;
@@ -61,15 +67,36 @@ export interface ParsedResume {
     graduationDate?: string;
     gpa?: string;
     fieldOfStudy?: string;
+    startDate?: string;
+    endDate?: string;
   }>;
   certifications: string[];
-  languages: string[];
+  languages: {
+    read?: string[];
+    speak?: string[];
+    write?: string[];
+  };
   projects: Array<{
     name?: string;
     description?: string;
     technologies?: string[];
     url?: string;
   }>;
+  compensation?: {
+    currentSalary?: number | null;
+    expectedSalary?: number | null;
+    currentHourlyRate?: number | null;
+    expectedHourlyRate?: number | null;
+    salaryType?: 'salary' | 'hourly';
+  };
+  workAuthorization?: {
+    status?: string;
+    endDate?: string;
+    w2EmployerName?: string;
+  };
+  address?: {
+    zipCode?: string;
+  };
   metadata: {
     totalExperienceYears?: number;
     seniorityLevel?: 'entry' | 'mid' | 'senior' | 'lead' | 'executive';
@@ -179,22 +206,61 @@ Return ONLY the JSON object, no other text.`
  * Parse resume text using AI for advanced structured extraction
  */
 export async function parseResumeWithAI(resumeText: string): Promise<ParsedResume> {
-  const prompt = `Extract structured information from the following resume text and return it as a JSON object.
+  const prompt = `Extract comprehensive structured information from the following resume text and return it as a JSON object.
 
 Resume Text:
 ${resumeText}
 
 Return a JSON object with this structure:
 {
-  "personalInfo": {"name": "", "email": "", "phone": "", "location": "", "linkedin": "", "github": ""},
+  "personalInfo": {
+    "name": "", "email": "", "phone": "", "location": "", "linkedin": "", "github": "",
+    "nationality": "", "gender": "", "dateOfBirth": "", "passportNumber": "", "linkedinId": ""
+  },
   "summary": "",
   "skills": [],
-  "experience": [{"title": "", "company": "", "location": "", "startDate": "", "endDate": "", "description": "", "duration": ""}],
-  "education": [{"degree": "", "institution": "", "location": "", "graduationDate": "", "gpa": "", "fieldOfStudy": ""}],
+  "experience": [{
+    "title": "", "company": "", "location": "", "address": "",
+    "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD", "description": "", "duration": ""
+  }],
+  "education": [{
+    "degree": "", "institution": "", "location": "", "graduationDate": "", "gpa": "",
+    "fieldOfStudy": "", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD"
+  }],
   "certifications": [],
-  "languages": [],
-  "projects": [{"name": "", "description": "", "technologies": [], "url": ""}]
-}`;
+  "languages": {
+    "read": [],
+    "speak": [],
+    "write": []
+  },
+  "projects": [{"name": "", "description": "", "technologies": [], "url": ""}],
+  "compensation": {
+    "currentSalary": null,
+    "expectedSalary": null,
+    "currentHourlyRate": null,
+    "expectedHourlyRate": null,
+    "salaryType": "salary"
+  },
+  "workAuthorization": {
+    "status": "",
+    "endDate": "",
+    "w2EmployerName": ""
+  },
+  "address": {
+    "zipCode": ""
+  }
+}
+
+Instructions:
+- Extract all available information from the resume
+- For dates, use YYYY-MM-DD format when possible
+- For languages, categorize into read/speak/write arrays (if not specified, put in all three)
+- For compensation, extract any salary information mentioned (convert to numbers)
+- For work authorization, look for visa status, citizenship, or work permit information
+- Leave fields empty ("") or null if information is not available
+- For experience, include full company address if available
+- For personal info, extract nationality, gender, DOB if mentioned
+- For linkedinId, extract the profile ID from LinkedIn URL if present`;
 
   try {
     console.log('Calling LLM with resume text length:', resumeText.length);
