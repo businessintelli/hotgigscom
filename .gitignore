@@ -123,3 +123,10 @@ public/uploads/
 *.crt
 *.p12
 *.pfx
+
+# Backup files (contain sensitive data)
+backups/
+*.sql
+*.sql.gz
+*_backup_*.json
+*.meta.json

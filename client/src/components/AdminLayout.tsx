@@ -35,7 +35,8 @@ import {
   Bot,
   DollarSign,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  HardDrive
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_TITLE } from "@/const";
@@ -55,6 +56,7 @@ const sidebarItems = [
   { title: "Environment", href: "/admin/environment", icon: Server },
   { title: "Logs", href: "/admin/logs", icon: ScrollText },
   { title: "Database", href: "/admin/database", icon: Database },
+  { title: "Backup & Restore", href: "/admin/backup-restore", icon: HardDrive },
   { type: "divider", label: "Analytics" },
   { title: "Reports", href: "/admin/reports", icon: BarChart3 },
   { title: "Analytics", href: "/admin/analytics", icon: TrendingUp },

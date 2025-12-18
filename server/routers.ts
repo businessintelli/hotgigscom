@@ -47,6 +47,7 @@ import { llmConfigRouter } from './routers/llmConfig';
 import { llmManagementRouter } from './routers/llmManagement';
 import { budgetManagementRouter } from './routers/budgetManagement';
 import { integrationSettingsRouter } from './routers/integrationSettings';
+import { backupRouter } from './routers/backup';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
 import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
@@ -93,6 +94,7 @@ export const appRouter = router({
   llmManagement: llmManagementRouter,
   budgetManagement: budgetManagementRouter,
   integrationSettings: integrationSettingsRouter,
+  backup: backupRouter,
   
   // AI Chat router for career coach and recruiting assistant
   ai: router({

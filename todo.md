@@ -3686,3 +3686,71 @@
 - [x] Show recruiter performance comparison
 - [x] Add filters by recruiter, date range, job status
 - [x] Test company admin can see all analytics
+
+
+## Phase 5: Backup and Restore System
+
+### Database Backup Infrastructure
+- [ ] Create database_backups table (id, filename, size, createdAt, createdBy, type, status)
+- [ ] Create backup_schedules table (id, frequency, retentionDays, enabled, lastRun, nextRun)
+- [ ] Create backup service in server/services/databaseBackup.ts
+- [ ] Implement createBackup function (full database dump)
+- [ ] Implement restoreBackup function (restore from backup file)
+- [ ] Implement listBackups function (with pagination)
+- [ ] Implement deleteBackup function (with file cleanup)
+- [ ] Add backup validation and integrity checks
+
+### Environment Backup Infrastructure
+- [ ] Create environment_backups table (id, filename, createdAt, createdBy)
+- [ ] Create environment backup service in server/services/environmentBackup.ts
+- [ ] Implement backupEnvironment function (save all env vars)
+- [ ] Implement restoreEnvironment function (restore env vars)
+- [ ] Implement compareEnvironments function (diff two backups)
+- [ ] Add encryption for sensitive environment variables
+
+### Admin Dashboard Interface
+- [ ] Create AdminBackupRestore page at /admin/backup-restore
+- [ ] Add Backup & Restore menu item to AdminLayout sidebar
+- [ ] Database Backup section with "Create Backup" button
+- [ ] Backup history table with download/restore/delete actions
+- [ ] Environment Backup section with "Backup Environment" button
+- [ ] Environment backup history with restore functionality
+- [ ] Backup scheduling configuration UI
+- [ ] Storage usage display and cleanup options
+- [ ] Restore confirmation dialogs with warnings
+
+### Manual Scripts
+- [ ] Create scripts/backup-database.sh (manual database backup)
+- [ ] Create scripts/restore-database.sh (manual database restore)
+- [ ] Create scripts/backup-environment.sh (backup env vars)
+- [ ] Create scripts/restore-environment.sh (restore env vars)
+- [ ] Create scripts/automated-backup.sh (cron job script)
+- [ ] Create scripts/cleanup-old-backups.sh (retention policy)
+- [ ] Add proper error handling and logging to all scripts
+- [ ] Create BACKUP_RESTORE_GUIDE.md documentation
+
+### Automated Backup Scheduling
+- [ ] Create backup scheduler service in server/services/backupScheduler.ts
+- [ ] Implement daily/weekly/monthly backup schedules
+- [ ] Add retention policy enforcement (auto-delete old backups)
+- [ ] Add backup success/failure notifications (email/Slack)
+- [ ] Create admin API endpoints for schedule management
+- [ ] Add backup status monitoring
+
+### GitHub Sync
+- [ ] Initialize git repository if not exists
+- [ ] Create .gitignore for backup files and sensitive data
+- [ ] Add all project files to git
+- [ ] Create comprehensive commit message
+- [ ] Push to GitHub repository
+- [ ] Update README.md with backup/restore instructions
+- [ ] Create DEPLOYMENT.md with complete setup guide
+
+### Testing
+- [ ] Test database backup creation
+- [ ] Test database restore functionality
+- [ ] Test environment backup/restore
+- [ ] Test automated backup scheduling
+- [ ] Test manual scripts
+- [ ] Test admin dashboard interface
+- [ ] Verify GitHub sync

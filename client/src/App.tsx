@@ -81,6 +81,7 @@ import RecruiterAIAssistant from "./pages/RecruiterAIAssistant";
 import AdminReports from "./pages/AdminReports";
 import AdminEnvironment from "./pages/AdminEnvironment";
 import AdminLogs from "./pages/AdminLogs";
+import AdminBackupRestore from "./pages/AdminBackupRestore";
 import LLMSettings from "./pages/admin/LLMSettings";
 import AdminLLMCostTracking from "./pages/AdminLLMCostTracking";
 import AdminLLMAlerts from "./pages/AdminLLMAlerts";
@@ -235,6 +236,7 @@ function Router() {
       <Route path="/admin/llm-alerts" component={AdminLLMAlerts} />
       <Route path="/admin/llm-fallback" component={AdminLLMFallback} />
       <Route path="/admin/database" component={AdminDatabase} />
+      <Route path="/admin/backup-restore" component={AdminBackupRestore} />
       <Route path="/analytics" component={AnalyticsDashboard} />
       <Route path="/candidate-dashboard">  
         <ErrorBoundary 
