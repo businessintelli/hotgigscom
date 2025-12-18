@@ -3934,3 +3934,12 @@
 - [x] Add route for guest candidate profile in App.tsx
 - [x] Test complete guest application workflow with resume upload and parsing
 - [x] Verify recruiters see complete guest candidate profiles in dashboard
+
+## Resume Upload Bug Fixes (COMPLETED)
+- [x] Fix missing db.countResumeProfiles function causing candidate resume upload to fail with 500 error
+- [x] Fix location field validation error in recruiter "apply on behalf" submission (handle null values)
+- [x] Add proper null handling for optional fields in candidate data validation
+- [x] Add missing createUser function to db.ts
+- [x] Fix getResumeProfilesByCandidate function name mismatch
+- [x] Test candidate resume upload with AI parsing wizard
+- [x] Test recruiter "apply on behalf" submission with parsed resume data

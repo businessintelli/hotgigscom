@@ -15,7 +15,7 @@ export const resumeProfileRouter = router({
   getResumeProfiles: protectedProcedure
     .input(z.object({ candidateId: z.number() }))
     .query(async ({ input }) => {
-      return await db.getResumeProfilesByCandidate(input.candidateId);
+      return await db.getResumeProfilesByCandidateId(input.candidateId);
     }),
   
   getResumeProfileById: protectedProcedure

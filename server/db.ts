@@ -176,6 +176,21 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
+export async function createUser(user: Omit<InsertUser, 'openId'> & { openId?: string | null }) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Generate a unique openId if not provided
+  const openId = user.openId || `local-${user.email}-${Date.now()}`;
+  
+  const result = await db.insert(users).values({
+    ...user,
+    openId,
+  });
+  
+  return result;
+}
+
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return null;
@@ -268,7 +283,15 @@ export async function updateRecruiter(userId: number, updates: Partial<InsertRec
 export async function createCandidate(candidate: InsertCandidate) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.insert(candidates).values(candidate);
+  
+  // Sanitize null and empty string values to undefined for optional fields
+  const sanitizedCandidate = {
+    ...candidate,
+    phoneNumber: candidate.phoneNumber && candidate.phoneNumber.trim() !== '' ? candidate.phoneNumber : undefined,
+    location: candidate.location && candidate.location.trim() !== '' ? candidate.location : undefined,
+  };
+  
+  const result = await db.insert(candidates).values(sanitizedCandidate);
   return result;
 }
 
@@ -317,6 +340,13 @@ export async function getResumeProfilesByCandidateId(candidateId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(resumeProfiles).where(eq(resumeProfiles.candidateId, candidateId));
+}
+
+export async function countResumeProfiles(candidateId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const profiles = await db.select().from(resumeProfiles).where(eq(resumeProfiles.candidateId, candidateId));
+  return profiles.length;
 }
 
 export async function updateResumeProfile(id: number, updates: Partial<InsertResumeProfile>) {

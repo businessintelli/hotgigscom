@@ -3182,8 +3182,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             // User exists but no candidate profile, create one
             const candidateResult = await db.createCandidate({
               userId: user.id,
-              phoneNumber: input.candidateData.phone,
-              location: input.candidateData.location,
+              phoneNumber: input.candidateData.phone || undefined,
+              location: input.candidateData.location || undefined,
               skills: input.candidateData.skills?.join(', '),
               experience: JSON.stringify(input.candidateData.experience || []),
               education: JSON.stringify(input.candidateData.education || []),
@@ -3243,8 +3243,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           
           const candidateResult = await db.createCandidate({
             userId: userResult.insertId,
-            phoneNumber: input.candidateData.phone,
-            location: input.candidateData.location,
+            phoneNumber: input.candidateData.phone || undefined,
+            location: input.candidateData.location || undefined,
             skills: input.candidateData.skills?.join(', '),
             experience: JSON.stringify(input.candidateData.experience || []),
             education: JSON.stringify(input.candidateData.education || []),
