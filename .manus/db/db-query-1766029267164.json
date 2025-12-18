@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO llm_configurations (provider, priority, model_name, notes) VALUES\n('manus', 100, 'default', 'Manus Forge API - Automatic on Manus platform'),\n('gemini', 90, 'gemini-1.5-flash', 'Google Gemini - Recommended for cost efficiency'),\n('openai', 80, 'gpt-3.5-turbo', 'OpenAI GPT - Industry standard'),\n('ollama', 70, 'deepseek-vl2', 'Self-hosted Ollama - For high volume')\nON DUPLICATE KEY UPDATE priority=VALUES(priority)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute INSERT INTO llm_configurations (provider, priority, model_name, notes) VALUES\n('manus', 100, 'default', 'Manus Forge API - Automatic on Manus platform'),\n('gemini', 90, 'gemini-1.5-flash', 'Google Gemini - Recommended for cost efficiency'),\n('openai', 80, 'gpt-3.5-turbo', 'OpenAI GPT - Industry standard'),\n('ollama', 70, 'deepseek-vl2', 'Self-hosted Ollama - For high volume')\nON DUPLICATE KEY UPDATE priority=VALUES(priority)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1672
+}

@@ -31,7 +31,8 @@ import {
   Server,
   ScrollText,
   Linkedin,
-  MessageSquare
+  MessageSquare,
+  Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_TITLE } from "@/const";
@@ -55,6 +56,7 @@ const sidebarItems = [
   { title: "Email Delivery", href: "/admin/email-delivery", icon: TrendingUp },
   { title: "LinkedIn Settings", href: "/admin/linkedin-settings", icon: Linkedin },
   { title: "InMail Templates", href: "/admin/inmail-templates", icon: MessageSquare },
+  { title: "LLM Settings", href: "/admin/llm-settings", icon: Bot },
   { title: "Database", href: "/admin/database", icon: Database },
 ];
 

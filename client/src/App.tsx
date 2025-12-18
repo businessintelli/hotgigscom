@@ -78,6 +78,7 @@ import RecruiterAIAssistant from "./pages/RecruiterAIAssistant";
 import AdminReports from "./pages/AdminReports";
 import AdminEnvironment from "./pages/AdminEnvironment";
 import AdminLogs from "./pages/AdminLogs";
+import LLMSettings from "./pages/admin/LLMSettings";
 import AdminDatabase from "./pages/AdminDatabase";
 import AdminLinkedInSettings from "./pages/AdminLinkedInSettings";
 import AdminInMailTemplates from "./pages/AdminInMailTemplates";
@@ -216,6 +217,7 @@ function Router() {
       <Route path="/admin/logs" component={AdminLogs} />
       <Route path="/admin/linkedin-settings" component={AdminLinkedInSettings} />
       <Route path="/admin/inmail-templates" component={AdminInMailTemplates} />
+      <Route path="/admin/llm-settings" component={LLMSettings} />
       <Route path="/admin/database" component={AdminDatabase} />
       <Route path="/analytics" component={AnalyticsDashboard} />
       <Route path="/candidate-dashboard">  

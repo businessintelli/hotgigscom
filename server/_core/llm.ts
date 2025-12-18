@@ -258,39 +258,55 @@ const normalizeResponseFormat = ({
 };
 
 /**
- * Detect which LLM provider to use based on environment variables
- * Priority order: Manus Forge → Google Gemini → OpenAI → Ollama
+ * Detect which LLM provider to use based on database configuration
+ * Falls back to environment variables if database is not configured
+ * Priority order: Database Active Provider → Manus Forge → Google Gemini → OpenAI → Ollama
  */
-function detectProvider(): LLMProvider {
+async function detectProvider(): Promise<LLMProvider> {
+  try {
+    // Try to get active provider from database
+    const { getActiveLLMProvider } = await import("../llmConfigHelpers");
+    const activeConfig = await getActiveLLMProvider();
+    
+    if (activeConfig && activeConfig.status !== "error") {
+      console.log(`[LLM] Using ${activeConfig.provider} from database configuration`);
+      return activeConfig.provider as LLMProvider;
+    }
+  } catch (error) {
+    // Database not available or not configured, fall back to environment variables
+    console.log("[LLM] Database configuration not available, falling back to environment variables");
+  }
+
+  // Fallback to environment variable detection
   // Check for Manus Forge API (only available in Manus platform)
   if (ENV.forgeApiKey && ENV.forgeApiKey.trim().length > 0) {
-    console.log("[LLM] Using Manus Forge API");
+    console.log("[LLM] Using Manus Forge API (from environment)");
     return "manus";
   }
 
   // Check for Google Gemini API
   const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
   if (geminiKey && geminiKey.trim().length > 0) {
-    console.log("[LLM] Using Google Gemini API");
+    console.log("[LLM] Using Google Gemini API (from environment)");
     return "gemini";
   }
 
   // Check for OpenAI API
   const openaiKey = process.env.OPENAI_API_KEY;
   if (openaiKey && openaiKey.trim().length > 0) {
-    console.log("[LLM] Using OpenAI API");
+    console.log("[LLM] Using OpenAI API (from environment)");
     return "openai";
   }
 
   // Check for Ollama (self-hosted)
   const ollamaUrl = process.env.OLLAMA_API_URL;
   if (ollamaUrl && ollamaUrl.trim().length > 0) {
-    console.log("[LLM] Using Ollama (self-hosted)");
+    console.log("[LLM] Using Ollama (self-hosted, from environment)");
     return "ollama";
   }
 
   throw new Error(
-    "No LLM provider configured. Please set one of: BUILT_IN_FORGE_API_KEY, GOOGLE_GEMINI_API_KEY, OPENAI_API_KEY, or OLLAMA_API_URL"
+    "No LLM provider configured. Please configure a provider in Admin > LLM Settings or set environment variables."
   );
 }
 
@@ -477,7 +493,7 @@ async function invokeOpenAI(params: InvokeParams): Promise<InvokeResult> {
   } = params;
 
   const payload: Record<string, unknown> = {
-    model: "gpt-3.5-turbo", // Default to GPT-3.5 for cost efficiency
+    model: modelName, // Use configured model or default
     messages: messages.map(normalizeMessage),
   };
 
@@ -531,8 +547,20 @@ async function invokeOpenAI(params: InvokeParams): Promise<InvokeResult> {
  * Invoke Ollama (self-hosted)
  */
 async function invokeOllama(params: InvokeParams): Promise<InvokeResult> {
-  const ollamaUrl = process.env.OLLAMA_API_URL || "http://localhost:11434";
-  const ollamaModel = process.env.OLLAMA_MODEL || "deepseek-vl2";
+  // Try to get configuration from database first
+  let ollamaUrl = process.env.OLLAMA_API_URL || "http://localhost:11434";
+  let ollamaModel = process.env.OLLAMA_MODEL || "deepseek-vl2";
+  
+  try {
+    const { getLLMConfigurationByProvider } = await import("../llmConfigHelpers");
+    const config = await getLLMConfigurationByProvider("ollama");
+    if (config) {
+      if (config.api_url) ollamaUrl = config.api_url;
+      if (config.model_name) ollamaModel = config.model_name;
+    }
+  } catch (error) {
+    // Fall back to environment variables
+  }
 
   const {
     messages,
@@ -604,7 +632,7 @@ async function invokeOllama(params: InvokeParams): Promise<InvokeResult> {
  * Main LLM invocation function with automatic provider detection
  */
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  const provider = detectProvider();
+  const provider = await detectProvider();
 
   try {
     switch (provider) {
@@ -628,6 +656,6 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 /**
  * Get the current active LLM provider
  */
-export function getCurrentProvider(): LLMProvider {
-  return detectProvider();
+export async function getCurrentProvider(): Promise<LLMProvider> {
+  return await detectProvider();
 }
