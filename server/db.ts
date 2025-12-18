@@ -1,4 +1,4 @@
-import mysql2 from "mysql2/promise";
+import mysql2 from "mysql2";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   companies, InsertCompany,
@@ -51,10 +51,10 @@ import {
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
 let _db: ReturnType<typeof drizzle> | null = null;
-let _pool: mysql2.Pool | null = null;
+let _pool: any | null = null;
 let _initializationPromise: Promise<ReturnType<typeof drizzle> | null> | null = null;
 
-export async function getDb(): Promise<ReturnType<typeof drizzle> | null> {
+export async function getDb(): Promise<ReturnType<typeof drizzle>> {
   // If database is already initialized, return it immediately
   if (_db) {
     return _db;
@@ -63,13 +63,17 @@ export async function getDb(): Promise<ReturnType<typeof drizzle> | null> {
   // If database is currently being initialized, wait for that promise to complete
   if (_initializationPromise) {
     console.log("[Database] Waiting for ongoing initialization to complete...");
-    return _initializationPromise;
+    const result = await _initializationPromise;
+    if (!result) {
+      throw new Error("Database not initialized");
+    }
+    return result;
   }
   
   // Check if DATABASE_URL is available
   if (!process.env.DATABASE_URL) {
     console.error("[Database] DATABASE_URL environment variable is not set");
-    return null;
+    throw new Error("DATABASE_URL environment variable is not set");
   }
   
   // Start database initialization
@@ -80,13 +84,22 @@ export async function getDb(): Promise<ReturnType<typeof drizzle> | null> {
       // Create connection pool with proper configuration
       _pool = mysql2.createPool(process.env.DATABASE_URL!);
       
-      // Test the connection using promise wrapper
+      // Test the connection with a simple query
+      const connection = await new Promise<any>((resolve, reject) => {
+        _pool!.getConnection((err: any, conn: any) => {
+          if (err) reject(err);
+          else resolve(conn);
+        });
+      });
+      
       await new Promise<void>((resolve, reject) => {
-        _pool!.query("SELECT 1", (err) => {
+        connection.query("SELECT 1", (err: any) => {
+          connection.release();
           if (err) reject(err);
           else resolve();
         });
       });
+      
       console.log("[Database] Connection pool test successful");
       
       // Create drizzle instance with the pool
@@ -101,14 +114,19 @@ export async function getDb(): Promise<ReturnType<typeof drizzle> | null> {
         _pool.end();
         _pool = null;
       }
-      return null;
-    } finally {
-      // Clear the initialization promise so future calls can retry if needed
       _initializationPromise = null;
+      throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   })();
   
-  return _initializationPromise;
+  const result = await _initializationPromise;
+  _initializationPromise = null;
+  
+  if (!result) {
+    throw new Error("Database not initialized");
+  }
+  
+  return result;
 }
 
 // User operations
