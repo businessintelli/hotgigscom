@@ -17,10 +17,6 @@ import { sendInterviewReminderNotification } from "./notificationDispatcher.js";
  */
 export async function send24HourReminders(): Promise<void> {
   const db = await getDb();
-  if (!db) {
-    console.error("[InterviewReminderCron] Database not available for 24-hour reminders");
-    return;
-  }
   
   try {
     const now = new Date();
@@ -91,10 +87,6 @@ export async function send24HourReminders(): Promise<void> {
  */
 export async function send1HourReminders(): Promise<void> {
   const db = await getDb();
-  if (!db) {
-    console.error("[InterviewReminderCron] Database not available for 1-hour reminders");
-    return;
-  }
   
   try {
     const now = new Date();

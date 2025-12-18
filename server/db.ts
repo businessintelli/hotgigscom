@@ -1,4 +1,4 @@
-import mysql2 from "mysql2";
+import mysql2 from "mysql2/promise";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   companies, InsertCompany,
@@ -51,10 +51,9 @@ import {
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
 let _db: ReturnType<typeof drizzle> | null = null;
-let _pool: any | null = null;
 let _initializationPromise: Promise<ReturnType<typeof drizzle> | null> | null = null;
 
-export async function getDb(): Promise<ReturnType<typeof drizzle>> {
+export async function getDb() {
   // If database is already initialized, return it immediately
   if (_db) {
     return _db;
@@ -63,70 +62,43 @@ export async function getDb(): Promise<ReturnType<typeof drizzle>> {
   // If database is currently being initialized, wait for that promise to complete
   if (_initializationPromise) {
     console.log("[Database] Waiting for ongoing initialization to complete...");
-    const result = await _initializationPromise;
-    if (!result) {
-      throw new Error("Database not initialized");
-    }
-    return result;
+    return _initializationPromise;
   }
   
   // Check if DATABASE_URL is available
   if (!process.env.DATABASE_URL) {
     console.error("[Database] DATABASE_URL environment variable is not set");
-    throw new Error("DATABASE_URL environment variable is not set");
+    return null;
   }
   
   // Start database initialization
   _initializationPromise = (async () => {
     try {
-      console.log("[Database] Initializing connection pool...");
+      console.log("[Database] Initializing connection...");
       
-      // Create connection pool with proper configuration
-      _pool = mysql2.createPool(process.env.DATABASE_URL!);
+      // Create connection pool
+      const connection = await mysql2.createConnection(process.env.DATABASE_URL!);
       
-      // Test the connection with a simple query
-      const connection = await new Promise<any>((resolve, reject) => {
-        _pool!.getConnection((err: any, conn: any) => {
-          if (err) reject(err);
-          else resolve(conn);
-        });
-      });
+      // Test the connection
+      await connection.execute("SELECT 1");
+      console.log("[Database] Connection test successful");
       
-      await new Promise<void>((resolve, reject) => {
-        connection.query("SELECT 1", (err: any) => {
-          connection.release();
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-      
-      console.log("[Database] Connection pool test successful");
-      
-      // Create drizzle instance with the pool
-      _db = drizzle(_pool);
-      console.log("[Database] Drizzle ORM initialized successfully with connection pool");
+      // Create drizzle instance
+      _db = drizzle(connection);
+      console.log("[Database] Drizzle ORM initialized successfully");
       
       return _db;
     } catch (error) {
       console.error("[Database] Failed to initialize:", error);
       _db = null;
-      if (_pool) {
-        _pool.end();
-        _pool = null;
-      }
+      return null;
+    } finally {
+      // Clear the initialization promise so future calls can retry if needed
       _initializationPromise = null;
-      throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   })();
   
-  const result = await _initializationPromise;
-  _initializationPromise = null;
-  
-  if (!result) {
-    throw new Error("Database not initialized");
-  }
-  
-  return result;
+  return _initializationPromise;
 }
 
 // User operations
@@ -2040,7 +2012,7 @@ export async function getJobApplicationStats(jobId: number) {
     total: apps.length,
   };
   
-  apps.forEach((app: any) => {
+  apps.forEach((app) => {
     if (app.status && stats.hasOwnProperty(app.status)) {
       stats[app.status as keyof typeof stats]++;
     }
@@ -2697,448 +2669,3 @@ export async function getApplicationsByRecruiterAndDateRange(
     )
   );
 }
-
-
-// ============================================================================
-// Missing Database Helper Functions
-// ============================================================================
-
-/**
- * Get recommended jobs for a candidate based on skills and preferences
- */
-export async function getRecommendedJobsForCandidate(candidateId: number, limit: number = 10) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const candidate = await getCandidateById(candidateId);
-  if (!candidate) return [];
-  
-  // Simple recommendation: get active jobs matching candidate's skills
-  return await db.select()
-    .from(jobs)
-    .where(and(
-      eq(jobs.status, 'open'),
-      eq(jobs.isPublic, true)
-    ))
-    .limit(limit);
-}
-
-/**
- * Save a job for a candidate
- */
-export async function saveJob(candidateId: number, jobId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  await db.insert(savedJobs).values({
-    candidateId,
-    jobId,
-  });
-}
-
-/**
- * Unsave a job for a candidate
- */
-export async function unsaveJob(candidateId: number, jobId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  await db.delete(savedJobs).where(
-    and(
-      eq(savedJobs.candidateId, candidateId),
-      eq(savedJobs.jobId, jobId)
-    )
-  );
-}
-
-/**
- * Check if a job is saved by a candidate
- */
-export async function isJobSaved(candidateId: number, jobId: number): Promise<boolean> {
-  const db = await getDb();
-  if (!db) return false;
-  
-  const result = await db.select()
-    .from(savedJobs)
-    .where(
-      and(
-        eq(savedJobs.candidateId, candidateId),
-        eq(savedJobs.jobId, jobId)
-      )
-    )
-    .limit(1);
-  
-  return result.length > 0;
-}
-
-/**
- * Create a profile share token
- */
-export async function createProfileShare(data: {
-  userId: number;
-  candidateId: number;
-  shareToken: string;
-  expiresAt?: Date | null;
-  allowedViews?: number | null;
-}) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  const result = await db.insert(candidateProfileShares).values(data);
-  return result;
-}
-
-/**
- * Get profile share by token
- */
-export async function getProfileShareByToken(token: string) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const result = await db.select()
-    .from(candidateProfileShares)
-    .where(eq(candidateProfileShares.shareToken, token))
-    .limit(1);
-  
-  return result[0] || null;
-}
-
-/**
- * Get applications by candidate ID
- */
-export async function getApplicationsByCandidate(candidateId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select({
-    application: applications,
-    job: jobs,
-  })
-  .from(applications)
-  .leftJoin(jobs, eq(applications.jobId, jobs.id))
-  .where(eq(applications.candidateId, candidateId))
-  .orderBy(desc(applications.submittedAt));
-}
-
-/**
- * Get applications by job ID
- */
-export async function getApplicationsByJob(jobId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select({
-    application: applications,
-    candidate: candidates,
-  })
-  .from(applications)
-  .leftJoin(candidates, eq(applications.candidateId, candidates.id))
-  .where(eq(applications.jobId, jobId))
-  .orderBy(desc(applications.submittedAt));
-}
-
-/**
- * Get interviews by candidate ID
- */
-export async function getInterviewsByCandidateId(candidateId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select()
-    .from(interviews)
-    .where(eq(interviews.candidateId, candidateId))
-    .orderBy(desc(interviews.scheduledAt));
-}
-
-/**
- * Get interview questions for an interview
- */
-export async function getInterviewQuestions(interviewId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select()
-    .from(interviewQuestions)
-    .where(eq(interviewQuestions.interviewId, interviewId))
-    .orderBy(interviewQuestions.questionOrder);
-}
-
-/**
- * Get interview responses for an interview
- */
-export async function getInterviewResponses(interviewId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select()
-    .from(interviewResponses)
-    .where(eq(interviewResponses.interviewId, interviewId))
-    .orderBy(interviewResponses.questionOrder);
-}
-
-/**
- * Get interview with questions and responses
- */
-export async function getInterviewWithQuestionsAndResponses(interviewId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const interview = await getInterviewById(interviewId);
-  if (!interview) return null;
-  
-  const questions = await getInterviewQuestions(interviewId);
-  const responses = await getInterviewResponses(interviewId);
-  
-  return {
-    ...interview,
-    questions,
-    responses,
-  };
-}
-
-/**
- * Get interview response with question details
- */
-export async function getInterviewResponseWithQuestion(responseId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const result = await db.select({
-    response: interviewResponses,
-    question: interviewQuestions,
-  })
-  .from(interviewResponses)
-  .leftJoin(interviewQuestions, eq(interviewResponses.questionId, interviewQuestions.id))
-  .where(eq(interviewResponses.id, responseId))
-  .limit(1);
-  
-  return result[0] || null;
-}
-
-/**
- * Create a user
- */
-export async function createUser(data: {
-  openId?: string | null;
-  name: string;
-  email: string;
-  avatarUrl?: string | null;
-  role?: 'admin' | 'user';
-  loginMethod?: 'oauth' | 'password' | 'pending';
-  emailVerified?: boolean;
-}) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  const result = await db.insert(users).values(data);
-  return result;
-}
-
-/**
- * Delete an interview
- */
-export async function deleteInterview(interviewId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  await db.delete(interviews).where(eq(interviews.id, interviewId));
-}
-
-/**
- * Get video introduction by candidate ID
- */
-export async function getVideoIntroductionByCandidate(candidateId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const result = await db.select()
-    .from(videoIntroductions)
-    .where(eq(videoIntroductions.candidateId, candidateId))
-    .limit(1);
-  
-  return result[0] || null;
-}
-
-/**
- * Get resume profile by candidate ID
- */
-export async function getResumeProfileByCandidate(candidateId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const result = await db.select()
-    .from(resumeProfiles)
-    .where(and(
-      eq(resumeProfiles.candidateId, candidateId),
-      eq(resumeProfiles.isDefault, true)
-    ))
-    .limit(1);
-  
-  return result[0] || null;
-}
-
-/**
- * Get all resume profiles for a candidate
- */
-export async function getResumeProfilesByCandidate(candidateId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select()
-    .from(resumeProfiles)
-    .where(eq(resumeProfiles.candidateId, candidateId))
-    .orderBy(desc(resumeProfiles.createdAt));
-}
-
-/**
- * Count resume profiles for a candidate
- */
-export async function countResumeProfiles(candidateId: number): Promise<number> {
-  const db = await getDb();
-  if (!db) return 0;
-  
-  const result = await db.select({ count: count() })
-    .from(resumeProfiles)
-    .where(eq(resumeProfiles.candidateId, candidateId));
-  
-  return result[0]?.count || 0;
-}
-
-/**
- * Set default resume profile
- */
-export async function setDefaultResumeProfile(candidateId: number, profileId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  // First, unset all defaults for this candidate
-  await db.update(resumeProfiles)
-    .set({ isDefault: false })
-    .where(eq(resumeProfiles.candidateId, candidateId));
-  
-  // Then set the new default
-  await db.update(resumeProfiles)
-    .set({ isDefault: true })
-    .where(eq(resumeProfiles.id, profileId));
-}
-
-/**
- * Get profile shares by user ID
- */
-export async function getProfileSharesByUser(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select()
-    .from(candidateProfileShares)
-    .where(eq(candidateProfileShares.userId, userId))
-    .orderBy(desc(candidateProfileShares.createdAt));
-}
-
-/**
- * Increment share view count
- */
-export async function incrementShareViewCount(shareId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  await db.update(candidateProfileShares)
-    .set({ viewCount: sql`${candidateProfileShares.viewCount} + 1` })
-    .where(eq(candidateProfileShares.id, shareId));
-}
-
-/**
- * Deactivate profile share
- */
-export async function deactivateProfileShare(shareId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  await db.update(candidateProfileShares)
-    .set({ isActive: false })
-    .where(eq(candidateProfileShares.id, shareId));
-}
-
-/**
- * Get contacts by customer ID
- */
-export async function getContactsByCustomer(customerId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select()
-    .from(customerContacts)
-    .where(eq(customerContacts.customerId, customerId))
-    .orderBy(customerContacts.name);
-}
-
-/**
- * Get upcoming interviews
- */
-export async function getUpcomingInterviews(limit: number = 10) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const now = new Date();
-  return await db.select()
-    .from(interviews)
-    .where(
-      and(
-        sql`${interviews.scheduledAt} > ${now.toISOString()}`,
-        eq(interviews.status, 'scheduled')
-      )
-    )
-    .orderBy(interviews.scheduledAt)
-    .limit(limit);
-}
-
-/**
- * Get placed applications by candidate
- */
-export async function getPlacedApplicationsByCandidate(candidateId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select()
-    .from(applications)
-    .where(
-      and(
-        eq(applications.candidateId, candidateId),
-        eq(applications.status, 'placed')
-      )
-    )
-    .orderBy(desc(applications.updatedAt));
-}
-
-// Stub functions for features not yet fully implemented
-export async function createJobSkillRequirements(data: any) { return null; }
-export async function getJobSkillRequirements(jobId: number) { return []; }
-export async function createCandidateSkillRatings(data: any) { return null; }
-export async function getCandidateSkillRatings(candidateId: number) { return []; }
-export async function calculateFraudScore(data: any) { return 0; }
-export async function getFraudEventsByInterview(interviewId: number) { return []; }
-export async function getRescheduleRequestsByInterview(interviewId: number) { return []; }
-export async function getPanelistFeedbackForInterview(interviewId: number) { return []; }
-export async function checkReminderSent(interviewId: number, type: string) { return false; }
-export async function markReminderSent(interviewId: number, type: string) { return; }
-export async function getInMailTemplates(userId: number) { return []; }
-export async function createInMailTemplate(data: any) { return null; }
-export async function updateInMailTemplate(id: number, data: any) { return; }
-export async function deleteInMailTemplate(id: number) { return; }
-export async function toggleInMailTemplateStatus(id: number) { return; }
-export async function getLinkedInCreditUsage(userId: number) { return null; }
-export async function getRecruiterCreditLimits(recruiterId: number) { return null; }
-export async function updateRecruiterCreditLimit(recruiterId: number, data: any) { return; }
-export async function setSystemSetting(key: string, value: string) { return; }
-export async function getLogRetentionDays() { return 30; }
-export async function setLogRetentionDays(days: number) { return; }
-export async function getApplicationLogs(filters: any) { return []; }
-export async function getLogStats() { return null; }
-export async function resolveLog(logId: number) { return; }
-export async function cleanupOldLogs(days: number) { return 0; }
-export async function seedDefaultEnvironmentVariables() { return; }
-export async function getEditableEnvironmentVariables() { return []; }
-export async function upsertEnvironmentVariable(data: any) { return null; }
-export async function updateEnvironmentVariableValue(id: number, value: string) { return; }
-export async function deleteEnvironmentVariable(id: number) { return; }
-export async function revertEnvironmentVariable(id: number) { return; }

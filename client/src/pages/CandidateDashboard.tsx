@@ -220,12 +220,12 @@ function CandidateDashboardContent() {
   useEffect(() => {
     if (candidate) {
       setProfileForm({
-        fullName: "", // Not available in candidate schema
-        email: "", // Email is on user object, not candidate
-        phone: candidate.phoneNumber || "",
+        fullName: candidate.fullName || "",
+        email: candidate.email || "",
+        phone: candidate.phone || "",
         location: candidate.location || "",
         skills: candidate.skills || "",
-        experience: candidate.experience || "",
+        experience: candidate.experienceYears?.toString() || "",
         bio: candidate.bio || "",
       });
     }
@@ -293,7 +293,7 @@ function CandidateDashboardContent() {
   // Sort recommended jobs
   const sortedJobs = useMemo(() => {
     if (!recommendedJobs) return [];
-    const jobs = [...recommendedJobs] as Array<typeof recommendedJobs[number] & { matchScore?: number }>;
+    const jobs = [...recommendedJobs];
     
     switch (sortBy) {
       case 'date_desc':
@@ -397,7 +397,7 @@ function CandidateDashboardContent() {
             <nav className="px-2 space-y-1">
               {sidebarItems.map((item, index) => {
                 // Handle section dividers
-                if ('type' in item && item.type === "divider") {
+                if (item.type === "divider") {
                   return (
                     <div key={`divider-${index}`} className="pt-4 pb-2 px-3">
                       {!sidebarCollapsed && (
@@ -411,9 +411,6 @@ function CandidateDashboardContent() {
                     </div>
                   );
                 }
-                
-                // Type guard ensures we have a regular menu item, not a divider
-                if (!('icon' in item)) return null;
                 
                 const isActive = item.path ? location === item.path : false;
                 const Icon = item.icon;

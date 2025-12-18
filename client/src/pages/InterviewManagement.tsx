@@ -437,7 +437,7 @@ export default function InterviewManagement() {
                       </CardContent>
                     </Card>
                   );
-                })}
+                 })}
                 </div>
                 {totalPages > 1 && (
                 <div className="mt-6">

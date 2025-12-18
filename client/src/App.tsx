@@ -83,11 +83,11 @@ import AdminEnvironment from "./pages/AdminEnvironment";
 import AdminLogs from "./pages/AdminLogs";
 import AdminBackupRestore from "./pages/AdminBackupRestore";
 import LLMSettings from "./pages/admin/LLMSettings";
-// import AdminLLMCostTracking from "./pages/AdminLLMCostTracking"; // Removed - LLM tables don't exist
-// import AdminLLMAlerts from "./pages/AdminLLMAlerts"; // Removed - LLM tables don't exist
-// import AdminLLMFallback from "./pages/AdminLLMFallback"; // Removed - LLM tables don't exist
-// import CompanyLLMCostTracking from "./pages/CompanyLLMCostTracking"; // Removed - LLM tables don't exist
-// import CompanyLLMAlerts from "./pages/CompanyLLMAlerts"; // Removed - LLM tables don't exist
+import AdminLLMCostTracking from "./pages/AdminLLMCostTracking";
+import AdminLLMAlerts from "./pages/AdminLLMAlerts";
+import AdminLLMFallback from "./pages/AdminLLMFallback";
+import CompanyLLMCostTracking from "./pages/CompanyLLMCostTracking";
+import CompanyLLMAlerts from "./pages/CompanyLLMAlerts";
 import AdminDatabase from "./pages/AdminDatabase";
 import AdminLinkedInSettings from "./pages/AdminLinkedInSettings";
 import AdminInMailTemplates from "./pages/AdminInMailTemplates";
@@ -213,8 +213,8 @@ function Router() {
       <Route path="/company-admin/profile-settings" component={CompanyAdminProfileSettings} />
       <Route path="/company-admin/ai-assistant" component={CompanyAdminAIAssistant} />
       <Route path="/company-admin/master-lists" component={CompanyAdminMasterLists} />
-      {/* <Route path="/company-admin/llm-cost-tracking" component={CompanyLLMCostTracking} /> */}
-      {/* <Route path="/company-admin/llm-alerts" component={CompanyLLMAlerts} /> */}
+      <Route path="/company-admin/llm-cost-tracking" component={CompanyLLMCostTracking} />
+      <Route path="/company-admin/llm-alerts" component={CompanyLLMAlerts} />
       <Route path="/company-admin/template-shares" component={CompanyAdminTemplateShares} />
       <Route path="/company-admin/analytics" component={CompanyAdminAnalytics} />
       
@@ -232,9 +232,9 @@ function Router() {
       <Route path="/admin/linkedin-settings" component={AdminLinkedInSettings} />
       <Route path="/admin/inmail-templates" component={AdminInMailTemplates} />
       <Route path="/admin/llm-settings" component={LLMSettings} />
-      {/* <Route path="/admin/llm-cost-tracking" component={AdminLLMCostTracking} /> */}
-      {/* <Route path="/admin/llm-alerts" component={AdminLLMAlerts} /> */}
-      {/* <Route path="/admin/llm-fallback" component={AdminLLMFallback} /> */}
+      <Route path="/admin/llm-cost-tracking" component={AdminLLMCostTracking} />
+      <Route path="/admin/llm-alerts" component={AdminLLMAlerts} />
+      <Route path="/admin/llm-fallback" component={AdminLLMFallback} />
       <Route path="/admin/database" component={AdminDatabase} />
       <Route path="/admin/backup-restore" component={AdminBackupRestore} />
       <Route path="/analytics" component={AnalyticsDashboard} />

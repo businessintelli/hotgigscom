@@ -39,10 +39,7 @@ export const candidateTools: DatabaseQueryTool[] = [
       }
     },
     handler: async (params, userId, userRole) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      if (!db) throw new Error("Database not available");
-            // Get candidate ID from user ID
+      // Get candidate ID from user ID
       const candidate = await db
         .select()
         .from(candidates)
@@ -82,7 +79,7 @@ export const candidateTools: DatabaseQueryTool[] = [
 
       // Enrich with job details
       const enrichedApps = await Promise.all(
-        apps.map(async (app: any) => {
+        apps.map(async (app) => {
           const job = await db
             .select()
             .from(jobs)
@@ -116,10 +113,7 @@ export const candidateTools: DatabaseQueryTool[] = [
       }
     },
     handler: async (params, userId, userRole) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      if (!db) throw new Error("Database not available");
-            const candidate = await db
+      const candidate = await db
         .select()
         .from(candidates)
         .where(eq(candidates.userId, userId))
@@ -155,7 +149,7 @@ export const candidateTools: DatabaseQueryTool[] = [
 
       // Enrich with job details
       const enrichedInterviews = await Promise.all(
-        interviewList.map(async (interview: any) => {
+        interviewList.map(async (interview) => {
           const job = await db
             .select()
             .from(jobs)
@@ -184,10 +178,7 @@ export const candidateTools: DatabaseQueryTool[] = [
       properties: {}
     },
     handler: async (params, userId, userRole) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      if (!db) throw new Error("Database not available");
-            const candidate = await db
+      const candidate = await db
         .select()
         .from(candidates)
         .where(eq(candidates.userId, userId))
@@ -212,7 +203,7 @@ export const candidateTools: DatabaseQueryTool[] = [
         offered: apps.filter(a => a.status === "offered").length,
         rejected: apps.filter(a => a.status === "rejected").length,
         averageMatchScore: apps.length > 0 
-          ? apps.reduce((sum: any, a: any) => sum + (a.matchScore || 0), 0) / apps.length 
+          ? apps.reduce((sum, a) => sum + (a.matchScore || 0), 0) / apps.length 
           : 0,
         recentApplications: apps.filter(a => {
           const appDate = new Date(a.createdAt);
@@ -246,10 +237,7 @@ export const candidateTools: DatabaseQueryTool[] = [
       }
     },
     handler: async (params, userId, userRole) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      if (!db) throw new Error("Database not available");
-            const limit = params.limit || 10;
+      const limit = params.limit || 10;
 
       let query = db
         .select()
@@ -329,10 +317,7 @@ export const recruiterTools: DatabaseQueryTool[] = [
       }
     },
     handler: async (params, userId, userRole) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      if (!db) throw new Error("Database not available");
-            const recruiter = await db
+      const recruiter = await db
         .select()
         .from(recruiters)
         .where(eq(recruiters.userId, userId))
@@ -370,7 +355,7 @@ export const recruiterTools: DatabaseQueryTool[] = [
 
       // Enrich with application counts
       const enrichedJobs = await Promise.all(
-        jobList.map(async (job: any) => {
+        jobList.map(async (job) => {
           const appCount = await db
             .select({ count: sql<number>`count(*)` })
             .from(applications)
@@ -412,10 +397,7 @@ export const recruiterTools: DatabaseQueryTool[] = [
       required: ["jobId"]
     },
     handler: async (params, userId, userRole) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      if (!db) throw new Error("Database not available");
-            // Verify recruiter owns this job
+      // Verify recruiter owns this job
       const recruiter = await db
         .select()
         .from(recruiters)
@@ -468,7 +450,7 @@ export const recruiterTools: DatabaseQueryTool[] = [
 
       // Enrich with candidate details
       const enrichedApps = await Promise.all(
-        apps.map(async (app: any) => {
+        apps.map(async (app) => {
           const candidate = await db
             .select()
             .from(candidates)
@@ -502,10 +484,7 @@ export const recruiterTools: DatabaseQueryTool[] = [
       }
     },
     handler: async (params, userId, userRole) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      if (!db) throw new Error("Database not available");
-            const recruiter = await db
+      const recruiter = await db
         .select()
         .from(recruiters)
         .where(eq(recruiters.userId, userId))
@@ -559,7 +538,7 @@ export const recruiterTools: DatabaseQueryTool[] = [
           rejected: apps.filter(a => a.status === "rejected").length
         },
         averageMatchScore: apps.length > 0 
-          ? apps.reduce((sum: any, a: any) => sum + (a.matchScore || 0), 0) / apps.length 
+          ? apps.reduce((sum, a) => sum + (a.matchScore || 0), 0) / apps.length 
           : 0,
         highQualityApplications: apps.filter(a => (a.matchScore || 0) >= 75).length
       };
@@ -592,10 +571,7 @@ export const recruiterTools: DatabaseQueryTool[] = [
       }
     },
     handler: async (params, userId, userRole) => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      if (!db) throw new Error("Database not available");
-            const limit = params.limit || 10;
+      const limit = params.limit || 10;
 
       let query = db
         .select()
@@ -614,10 +590,10 @@ export const recruiterTools: DatabaseQueryTool[] = [
 
       // Filter by skills if provided
       if (params.skills) {
-        const requiredSkills = params.skills.toLowerCase().split(",").map((s: string) => s.trim());
+        const requiredSkills = params.skills.toLowerCase().split(",").map(s => s.trim());
         candidateList = candidateList.filter(c => {
           const candidateSkills = c.skills ? JSON.parse(c.skills).map((s: string) => s.toLowerCase()) : [];
-          return requiredSkills.some((skill: string) => candidateSkills.includes(skill));
+          return requiredSkills.some(skill => candidateSkills.includes(skill));
         });
       }
 

@@ -113,15 +113,15 @@ export async function calculateAlgorithmMetrics(
 
     // Calculate metrics
     const totalOutcomes = outcomes.length;
-    const hiredCandidates = outcomes.filter((o: any) => o.outcome === "hired");
-    const rejectedCandidates = outcomes.filter((o: any) => o.outcome === "rejected");
+    const hiredCandidates = outcomes.filter(o => o.outcome === "hired");
+    const rejectedCandidates = outcomes.filter(o => o.outcome === "rejected");
     
     // High match score threshold (>= 70)
     const highMatchScoreThreshold = 70;
-    const predictedPositives = outcomes.filter((o: any) => parseFloat(o.initialMatchScore) >= highMatchScoreThreshold);
-    const truePositives = predictedPositives.filter((o: any) => o.outcome === "hired");
-    const falsePositives = predictedPositives.filter((o: any) => o.outcome === "rejected");
-    const falseNegatives = outcomes.filter((o: any) => 
+    const predictedPositives = outcomes.filter(o => parseFloat(o.initialMatchScore) >= highMatchScoreThreshold);
+    const truePositives = predictedPositives.filter(o => o.outcome === "hired");
+    const falsePositives = predictedPositives.filter(o => o.outcome === "rejected");
+    const falseNegatives = outcomes.filter(o => 
       parseFloat(o.initialMatchScore) < highMatchScoreThreshold && o.outcome === "hired"
     );
 
@@ -142,7 +142,7 @@ export async function calculateAlgorithmMetrics(
 
     // Accuracy: Overall correct predictions
     const correctPredictions = truePositives.length + 
-      outcomes.filter((o: any) => parseFloat(o.initialMatchScore) < highMatchScoreThreshold && o.outcome === "rejected").length;
+      outcomes.filter(o => parseFloat(o.initialMatchScore) < highMatchScoreThreshold && o.outcome === "rejected").length;
     const accuracy = totalOutcomes > 0 ? correctPredictions / totalOutcomes : 0;
 
     // Save metrics to database
@@ -236,24 +236,24 @@ export async function analyzeScoreComponents(startDate: Date, endDate: Date) {
         )
       );
 
-    const hiredCandidates = outcomes.filter((o: any) => o.outcome === "hired");
-    const rejectedCandidates = outcomes.filter((o: any) => o.outcome === "rejected");
+    const hiredCandidates = outcomes.filter(o => o.outcome === "hired");
+    const rejectedCandidates = outcomes.filter(o => o.outcome === "rejected");
 
     // Calculate average scores for each component
     const avgHiredScores = {
-      skills: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.skillsScore || "0")), 0) / hiredCandidates.length,
-      experience: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.experienceScore || "0")), 0) / hiredCandidates.length,
-      location: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.locationScore || "0")), 0) / hiredCandidates.length,
-      salary: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.salaryScore || "0")), 0) / hiredCandidates.length,
-      culturalFit: hiredCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.culturalFitScore || "0")), 0) / hiredCandidates.length
+      skills: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.skillsScore || "0")), 0) / hiredCandidates.length,
+      experience: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.experienceScore || "0")), 0) / hiredCandidates.length,
+      location: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.locationScore || "0")), 0) / hiredCandidates.length,
+      salary: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.salaryScore || "0")), 0) / hiredCandidates.length,
+      culturalFit: hiredCandidates.reduce((sum, o) => sum + (parseFloat(o.culturalFitScore || "0")), 0) / hiredCandidates.length
     };
 
     const avgRejectedScores = {
-      skills: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.skillsScore || "0")), 0) / rejectedCandidates.length,
-      experience: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.experienceScore || "0")), 0) / rejectedCandidates.length,
-      location: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.locationScore || "0")), 0) / rejectedCandidates.length,
-      salary: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.salaryScore || "0")), 0) / rejectedCandidates.length,
-      culturalFit: rejectedCandidates.reduce((sum: any, o: any) => sum + (parseFloat(o.culturalFitScore || "0")), 0) / rejectedCandidates.length
+      skills: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.skillsScore || "0")), 0) / rejectedCandidates.length,
+      experience: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.experienceScore || "0")), 0) / rejectedCandidates.length,
+      location: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.locationScore || "0")), 0) / rejectedCandidates.length,
+      salary: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.salaryScore || "0")), 0) / rejectedCandidates.length,
+      culturalFit: rejectedCandidates.reduce((sum, o) => sum + (parseFloat(o.culturalFitScore || "0")), 0) / rejectedCandidates.length
     };
 
     // Calculate predictive power (difference between hired and rejected)
@@ -299,7 +299,7 @@ export async function getSuggestedWeightAdjustments(startDate: Date, endDate: Da
   };
 
   // Calculate suggested weights based on predictive power
-  const totalPredictivePower = Object.values(analysis.predictivePower).reduce((sum: any, val: any) => sum + val, 0);
+  const totalPredictivePower = Object.values(analysis.predictivePower).reduce((sum, val) => sum + val, 0);
   
   const suggestedWeights = {
     skills: (analysis.predictivePower.skills / totalPredictivePower) || currentWeights.skills,

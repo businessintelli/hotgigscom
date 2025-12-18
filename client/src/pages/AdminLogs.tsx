@@ -195,9 +195,9 @@ export default function AdminLogs() {
     return new Date(date).toLocaleString();
   };
 
-  const stats = statsQuery.data || { total: 0, unresolvedCount: 0, byLevel: {} as Record<string, number>, bySource: {} as Record<string, number> };
-  const logs = (logsQuery.data as any)?.logs || [];
-  const totalLogs = (logsQuery.data as any)?.total || 0;
+  const stats = statsQuery.data || { total: 0, unresolvedCount: 0, byLevel: {}, bySource: {} };
+  const logs = logsQuery.data?.logs || [];
+  const totalLogs = logsQuery.data?.total || 0;
   const totalPages = Math.ceil(totalLogs / limit);
 
   return (

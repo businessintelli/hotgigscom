@@ -44,13 +44,15 @@ import { createVideoMeeting } from './videoMeetingService';
 import { panelPublicRouter } from './panelPublicRouter';
 import { companyAdminRouter } from './routers/companyAdmin';
 import { llmConfigRouter } from './routers/llmConfig';
-// import { llmManagementRouter } from './routers/llmManagement'; // Removed - tables don't exist
+import { llmManagementRouter } from './routers/llmManagement';
 import { budgetManagementRouter } from './routers/budgetManagement';
 import { integrationSettingsRouter } from './routers/integrationSettings';
 import { backupRouter } from './routers/backup';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
 import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
+import { sendEmail } from './emailService';
+import { invokeLLM } from './_core/llm';
 import { calculateJobMatch, screenAndRankCandidates } from './ai-matching';
 import { detectResumeBias, detectJobDescriptionBias } from './services/biasDetection';
 import { getHiringTrends, getTimeToHireMetrics as getPredictiveTimeToHire, getPipelineHealth, predictSuccessRate } from './predictive-analytics';
@@ -89,7 +91,7 @@ export const appRouter = router({
   document: documentUploadRouter,
   companyAdmin: companyAdminRouter,
   llmConfig: llmConfigRouter,
-  // llmManagement: llmManagementRouter, // Removed - tables don't exist
+  llmManagement: llmManagementRouter,
   budgetManagement: budgetManagementRouter,
   integrationSettings: integrationSettingsRouter,
   backup: backupRouter,
@@ -779,7 +781,6 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const result = await db.insert(sourcingCampaigns).values({
           name: input.name,
           jobId: input.jobId,
@@ -796,12 +797,11 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
           autoAddToPool: input.autoAddToPool,
           status: 'draft',
         });
-        return { success: true, id: Number(result.insertId) };
+        return { success: true, id: result.insertId };
       }),
     
     getSourcingCampaigns: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       return await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.createdBy, ctx.user.id));
     }),
     
@@ -809,7 +809,6 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const campaign = await db.select().from(sourcingCampaigns).where(eq(sourcingCampaigns.id, input.id)).limit(1);
         return campaign[0] || null;
       }),
@@ -829,7 +828,6 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         await db.update(sourcingCampaigns)
           .set({ status: 'paused' })
           .where(eq(sourcingCampaigns.id, input.id));
@@ -840,7 +838,6 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       .input(z.object({ campaignId: z.number() }))
       .query(async ({ input }) => {
         const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         return await db.select().from(sourcedCandidates).where(eq(sourcedCandidates.campaignId, input.campaignId));
       }),
     
@@ -855,7 +852,6 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const result = await db.insert(emailCampaigns).values({
           name: input.name,
           sourcingCampaignId: input.sourcingCampaignId,
@@ -865,7 +861,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
           status: 'draft',
           createdBy: ctx.user.id,
         });
-        return { success: true, id: Number(result.insertId) };
+        return { success: true, id: result.insertId };
       }),
     
     sendEmailCampaign: protectedProcedure
@@ -918,7 +914,6 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
       .input(z.object({ applicationId: z.number() }))
       .query(async ({ input }) => {
         const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const predictions = await db.select()
           .from(candidateSuccessPredictions)
           .where(eq(candidateSuccessPredictions.applicationId, input.applicationId))
@@ -929,7 +924,6 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
     getEmailCampaigns: protectedProcedure
       .query(async ({ ctx }) => {
         const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const campaigns = await db.select()
           .from(emailCampaigns)
           .where(eq(emailCampaigns.createdBy, ctx.user.id));
@@ -992,7 +986,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
             const now = new Date();
             return Math.floor((now.getTime() - submitted.getTime()) / (1000 * 60 * 60 * 24));
           });
-          avgTimeToHire = hireTimes.reduce((a: any, b: any) => a + b, 0) / hireTimes.length;
+          avgTimeToHire = hireTimes.reduce((a, b) => a + b, 0) / hireTimes.length;
           fastestHire = Math.min(...hireTimes);
           slowestHire = Math.max(...hireTimes);
         }
@@ -1005,7 +999,7 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
           applicationCount: allApplications.filter(app => app.jobId === job.id).length,
         }));
         const topJobs = jobApplicationCounts
-          .sort((a: any, b: any) => b.applicationCount - a.applicationCount)
+          .sort((a, b) => b.applicationCount - a.applicationCount)
           .slice(0, 5);
         
         // Candidate sources (placeholder)
@@ -1149,7 +1143,6 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         const { createGoogleCalendarEvent } = await import('./integrations/googleCalendar');
         const { calendarIntegrations } = await import('../drizzle/schema');
         const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         if (!db) throw new Error('Database connection failed');
         
         // Get user's calendar integration
@@ -1826,7 +1819,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                 loginMethod: 'password',
                 emailVerified: false,
               });
-              user = await db.getUserById(Number(userResult.insertId));
+              user = await db.getUserById(userResult.insertId);
             }
 
             if (!user) {
@@ -2128,7 +2121,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           postedBy: ctx.user.id,
         });
         
-        const jobId = Number(result.insertId);
+        const jobId = result.insertId;
         
         // Run bias detection on job description and requirements
         let biasDetectionResult = null;
@@ -2217,7 +2210,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
               isPublic: false,
               postedBy: ctx.user.id,
             });
-            createdIds.push(Number(result.insertId));
+            createdIds.push(result.insertId);
           }
         }
         return { success: true, createdIds };
@@ -2525,7 +2518,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         }
         
         const appResult = await db.createApplication(input);
-        const applicationId = Number(appResult.insertId);
+        const applicationId = appResult.insertId;
         
         // Create notification for recruiter about new application
         try {
@@ -3218,7 +3211,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                 dlCopyUrl: input.extendedInfo.dlCopyUrl,
               }),
             });
-            candidate = await db.getCandidateById(Number(candidateResult.insertId));
+            candidate = await db.getCandidateById(candidateResult.insertId);
           } else {
             // Update existing candidate with new resume
             await db.updateCandidate(candidate.id, {
@@ -3238,7 +3231,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           });
           
           const candidateResult = await db.createCandidate({
-            userId: Number(userResult.insertId),
+            userId: userResult.insertId,
             phoneNumber: input.candidateData.phone,
             location: input.candidateData.location,
             skills: input.candidateData.skills?.join(', '),
@@ -3274,8 +3267,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             }),
           });
           
-          candidate = await db.getCandidateById(Number(candidateResult.insertId));
-          user = await db.getUserById(Number(userResult.insertId));
+          candidate = await db.getCandidateById(candidateResult.insertId);
+          user = await db.getUserById(userResult.insertId);
         }
         
         if (!candidate) throw new Error("Failed to create candidate");
@@ -3449,7 +3442,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       .mutation(async ({ input }) => {
         const { id, scheduledAt, duration } = input;
         await db.updateInterview(id, {
-          scheduledAt: new Date(scheduledAt || 0),
+          scheduledAt: new Date(scheduledAt),
           ...(duration && { duration }),
         });
         return { success: true };
@@ -4058,11 +4051,11 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         if (allFeedback.length === 0) return null;
         
         // Calculate averages
-        const avgTechnical = allFeedback.reduce((sum: any, f: any) => sum + (f.technicalScore || 0), 0) / allFeedback.length;
-        const avgCommunication = allFeedback.reduce((sum: any, f: any) => sum + (f.communicationScore || 0), 0) / allFeedback.length;
-        const avgProblemSolving = allFeedback.reduce((sum: any, f: any) => sum + (f.problemSolvingScore || 0), 0) / allFeedback.length;
-        const avgCultureFit = allFeedback.reduce((sum: any, f: any) => sum + (f.cultureFitScore || 0), 0) / allFeedback.length;
-        const avgOverall = allFeedback.reduce((sum: any, f: any) => sum + (f.overallScore || 0), 0) / allFeedback.length;
+        const avgTechnical = allFeedback.reduce((sum, f) => sum + (f.technicalScore || 0), 0) / allFeedback.length;
+        const avgCommunication = allFeedback.reduce((sum, f) => sum + (f.communicationScore || 0), 0) / allFeedback.length;
+        const avgProblemSolving = allFeedback.reduce((sum, f) => sum + (f.problemSolvingScore || 0), 0) / allFeedback.length;
+        const avgCultureFit = allFeedback.reduce((sum, f) => sum + (f.cultureFitScore || 0), 0) / allFeedback.length;
+        const avgOverall = allFeedback.reduce((sum, f) => sum + (f.overallScore || 0), 0) / allFeedback.length;
         
         // Count recommendations
         const recommendations = {
@@ -4436,7 +4429,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           .where(sql`${interviews.createdAt} >= ${startDate}`);
         
         // Get previous period for comparison
-        const prevStartDate = new Date(startDate || 0);
+        const prevStartDate = new Date(startDate);
         prevStartDate.setDate(prevStartDate.getDate() - input.days);
         const [prevUserCount] = await database.select({ count: count() }).from(users)
           .where(sql`${users.createdAt} >= ${prevStartDate} AND ${users.createdAt} < ${startDate}`);

@@ -266,7 +266,6 @@ export async function predictApplicationSuccess(applicationId: number): Promise<
   recommendation: string;
 }> {
   const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
   
   // Extract features
   const features = await extractFeatures(applicationId);
@@ -320,7 +319,7 @@ export async function predictApplicationSuccess(applicationId: number): Promise<
         if (jobData && jobData.length > 0) {
           const job = jobData[0];
           // Auto-schedule in background (don't block prediction response)
-          autoScheduleInterview(applicationId, job.postedBy).catch(error => {
+          autoScheduleInterview(applicationId, job.recruiterId).catch(error => {
             console.error('Auto-scheduling failed:', error);
           });
         }
@@ -353,7 +352,6 @@ export async function batchPredictSuccess(applicationIds: number[]): Promise<voi
  */
 export async function getRankedApplications(jobId: number): Promise<any[]> {
   const db = await getDb();
-  if (!db) return [];
   
   // Get all applications for job
   const apps = await db.select()
@@ -376,7 +374,7 @@ export async function getRankedApplications(jobId: number): Promise<any[]> {
   }
   
   // Sort by prediction score (highest first)
-  rankedApps.sort((a: any, b: any) => {
+  rankedApps.sort((a, b) => {
     const scoreA = a.prediction?.predictionScore || 0;
     const scoreB = b.prediction?.predictionScore || 0;
     return scoreB - scoreA;

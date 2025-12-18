@@ -17,7 +17,7 @@ interface ScheduleConfig {
  * Calculate next run time based on frequency
  */
 function calculateNextRun(frequency: string, fromDate: Date = new Date()): Date {
-  const next = new Date(fromDate || 0);
+  const next = new Date(fromDate);
   
   switch (frequency) {
     case "hourly":

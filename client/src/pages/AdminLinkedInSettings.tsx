@@ -75,9 +75,7 @@ export default function AdminLinkedInSettings() {
   };
 
   const isConfigured = settings?.configured || false;
-  const totalCreditsUsed = (creditUsage && Array.isArray(creditUsage)) 
-    ? creditUsage.reduce((sum: number, usage: any) => sum + (usage.creditsUsed || 0), 0) 
-    : 0;
+  const totalCreditsUsed = creditUsage?.reduce((sum, usage) => sum + usage.creditsUsed, 0) || 0;
 
   return (
     <div className="container mx-auto py-8">
@@ -258,7 +256,7 @@ export default function AdminLinkedInSettings() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {creditUsage && Array.isArray(creditUsage) && creditUsage.map((usage: any) => (
+                    {creditUsage.map((usage) => (
                       <TableRow key={usage.id}>
                         <TableCell className="font-medium">
                           Recruiter #{usage.recruiterId}
@@ -304,7 +302,7 @@ export default function AdminLinkedInSettings() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {recruiterLimits && Array.isArray(recruiterLimits) && recruiterLimits.map((limit: any) => (
+                    {recruiterLimits.map((limit) => (
                       <TableRow key={limit.recruiterId}>
                         <TableCell className="font-medium">
                           {limit.recruiterName || `Recruiter #${limit.recruiterId}`}
