@@ -4078,3 +4078,8 @@
 - [ ] Test skipping optional fields
 - [ ] Test editing data in review step
 - [ ] Verify candidate appears in search results after creation
+
+
+## Current Issues (Add Candidate Page)
+- [x] Fix resume parsing error - candidates.parseResumeFile endpoint returning 404
+- [x] Add RecruiterLayout sidebar to AddCandidatePage
