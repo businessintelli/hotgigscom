@@ -3943,3 +3943,4 @@
 - [x] Fix getResumeProfilesByCandidate function name mismatch
 - [x] Test candidate resume upload with AI parsing wizard
 - [x] Test recruiter "apply on behalf" submission with parsed resume data
+- [x] Fix nested anchor tag error in Breadcrumb component
