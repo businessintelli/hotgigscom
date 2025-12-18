@@ -6331,6 +6331,243 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return await recruiterReportsHelpers.getJobPerformanceReport(recruiter.id, input.period, input.customStart, input.customEnd);
       }),
   }),
+
+  // Guest Application router - for users applying without registration
+  guestApplication: router({
+    // Submit guest application with resume upload
+    submit: publicProcedure
+      .input(z.object({
+        jobId: z.number(),
+        email: z.string().email(),
+        name: z.string().min(1),
+        phoneNumber: z.string().optional(),
+        coverLetter: z.string().optional(),
+        resumeFile: z.object({
+          data: z.string(), // base64 encoded file data
+          filename: z.string(),
+          mimeType: z.string(),
+        }),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          // Decode base64 resume file
+          const resumeBuffer = Buffer.from(input.resumeFile.data, 'base64');
+          
+          // Upload resume to S3
+          const fileKey = `guest-resumes/${Date.now()}-${randomSuffix()}-${input.resumeFile.filename}`;
+          const { url: resumeUrl } = await storagePut(
+            fileKey,
+            resumeBuffer,
+            input.resumeFile.mimeType
+          );
+
+          // Extract text from resume
+          const resumeText = await extractResumeText(resumeBuffer, input.resumeFile.mimeType);
+          
+          // Parse resume with AI
+          const parsedResume = await parseResumeWithAI(resumeText);
+          
+          // Create guest application
+          const result = await db.createGuestApplication({
+            jobId: input.jobId,
+            email: input.email.toLowerCase(),
+            name: input.name,
+            phoneNumber: input.phoneNumber,
+            resumeUrl,
+            resumeFilename: input.resumeFile.filename,
+            coverLetter: input.coverLetter,
+            parsedResumeData: JSON.stringify(parsedResume),
+            skills: JSON.stringify(parsedResume.skills),
+            experience: JSON.stringify(parsedResume.experience),
+            education: JSON.stringify(parsedResume.education),
+            totalExperienceYears: parsedResume.metadata.totalExperienceYears,
+            claimed: false,
+          });
+
+          const guestAppId = result.insertId;
+
+          // Get job details for email
+          const job = await db.getJobById(input.jobId);
+          
+          // Send confirmation email to guest applicant
+          if (job) {
+            try {
+              const { generateGuestApplicationConfirmationEmail } = await import('./emails/guestApplicationConfirmation');
+              const registrationLink = `${process.env.VITE_OAUTH_PORTAL_URL || 'https://3000-ipj6hp6wcz9dop9d3xjt2-0b97a8a4.manusvm.computer'}/signup?email=${encodeURIComponent(input.email)}`;
+              
+              const emailContent = generateGuestApplicationConfirmationEmail({
+                candidateName: input.name,
+                jobTitle: job.title,
+                companyName: job.companyName || 'the company',
+                applicationId: guestAppId,
+                registrationLink,
+              });
+
+              await sendEmail({
+                to: input.email,
+                subject: emailContent.subject,
+                html: emailContent.html,
+                text: emailContent.text,
+              });
+            } catch (emailError) {
+              console.error('Failed to send confirmation email:', emailError);
+              // Don't fail the application if email fails
+            }
+          }
+          
+          // Create notification for recruiter
+          if (job) {
+            try {
+              const recruiter = await db.getRecruiterByUserId(job.postedBy);
+              if (recruiter) {
+                await notificationHelpers.createNotification({
+                  userId: job.postedBy,
+                  type: 'application',
+                  title: 'New Guest Application Received',
+                  message: `${input.name} has applied for ${job.title} (guest application)`,
+                  isRead: false,
+                  relatedEntityType: 'application',
+                  relatedEntityId: input.jobId,
+                  actionUrl: `/recruiter/applications?jobId=${input.jobId}`,
+                });
+              }
+            } catch (error) {
+              console.error('Failed to create notification:', error);
+            }
+          }
+
+          return {
+            success: true,
+            guestApplicationId: guestAppId,
+            parsedData: {
+              name: parsedResume.personalInfo.name || input.name,
+              email: parsedResume.personalInfo.email || input.email,
+              phone: parsedResume.personalInfo.phone || input.phoneNumber,
+              skills: parsedResume.skills,
+              experienceYears: parsedResume.metadata.totalExperienceYears,
+            },
+          };
+        } catch (error: any) {
+          console.error('Error submitting guest application:', error);
+          throw new Error(`Failed to submit application: ${error.message}`);
+        }
+      }),
+
+    // Get guest application by ID (for confirmation page)
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const guestApp = await db.getGuestApplicationById(input.id);
+        if (!guestApp) {
+          throw new Error('Guest application not found');
+        }
+        
+        // Get job details
+        const job = await db.getJobById(guestApp.jobId);
+        
+        return {
+          ...guestApp,
+          job: job ? {
+            id: job.id,
+            title: job.title,
+            companyName: job.companyName,
+            location: job.location,
+          } : null,
+        };
+      }),
+
+    // Claim guest applications when user registers
+    claimApplications: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const user = ctx.user;
+        if (!user?.email) {
+          throw new Error('User email not found');
+        }
+
+        // Get candidate profile
+        const candidate = await db.getCandidateByUserId(user.id);
+        if (!candidate) {
+          throw new Error('Candidate profile not found');
+        }
+
+        // Find unclaimed guest applications with this email
+        const unclaimedApps = await db.getUnclaimedGuestApplicationsByEmail(user.email);
+        
+        const claimedCount = unclaimedApps.length;
+        
+        // Convert each guest application to a real application
+        for (const guestApp of unclaimedApps) {
+          try {
+            // Create real application
+            const appResult = await db.createApplication({
+              jobId: guestApp.jobId,
+              candidateId: candidate.id,
+              coverLetter: guestApp.coverLetter || undefined,
+              resumeUrl: guestApp.resumeUrl,
+              resumeFilename: guestApp.resumeFilename || undefined,
+            });
+
+            // Mark guest application as claimed
+            await db.claimGuestApplication(
+              guestApp.id,
+              candidate.id,
+              appResult.insertId
+            );
+
+            // Update candidate profile with parsed resume data if available
+            if (guestApp.parsedResumeData) {
+              try {
+                const parsedData = JSON.parse(guestApp.parsedResumeData as string);
+                
+                // Update candidate with missing information from resume
+                const updates: any = {};
+                
+                if (parsedData.personalInfo?.phone && !candidate.phoneNumber) {
+                  updates.phoneNumber = parsedData.personalInfo.phone;
+                }
+                
+                if (parsedData.personalInfo?.location && !candidate.location) {
+                  updates.location = parsedData.personalInfo.location;
+                }
+                
+                if (parsedData.skills && parsedData.skills.length > 0 && !candidate.skills) {
+                  updates.skills = parsedData.skills.join(', ');
+                }
+                
+                if (parsedData.metadata?.totalExperienceYears && !candidate.experienceYears) {
+                  updates.experienceYears = parsedData.metadata.totalExperienceYears;
+                }
+                
+                if (Object.keys(updates).length > 0) {
+                  await db.updateCandidate(candidate.id, updates);
+                }
+              } catch (parseError) {
+                console.error('Error parsing guest application resume data:', parseError);
+              }
+            }
+
+            // Create notification for the user
+            await notificationHelpers.createNotification({
+              userId: user.id,
+              type: 'application',
+              title: 'Application Linked to Your Account',
+              message: `Your previous application has been linked to your account`,
+              isRead: false,
+              relatedEntityType: 'application',
+              relatedEntityId: appResult.insertId,
+              actionUrl: '/my-applications',
+            });
+          } catch (error) {
+            console.error(`Failed to claim guest application ${guestApp.id}:`, error);
+          }
+        }
+
+        return {
+          success: true,
+          claimedCount,
+        };
+      }),
+  }),
 });
 
 

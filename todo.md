@@ -3881,3 +3881,17 @@
 - [x] Build company admin Applicants page with filters
 - [x] Build company admin Candidates page with filters
 - [x] Build company admin Associates page with filters
+
+
+## Guest Application Workflow
+- [x] Analyze current job application flow and identify required changes
+- [x] Create guestApplications database table with email, resume, parsed data
+- [ ] Add applicationToken field to applications table for claiming
+- [x] Create backend API for guest application submission
+- [x] Integrate AI resume parsing into guest application flow
+- [x] Build multi-step guest application wizard UI (resume upload, data collection, confirmation)
+- [x] Implement email confirmation with application details
+- [x] Add registration invitation link to confirmation email
+- [x] Build application claiming mechanism when user registers with same email
+- [x] Update candidate dashboard to show claimed applications (auto-claimed on login)
+- [x] Test complete guest application workflow end-to-end

@@ -1,7 +1,8 @@
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { toast } from "sonner";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -12,6 +13,21 @@ export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
   const utils = trpc.useUtils();
+  const hasAttemptedClaim = useRef(false);
+  
+  const claimGuestApplicationsMutation = trpc.guestApplication.claimApplications.useMutation({
+    onSuccess: (data) => {
+      if (data.claimedCount > 0) {
+        toast.success(
+          `Welcome back! We've linked ${data.claimedCount} previous application${data.claimedCount > 1 ? 's' : ''} to your account.`,
+          { duration: 5000 }
+        );
+      }
+    },
+    onError: (error) => {
+      console.error("Failed to claim guest applications:", error);
+    },
+  });
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
@@ -74,6 +90,16 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.error,
     logoutMutation.isPending,
   ]);
+
+  // Auto-claim guest applications for candidates
+  useEffect(() => {
+    if (state.user && state.user.role === "candidate" && !hasAttemptedClaim.current) {
+      hasAttemptedClaim.current = true;
+      setTimeout(() => {
+        claimGuestApplicationsMutation.mutate();
+      }, 1000);
+    }
+  }, [state.user]);
 
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;

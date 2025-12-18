@@ -46,7 +46,8 @@ import {
   systemHealthMetrics, InsertSystemHealthMetric,
   customReports, InsertCustomReport,
   reportSchedules, InsertReportSchedule,
-  reportExecutions, InsertReportExecution
+  reportExecutions, InsertReportExecution,
+  guestApplications, InsertGuestApplication
 } from "../drizzle/schema";import { getDb } from './_core/db';
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
@@ -2971,4 +2972,48 @@ export async function getCompanyAssociatesPaginated(
     .offset(offset);
   
   return buildPaginatedResponse(results, total, params);
+}
+
+// Guest Application operations
+export async function createGuestApplication(guestApp: InsertGuestApplication) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(guestApplications).values(guestApp);
+  return result;
+}
+
+export async function getGuestApplicationById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(guestApplications).where(eq(guestApplications.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function getGuestApplicationsByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(guestApplications).where(eq(guestApplications.email, email.toLowerCase()));
+}
+
+export async function getUnclaimedGuestApplicationsByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(guestApplications)
+    .where(and(
+      eq(guestApplications.email, email.toLowerCase()),
+      eq(guestApplications.claimed, false)
+    ));
+}
+
+export async function claimGuestApplication(guestAppId: number, candidateId: number, applicationId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(guestApplications)
+    .set({
+      claimed: true,
+      claimedBy: candidateId,
+      claimedAt: new Date(),
+      applicationId: applicationId
+    })
+    .where(eq(guestApplications.id, guestAppId));
 }

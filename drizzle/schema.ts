@@ -2143,3 +2143,35 @@ export const jobViews = mysqlTable("job_views", {
 
 export type JobView = typeof jobViews.$inferSelect;
 export type InsertJobView = typeof jobViews.$inferInsert;
+
+/**
+ * Guest Applications - Track applications from non-registered users
+ * These can be claimed when user registers with matching email
+ */
+export const guestApplications = mysqlTable("guest_applications", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  email: varchar("email", { length: 320 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  phoneNumber: varchar("phoneNumber", { length: 50 }),
+  resumeUrl: varchar("resumeUrl", { length: 500 }).notNull(),
+  resumeFilename: varchar("resumeFilename", { length: 255 }).notNull(),
+  coverLetter: text("coverLetter"),
+  // AI parsed data from resume
+  parsedResumeData: text("parsedResumeData"), // Full ParsedResume JSON
+  skills: text("skills"), // JSON array of skills
+  experience: text("experience"),
+  education: text("education"),
+  totalExperienceYears: int("totalExperienceYears"),
+  // Application claiming
+  claimed: boolean("claimed").default(false).notNull(),
+  claimedBy: int("claimedBy").references(() => candidates.id), // Candidate who claimed this application
+  claimedAt: timestamp("claimedAt"),
+  applicationId: int("applicationId").references(() => applications.id), // Linked application after claiming
+  // Tracking
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GuestApplication = typeof guestApplications.$inferSelect;
+export type InsertGuestApplication = typeof guestApplications.$inferInsert;
