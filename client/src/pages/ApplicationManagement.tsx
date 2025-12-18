@@ -120,6 +120,16 @@ export default function ApplicationManagement() {
     },
   });
 
+  // Invite guest applicant mutation
+  const inviteGuestMutation = trpc.guestApplication.sendInvitation.useMutation({
+    onSuccess: () => {
+      utils.application.list.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to send invitation: ${error.message}`);
+    },
+  });
+
   // Handle URL parameters for job and status filtering
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -806,9 +816,32 @@ export default function ApplicationManagement() {
 
                         <div className="flex flex-wrap items-center gap-2 pt-3 border-t">
                           {application.isGuest && (
-                            <Badge variant="secondary" className="text-xs">
-                              Guest applicant - Invite to register for full features
-                            </Badge>
+                            <>
+                              <Badge variant="secondary" className="text-xs">
+                                Guest applicant
+                              </Badge>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    await inviteGuestMutation.mutateAsync({ guestApplicationId: application.id });
+                                    toast.success(`Invitation sent to ${application.name}`);
+                                  } catch (error: any) {
+                                    toast.error(error.message || 'Failed to send invitation');
+                                  }
+                                }}
+                                disabled={inviteGuestMutation.isPending || application.invitationSent}
+                              >
+                                <Send className="h-4 w-4 mr-1" />
+                                {application.invitationSent ? 'Invited' : 'Invite to Register'}
+                              </Button>
+                              {application.invitationSent && application.invitedAt && (
+                                <span className="text-xs text-gray-500">
+                                  Invited {new Date(application.invitedAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </>
                           )}
                           <Button 
                             variant="outline" 

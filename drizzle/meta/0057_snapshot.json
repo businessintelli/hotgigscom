@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "f6fd570d-1971-47bb-a605-4ac18cd605d6",
-  "prevId": "73e1ec68-c90a-408a-841a-f08f79632a32",
+  "id": "bd312c5b-2099-4017-92d2-b8ed1e394620",
+  "prevId": "f6fd570d-1971-47bb-a605-4ac18cd605d6",
   "tables": {
     "aiNotificationPreferences": {
       "name": "aiNotificationPreferences",
@@ -5060,6 +5060,29 @@
           "autoincrement": false,
           "onUpdate": true,
           "default": "(now())"
+        },
+        "invitationSent": {
+          "name": "invitationSent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "invitedAt": {
+          "name": "invitedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "invitationCount": {
+          "name": "invitationCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {},

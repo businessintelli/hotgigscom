@@ -48,7 +48,7 @@ import {
   reportSchedules, InsertReportSchedule,
   reportExecutions, InsertReportExecution,
   guestApplications, InsertGuestApplication
-} from "../drizzle/schema";import { getDb } from './_core/db';
+} from "../drizzle/schema";
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -3032,6 +3032,23 @@ export async function claimGuestApplication(guestAppId: number, candidateId: num
       claimedBy: candidateId,
       claimedAt: new Date(),
       applicationId: applicationId
+    })
+    .where(eq(guestApplications.id, guestAppId));
+}
+
+export async function updateGuestApplicationInvitation(guestAppId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Get current invitation count
+  const current = await db.select().from(guestApplications).where(eq(guestApplications.id, guestAppId)).limit(1);
+  const currentCount = current[0]?.invitationCount || 0;
+  
+  await db.update(guestApplications)
+    .set({
+      invitationSent: true,
+      invitedAt: new Date(),
+      invitationCount: currentCount + 1
     })
     .where(eq(guestApplications.id, guestAppId));
 }

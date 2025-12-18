@@ -2171,6 +2171,10 @@ export const guestApplications = mysqlTable("guest_applications", {
   // Tracking
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  // Invitation tracking
+  invitationSent: boolean("invitationSent").default(false).notNull(),
+  invitedAt: timestamp("invitedAt"),
+  invitationCount: int("invitationCount").default(0).notNull(),
 });
 
 export type GuestApplication = typeof guestApplications.$inferSelect;

@@ -3908,3 +3908,17 @@
 - [ ] Implement guest application status check (email + application ID)
 - [ ] Add public status page for guest applicants to track progress
 - [ ] Create notification system for guest applicants (email-based)
+
+## Database Query Error Fix (URGENT)
+- [x] Fix jobs table query error (select statement failing on home page)
+- [x] Verify database connection pool is working correctly
+- [x] Check if jobs table schema matches query columns
+- [x] Test jobs listing on home page after fix
+
+## Guest Invitation System
+- [x] Create backend API endpoint for sending invitation emails to guest applicants
+- [x] Design personalized email template for guest invitations with benefits
+- [x] Add "Invite to Register" button to Application Management for guest applications
+- [x] Track invitation status in guestApplications table (invitedAt, invitationSent)
+- [x] Implement invitation tracking to prevent duplicate invitations
+- [x] Test complete invitation workflow end-to-end

@@ -6578,6 +6578,77 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           claimedCount,
         };
       }),
+
+    // Send invitation email to guest applicant
+    sendInvitation: protectedProcedure
+      .input(z.object({
+        guestApplicationId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Get guest application
+        const guestApp = await db.getGuestApplicationById(input.guestApplicationId);
+        if (!guestApp) {
+          throw new Error('Guest application not found');
+        }
+
+        // Check if already claimed
+        if (guestApp.claimed) {
+          throw new Error('This applicant has already registered');
+        }
+
+        // Get job details
+        const job = await db.getJobById(guestApp.jobId);
+        if (!job) {
+          throw new Error('Job not found');
+        }
+
+        // Get recruiter info
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) {
+          throw new Error('Recruiter profile not found');
+        }
+
+        try {
+          // Generate invitation email
+          const { generateGuestInvitationEmail } = await import('./emails/guestInvitation');
+          const registrationLink = `${process.env.VITE_OAUTH_PORTAL_URL || 'https://3000-ipj6hp6wcz9dop9d3xjt2-0b97a8a4.manusvm.computer'}/signup?email=${encodeURIComponent(guestApp.email)}`;
+          
+          const emailContent = generateGuestInvitationEmail({
+            candidateName: guestApp.name,
+            jobTitle: job.title,
+            companyName: recruiter.companyName || 'our company',
+            recruiterName: ctx.user.name,
+            registrationLink,
+            benefits: [
+              'Track your application status in real-time',
+              'Get instant notifications about interview invitations',
+              'Access AI-powered career insights and recommendations',
+              'Build a complete professional profile',
+              'Apply to multiple jobs with one click',
+              'Connect directly with recruiters',
+            ],
+          });
+
+          // Send email using Resend
+          const { sendEmail } = await import('./_core/email');
+          await sendEmail({
+            to: guestApp.email,
+            subject: `Unlock Your Full Potential - Register on HotGigs`,
+            html: emailContent,
+          });
+
+          // Update invitation tracking
+          await db.updateGuestApplicationInvitation(input.guestApplicationId);
+
+          return {
+            success: true,
+            message: 'Invitation sent successfully',
+          };
+        } catch (error: any) {
+          console.error('Error sending invitation:', error);
+          throw new Error(`Failed to send invitation: ${error.message}`);
+        }
+      }),
   }),
 });
 
