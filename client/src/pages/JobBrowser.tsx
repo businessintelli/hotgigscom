@@ -10,10 +10,19 @@ import { Briefcase, MapPin, DollarSign, Clock, Search, Loader2, Building2, Slide
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { DeadlineBadge } from "@/components/DeadlineBadge";
 import { JobShareButton } from "@/components/JobShareButton";
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function JobBrowser() {
   const { user } = useAuth();
@@ -22,6 +31,8 @@ export default function JobBrowser() {
   const [searchQuery, setSearchQuery] = useLocalStorage("jobBrowser_searchQuery", "");
   const [locationFilter, setLocationFilter] = useLocalStorage("jobBrowser_locationFilter", "");
   const [typeFilter, setTypeFilter] = useLocalStorage("jobBrowser_typeFilter", "all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
 
   // Fetch all public jobs
   const { data: jobs, isLoading } = trpc.job.list.useQuery();
@@ -33,19 +44,33 @@ export default function JobBrowser() {
   );
 
   // Filter jobs based on search and filters
-  const filteredJobs = jobs?.filter((job) => {
-    const matchesSearch =
-      !searchQuery ||
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredJobs = useMemo(() => {
+    return jobs?.filter((job) => {
+      const matchesSearch =
+        !searchQuery ||
+        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesLocation =
-      !locationFilter || job.location?.toLowerCase().includes(locationFilter.toLowerCase());
+      const matchesLocation =
+        !locationFilter || job.location?.toLowerCase().includes(locationFilter.toLowerCase());
 
-    const matchesType = !typeFilter || typeFilter === "all" || job.employmentType === typeFilter;
+      const matchesType = !typeFilter || typeFilter === "all" || job.employmentType === typeFilter;
 
-    return matchesSearch && matchesLocation && matchesType;
-  });
+      return matchesSearch && matchesLocation && matchesType;
+    }) || [];
+  }, [jobs, searchQuery, locationFilter, typeFilter]);
+
+  // Calculate pagination
+  const totalItems = filteredJobs.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, locationFilter, typeFilter]);
 
   const handleApply = (jobId: number) => {
     if (!user) {
@@ -148,8 +173,8 @@ export default function JobBrowser() {
 
         {/* Job Listings */}
         <div className="space-y-4">
-          {filteredJobs && filteredJobs.length > 0 ? (
-            filteredJobs.map((job) => (
+          {paginatedJobs && paginatedJobs.length > 0 ? (
+            paginatedJobs.map((job) => (
               <Card key={job.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
@@ -257,10 +282,55 @@ export default function JobBrowser() {
           )}
         </div>
 
-        {/* Results Summary */}
-        {filteredJobs && filteredJobs.length > 0 && (
-          <div className="mt-6 text-center text-sm text-gray-600">
-            Showing {filteredJobs.length} of {jobs?.length || 0} jobs
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-8">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    return page === 1 || 
+                           page === totalPages || 
+                           Math.abs(page - currentPage) <= 1;
+                  })
+                  .map((page, index, array) => (
+                    <React.Fragment key={page}>
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </React.Fragment>
+                  ))}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+            
+            <p className="text-center text-sm text-gray-600 mt-4">
+              Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} jobs
+            </p>
           </div>
         )}
       </div>

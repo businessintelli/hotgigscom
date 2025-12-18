@@ -1546,6 +1546,17 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return await getSavedJobs(input.candidateId);
       }),
     
+    getSavedJobsPaginated: protectedProcedure
+      .input(z.object({ 
+        candidateId: z.number(),
+        page: z.number().optional(),
+        pageSize: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { candidateId, ...paginationParams } = input;
+        return await db.getSavedJobsByCandidatePaginated(candidateId, paginationParams);
+      }),
+    
     isJobSaved: protectedProcedure
       .input(z.object({ candidateId: z.number(), jobId: z.number() }))
       .query(async ({ input }) => {
@@ -2026,6 +2037,15 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     list: publicProcedure.query(async () => {
       return await db.getPublicJobs();
     }),
+    
+    listPaginated: publicProcedure
+      .input(z.object({
+        page: z.number().optional(),
+        pageSize: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getPublicJobsPaginated(input);
+      }),
     
     search: publicProcedure
       .input(z.object({
@@ -2511,6 +2531,17 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       .input(z.object({ candidateId: z.number() }))
       .query(async ({ input }) => {
         return await db.getApplicationsByCandidate(input.candidateId);
+      }),
+    
+    getByCandidatePaginated: protectedProcedure
+      .input(z.object({ 
+        candidateId: z.number(),
+        page: z.number().optional(),
+        pageSize: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const { candidateId, ...paginationParams } = input;
+        return await db.getApplicationsByCandidatePaginated(candidateId, paginationParams);
       }),
     
     // Get placed applications (hired or offered status) for a candidate

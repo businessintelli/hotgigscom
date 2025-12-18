@@ -3812,3 +3812,36 @@
 - [x] Add loading skeletons to report pages (better perceived performance)
 - [x] Optimize candidate My Applications page (slow loading issue)
 - [x] Optimize candidate Saved Jobs page (slow loading issue)
+
+
+## Pagination, Optimistic Updates & Recently Viewed Jobs - Phase 7
+
+### Pagination Implementation
+- [x] Audit current pagination across all pages
+- [x] Create backend pagination infrastructure (limit, offset, total count)
+- [x] Add pagination to candidate My Applications page
+- [x] Add pagination to candidate Saved Jobs page
+- [x] Add pagination to candidate Job Browser page
+- [ ] Add pagination to public home page job listings
+- [ ] Add pagination to recruiter Jobs page
+- [ ] Add pagination to recruiter Applications page
+- [ ] Add pagination to recruiter Candidates page
+- [ ] Add pagination to recruiter Associates page
+- [ ] Add pagination to recruiter Reports page
+- [ ] Add pagination to company admin Jobs page
+- [ ] Add pagination to company admin Candidates page
+- [ ] Add pagination to company admin Associates page
+- [ ] Add pagination to company admin Applications page
+- [ ] Add pagination to company admin Reports page
+
+### Optimistic Updates
+- [ ] Implement optimistic updates for save/unsave job actions
+- [ ] Add optimistic updates to all job list pages (candidate, recruiter, company admin)
+- [ ] Add loading states and error rollback for failed optimistic updates
+
+### Recently Viewed Jobs
+- [ ] Create database table for recently viewed jobs tracking
+- [ ] Implement backend tracking for job views
+- [ ] Create recently viewed jobs query with optimized joins
+- [ ] Add recently viewed jobs widget to candidate dashboard
+- [ ] Add recently viewed jobs section to job browser page

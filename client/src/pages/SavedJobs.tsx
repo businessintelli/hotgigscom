@@ -7,10 +7,22 @@ import { trpc } from "@/lib/trpc";
 import { Briefcase, MapPin, DollarSign, Clock, Loader2, Building2, Bookmark, Trash2, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import React, { useState } from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function SavedJobs() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Get candidate profile
   const { data: candidate } = trpc.candidate.getByUserId.useQuery(
@@ -18,11 +30,18 @@ export default function SavedJobs() {
     { enabled: !!user?.id }
   );
 
-  // Fetch saved jobs
-  const { data: savedJobs, isLoading, refetch } = trpc.candidate.getSavedJobs.useQuery(
-    { candidateId: candidate?.id || 0 },
+  // Fetch saved jobs with pagination
+  const { data: paginatedData, isLoading, refetch } = trpc.candidate.getSavedJobsPaginated.useQuery(
+    { 
+      candidateId: candidate?.id || 0,
+      page: currentPage,
+      pageSize: pageSize,
+    },
     { enabled: !!candidate?.id }
   );
+
+  const savedJobs = paginatedData?.data || [];
+  const pagination = paginatedData?.pagination;
 
   // Unsave job mutation
   const unsaveJobMutation = trpc.candidate.unsaveJob.useMutation({
@@ -173,6 +192,58 @@ export default function SavedJobs() {
               </CardContent>
             </Card>
           ))}
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      className={!pagination.hasPreviousPage ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      return page === 1 || 
+                             page === pagination.totalPages || 
+                             Math.abs(page - currentPage) <= 1;
+                    })
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <PaginationItem>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        )}
+                        <PaginationItem>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </React.Fragment>
+                    ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
+                      className={!pagination.hasNextPage ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+              
+              <p className="text-center text-sm text-gray-600 mt-4">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination.totalItems)} of {pagination.totalItems} saved jobs
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

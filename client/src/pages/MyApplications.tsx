@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import CandidateLayout from "@/components/CandidateLayout";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Briefcase, Calendar, Clock, FileText, MessageSquare } from "lucide-react";
 import { useLocation } from "wouter";
+import { useState } from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const statusColors = {
   submitted: "bg-blue-100 text-blue-700",
@@ -20,6 +31,8 @@ const statusColors = {
 export default function MyApplications() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Get candidate profile
   const { data: candidate } = trpc.candidate.getByUserId.useQuery(
@@ -27,11 +40,18 @@ export default function MyApplications() {
     { enabled: !!user?.id }
   );
 
-  // Get applications with job details
-  const { data: applications, isLoading } = trpc.application.getCandidateApplications.useQuery(
-    { candidateId: candidate?.id || 0 },
+  // Get applications with pagination
+  const { data: paginatedData, isLoading } = trpc.application.getByCandidatePaginated.useQuery(
+    { 
+      candidateId: candidate?.id || 0,
+      page: currentPage,
+      pageSize: pageSize,
+    },
     { enabled: !!candidate?.id }
   );
+
+  const applications = paginatedData?.data || [];
+  const pagination = paginatedData?.pagination;
 
   if (isLoading) {
     return (
@@ -201,6 +221,59 @@ export default function MyApplications() {
                 </CardContent>
               </Card>
             ))}
+
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className={!pagination.hasPreviousPage ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        // Show first page, last page, current page, and pages around current
+                        return page === 1 || 
+                               page === pagination.totalPages || 
+                               Math.abs(page - currentPage) <= 1;
+                      })
+                      .map((page, index, array) => (
+                        <React.Fragment key={page}>
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <PaginationItem>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          )}
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        </React.Fragment>
+                      ))}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
+                        className={!pagination.hasNextPage ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+                
+                <p className="text-center text-sm text-gray-600 mt-4">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, pagination.totalItems)} of {pagination.totalItems} applications
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

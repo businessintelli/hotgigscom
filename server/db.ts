@@ -46,8 +46,8 @@ import {
   customReports, InsertCustomReport,
   reportSchedules, InsertReportSchedule,
   reportExecutions, InsertReportExecution
-} from "../drizzle/schema";
-import { ENV } from './_core/env';
+} from "../drizzle/schema";import { getDb } from './_core/db';
+import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _initializationPromise: Promise<ReturnType<typeof drizzle> | null> | null = null;
@@ -470,6 +470,44 @@ export async function getApplicationsByCandidateId(candidateId: number) {
   return db.select().from(applications).where(eq(applications.candidateId, candidateId));
 }
 
+/**
+ * Get applications by candidate with pagination and full job details
+ */
+export async function getApplicationsByCandidatePaginated(
+  candidateId: number,
+  params: PaginationParams
+): Promise<PaginatedResponse<any>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const { limit, offset, page, pageSize } = getPaginationLimitOffset(params);
+  
+  // Get total count
+  const countResult = await db.select({ count: sql<number>`count(*)` })
+    .from(applications)
+    .where(eq(applications.candidateId, candidateId));
+  const totalItems = Number(countResult[0]?.count || 0);
+  
+  // Get paginated data with joins
+  const data = await db
+    .select()
+    .from(applications)
+    .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .leftJoin(resumeProfiles, eq(applications.resumeProfileId, resumeProfiles.id))
+    .where(eq(applications.candidateId, candidateId))
+    .orderBy(desc(applications.appliedAt))
+    .limit(limit)
+    .offset(offset);
+  
+  const transformedData = data.map((row: any) => ({
+    ...row.applications,
+    job: row.jobs,
+    resumeProfile: row.resume_profiles,
+  }));
+  
+  return buildPaginatedResponse(transformedData, totalItems, { page, pageSize });
+}
+
 export async function getAllApplications() {
   const db = await getDb();
   if (!db) return [];
@@ -623,6 +661,42 @@ export async function getSavedJobsByCandidateId(candidateId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(savedJobs).where(eq(savedJobs.candidateId, candidateId));
+}
+
+/**
+ * Get saved jobs by candidate with pagination and full job details
+ */
+export async function getSavedJobsByCandidatePaginated(
+  candidateId: number,
+  params: PaginationParams
+): Promise<PaginatedResponse<any>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const { limit, offset, page, pageSize } = getPaginationLimitOffset(params);
+  
+  // Get total count
+  const countResult = await db.select({ count: sql<number>`count(*)` })
+    .from(savedJobs)
+    .where(eq(savedJobs.candidateId, candidateId));
+  const totalItems = Number(countResult[0]?.count || 0);
+  
+  // Get paginated data with job details
+  const data = await db
+    .select()
+    .from(savedJobs)
+    .leftJoin(jobs, eq(savedJobs.jobId, jobs.id))
+    .where(eq(savedJobs.candidateId, candidateId))
+    .orderBy(desc(savedJobs.savedAt))
+    .limit(limit)
+    .offset(offset);
+  
+  const transformedData = data.map((row: any) => ({
+    ...row.saved_jobs,
+    job: row.jobs,
+  }));
+  
+  return buildPaginatedResponse(transformedData, totalItems, { page, pageSize });
 }
 
 export async function deleteSavedJob(candidateId: number, jobId: number) {
@@ -1547,7 +1621,7 @@ export async function getSavedSearchesByUser(userId: number) {
 }
 
 /**
- * Get public jobs (all active jobs)
+ * Get all public jobs (active status)
  */
 export async function getPublicJobs(filters?: {
   search?: string;
@@ -1565,6 +1639,40 @@ export async function getPublicJobs(filters?: {
     .limit(filters?.limit || 50);
   
   return await query;
+}
+
+/**
+ * Get public jobs with pagination
+ */
+export async function getPublicJobsPaginated(
+  filters: {
+    search?: string;
+    location?: string;
+    employmentType?: string;
+  } & PaginationParams
+): Promise<PaginatedResponse<typeof jobs.$inferSelect>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const { limit, offset, page, pageSize } = getPaginationLimitOffset(filters);
+  
+  // Build base query
+  let query = db.select()
+    .from(jobs)
+    .where(eq(jobs.status, 'active'))
+    .orderBy(desc(jobs.createdAt))
+    .$dynamic();
+  
+  // Get total count
+  const countResult = await db.select({ count: sql<number>`count(*)` })
+    .from(jobs)
+    .where(eq(jobs.status, 'active'));
+  const totalItems = Number(countResult[0]?.count || 0);
+  
+  // Get paginated data
+  const data = await query.limit(limit).offset(offset);
+  
+  return buildPaginatedResponse(data, totalItems, { page, pageSize });
 }
 
 /**
