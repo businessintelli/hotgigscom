@@ -1,57 +1,257 @@
-# LLM Integration Guide
-
-This document explains how the HotGigs platform integrates with Large Language Models (LLMs) for AI-powered features.
+# LLM Integration Guide for HotGigs Platform
 
 ## Overview
 
-HotGigs uses LLMs for multiple AI-powered features:
-- **Resume Parsing**: Extract skills, experience, and education from resumes
-- **Job Description Generation**: Create compelling job descriptions
-- **Candidate Matching**: Intelligent matching between candidates and jobs
-- **Interview Question Generation**: Create relevant interview questions
-- **Interview Evaluation**: Analyze and score candidate responses
-- **Career Coaching**: Provide personalized career advice
-- **Recruiting Assistant**: Data-driven insights for recruiters
+The HotGigs platform leverages Large Language Models (LLMs) for critical recruitment features including resume parsing, candidate matching, interview question generation, career coaching, and AI-powered recruiting assistance. This document provides a comprehensive guide to LLM integration across different deployment environments, with detailed cost analysis and implementation strategies.
 
-## LLM Providers
+## Deployment Options
 
-The platform supports two LLM providers:
+The platform supports multiple LLM providers with automatic fallback logic, allowing you to choose the most cost-effective solution for your deployment environment.
 
-### 1. Manus Forge API (Built-in)
+### Option 1: Manus Forge API (Built-in, Manus Platform Only)
 
-**Advantages**:
-- Pre-configured in Manus environment
-- No manual setup required
-- Automatic API key injection
-- Includes LLM, storage, and notification services
+The Manus Forge API is a pre-configured LLM service available exclusively when running within the Manus platform environment. This option provides zero-configuration integration with automatic API key injection.
 
-**Configuration**:
+**Availability:** This service is **only available when deployed on the Manus platform**. When deploying to AWS, local servers, Docker, or other cloud providers, you must use one of the alternative options below.
+
+**Advantages:**
+- Pre-configured in Manus environment with no manual setup required
+- Automatic API key injection through environment variables
+- Includes integrated LLM, storage, and notification services
+- No billing management needed
+
+**Configuration:**
+
+The following environment variables are automatically injected in the Manus environment:
+
 ```env
-# Automatically injected in Manus environment
 BUILT_IN_FORGE_API_URL=https://api.manus.im
 BUILT_IN_FORGE_API_KEY=your-forge-api-key
 VITE_FRONTEND_FORGE_API_URL=https://api.manus.im
 VITE_FRONTEND_FORGE_API_KEY=your-frontend-forge-api-key
 ```
 
-### 2. OpenAI API (Optional)
+**Usage:** The application automatically detects these variables and uses the Manus Forge API when available. No code changes required.
 
-**Advantages**:
-- Access to latest GPT models
-- Advanced features (function calling, structured outputs)
-- Higher rate limits with paid plans
+---
 
-**Configuration**:
+### Option 2: Google Gemini API (Recommended for Self-Hosted)
+
+Google Gemini provides exceptional value for document understanding tasks, offering performance comparable to GPT-4 at a fraction of the cost. Gemini 1.5 Flash is particularly well-suited for resume parsing and structured data extraction.
+
+**Advantages:**
+- **95% cheaper than GPT-4** for similar tasks
+- Excellent multimodal capabilities (text + images)
+- Strong document understanding and OCR
+- Fast inference with low latency
+- Free tier available (15 requests/minute)
+- No upfront infrastructure costs
+
+**Pricing (2025):**
+
+| Model | Input Cost | Output Cost | Best For |
+|-------|------------|-------------|----------|
+| Gemini 1.5 Flash | $0.075/M tokens | $0.30/M tokens | Resume parsing, matching (recommended) |
+| Gemini 2.0 Flash | $0.10/M tokens | $0.40/M tokens | Latest features, enhanced performance |
+| Gemini 1.5 Pro | $1.25/M tokens | $5.00/M tokens | Complex reasoning, detailed analysis |
+
+**Cost Example:**
+- Average resume parsing: ~2,000 tokens
+- Cost per resume: **$0.0002** (Gemini 1.5 Flash)
+- 100,000 resumes: **$20**
+- 1 million resumes: **$200**
+
+**Setup:**
+
+1. Get your API key from [Google AI Studio](https://aistudio.google.com/apikey)
+
+2. Add to your `.env` file:
+
 ```env
-OPENAI_API_KEY=sk-your-openai-api-key
+GOOGLE_GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
-**Getting an API Key**:
-1. Go to [OpenAI Platform](https://platform.openai.com/)
-2. Sign up or log in
-3. Navigate to API Keys section
-4. Create a new API key
-5. Add to `.env` file
+3. The application will automatically detect and use Gemini when the key is present.
+
+**Implementation:** See the "Multi-Provider Implementation" section below for code details.
+
+---
+
+### Option 3: OpenAI API (Industry Standard)
+
+OpenAI provides the most widely-used LLM APIs with excellent performance and reliability. While more expensive than Gemini, it offers robust performance for complex reasoning tasks.
+
+**Advantages:**
+- Industry-leading performance on complex tasks
+- Extensive documentation and community support
+- Reliable infrastructure with high availability
+- Advanced features (function calling, structured outputs)
+
+**Pricing (2025):**
+
+| Model | Input Cost | Output Cost | Use Case |
+|-------|------------|-------------|----------|
+| GPT-4 Turbo | $10.00/M tokens | $30.00/M tokens | Complex reasoning, edge cases |
+| GPT-4o | $2.50/M tokens | $10.00/M tokens | Balanced performance and cost |
+| GPT-3.5 Turbo | $0.50/M tokens | $1.50/M tokens | Simple tasks, high volume |
+
+**Cost Example:**
+- Average resume parsing: ~2,000 tokens
+- Cost per resume: **$0.002** (GPT-3.5 Turbo)
+- 100,000 resumes: **$200**
+- 1 million resumes: **$2,000**
+
+**Setup:**
+
+1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+
+2. Add to your `.env` file:
+
+```env
+OPENAI_API_KEY=sk-your-openai-api-key-here
+```
+
+3. The application will automatically use OpenAI when configured.
+
+---
+
+### Option 4: Self-Hosted LLMs with Ollama (Cost-Optimized for High Volume)
+
+For organizations processing large volumes of resumes (500,000+ per month) or requiring complete data privacy, self-hosting open-source LLMs can significantly reduce operational costs after the initial hardware investment.
+
+**When to Consider Self-Hosting:**
+- Processing 500,000+ resumes per month
+- Monthly API costs exceed $500
+- Data privacy and compliance requirements mandate on-premises processing
+- Dedicated DevOps resources available
+- Predictable, high-volume workloads
+
+**Recommended Open-Source Models:**
+
+| Model | Parameters | Context | Strengths | API Cost Equivalent |
+|-------|-----------|---------|-----------|---------------------|
+| DeepSeek-VL2 | 27B (4.5B active) | 4K | Exceptional OCR, document understanding, most efficient | $0.15/M tokens |
+| Qwen2.5-VL-72B | 72B | 131K | Structured data extraction, complex documents | $0.59/M tokens |
+| GLM-4.5V | 106B (12B active) | 66K | Deep reasoning, long documents | $0.86/M tokens |
+
+**Hardware Requirements:**
+
+**Budget Setup ($800-1,200):**
+- CPU: Modern multi-core (Ryzen 5/i5 or better)
+- RAM: 16GB minimum (32GB recommended)
+- GPU: NVIDIA RTX 3060 12GB
+- Storage: 500GB SSD
+- **Suitable for:** 7B-13B parameter models, development/testing
+
+**Production Setup ($2,000-3,000):**
+- CPU: Ryzen 7/i7 or better
+- RAM: 32-64GB
+- GPU: NVIDIA RTX 4070 Ti 16GB or RTX 4080
+- Storage: 1TB NVMe SSD
+- **Suitable for:** 13B-30B parameter models (recommended for HotGigs)
+
+**Enterprise Setup ($5,000+):**
+- CPU: Threadripper/Xeon
+- RAM: 128GB+
+- GPU: NVIDIA RTX 4090 24GB or A6000 48GB
+- Storage: 2TB NVMe SSD
+- **Suitable for:** 70B+ parameter models, maximum performance
+
+**Total Cost of Ownership (3-Year Analysis):**
+
+**Production Setup Example:**
+- Hardware: $2,500 (one-time investment)
+- Electricity: $15/month × 36 months = $540
+- Maintenance/Upgrades: $500
+- **Total: $3,540 over 3 years** = $98/month average
+
+**Break-Even Analysis:**
+
+Comparing to Gemini 1.5 Flash ($0.19/M tokens average):
+- Break-even point: ~18.6M tokens/month
+- Equivalent to: ~560,000 resumes/month
+- If processing fewer resumes: Cloud API is more cost-effective
+- If processing more resumes: Self-hosting saves money
+
+**Ollama Setup:**
+
+1. Install Ollama on your server:
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+2. Pull the recommended model:
+
+```bash
+# For resume parsing (most efficient)
+ollama pull deepseek-vl2
+
+# For complex document analysis
+ollama pull qwen2.5-vl:72b
+```
+
+3. Configure environment variables:
+
+```env
+OLLAMA_API_URL=http://localhost:11434
+OLLAMA_MODEL=deepseek-vl2
+```
+
+4. The application will automatically detect and use Ollama when configured.
+
+**Advantages:**
+- Zero per-request costs after initial investment
+- Complete data privacy (no external API calls)
+- No rate limits or usage quotas
+- Customizable models and fine-tuning
+- Works offline
+
+**Disadvantages:**
+- High upfront hardware cost ($2,500-5,000)
+- Requires technical expertise for setup and maintenance
+- Slower inference than cloud GPUs
+- Ongoing electricity and maintenance costs
+- Need to manage model updates manually
+
+---
+
+## Cost Comparison Summary
+
+The following table compares the total cost of processing 1 million resumes across different providers:
+
+| Provider | Model | Cost per Resume | Total Cost (1M resumes) | Break-Even Volume |
+|----------|-------|-----------------|-------------------------|-------------------|
+| **Gemini** | 1.5 Flash | $0.0002 | $200 | Best for 0-500K/month |
+| **Gemini** | 2.0 Flash | $0.00025 | $250 | - |
+| **OpenAI** | GPT-3.5 Turbo | $0.002 | $2,000 | Not recommended |
+| **OpenAI** | GPT-4 Turbo | $0.02 | $20,000 | Edge cases only |
+| **Self-Hosted** | DeepSeek-VL2 | $0.00035* | $350* | Best for 500K+/month |
+
+*Self-hosted costs include amortized hardware, electricity, and maintenance over 3 years at 500K resumes/month.
+
+---
+
+## Multi-Provider Implementation
+
+The platform implements automatic provider detection and fallback logic in `server/_core/llm.ts`. The system checks for available API keys in the following priority order:
+
+1. **Manus Forge API** (if `BUILT_IN_FORGE_API_KEY` exists)
+2. **Google Gemini** (if `GOOGLE_GEMINI_API_KEY` exists)
+3. **OpenAI** (if `OPENAI_API_KEY` exists)
+4. **Ollama** (if `OLLAMA_API_URL` is configured)
+
+### Complete Implementation
+
+See the `server/_core/llm.ts` file for the full multi-provider implementation with automatic fallback logic. The implementation supports:
+
+- Automatic provider detection based on environment variables
+- Consistent API interface across all providers
+- Structured JSON output with schema validation
+- Error handling and fallback mechanisms
+- Support for multimodal inputs (text + images)
+
+---
 
 ## Usage Examples
 
@@ -70,7 +270,7 @@ const response = await invokeLLM({
 console.log(response.choices[0].message.content);
 ```
 
-### Resume Parsing
+### Resume Parsing with Structured Output
 
 ```typescript
 import { invokeLLM } from './server/_core/llm';
@@ -137,27 +337,6 @@ async function parseResume(resumeText: string) {
 }
 ```
 
-### Job Description Generation
-
-```typescript
-async function generateJobDescription(jobTitle: string, requirements: string[]) {
-  const response = await invokeLLM({
-    messages: [
-      {
-        role: 'system',
-        content: 'You are an expert recruiter. Write compelling job descriptions.'
-      },
-      {
-        role: 'user',
-        content: `Create a job description for: ${jobTitle}\n\nRequirements:\n${requirements.join('\n')}`
-      }
-    ]
-  });
-
-  return response.choices[0].message.content;
-}
-```
-
 ### Candidate Matching
 
 ```typescript
@@ -208,172 +387,7 @@ async function calculateMatchScore(
 }
 ```
 
-### Interview Question Generation
-
-```typescript
-async function generateInterviewQuestions(
-  jobTitle: string,
-  skills: string[],
-  count: number = 5
-) {
-  const response = await invokeLLM({
-    messages: [
-      {
-        role: 'system',
-        content: 'You are an expert interviewer. Generate relevant interview questions.'
-      },
-      {
-        role: 'user',
-        content: `Generate ${count} interview questions for a ${jobTitle} position requiring: ${skills.join(', ')}`
-      }
-    ],
-    response_format: {
-      type: 'json_schema',
-      json_schema: {
-        name: 'interview_questions',
-        strict: true,
-        schema: {
-          type: 'object',
-          properties: {
-            questions: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  question: { type: 'string' },
-                  category: { type: 'string' },
-                  difficulty: { type: 'string' }
-                },
-                required: ['question', 'category', 'difficulty']
-              }
-            }
-          },
-          required: ['questions']
-        }
-      }
-    }
-  });
-
-  return JSON.parse(response.choices[0].message.content);
-}
-```
-
-### Interview Response Evaluation
-
-```typescript
-async function evaluateInterviewResponse(
-  question: string,
-  response: string,
-  jobTitle: string
-) {
-  const llmResponse = await invokeLLM({
-    messages: [
-      {
-        role: 'system',
-        content: `You are an expert interviewer evaluating candidates for a ${jobTitle} position.`
-      },
-      {
-        role: 'user',
-        content: `Question: ${question}\n\nCandidate Response: ${response}\n\nEvaluate this response.`
-      }
-    ],
-    response_format: {
-      type: 'json_schema',
-      json_schema: {
-        name: 'evaluation',
-        strict: true,
-        schema: {
-          type: 'object',
-          properties: {
-            score: {
-              type: 'number',
-              description: 'Score from 0-100'
-            },
-            strengths: {
-              type: 'array',
-              items: { type: 'string' }
-            },
-            weaknesses: {
-              type: 'array',
-              items: { type: 'string' }
-            },
-            feedback: {
-              type: 'string',
-              description: 'Detailed feedback'
-            }
-          },
-          required: ['score', 'strengths', 'weaknesses', 'feedback']
-        }
-      }
-    }
-  });
-
-  return JSON.parse(llmResponse.choices[0].message.content);
-}
-```
-
-## Advanced Features
-
-### Structured Outputs (JSON Schema)
-
-Use `response_format` to get structured JSON responses:
-
-```typescript
-const response = await invokeLLM({
-  messages: [...],
-  response_format: {
-    type: 'json_schema',
-    json_schema: {
-      name: 'output_schema',
-      strict: true,
-      schema: {
-        type: 'object',
-        properties: {
-          // Define your schema here
-        },
-        required: ['field1', 'field2']
-      }
-    }
-  }
-});
-```
-
-### Function Calling
-
-Use tools for function calling:
-
-```typescript
-const response = await invokeLLM({
-  messages: [...],
-  tools: [
-    {
-      type: 'function',
-      function: {
-        name: 'search_candidates',
-        description: 'Search for candidates matching criteria',
-        parameters: {
-          type: 'object',
-          properties: {
-            skills: {
-              type: 'array',
-              items: { type: 'string' }
-            },
-            experience_years: {
-              type: 'number'
-            }
-          },
-          required: ['skills']
-        }
-      }
-    }
-  ],
-  tool_choice: 'auto'
-});
-```
-
-### Multimodal Inputs (Images)
-
-Analyze images (resumes, screenshots):
+### Multimodal Inputs (Resume Images)
 
 ```typescript
 const response = await invokeLLM({
@@ -398,6 +412,8 @@ const response = await invokeLLM({
 });
 ```
 
+---
+
 ## Best Practices
 
 ### Error Handling
@@ -421,186 +437,123 @@ try {
 
 ### Rate Limiting
 
-Implement rate limiting for LLM calls:
-
-```typescript
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, '1 m')
-});
-
-async function rateLimitedLLMCall(userId: string, messages: Message[]) {
-  const { success } = await ratelimit.limit(userId);
-  if (!success) {
-    throw new Error('Rate limit exceeded');
-  }
-  return await invokeLLM({ messages });
-}
-```
+Implement rate limiting for LLM calls to prevent abuse and control costs.
 
 ### Caching
 
-Cache LLM responses for identical requests:
-
-```typescript
-import { Redis } from '@upstash/redis';
-
-const redis = Redis.fromEnv();
-
-async function cachedLLMCall(cacheKey: string, messages: Message[]) {
-  // Check cache
-  const cached = await redis.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  // Call LLM
-  const response = await invokeLLM({ messages });
-  const result = response.choices[0].message.content;
-
-  // Cache result (24 hours)
-  await redis.set(cacheKey, result, { ex: 86400 });
-
-  return result;
-}
-```
+Cache LLM responses for identical requests to reduce costs and improve performance.
 
 ### Cost Optimization
 
-**Tips to reduce costs**:
+**Tips to reduce costs:**
 1. Use caching for repeated requests
 2. Implement rate limiting
 3. Use shorter prompts when possible
 4. Use structured outputs to reduce parsing needs
 5. Batch similar requests
-6. Use appropriate model sizes (don't always use GPT-4)
+6. Choose appropriate models (don't always use GPT-4)
 
 ### Security
 
-**Never expose API keys**:
+**Never expose API keys:**
 - Keep keys in environment variables
 - Never commit keys to version control
 - Use server-side calls only
 - Implement proper authentication
 
-**Sanitize inputs**:
-```typescript
-function sanitizeInput(input: string): string {
-  // Remove potentially harmful content
-  return input
-    .replace(/[<>]/g, '')
-    .substring(0, 10000); // Limit length
-}
+---
+
+## Recommended Deployment Strategy
+
+### Phase 1: Start with Cloud API (Months 1-6)
+
+**Recommended:** Google Gemini 1.5 Flash
+
+**Why:**
+- Zero upfront cost enables fast time to market
+- Scales automatically with demand
+- No infrastructure management overhead
+- Predictable per-resume pricing
+- Easy to switch providers if needed
+
+**Expected Cost:**
+- 10,000 resumes/month: $2/month
+- 100,000 resumes/month: $20/month
+- 500,000 resumes/month: $100/month
+
+### Phase 2: Evaluate Self-Hosting (After 6 months)
+
+**Consider self-hosting when:**
+- Consistently processing 500,000+ resumes per month
+- Monthly API costs exceed $500
+- Data privacy becomes a compliance requirement
+- Have dedicated DevOps resources available
+
+**Hybrid Approach (Optimal):**
+- **Gemini Flash:** Real-time candidate matching, interactive queries
+- **Self-hosted Ollama:** Batch processing, overnight resume parsing
+- **OpenAI GPT-4:** Complex edge cases requiring advanced reasoning
+
+This hybrid strategy minimizes costs while maintaining reliability and performance across different use cases.
+
+---
+
+## Environment Variables Reference
+
+The following environment variables control LLM provider selection:
+
+```env
+# Manus Forge API (Manus platform only)
+BUILT_IN_FORGE_API_URL=https://api.manus.im
+BUILT_IN_FORGE_API_KEY=your-forge-api-key
+VITE_FRONTEND_FORGE_API_URL=https://api.manus.im
+VITE_FRONTEND_FORGE_API_KEY=your-frontend-forge-api-key
+
+# Google Gemini (recommended for self-hosted)
+GOOGLE_GEMINI_API_KEY=your-gemini-api-key-here
+
+# OpenAI (industry standard)
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# Ollama (self-hosted)
+OLLAMA_API_URL=http://localhost:11434
+OLLAMA_MODEL=deepseek-vl2
 ```
 
-## Monitoring & Debugging
+**Important:** Do not commit these values to version control. Always use environment variables or secure secret management systems.
 
-### Logging
+---
 
-Log LLM calls for debugging:
+## Testing and Validation
 
-```typescript
-async function loggedLLMCall(messages: Message[]) {
-  console.log('LLM Request:', {
-    timestamp: new Date().toISOString(),
-    messages: messages.map(m => ({ role: m.role, content: m.content.substring(0, 100) }))
-  });
+After configuring your LLM provider, test the integration:
 
-  const start = Date.now();
-  const response = await invokeLLM({ messages });
-  const duration = Date.now() - start;
+```bash
+# Run the test suite
+pnpm test
 
-  console.log('LLM Response:', {
-    duration,
-    tokens: response.usage?.total_tokens
-  });
-
-  return response;
-}
+# Test resume parsing specifically
+pnpm test:resume-parser
 ```
 
-### Error Tracking
+Monitor performance and costs in production:
+- Track token usage per request
+- Monitor response times
+- Set up alerts for cost thresholds
+- Log provider fallback events
 
-Use Sentry or similar for error tracking:
+---
 
-```typescript
-import * as Sentry from '@sentry/node';
+## Support and Resources
 
-try {
-  const response = await invokeLLM({ messages });
-} catch (error) {
-  Sentry.captureException(error, {
-    tags: { component: 'llm' },
-    extra: { messages }
-  });
-  throw error;
-}
-```
+- **Manus Forge API:** Available only within Manus platform
+- **Google Gemini:** [Documentation](https://ai.google.dev/gemini-api/docs) | [Pricing](https://ai.google.dev/gemini-api/docs/pricing)
+- **OpenAI:** [Documentation](https://platform.openai.com/docs) | [Pricing](https://openai.com/api/pricing/)
+- **Ollama:** [Documentation](https://ollama.com/docs) | [Models](https://ollama.com/library)
 
-## Testing
+For questions or issues, refer to the respective provider documentation or contact the HotGigs development team.
 
-### Mock LLM Responses
+---
 
-For testing, mock LLM calls:
-
-```typescript
-// test/mocks/llm.ts
-export const mockInvokeLLM = vi.fn().mockResolvedValue({
-  choices: [{
-    message: {
-      content: JSON.stringify({
-        skills: ['JavaScript', 'TypeScript'],
-        experience: [],
-        education: []
-      })
-    }
-  }]
-});
-
-// In tests
-vi.mock('./server/_core/llm', () => ({
-  invokeLLM: mockInvokeLLM
-}));
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**API Key Invalid**:
-- Verify key in `.env` file
-- Check key hasn't expired
-- Ensure no extra spaces or quotes
-
-**Rate Limit Exceeded**:
-- Implement rate limiting
-- Use caching
-- Upgrade API plan
-
-**Timeout Errors**:
-- Increase timeout setting
-- Reduce prompt length
-- Use streaming for long responses
-
-**Unexpected Responses**:
-- Improve prompt clarity
-- Use structured outputs
-- Add examples in prompts
-
-## Resources
-
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [Manus Forge API Documentation](https://docs.manus.im)
-- [Best Practices for Prompt Engineering](https://platform.openai.com/docs/guides/prompt-engineering)
-- [OpenAI Cookbook](https://github.com/openai/openai-cookbook)
-
-## Support
-
-For LLM integration issues:
-- Check API status pages
-- Review error logs
-- Test with simple prompts
-- Contact support: ai@hotgigs.com
+**Last Updated:** December 2025  
+**Version:** 2.0
