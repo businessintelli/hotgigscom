@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '../lib/trpc';
+import RecruiterLayout from '@/components/RecruiterLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -37,19 +38,22 @@ export default function PredictiveAnalytics() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading analytics...</p>
+      <RecruiterLayout>
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading analytics...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </RecruiterLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <RecruiterLayout>
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Predictive Analytics</h1>
@@ -384,6 +388,7 @@ export default function PredictiveAnalytics() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </RecruiterLayout>
   );
 }

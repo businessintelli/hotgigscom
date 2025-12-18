@@ -3560,3 +3560,30 @@
 - [x] Fix back button to navigate to /recruiter/dashboard for recruiters
 - [x] Fix dashboard link in sidebar to not cause logout (JobBrowser now shows correct layout)
 - [x] Ensure /jobs route uses correct layout based on user role (JobBrowser is now role-aware)
+
+
+## New Feature Requests - Navigation & Job Management Enhancements
+
+### Breadcrumb Navigation
+- [x] Create reusable Breadcrumb component with home icon and chevron separators
+- [x] Add breadcrumbs to JobDetails page (Dashboard > Jobs > Job Title)
+- [ ] Add breadcrumbs to other job-related pages as needed
+
+### Job Edit Functionality
+- [x] Add "Edit Job" button to JobDetails page for recruiters
+- [x] Create EditJob page/modal with form pre-populated with job data
+- [x] Add job.update tRPC mutation if not exists
+- [ ] Test job editing workflow end-to-end
+
+### Share Job Buttons Across Views
+- [x] Add JobShareButton to list view on /jobs page (JobBrowser)
+- [x] Add JobShareButton to grid view on /jobs page (JobBrowser)
+- [x] Add JobShareButton to list view on home page (PublicHome)
+- [x] Add JobShareButton to grid view on home page (PublicHome)
+- [ ] Ensure share buttons work for both logged-in and anonymous users
+
+### Predictive Analytics Issues
+- [x] Add "Predictive Analytics" menu item to RecruiterLayout sidebar (already exists)
+- [x] Fix /recruiter/predictive-analytics page loading performance (wrapped in RecruiterLayout)
+- [ ] Optimize database queries causing slow load times
+- [x] Add loading states and skeleton UI for better UX

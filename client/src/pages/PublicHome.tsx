@@ -3,7 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Briefcase, DollarSign, Clock, Building2, Target, Grid3x3, List, AlertCircle } from "lucide-react";
+import { Search, MapPin, Briefcase, DollarSign, Clock, Building2, Target, Grid3x3, List, AlertCircle, Share2 } from "lucide-react";
+import { JobShareButton } from "@/components/JobShareButton";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useLocation } from "wouter";
@@ -284,8 +285,24 @@ export default function PublicHome() {
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className={viewMode === "list" ? "ml-auto" : ""}>
-                    <Button className={viewMode === "list" ? "" : "w-full"}>View Details</Button>
+                  <CardFooter className={`${viewMode === "list" ? "ml-auto flex gap-2" : "flex gap-2"}`}>
+                    <Button 
+                      className={viewMode === "list" ? "flex-1" : "flex-1"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocation(`/jobs/${job.id}`);
+                      }}
+                    >
+                      View Details
+                    </Button>
+                    <JobShareButton
+                      jobId={job.id}
+                      jobTitle={job.title}
+                      companyName={job.companyName || undefined}
+                      variant="outline"
+                      size="default"
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    />
                   </CardFooter>
                 </Card>
               ))}

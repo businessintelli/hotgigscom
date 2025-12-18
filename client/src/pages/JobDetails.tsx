@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2, Users, FileCheck, Video, Gift, CheckCircle, XCircle, UserX } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2, Users, FileCheck, Video, Gift, CheckCircle, XCircle, UserX, Edit } from "lucide-react";
 import { JobShareButton } from "@/components/JobShareButton";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { useLocation, useRoute } from "wouter";
 
 export default function JobDetails() {
@@ -74,14 +75,14 @@ export default function JobDetails() {
   const content = (
     <div className="min-h-screen bg-gray-50">
       <div className="container max-w-5xl py-8">
-        <Button
-          variant="ghost"
-          onClick={() => setLocation(isRecruiterView ? "/recruiter/dashboard" : "/jobs")}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to {isRecruiterView ? "Dashboard" : "Jobs"}
-        </Button>
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          items={[
+            { label: "Dashboard", href: isRecruiterView ? "/recruiter/dashboard" : "/candidate-dashboard" },
+            { label: "Jobs", href: isRecruiterView ? "/recruiter/jobs" : "/jobs" },
+            { label: job.title }
+          ]}
+        />
 
         <Card>
           <CardHeader>
@@ -96,6 +97,16 @@ export default function JobDetails() {
                 )}
               </div>
               <div className="flex items-center gap-2">
+                {isRecruiterView && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLocation(`/recruiter/jobs/${job.id}/edit`)}
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Job
+                  </Button>
+                )}
                 <JobShareButton
                   jobId={job.id}
                   jobTitle={job.title}

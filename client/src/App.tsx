@@ -19,6 +19,7 @@ import CandidateDashboard from "./pages/CandidateDashboard";
 import JobBrowser from "./pages/JobBrowser";
 import AdvancedJobSearch from "./pages/AdvancedJobSearch";
 import CreateJob from "./pages/CreateJob";
+import EditJob from "./pages/EditJob";
 import AIMatchingDashboard from "./pages/AIMatchingDashboard";
 import ApplicationManagement from "@/pages/ApplicationManagement";
 import JobManagement from "@/pages/JobManagement";
@@ -144,6 +145,7 @@ function Router() {
           <Route path="/integrations/callback/:provider" component={IntegrationCallback} />
       <Route path="/recruiter/create-job" component={CreateJob} />
       <Route path="/recruiter/jobs/create" component={CreateJob} />
+      <Route path="/recruiter/jobs/:id/edit" component={EditJob} />
       <Route path="/recruiter/jobs" component={JobManagement} />
       <Route path="/recruiter/submissions" component={SubmissionManagement} />
       <Route path="/recruiter/ai-matching" component={AIMatchingDashboard} />
