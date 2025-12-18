@@ -3543,3 +3543,20 @@
 - [ ] Test Teams webhook delivery
 - [x] Create NOTIFICATION_INTEGRATION.md guide
 - [ ] Update README with notification features
+
+
+## Job Details Page Routing Issues (URGENT)
+
+### Issues Reported:
+- [x] Job details page at /jobs/:id missing RecruiterLayout sidebar for recruiters
+- [x] Job details page showing candidate sidebar instead of recruiter sidebar
+- [x] Back button navigating to /jobs instead of /recruiter/dashboard
+- [x] Dashboard link in sidebar causing logout (redirects to / and logs out)
+- [x] /jobs route showing candidate sidebar items for recruiter users
+
+### Fixes Implemented:
+- [x] Update JobDetails component to detect user role and show appropriate layout
+- [x] Add RecruiterLayout wrapper for recruiter users viewing job details
+- [x] Fix back button to navigate to /recruiter/dashboard for recruiters
+- [x] Fix dashboard link in sidebar to not cause logout (JobBrowser now shows correct layout)
+- [x] Ensure /jobs route uses correct layout based on user role (JobBrowser is now role-aware)

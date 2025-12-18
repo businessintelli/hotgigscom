@@ -18,7 +18,8 @@ export default function JobDetails() {
   
   const params = matchJobs ? paramsJobs : paramsRecruiter;
   const jobId = parseInt(params?.id || "0");
-  const isRecruiterView = matchRecruiter;
+  // Show recruiter layout if user is a recruiter, regardless of URL
+  const isRecruiterView = user?.role === "recruiter" || user?.role === "company_admin";
 
   const { data: job, isLoading } = trpc.job.getById.useQuery(
     { id: jobId },
@@ -75,11 +76,11 @@ export default function JobDetails() {
       <div className="container max-w-5xl py-8">
         <Button
           variant="ghost"
-          onClick={() => setLocation(isRecruiterView ? "/recruiter/jobs" : "/jobs")}
+          onClick={() => setLocation(isRecruiterView ? "/recruiter/dashboard" : "/jobs")}
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Jobs
+          Back to {isRecruiterView ? "Dashboard" : "Jobs"}
         </Button>
 
         <Card>

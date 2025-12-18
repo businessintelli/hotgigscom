@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import CandidateLayout from "@/components/CandidateLayout";
+import RecruiterLayout from "@/components/RecruiterLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export default function JobBrowser() {
   const { user } = useAuth();
+  const isRecruiter = user?.role === "recruiter" || user?.role === "company_admin";
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useLocalStorage("jobBrowser_searchQuery", "");
   const [locationFilter, setLocationFilter] = useLocalStorage("jobBrowser_locationFilter", "");
@@ -76,8 +78,7 @@ export default function JobBrowser() {
     );
   }
 
-  return (
-    <CandidateLayout title="Browse Jobs">
+  const content = (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
 
       <div className="container mx-auto px-4 py-8">
@@ -264,6 +265,11 @@ export default function JobBrowser() {
         )}
       </div>
     </div>
-    </CandidateLayout>
   );
+
+  if (isRecruiter) {
+    return <RecruiterLayout title="Browse Jobs">{content}</RecruiterLayout>;
+  }
+
+  return <CandidateLayout title="Browse Jobs">{content}</CandidateLayout>;
 }
