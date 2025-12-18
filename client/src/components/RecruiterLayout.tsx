@@ -38,27 +38,30 @@ import { useLocation } from "wouter";
 import { NotificationBell } from "@/components/NotificationBell";
 import { trpc } from "@/lib/trpc";
 
-// Sidebar navigation items for recruiters
+// Sidebar navigation items for recruiters with grouped sections
 const sidebarItems = [
+  // Core
   { icon: LayoutDashboard, label: "Dashboard", path: "/recruiter/dashboard" },
   { icon: Briefcase, label: "Jobs", path: "/recruiter/jobs" },
   { icon: Users, label: "Candidates", path: "/recruiter/search-candidates" },
   { icon: FileText, label: "Applications", path: "/recruiter/applications" },
+  { type: "divider", label: "Team & Clients" },
   { icon: UserCheck, label: "Associates", path: "/recruiter/associates" },
+  { icon: Building2, label: "Clients", path: "/recruiter/customers" },
+  { type: "divider", label: "Scheduling" },
   { icon: Calendar, label: "Interviews", path: "/recruiter/interviews" },
+  { icon: RefreshCw, label: "Reschedule Requests", path: "/recruiter/reschedule-requests", hasBadge: true },
+  { type: "divider", label: "AI Tools" },
   { icon: Video, label: "AI Interviews", path: "/recruiter/interview-playback" },
   { icon: Target, label: "AI Matching", path: "/recruiter/ai-matching" },
   { icon: Bot, label: "AI Assistant", path: "/recruiter/ai-assistant" },
-  { icon: Building2, label: "Clients", path: "/recruiter/customers" },
+  { type: "divider", label: "Operations" },
   { icon: Upload, label: "Bulk Upload", path: "/recruiter/bulk-upload" },
-  { icon: Search, label: "Sourcing Campaigns", path: "/recruiter/sourcing-campaigns" },
   { icon: Mail, label: "Email Campaigns", path: "/recruiter/email-campaigns" },
-  { icon: Zap, label: "Automation Analytics", path: "/recruiter/automation-analytics" },
-  { icon: Settings, label: "Integrations", path: "/recruiter/integrations" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: TrendingUp, label: "Predictive Analytics", path: "/recruiter/predictive-analytics" },
-  { icon: FileText, label: "Reports", path: "/recruiter/reports" },
-  { icon: RefreshCw, label: "Reschedule Requests", path: "/recruiter/reschedule-requests", hasBadge: true },
+  { type: "divider", label: "Support" },
+  { icon: Settings, label: "Settings", path: "/recruiter/settings" },
 ];
 
 interface RecruiterLayoutProps {
@@ -104,7 +107,23 @@ export default function RecruiterLayout({ children, title, showBackButton, onBac
 
   const renderSidebarContent = (isMobile = false) => (
     <nav className="space-y-1 px-2">
-      {sidebarItems.map((item) => {
+      {sidebarItems.map((item, index) => {
+        // Render divider with section label
+        if (item.type === 'divider') {
+          return (
+            <div key={`divider-${index}`} className="pt-4 pb-2">
+              {(!sidebarCollapsed || isMobile) && (
+                <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {item.label}
+                </h3>
+              )}
+              {(sidebarCollapsed && !isMobile) && (
+                <div className="border-t border-gray-200 mx-2" />
+              )}
+            </div>
+          );
+        }
+        
         const isActive = item.path === location || (item.path !== '/recruiter/dashboard' && location.startsWith(item.path));
         const badgeCount = item.hasBadge ? pendingCount : 0;
         

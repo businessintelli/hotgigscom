@@ -38,16 +38,21 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navigation = [
+    // Core
     { name: "Dashboard", href: "/company-admin/dashboard", icon: BarChart3 },
     { name: "Team Members", href: "/company-admin/team-members", icon: Users },
+    { type: "divider", label: "Reports" },
     { name: "Reports", href: "/company-admin/reports", icon: BarChart3 },
     { name: "Custom Reports", href: "/company-admin/custom-reports", icon: BarChart3 },
     { name: "Report Schedules", href: "/company-admin/report-schedules", icon: BarChart3 },
+    { type: "divider", label: "LinkedIn" },
     { name: "LinkedIn Settings", href: "/company-admin/linkedin-settings", icon: Linkedin },
     { name: "InMail Templates", href: "/company-admin/inmail-templates", icon: MessageSquare },
+    { type: "divider", label: "AI Management" },
     { name: "AI Assistant", href: "/company-admin/ai-assistant", icon: Sparkles },
     { name: "AI Cost Tracking", href: "/company-admin/llm-cost-tracking", icon: DollarSign },
     { name: "AI Usage Alerts", href: "/company-admin/llm-alerts", icon: Bell },
+    { type: "divider", label: "Settings" },
     { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },
   ];
 
@@ -95,7 +100,23 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
+            {navigation.map((item, index) => {
+              // Render divider with section label
+              if (item.type === 'divider') {
+                return (
+                  <div key={`divider-${index}`} className="pt-4 pb-2">
+                    {!isCollapsed && (
+                      <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {item.label}
+                      </h3>
+                    )}
+                    {isCollapsed && (
+                      <div className="border-t border-border mx-2" />
+                    )}
+                  </div>
+                );
+              }
+              
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href}>

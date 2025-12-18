@@ -1480,8 +1480,31 @@ function RecruiterDashboardContent() {
                 </p>
                 <Button 
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
-                  onClick={() => {
-                    toast.info('Template saving feature coming soon');
+                  onClick={async () => {
+                    if (selectedJobs.size === 0) return;
+                    
+                    try {
+                      const jobId = Array.from(selectedJobs)[0]; // Save first selected job as template
+                      const job = allJobs?.find((j: any) => j.id === jobId);
+                      if (!job) return;
+                      
+                      const templateName = prompt('Enter template name:', job.title);
+                      if (!templateName) return;
+                      
+                      await trpc.job.saveJobAsTemplate.mutate({
+                        jobId,
+                        templateName,
+                        category: job.employmentType,
+                      });
+                      
+                      toast.success('Template saved successfully');
+                      refetchTemplates?.();
+                      setShowTemplates(false);
+                      setSelectedJobs(new Set());
+                      setShowBulkActions(false);
+                    } catch (error) {
+                      toast.error('Failed to save template');
+                    }
                   }}
                 >
                   Save {selectedJobs.size} Job(s) as Template

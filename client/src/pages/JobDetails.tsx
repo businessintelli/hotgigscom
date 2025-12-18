@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2, Users, FileCheck, Video, Gift, CheckCircle, XCircle, UserX, Edit } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2, Users, FileCheck, Video, Gift, CheckCircle, XCircle, UserX, Edit, Eye, TrendingUp, Calendar } from "lucide-react";
 import { JobShareButton } from "@/components/JobShareButton";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { useLocation, useRoute } from "wouter";
@@ -28,6 +28,11 @@ export default function JobDetails() {
   );
 
   const { data: stats } = trpc.recruiter.getJobApplicationStats.useQuery(
+    { jobId },
+    { enabled: !!jobId && isRecruiterView }
+  );
+  
+  const { data: analytics } = trpc.job.getJobAnalytics.useQuery(
     { jobId },
     { enabled: !!jobId && isRecruiterView }
   );
@@ -147,9 +152,48 @@ export default function JobDetails() {
               </div>
             </div>
 
+            {/* Job Performance Analytics (only for recruiters) */}
+            {isRecruiterView && analytics && (
+              <div className="border-t border-gray-200 py-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Job Performance Analytics</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Eye className="w-5 h-5 text-blue-600" />
+                      <p className="text-xs text-gray-600">Total Views</p>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-600">{analytics.viewCount}</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="w-5 h-5 text-green-600" />
+                      <p className="text-xs text-gray-600">Applications</p>
+                    </div>
+                    <p className="text-2xl font-bold text-green-600">{analytics.applicationCount}</p>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-5 h-5 text-purple-600" />
+                      <p className="text-xs text-gray-600">Conversion Rate</p>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-600">{analytics.conversionRate}%</p>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="w-5 h-5 text-orange-600" />
+                      <p className="text-xs text-gray-600">Time to Fill</p>
+                    </div>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {analytics.timeToFill ? `${analytics.timeToFill} days` : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Application Stats Bar (only for recruiters) */}
             {isRecruiterView && stats && (
-              <div className="border-t border-b border-gray-200 py-4">
+              <div className="border-b border-gray-200 py-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Application Pipeline</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                   {statItems.map((stat) => {

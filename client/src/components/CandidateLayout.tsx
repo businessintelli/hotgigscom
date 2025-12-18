@@ -30,17 +30,21 @@ import { useState, ReactNode } from "react";
 import { useLocation } from "wouter";
 import { NotificationBell } from "@/components/NotificationBell";
 
-// Sidebar navigation items for candidates
+// Sidebar navigation items for candidates with grouped sections
 const sidebarItems = [
+  // Core
   { icon: LayoutDashboard, label: "Dashboard", path: "/candidate-dashboard" },
-  { icon: FileText, label: "My Resume", path: "/candidate/my-resumes" },
-  { icon: Video, label: "Video Introduction", path: "/candidate/video-intro" },
   { icon: Search, label: "Browse Jobs", path: "/jobs" },
   { icon: Briefcase, label: "My Applications", path: "/my-applications" },
   { icon: Heart, label: "Saved Jobs", path: "/saved-jobs" },
-  { icon: CalendarDays, label: "Calendar", path: "/candidate/calendar" },
+  { type: "divider", label: "Profile" },
+  { icon: FileText, label: "My Resume", path: "/candidate/my-resumes" },
+  { icon: Video, label: "Video Introduction", path: "/candidate/video-intro" },
+  { type: "divider", label: "AI Tools" },
   { icon: MessageSquare, label: "AI Career Coach", path: "/candidate/career-coach" },
   { icon: Star, label: "Recommendations", path: "/recommendations" },
+  { type: "divider", label: "Resources" },
+  { icon: CalendarDays, label: "Calendar", path: "/candidate/calendar" },
   { icon: BookOpen, label: "Career Resources", path: "/resources" },
 ];
 
@@ -83,7 +87,23 @@ export default function CandidateLayout({ children, title, showBackButton, onBac
 
   const renderSidebarContent = (isMobile = false) => (
     <nav className="space-y-1 px-2">
-      {sidebarItems.map((item) => {
+      {sidebarItems.map((item, index) => {
+        // Render divider with section label
+        if (item.type === 'divider') {
+          return (
+            <div key={`divider-${index}`} className="pt-4 pb-2">
+              {(!sidebarCollapsed || isMobile) && (
+                <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {item.label}
+                </h3>
+              )}
+              {(sidebarCollapsed && !isMobile) && (
+                <div className="border-t border-gray-200 mx-2" />
+              )}
+            </div>
+          );
+        }
+        
         const isActive = item.path === location || (item.path !== '/candidate-dashboard' && location.startsWith(item.path));
         
         return (

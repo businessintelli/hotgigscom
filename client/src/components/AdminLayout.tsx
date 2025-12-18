@@ -47,23 +47,29 @@ interface AdminLayoutProps {
 }
 
 const sidebarItems = [
+  // Core
   { title: "Dashboard", href: "/admin/dashboard", icon: Home },
   { title: "Users", href: "/admin/users", icon: Users },
-  { title: "Reports", href: "/admin/reports", icon: BarChart3 },
+  { type: "divider", label: "System" },
   { title: "System Health", href: "/admin/health", icon: Activity },
-  { title: "Analytics", href: "/admin/analytics", icon: TrendingUp },
   { title: "Environment", href: "/admin/environment", icon: Server },
   { title: "Logs", href: "/admin/logs", icon: ScrollText },
+  { title: "Database", href: "/admin/database", icon: Database },
+  { type: "divider", label: "Analytics" },
+  { title: "Reports", href: "/admin/reports", icon: BarChart3 },
+  { title: "Analytics", href: "/admin/analytics", icon: TrendingUp },
+  { type: "divider", label: "Email & Communication" },
   { title: "Email Settings", href: "/admin/email-settings", icon: Mail },
-  { title: "Video Settings", href: "/admin/video-settings", icon: Video },
   { title: "Email Delivery", href: "/admin/email-delivery", icon: TrendingUp },
+  { title: "Video Settings", href: "/admin/video-settings", icon: Video },
+  { type: "divider", label: "LinkedIn" },
   { title: "LinkedIn Settings", href: "/admin/linkedin-settings", icon: Linkedin },
   { title: "InMail Templates", href: "/admin/inmail-templates", icon: MessageSquare },
+  { type: "divider", label: "AI Management" },
   { title: "LLM Settings", href: "/admin/llm-settings", icon: Bot },
   { title: "LLM Cost Tracking", href: "/admin/llm-cost-tracking", icon: DollarSign },
   { title: "LLM Alerts", href: "/admin/llm-alerts", icon: AlertTriangle },
   { title: "LLM Fallback", href: "/admin/llm-fallback", icon: RefreshCw },
-  { title: "Database", href: "/admin/database", icon: Database },
 ];
 
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
@@ -144,7 +150,23 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         {/* Navigation */}
         <nav className="flex-1 py-4 overflow-y-auto">
           <ul className="space-y-1 px-2">
-            {sidebarItems.map((item) => {
+            {sidebarItems.map((item, index) => {
+              // Render divider with section label
+              if (item.type === 'divider') {
+                return (
+                  <li key={`divider-${index}`} className="pt-4 pb-2">
+                    {!isCollapsed && (
+                      <h3 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        {item.label}
+                      </h3>
+                    )}
+                    {isCollapsed && (
+                      <div className="border-t border-slate-700 mx-2" />
+                    )}
+                  </li>
+                );
+              }
+              
               const Icon = item.icon;
               const isActive = location === item.href || location.startsWith(item.href + "/");
               

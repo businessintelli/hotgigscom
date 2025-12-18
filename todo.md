@@ -3587,3 +3587,43 @@
 - [x] Fix /recruiter/predictive-analytics page loading performance (wrapped in RecruiterLayout)
 - [ ] Optimize database queries causing slow load times
 - [x] Add loading states and skeleton UI for better UX
+
+
+## New Feature Requests - Menu Formatting & Job Management
+
+### Sidebar Menu Formatting Issue
+- [x] Investigate why sidebar menu groups are not showing on all pages
+- [x] Check RecruiterLayout, CandidateLayout, CompanyAdminLayout, AdminLayout components
+- [x] Fix sidebar menu to show grouped sections consistently across all pages
+- [x] Test menu formatting on dashboard vs other pages for all roles
+
+### Bulk Job Management Actions
+- [x] Check if bulk job management exists in JobManagement page
+- [x] Add checkbox selection for multiple jobs
+- [x] Implement bulk status update (active, closed, draft)
+- [x] Implement bulk archive functionality
+- [x] Add bulk delete with confirmation dialog
+- [x] Create backend tRPC procedures for bulk operations
+- [x] Test bulk actions with multiple job selections
+
+### Job Templates System
+- [x] Check if job templates feature exists
+- [x] Create job_templates database table
+- [x] Add "Save as Template" button on job creation/edit pages
+- [x] Create template management page for recruiters
+- [x] Add "Use Template" option on job creation page
+- [x] Implement template CRUD operations (create, read, update, delete)
+- [x] Add template categories/tags for organization
+- [x] Test template creation and usage workflow
+
+### Job Performance Analytics
+- [x] Check if job performance analytics exist on job details page
+- [x] Add job views tracking to database
+- [x] Create analytics section on JobDetails page showing:
+  * Total views count
+  * Applications per job
+  * Application conversion rate
+  * Time-to-fill (days from posting to first hire)
+- [x] Add analytics charts/graphs for visual representation
+- [x] Implement backend procedures to calculate metrics
+- [x] Test analytics display with real job data

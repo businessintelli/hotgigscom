@@ -10,6 +10,8 @@ import {
   customers, InsertCustomer,
   customerContacts, InsertCustomerContact,
   jobs, InsertJob,
+  jobTemplates, InsertJobTemplate,
+  jobViews, InsertJobView,
   applications, InsertApplication,
   interviews, InsertInterview,
   interviewQuestions, InsertInterviewQuestion,
@@ -2080,4 +2082,134 @@ export async function getNotificationDeliveryLogs(integrationId: number, limit: 
   `);
   
   return result || [];
+}
+
+// ============================================
+// Job Templates Functions
+// ============================================
+
+export async function createJobTemplate(data: InsertJobTemplate) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [result] = await db.insert(jobTemplates).values(data);
+  return result.insertId;
+}
+
+export async function getJobTemplatesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return await db.select().from(jobTemplates)
+    .where(eq(jobTemplates.createdBy, userId))
+    .orderBy(desc(jobTemplates.usageCount), desc(jobTemplates.createdAt));
+}
+
+export async function getJobTemplateById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [template] = await db.select().from(jobTemplates)
+    .where(eq(jobTemplates.id, id));
+  return template;
+}
+
+export async function updateJobTemplate(id: number, data: Partial<InsertJobTemplate>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(jobTemplates)
+    .set(data)
+    .where(eq(jobTemplates.id, id));
+}
+
+export async function deleteJobTemplate(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.delete(jobTemplates)
+    .where(eq(jobTemplates.id, id));
+}
+
+export async function incrementTemplateUsage(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.execute(sql`
+    UPDATE job_templates 
+    SET usageCount = usageCount + 1 
+    WHERE id = ${id}
+  `);
+}
+
+// ============================================
+// Job Views Tracking Functions
+// ============================================
+
+export async function trackJobView(data: InsertJobView) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.insert(jobViews).values(data);
+}
+
+export async function getJobViewCount(jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [result] = await db.execute(sql`
+    SELECT COUNT(*) as count FROM job_views WHERE jobId = ${jobId}
+  `);
+  return result?.[0]?.count || 0;
+}
+
+export async function getJobViewsBySource(jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const result = await db.execute(sql`
+    SELECT source, COUNT(*) as count 
+    FROM job_views 
+    WHERE jobId = ${jobId} 
+    GROUP BY source
+  `);
+  return result || [];
+}
+
+export async function getJobAnalytics(jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Get view count
+  const [viewResult] = await db.execute(sql`
+    SELECT COUNT(*) as viewCount FROM job_views WHERE jobId = ${jobId}
+  `);
+  
+  // Get application count and conversion rate
+  const [appResult] = await db.execute(sql`
+    SELECT COUNT(*) as applicationCount FROM applications WHERE jobId = ${jobId}
+  `);
+  
+  // Get job details for time-to-fill calculation
+  const [jobResult] = await db.execute(sql`
+    SELECT createdAt, closedAt, status FROM jobs WHERE id = ${jobId}
+  `);
+  
+  const viewCount = viewResult?.[0]?.viewCount || 0;
+  const applicationCount = appResult?.[0]?.applicationCount || 0;
+  const job = jobResult?.[0];
+  
+  let timeToFill = null;
+  if (job?.closedAt && job?.createdAt) {
+    const diffMs = new Date(job.closedAt).getTime() - new Date(job.createdAt).getTime();
+    timeToFill = Math.floor(diffMs / (1000 * 60 * 60 * 24)); // days
+  }
+  
+  return {
+    viewCount,
+    applicationCount,
+    conversionRate: viewCount > 0 ? ((applicationCount / viewCount) * 100).toFixed(2) : '0',
+    timeToFill,
+    status: job?.status
+  };
 }

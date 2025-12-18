@@ -2016,3 +2016,47 @@ export const notificationDeliveryLogs = mysqlTable("notification_delivery_logs",
 });
 export type NotificationDeliveryLog = typeof notificationDeliveryLogs.$inferSelect;
 export type InsertNotificationDeliveryLog = typeof notificationDeliveryLogs.$inferInsert;
+
+/**
+ * Job Templates - Reusable job posting templates for recruiters
+ */
+export const jobTemplates = mysqlTable("job_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(), // Template name
+  title: varchar("title", { length: 255 }).notNull(),
+  companyName: varchar("companyName", { length: 255 }),
+  description: text("description").notNull(),
+  requirements: text("requirements"),
+  responsibilities: text("responsibilities"),
+  location: varchar("location", { length: 255 }),
+  employmentType: mysqlEnum("employmentType", ["full-time", "part-time", "contract", "temporary", "internship"]).default("full-time"),
+  salaryMin: int("salaryMin"),
+  salaryMax: int("salaryMax"),
+  salaryCurrency: varchar("salaryCurrency", { length: 10 }).default("USD"),
+  category: varchar("category", { length: 100 }), // e.g., "Engineering", "Sales", "Marketing"
+  tags: text("tags"), // JSON array of tags for organization
+  createdBy: int("createdBy").notNull().references(() => users.id),
+  isPublic: boolean("isPublic").default(false), // Whether template is shared with team
+  usageCount: int("usageCount").default(0).notNull(), // Track how many times template was used
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type JobTemplate = typeof jobTemplates.$inferSelect;
+export type InsertJobTemplate = typeof jobTemplates.$inferInsert;
+
+/**
+ * Job Views Tracking - Track job post views for analytics
+ */
+export const jobViews = mysqlTable("job_views", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("jobId").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  userId: int("userId").references(() => users.id), // Null for anonymous views
+  viewedAt: timestamp("viewedAt").defaultNow().notNull(),
+  source: varchar("source", { length: 100 }), // e.g., "direct", "search", "referral", "email"
+  ipAddress: varchar("ipAddress", { length: 45 }), // For deduplication
+  userAgent: text("userAgent"),
+});
+
+export type JobView = typeof jobViews.$inferSelect;
+export type InsertJobView = typeof jobViews.$inferInsert;

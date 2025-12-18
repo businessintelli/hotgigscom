@@ -2170,30 +2170,97 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     
     // Get job templates for recruiter
     getTemplates: protectedProcedure.query(async ({ ctx }) => {
-      // For now, return recent jobs as templates (in future, add a separate templates table)
-      const recruiter = await db.getRecruiterByUserId(ctx.user.id);
-      if (!recruiter) return [];
-      const jobs = await db.getJobsByRecruiter(recruiter.id);
-      // Return unique jobs by title as templates
-      const templateMap = new Map();
-      jobs.forEach((job: any) => {
-        if (!templateMap.has(job.title)) {
-          templateMap.set(job.title, {
-            id: job.id,
-            name: job.title,
-            title: job.title,
-            description: job.description,
-            requirements: job.requirements,
-            responsibilities: job.responsibilities,
-            location: job.location,
-            employmentType: job.employmentType,
-            salaryMin: job.salaryMin,
-            salaryMax: job.salaryMax,
-          });
-        }
-      });
-      return Array.from(templateMap.values()).slice(0, 10);
+      return await db.getJobTemplatesByUser(ctx.user.id);
     }),
+    
+    // Create job template from existing job or scratch
+    createTemplate: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        title: z.string(),
+        companyName: z.string().optional(),
+        description: z.string(),
+        requirements: z.string().optional(),
+        responsibilities: z.string().optional(),
+        location: z.string().optional(),
+        employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
+        salaryMin: z.number().optional(),
+        salaryMax: z.number().optional(),
+        salaryCurrency: z.string().optional(),
+        category: z.string().optional(),
+        tags: z.string().optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const templateId = await db.createJobTemplate({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        return { success: true, templateId };
+      }),
+    
+    // Save existing job as template
+    saveJobAsTemplate: protectedProcedure
+      .input(z.object({
+        jobId: z.number(),
+        templateName: z.string(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const job = await db.getJobById(input.jobId);
+        if (!job) throw new TRPCError({ code: "NOT_FOUND", message: "Job not found" });
+        
+        const templateId = await db.createJobTemplate({
+          name: input.templateName,
+          title: job.title,
+          companyName: job.companyName || undefined,
+          description: job.description,
+          requirements: job.requirements || undefined,
+          responsibilities: job.responsibilities || undefined,
+          location: job.location || undefined,
+          employmentType: job.employmentType,
+          salaryMin: job.salaryMin || undefined,
+          salaryMax: job.salaryMax || undefined,
+          salaryCurrency: job.salaryCurrency || undefined,
+          category: input.category,
+          createdBy: ctx.user.id,
+        });
+        return { success: true, templateId };
+      }),
+    
+    // Delete job template
+    deleteTemplate: protectedProcedure
+      .input(z.object({ templateId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const template = await db.getJobTemplateById(input.templateId);
+        if (!template || template.createdBy !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized" });
+        }
+        await db.deleteJobTemplate(input.templateId);
+        return { success: true };
+      }),
+    
+    // Get job analytics (views, applications, conversion)
+    getJobAnalytics: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getJobAnalytics(input.jobId);
+      }),
+    
+    // Track job view
+    trackView: publicProcedure
+      .input(z.object({
+        jobId: z.number(),
+        source: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.trackJobView({
+          jobId: input.jobId,
+          userId: ctx.user?.id,
+          source: input.source,
+        });
+        return { success: true };
+      }),
 
     // Track job share analytics
     trackShare: publicProcedure
