@@ -1,12 +1,9 @@
 import { cn } from "@/lib/utils";
-import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
-  fallbackTitle?: string;
-  fallbackMessage?: string;
-  showHomeButton?: boolean;
 }
 
 interface State {
@@ -34,10 +31,7 @@ class ErrorBoundary extends Component<Props, State> {
               className="text-destructive mb-6 flex-shrink-0"
             />
 
-            <h2 className="text-xl mb-4">{this.props.fallbackTitle || "An unexpected error occurred."}</h2>
-            {this.props.fallbackMessage && (
-              <p className="text-muted-foreground mb-4 text-center">{this.props.fallbackMessage}</p>
-            )}
+            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
 
             <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
               <pre className="text-sm text-muted-foreground whitespace-break-spaces">
@@ -45,32 +39,17 @@ class ErrorBoundary extends Component<Props, State> {
               </pre>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => window.location.reload()}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg",
-                  "bg-primary text-primary-foreground",
-                  "hover:opacity-90 cursor-pointer"
-                )}
-              >
-                <RotateCcw size={16} />
-                Reload Page
-              </button>
-              {this.props.showHomeButton !== false && (
-                <button
-                  onClick={() => window.location.href = '/'}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg",
-                    "bg-secondary text-secondary-foreground",
-                    "hover:opacity-90 cursor-pointer"
-                  )}
-                >
-                  <Home size={16} />
-                  Go Home
-                </button>
+            <button
+              onClick={() => window.location.reload()}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg",
+                "bg-primary text-primary-foreground",
+                "hover:opacity-90 cursor-pointer"
               )}
-            </div>
+            >
+              <RotateCcw size={16} />
+              Reload Page
+            </button>
           </div>
         </div>
       );

@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE users \nADD COLUMN IF NOT EXISTS emailVerified BOOLEAN NOT NULL DEFAULT FALSE,\nADD COLUMN IF NOT EXISTS verificationToken VARCHAR(255),\nADD COLUMN IF NOT EXISTS verificationTokenExpiry TIMESTAMP,\nADD COLUMN IF NOT EXISTS passwordResetToken VARCHAR(255),\nADD COLUMN IF NOT EXISTS passwordResetTokenExpiry TIMESTAMP;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE users \nADD COLUMN IF NOT EXISTS emailVerified BOOLEAN NOT NULL DEFAULT FALSE,\nADD COLUMN IF NOT EXISTS verificationToken VARCHAR(255),\nADD COLUMN IF NOT EXISTS verificationTokenExpiry TIMESTAMP,\nADD COLUMN IF NOT EXISTS passwordResetToken VARCHAR(255),\nADD COLUMN IF NOT EXISTS passwordResetTokenExpiry TIMESTAMP;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1710
-}

@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `inmail_templates` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `name` varchar(255) NOT NULL,\n  `subject` varchar(500) NOT NULL,\n  `body` text NOT NULL,\n  `variables` text,\n  `category` varchar(100),\n  `isActive` boolean NOT NULL DEFAULT true,\n  `timesUsed` int NOT NULL DEFAULT 0,\n  `responseRate` decimal(5,2),\n  `createdBy` int NOT NULL,\n  `lastUsedAt` timestamp,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `inmail_templates_id` PRIMARY KEY(`id`),\n  CONSTRAINT `inmail_templates_createdBy_fk` FOREIGN KEY (`createdBy`) REFERENCES `users`(`id`)\n)",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `inmail_templates` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `name` varchar(255) NOT NULL,\n  `subject` varchar(500) NOT NULL,\n  `body` text NOT NULL,\n  `variables` text,\n  `category` varchar(100),\n  `isActive` boolean NOT NULL DEFAULT true,\n  `timesUsed` int NOT NULL DEFAULT 0,\n  `responseRate` decimal(5,2),\n  `createdBy` int NOT NULL,\n  `lastUsedAt` timestamp,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `inmail_templates_id` PRIMARY KEY(`id`),\n  CONSTRAINT `inmail_templates_createdBy_fk` FOREIGN KEY (`createdBy`) REFERENCES `users`(`id`)\n)",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1744
-}

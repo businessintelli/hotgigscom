@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `candidateTagAssignments` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `candidateId` int NOT NULL,\n  `tagId` int NOT NULL,\n  `assignedBy` int NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `candidateTagAssignments_id` PRIMARY KEY(`id`),\n  CONSTRAINT `candidateTagAssignments_candidateId_fk` FOREIGN KEY (`candidateId`) REFERENCES `candidates`(`id`),\n  CONSTRAINT `candidateTagAssignments_tagId_fk` FOREIGN KEY (`tagId`) REFERENCES `candidateTags`(`id`),\n  CONSTRAINT `candidateTagAssignments_assignedBy_fk` FOREIGN KEY (`assignedBy`) REFERENCES `users`(`id`)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `candidateTagAssignments` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `candidateId` int NOT NULL,\n  `tagId` int NOT NULL,\n  `assignedBy` int NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `candidateTagAssignments_id` PRIMARY KEY(`id`),\n  CONSTRAINT `candidateTagAssignments_candidateId_fk` FOREIGN KEY (`candidateId`) REFERENCES `candidates`(`id`),\n  CONSTRAINT `candidateTagAssignments_tagId_fk` FOREIGN KEY (`tagId`) REFERENCES `candidateTags`(`id`),\n  CONSTRAINT `candidateTagAssignments_assignedBy_fk` FOREIGN KEY (`assignedBy`) REFERENCES `users`(`id`)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 378
-}

@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `videoIntroductions` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `candidateId` int NOT NULL,\n  `videoUrl` varchar(500) NOT NULL,\n  `videoFileKey` varchar(500) NOT NULL,\n  `thumbnailUrl` varchar(500),\n  `duration` int NOT NULL,\n  `fileSize` int,\n  `mimeType` varchar(100),\n  `transcription` text,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `videoIntroductions_id` PRIMARY KEY(`id`),\n  CONSTRAINT `videoIntroductions_candidateId_fk` FOREIGN KEY (`candidateId`) REFERENCES `candidates`(`id`)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `videoIntroductions` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `candidateId` int NOT NULL,\n  `videoUrl` varchar(500) NOT NULL,\n  `videoFileKey` varchar(500) NOT NULL,\n  `thumbnailUrl` varchar(500),\n  `duration` int NOT NULL,\n  `fileSize` int,\n  `mimeType` varchar(100),\n  `transcription` text,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `videoIntroductions_id` PRIMARY KEY(`id`),\n  CONSTRAINT `videoIntroductions_candidateId_fk` FOREIGN KEY (`candidateId`) REFERENCES `candidates`(`id`)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 287
-}

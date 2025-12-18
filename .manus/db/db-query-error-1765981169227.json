@@ -1,8 +1,0 @@
-{
-  "query": "ALTER TABLE users ADD COLUMN companyId INT NULL, ADD FOREIGN KEY (companyId) REFERENCES companies(id) ON DELETE SET NULL",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE users ADD COLUMN companyId INT NULL, ADD FOREIGN KEY (companyId) REFERENCES companies(id) ON DELETE SET NULL",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1072 (42000) at line 1: Key column 'companyId' doesn't exist in table"
-  ]
-}

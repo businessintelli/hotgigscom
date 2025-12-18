@@ -1,8 +1,0 @@
-{
-  "query": "ALTER TABLE codingChallenges \nMODIFY COLUMN interviewId INT NULL,\nADD COLUMN createdBy INT NULL,\nADD FOREIGN KEY (createdBy) REFERENCES users(id);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE codingChallenges \nMODIFY COLUMN interviewId INT NULL,\nADD COLUMN createdBy INT NULL,\nADD FOREIGN KEY (createdBy) REFERENCES users(id);",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1072 (42000) at line 1: Key column 'createdBy' doesn't exist in table"
-  ]
-}

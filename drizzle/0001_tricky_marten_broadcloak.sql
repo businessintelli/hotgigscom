@@ -1,0 +1,2 @@
+ALTER TABLE `candidates` ADD `recruiterId` int;--> statement-breakpoint
+ALTER TABLE `candidates` ADD CONSTRAINT `candidates_recruiterId_recruiters_id_fk` FOREIGN KEY (`recruiterId`) REFERENCES `recruiters`(`id`) ON DELETE no action ON UPDATE no action;

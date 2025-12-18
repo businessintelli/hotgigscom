@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS panel_action_tokens (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  panelist_id INT NOT NULL,\n  interview_id INT NOT NULL,\n  token VARCHAR(255) NOT NULL UNIQUE,\n  action_type ENUM('accept', 'decline', 'reschedule', 'feedback') NOT NULL,\n  used_at DATETIME NULL,\n  expires_at DATETIME NOT NULL,\n  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_token (token),\n  INDEX idx_panelist (panelist_id),\n  INDEX idx_interview (interview_id)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS panel_action_tokens (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  panelist_id INT NOT NULL,\n  interview_id INT NOT NULL,\n  token VARCHAR(255) NOT NULL UNIQUE,\n  action_type ENUM('accept', 'decline', 'reschedule', 'feedback') NOT NULL,\n  used_at DATETIME NULL,\n  expires_at DATETIME NOT NULL,\n  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_token (token),\n  INDEX idx_panelist (panelist_id),\n  INDEX idx_interview (interview_id)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1779
-}

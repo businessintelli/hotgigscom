@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `application_history` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `applicationId` int NOT NULL,\n  `fromStatus` varchar(50),\n  `toStatus` varchar(50) NOT NULL,\n  `changedBy` int,\n  `notes` text,\n  `emailSent` boolean NOT NULL DEFAULT false,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `application_history_id` PRIMARY KEY(`id`),\n  CONSTRAINT `application_history_applicationId_fk` FOREIGN KEY (`applicationId`) REFERENCES `applications`(`id`),\n  CONSTRAINT `application_history_changedBy_fk` FOREIGN KEY (`changedBy`) REFERENCES `users`(`id`)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `application_history` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `applicationId` int NOT NULL,\n  `fromStatus` varchar(50),\n  `toStatus` varchar(50) NOT NULL,\n  `changedBy` int,\n  `notes` text,\n  `emailSent` boolean NOT NULL DEFAULT false,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `application_history_id` PRIMARY KEY(`id`),\n  CONSTRAINT `application_history_applicationId_fk` FOREIGN KEY (`applicationId`) REFERENCES `applications`(`id`),\n  CONSTRAINT `application_history_changedBy_fk` FOREIGN KEY (`changedBy`) REFERENCES `users`(`id`)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1995
-}

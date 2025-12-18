@@ -1,9 +1,0 @@
-{
-  "query": "-- Custom Reports Table\nCREATE TABLE IF NOT EXISTS custom_reports (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  companyId INT NOT NULL,\n  userId INT NOT NULL,\n  name VARCHAR(255) NOT NULL,\n  description TEXT,\n  selectedFields JSON NOT NULL,\n  filters JSON,\n  groupBy VARCHAR(100),\n  sortBy VARCHAR(100),\n  sortOrder ENUM('asc', 'desc') DEFAULT 'asc',\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (companyId) REFERENCES companies(id) ON DELETE CASCADE,\n  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE\n);\n\nCREATE INDEX idx_custom_reports_company ON custom_reports(companyId);\nCREATE INDEX idx_custom_reports_user ON custom_reports(userId);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute -- Custom Reports Table\nCREATE TABLE IF NOT EXISTS custom_reports (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  companyId INT NOT NULL,\n  userId INT NOT NULL,\n  name VARCHAR(255) NOT NULL,\n  description TEXT,\n  selectedFields JSON NOT NULL,\n  filters JSON,\n  groupBy VARCHAR(100),\n  sortBy VARCHAR(100),\n  sortOrder ENUM('asc', 'desc') DEFAULT 'asc',\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (companyId) REFERENCES companies(id) ON DELETE CASCADE,\n  FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE\n);\n\nCREATE INDEX idx_custom_reports_company ON custom_reports(companyId);\nCREATE INDEX idx_custom_reports_user ON custom_reports(userId);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 3092
-}

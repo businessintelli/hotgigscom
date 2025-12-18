@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE recruiters \nADD COLUMN profileCompleted BOOLEAN DEFAULT FALSE NOT NULL,\nADD COLUMN profileCompletionStep INT DEFAULT 0 NOT NULL;\n\nALTER TABLE candidates \nADD COLUMN profileCompleted BOOLEAN DEFAULT FALSE NOT NULL,\nADD COLUMN profileCompletionStep INT DEFAULT 0 NOT NULL;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE recruiters \nADD COLUMN profileCompleted BOOLEAN DEFAULT FALSE NOT NULL,\nADD COLUMN profileCompletionStep INT DEFAULT 0 NOT NULL;\n\nALTER TABLE candidates \nADD COLUMN profileCompleted BOOLEAN DEFAULT FALSE NOT NULL,\nADD COLUMN profileCompletionStep INT DEFAULT 0 NOT NULL;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1470
-}

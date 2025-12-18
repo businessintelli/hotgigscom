@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `linkedin_profiles` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `linkedinUrl` varchar(500) NOT NULL,\n  `publicIdentifier` varchar(255),\n  `firstName` varchar(255),\n  `lastName` varchar(255),\n  `headline` text,\n  `summary` text,\n  `location` varchar(255),\n  `industry` varchar(255),\n  `currentCompany` varchar(255),\n  `currentTitle` varchar(255),\n  `profilePictureUrl` varchar(500),\n  `connections` int,\n  `followersCount` int,\n  `fullProfileData` text,\n  `importedBy` int NOT NULL,\n  `sourcingCampaignId` int,\n  `importSource` varchar(100),\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `linkedin_profiles_id` PRIMARY KEY(`id`)\n)",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `linkedin_profiles` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `linkedinUrl` varchar(500) NOT NULL,\n  `publicIdentifier` varchar(255),\n  `firstName` varchar(255),\n  `lastName` varchar(255),\n  `headline` text,\n  `summary` text,\n  `location` varchar(255),\n  `industry` varchar(255),\n  `currentCompany` varchar(255),\n  `currentTitle` varchar(255),\n  `profilePictureUrl` varchar(500),\n  `connections` int,\n  `followersCount` int,\n  `fullProfileData` text,\n  `importedBy` int NOT NULL,\n  `sourcingCampaignId` int,\n  `importSource` varchar(100),\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `linkedin_profiles_id` PRIMARY KEY(`id`)\n)",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1753
-}

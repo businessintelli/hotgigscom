@@ -8,11 +8,7 @@ export const APP_LOGO = "https://placehold.co/128x128/E1E7EF/1F2937?text=App";
 export const getLoginUrl = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
-  
-  // Clean redirect URI without query parameters
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
-  
-  // Encode redirect URI in state parameter
   const state = btoa(redirectUri);
 
   const url = new URL(`${oauthPortalUrl}/app-auth`);

@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE notifications \nADD COLUMN IF NOT EXISTS relatedEntityType VARCHAR(50),\nADD COLUMN IF NOT EXISTS relatedEntityId INT,\nADD COLUMN IF NOT EXISTS actionUrl VARCHAR(500);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE notifications \nADD COLUMN IF NOT EXISTS relatedEntityType VARCHAR(50),\nADD COLUMN IF NOT EXISTS relatedEntityId INT,\nADD COLUMN IF NOT EXISTS actionUrl VARCHAR(500);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 960
-}

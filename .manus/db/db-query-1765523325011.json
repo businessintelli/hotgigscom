@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `notifications` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `userId` int NOT NULL,\n  `type` varchar(50) NOT NULL,\n  `title` varchar(255) NOT NULL,\n  `message` text NOT NULL,\n  `isRead` boolean NOT NULL DEFAULT false,\n  `relatedEntityType` varchar(50),\n  `relatedEntityId` int,\n  `actionUrl` varchar(500),\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `notifications_id` PRIMARY KEY(`id`),\n  CONSTRAINT `notifications_userId_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`)\n)",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `notifications` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `userId` int NOT NULL,\n  `type` varchar(50) NOT NULL,\n  `title` varchar(255) NOT NULL,\n  `message` text NOT NULL,\n  `isRead` boolean NOT NULL DEFAULT false,\n  `relatedEntityType` varchar(50),\n  `relatedEntityId` int,\n  `actionUrl` varchar(500),\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `notifications_id` PRIMARY KEY(`id`),\n  CONSTRAINT `notifications_userId_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`)\n)",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 106
-}

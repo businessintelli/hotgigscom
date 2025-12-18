@@ -1,9 +1,0 @@
-{
-  "query": "INSERT INTO profileBadges (name, description, icon, color, milestone, points) VALUES\n('Profile Starter', 'Completed 50% of your profile', '🌱', 'green', 50, 50),\n('Profile Pro', 'Completed 75% of your profile', '⭐', 'blue', 75, 75),\n('Profile Master', 'Completed 100% of your profile', '🏆', 'gold', 100, 100)\nON DUPLICATE KEY UPDATE name=name",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute INSERT INTO profileBadges (name, description, icon, color, milestone, points) VALUES\n('Profile Starter', 'Completed 50% of your profile', '🌱', 'green', 50, 50),\n('Profile Pro', 'Completed 75% of your profile', '⭐', 'blue', 75, 75),\n('Profile Master', 'Completed 100% of your profile', '🏆', 'gold', 100, 100)\nON DUPLICATE KEY UPDATE name=name",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1568
-}

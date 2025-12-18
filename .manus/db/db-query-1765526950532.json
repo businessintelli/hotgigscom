@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `emailDeliveryEvents` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `campaignRecipientId` int,\n  `eventType` varchar(50) NOT NULL,\n  `provider` varchar(20) NOT NULL,\n  `timestamp` timestamp NOT NULL DEFAULT (now()),\n  `messageId` varchar(255),\n  `email` varchar(255) NOT NULL,\n  `reason` text,\n  `metadata` json,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `emailDeliveryEvents_id` PRIMARY KEY(`id`),\n  INDEX `idx_email` (`email`),\n  INDEX `idx_event_type` (`eventType`),\n  INDEX `idx_provider` (`provider`),\n  INDEX `idx_timestamp` (`timestamp`)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `emailDeliveryEvents` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `campaignRecipientId` int,\n  `eventType` varchar(50) NOT NULL,\n  `provider` varchar(20) NOT NULL,\n  `timestamp` timestamp NOT NULL DEFAULT (now()),\n  `messageId` varchar(255),\n  `email` varchar(255) NOT NULL,\n  `reason` text,\n  `metadata` json,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `emailDeliveryEvents_id` PRIMARY KEY(`id`),\n  INDEX `idx_email` (`email`),\n  INDEX `idx_event_type` (`eventType`),\n  INDEX `idx_provider` (`provider`),\n  INDEX `idx_timestamp` (`timestamp`)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 210
-}

@@ -1,9 +1,0 @@
-{
-  "query": "UPDATE users SET role = 'recruiter', companyId = 1 WHERE email = 'bhimireddy@gmail.com'",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute UPDATE users SET role = 'recruiter', companyId = 1 WHERE email = 'bhimireddy@gmail.com'",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1529
-}

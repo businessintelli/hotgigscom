@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE jobs \nADD COLUMN IF NOT EXISTS shareCount INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS emailShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS linkedinShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS twitterShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS facebookShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS whatsappShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS linkCopies INT NOT NULL DEFAULT 0",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE jobs \nADD COLUMN IF NOT EXISTS shareCount INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS emailShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS linkedinShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS twitterShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS facebookShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS whatsappShares INT NOT NULL DEFAULT 0,\nADD COLUMN IF NOT EXISTS linkCopies INT NOT NULL DEFAULT 0",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 3606
-}

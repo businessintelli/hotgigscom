@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE candidates ADD COLUMN parsedResumeData TEXT, ADD COLUMN linkedinUrl VARCHAR(500), ADD COLUMN githubUrl VARCHAR(500), ADD COLUMN certifications TEXT, ADD COLUMN languages TEXT, ADD COLUMN projects TEXT, ADD COLUMN totalExperienceYears INT, ADD COLUMN seniorityLevel VARCHAR(50), ADD COLUMN primaryDomain VARCHAR(100), ADD COLUMN skillCategories TEXT;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute ALTER TABLE candidates ADD COLUMN parsedResumeData TEXT, ADD COLUMN linkedinUrl VARCHAR(500), ADD COLUMN githubUrl VARCHAR(500), ADD COLUMN certifications TEXT, ADD COLUMN languages TEXT, ADD COLUMN projects TEXT, ADD COLUMN totalExperienceYears INT, ADD COLUMN seniorityLevel VARCHAR(50), ADD COLUMN primaryDomain VARCHAR(100), ADD COLUMN skillCategories TEXT;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 4317
-}

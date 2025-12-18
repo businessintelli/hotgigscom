@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `resumeProfiles` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `candidateId` int NOT NULL,\n  `profileName` varchar(255) NOT NULL,\n  `resumeUrl` varchar(500) NOT NULL,\n  `resumeFileKey` varchar(500) NOT NULL,\n  `resumeFilename` varchar(255) NOT NULL,\n  `parsedData` text,\n  `isDefault` boolean NOT NULL DEFAULT false,\n  `uploadedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `resumeProfiles_id` PRIMARY KEY(`id`),\n  CONSTRAINT `resumeProfiles_candidateId_fk` FOREIGN KEY (`candidateId`) REFERENCES `candidates`(`id`)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user Qn11raqpZKapJrc.584a41145ea0 --database myxzroeDB4HgZWmTgbS8PA --execute CREATE TABLE IF NOT EXISTS `resumeProfiles` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `candidateId` int NOT NULL,\n  `profileName` varchar(255) NOT NULL,\n  `resumeUrl` varchar(500) NOT NULL,\n  `resumeFileKey` varchar(500) NOT NULL,\n  `resumeFilename` varchar(255) NOT NULL,\n  `parsedData` text,\n  `isDefault` boolean NOT NULL DEFAULT false,\n  `uploadedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `resumeProfiles_id` PRIMARY KEY(`id`),\n  CONSTRAINT `resumeProfiles_candidateId_fk` FOREIGN KEY (`candidateId`) REFERENCES `candidates`(`id`)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 399
-}

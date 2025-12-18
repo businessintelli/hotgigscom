@@ -1,13 +1,5 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1766084566472,
-      "tag": "0000_sturdy_pet_avengers",
-      "breakpoints": true
-    }
-  ]
+  "entries": []
 }
