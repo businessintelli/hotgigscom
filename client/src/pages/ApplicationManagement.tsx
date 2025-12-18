@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Search, Filter, Download, Mail, Phone, FileText, CheckCircle2, XCircle, Clock, Users, TrendingUp, Calendar, MessageSquare, Share2, Bot, User, CalendarDays, Send, Video, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "@/components/PaginationControls";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -187,6 +189,20 @@ export default function ApplicationManagement() {
     
     return matchesStatus && matchesJob && matchesSearch && 
            matchesOverallScore && matchesDomainScore && matchesSkillScore && matchesExperienceScore;
+  });
+
+  // Pagination
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedData: paginatedApplications,
+    totalPages,
+    totalItems,
+    pageSize,
+  } = usePagination({
+    data: filteredApplications,
+    pageSize: 10,
+    dependencies: [statusFilter, selectedJobId, searchQuery, minOverallScore, minDomainScore, minSkillScore, minExperienceScore],
   });
 
   const handleSelectAll = () => {
@@ -636,7 +652,7 @@ export default function ApplicationManagement() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredApplications.map((application: any) => (
+                {paginatedApplications.map((application: any) => (
                   <div key={application.id} className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start gap-2 sm:gap-4">
                       <Checkbox
@@ -1199,6 +1215,16 @@ export default function ApplicationManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Pagination Controls */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        className="mt-6"
+      />
     </div>
     </RecruiterLayout>
   );

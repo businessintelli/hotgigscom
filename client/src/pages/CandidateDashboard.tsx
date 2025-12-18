@@ -82,6 +82,7 @@ import CandidateOnboarding from "@/components/CandidateOnboarding";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 import { BadgeDisplay } from "@/components/BadgeDisplay";
+import { RecentlyViewedJobs } from "@/components/RecentlyViewedJobs";
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 
 export default function CandidateDashboard() {
@@ -746,6 +747,11 @@ function CandidateDashboardContent() {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Recently Viewed Jobs */}
+                {candidate?.id && (
+                  <RecentlyViewedJobs candidateId={candidate.id} limit={5} />
+                )}
 
                 {/* Video Introduction - Moved to dedicated page at /candidate/video-intro */}
               </div>

@@ -3823,9 +3823,7 @@
 - [x] Add pagination to candidate Saved Jobs page
 - [x] Add pagination to candidate Job Browser page
 - [ ] Add pagination to public home page job listings
-- [ ] Add pagination to recruiter Jobs page
-- [ ] Add pagination to recruiter Applications page
-- [ ] Add pagination to recruiter Candidates page
+- [ ] Add pagination to recruiter Jo- [x] Add pagination to recruiter Application Management page [ ] Add pagination to recruiter Candidates page
 - [ ] Add pagination to recruiter Associates page
 - [ ] Add pagination to recruiter Reports page
 - [ ] Add pagination to company admin Jobs page
@@ -3843,5 +3841,5 @@
 - [x] Create database table for recently viewed jobs tracking
 - [x] Implement backend tracking for job views
 - [x] Create recently viewed jobs query with optimized joins
-- [ ] Add recently viewed jobs widget to candidate dashboard
-- [ ] Add recently viewed jobs section to job browser page
+- [x] Add recently viewed jobs widget to candidate dashboard
+- [x] Add recently viewed jobs section to job browser page

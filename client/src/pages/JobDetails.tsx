@@ -9,7 +9,6 @@ import { JobShareButton } from "@/components/JobShareButton";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { useLocation, useRoute } from "wouter";
 import { useEffect } from "react";
-import { trackJobView } from "@/lib/trackJobView";
 
 export default function JobDetails() {
   const [, setLocation] = useLocation();
@@ -39,12 +38,23 @@ export default function JobDetails() {
     { enabled: !!jobId && isRecruiterView }
   );
   
-  // Track job view when page loads
+  // Get candidate profile for tracking
+  const { data: candidateProfile } = trpc.candidate.getProfile.useQuery(
+    undefined,
+    { enabled: user?.role === 'candidate' }
+  );
+  
+  // Track job view analytics and recently viewed for candidates
+  const trackRecentlyViewedMutation = trpc.candidate.trackRecentlyViewedJob.useMutation();
+  
   useEffect(() => {
-    if (jobId && job) {
-      trackJobView({ jobId, userId: user?.id }, trpc);
+    if (jobId && job && user?.role === 'candidate' && candidateProfile?.id) {
+      trackRecentlyViewedMutation.mutate({
+        candidateId: candidateProfile.id,
+        jobId: jobId,
+      });
     }
-  }, [jobId, job, user?.id]);
+  }, [jobId, job, user?.role, candidateProfile?.id]);
 
   if (isLoading) {
     return (
