@@ -1,5 +1,5 @@
 import { invokeLLM } from "../_core/llm";
-import { db } from "../_core/db";
+import { getDb } from "../db";
 import { aiNotificationQueue, aiNotificationPreferences, candidates, jobs, applications } from "../../drizzle/schema";
 import { eq, and, gte, lte, desc, sql, isNull } from "drizzle-orm";
 import * as dbHelpers from "../db";
@@ -68,8 +68,10 @@ export async function generateTopCandidateDigest(recruiterId: number) {
       ]
     });
 
-    const message = response.choices[0]?.message?.content || 
-      `You have ${topCandidates.length} job(s) with high-scoring candidates today! Check your dashboard to review them.`;
+    const messageContent3 = response.choices[0]?.message?.content;
+    const message = typeof messageContent3 === 'string' 
+      ? messageContent3 
+      : `You have ${topCandidates.length} job(s) with high-scoring candidates today! Check your dashboard to review them.`;
 
     // Queue notification
     await queueNotification({
@@ -94,6 +96,9 @@ export async function generateTopCandidateDigest(recruiterId: number) {
  */
 export async function generateJobMatchAlerts(candidateId: number) {
   try {
+    const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+    
     // Get candidate profile
     const candidate = await db
       .select()
@@ -127,7 +132,7 @@ export async function generateJobMatchAlerts(candidateId: number) {
     }
 
     // Simple skill matching to find relevant jobs
-    const matchingJobs = recentJobs.filter(job => {
+    const matchingJobs = recentJobs.filter((job: any) => {
       const jobRequirements = job.requirements?.toLowerCase() || "";
       return candidateSkills.some((skill: string) => 
         jobRequirements.includes(skill.toLowerCase())
@@ -147,13 +152,15 @@ export async function generateJobMatchAlerts(candidateId: number) {
         },
         {
           role: "user",
-          content: `Generate a short message for a candidate about ${matchingJobs.length} new job(s) that match their skills: ${candidateSkills.join(", ")}. Jobs: ${matchingJobs.map(j => j.title).join(", ")}. Keep it under 150 words and encouraging.`
+          content: `Generate a short message for a candidate about ${matchingJobs.length} new job(s) that match their skills: ${candidateSkills.join(", ")}. Jobs: ${matchingJobs.map((j: any) => j.title).join(", ")}. Keep it under 150 words and encouraging.`
         }
       ]
     });
 
-    const message = response.choices[0]?.message?.content || 
-      `We found ${matchingJobs.length} new job(s) matching your skills! Check them out now.`;
+    const messageContent = response.choices[0]?.message?.content;
+    const message = typeof messageContent === 'string' 
+      ? messageContent 
+      : `We found ${matchingJobs.length} new job(s) matching your skills! Check them out now.`;
 
     // Queue notification
     await queueNotification({
@@ -178,6 +185,9 @@ export async function generateJobMatchAlerts(candidateId: number) {
  */
 export async function generateProfileImprovementSuggestions(candidateId: number) {
   try {
+    const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+    
     // Get candidate profile
     const candidate = await db
       .select()
@@ -217,8 +227,10 @@ export async function generateProfileImprovementSuggestions(candidateId: number)
       ]
     });
 
-    const message = response.choices[0]?.message?.content || 
-      `Complete your profile by adding: ${missingFields.join(", ")}. This will help you get better job matches!`;
+    const messageContent2 = response.choices[0]?.message?.content;
+    const message = typeof messageContent2 === 'string' 
+      ? messageContent2 
+      : `Complete your profile by adding: ${missingFields.join(", ")}. This will help you get better job matches!`;
 
     // Queue notification (only if they haven't been notified recently)
     const recentNotifications = await db
@@ -265,6 +277,9 @@ async function queueNotification(data: {
   metadata?: any;
 }) {
   try {
+    const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+    
     // Check user preferences
     const prefs = await db
       .select()
@@ -330,6 +345,9 @@ function getNotificationPreference(prefs: any, notificationType: string): boolea
  */
 export async function processPendingNotifications() {
   try {
+    const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+    
     const now = new Date();
     
     // Get pending notifications that are due
@@ -383,6 +401,9 @@ export async function processPendingNotifications() {
  * Get user's notification preferences
  */
 export async function getUserNotificationPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
   const prefs = await db
     .select()
     .from(aiNotificationPreferences)
@@ -421,6 +442,9 @@ export async function updateNotificationPreferences(
   preferences: Partial<typeof aiNotificationPreferences.$inferInsert>
 ) {
   try {
+    const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+    
     const existing = await db
       .select()
       .from(aiNotificationPreferences)
@@ -452,6 +476,9 @@ export async function updateNotificationPreferences(
  * Get user's notification history
  */
 export async function getUserNotifications(userId: number, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  
   return await db
     .select()
     .from(aiNotificationQueue)
@@ -459,11 +486,13 @@ export async function getUserNotifications(userId: number, limit: number = 20) {
     .orderBy(desc(aiNotificationQueue.createdAt))
     .limit(limit);
 }
-
 /**
  * Mark notification as read
  */
 export async function markNotificationAsRead(notificationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
   await db
     .update(aiNotificationQueue)
     .set({

@@ -113,15 +113,15 @@ export async function calculateAlgorithmMetrics(
 
     // Calculate metrics
     const totalOutcomes = outcomes.length;
-    const hiredCandidates = outcomes.filter(o => o.outcome === "hired");
-    const rejectedCandidates = outcomes.filter(o => o.outcome === "rejected");
+    const hiredCandidates = outcomes.filter((o: any) => o.outcome === "hired");
+    const rejectedCandidates = outcomes.filter((o: any) => o.outcome === "rejected");
     
     // High match score threshold (>= 70)
     const highMatchScoreThreshold = 70;
-    const predictedPositives = outcomes.filter(o => parseFloat(o.initialMatchScore) >= highMatchScoreThreshold);
-    const truePositives = predictedPositives.filter(o => o.outcome === "hired");
-    const falsePositives = predictedPositives.filter(o => o.outcome === "rejected");
-    const falseNegatives = outcomes.filter(o => 
+    const predictedPositives = outcomes.filter((o: any) => parseFloat(o.initialMatchScore) >= highMatchScoreThreshold);
+    const truePositives = predictedPositives.filter((o: any) => o.outcome === "hired");
+    const falsePositives = predictedPositives.filter((o: any) => o.outcome === "rejected");
+    const falseNegatives = outcomes.filter((o: any) => 
       parseFloat(o.initialMatchScore) < highMatchScoreThreshold && o.outcome === "hired"
     );
 
@@ -142,7 +142,7 @@ export async function calculateAlgorithmMetrics(
 
     // Accuracy: Overall correct predictions
     const correctPredictions = truePositives.length + 
-      outcomes.filter(o => parseFloat(o.initialMatchScore) < highMatchScoreThreshold && o.outcome === "rejected").length;
+      outcomes.filter((o: any) => parseFloat(o.initialMatchScore) < highMatchScoreThreshold && o.outcome === "rejected").length;
     const accuracy = totalOutcomes > 0 ? correctPredictions / totalOutcomes : 0;
 
     // Save metrics to database
@@ -236,8 +236,8 @@ export async function analyzeScoreComponents(startDate: Date, endDate: Date) {
         )
       );
 
-    const hiredCandidates = outcomes.filter(o => o.outcome === "hired");
-    const rejectedCandidates = outcomes.filter(o => o.outcome === "rejected");
+    const hiredCandidates = outcomes.filter((o: any) => o.outcome === "hired");
+    const rejectedCandidates = outcomes.filter((o: any) => o.outcome === "rejected");
 
     // Calculate average scores for each component
     const avgHiredScores = {

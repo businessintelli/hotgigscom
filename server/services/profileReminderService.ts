@@ -49,7 +49,7 @@ export async function sendProfileCompletionReminders(): Promise<{
       // Skip if profile is already complete
       if (completionPercentage >= 100) continue;
 
-      const createdAt = new Date(record.createdAt);
+      const createdAt = record.createdAt ? new Date(record.createdAt) : new Date();
       const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (24 * 60 * 60 * 1000));
 
       // Check if we should send 3-day reminder

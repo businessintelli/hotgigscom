@@ -293,7 +293,7 @@ function CandidateDashboardContent() {
   // Sort recommended jobs
   const sortedJobs = useMemo(() => {
     if (!recommendedJobs) return [];
-    const jobs = [...recommendedJobs];
+    const jobs = [...recommendedJobs] as Array<typeof recommendedJobs[number] & { matchScore?: number }>;
     
     switch (sortBy) {
       case 'date_desc':

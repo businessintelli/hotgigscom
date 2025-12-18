@@ -365,7 +365,7 @@ export default function CandidateSearch() {
                   // Skip if candidate data is missing
                   if (!candidate) return null;
                   
-                  const skills = candidate?.skills ? candidate.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+                  const skills = candidate?.skills ? candidate.skills.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
                   
                   return (
                     <Card key={candidate.id} className="hover:shadow-lg transition-shadow">
@@ -418,7 +418,7 @@ export default function CandidateSearch() {
                           <div>
                             <h4 className="font-semibold text-sm mb-2">Skills</h4>
                             <div className="flex flex-wrap gap-2">
-                              {skills.slice(0, 8).map((skill, idx) => (
+                              {skills.slice(0, 8).map((skill: string, idx: number) => (
                                 <Badge key={idx} variant="secondary">
                                   {skill}
                                 </Badge>

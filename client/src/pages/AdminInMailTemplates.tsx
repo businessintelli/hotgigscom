@@ -308,7 +308,7 @@ export default function AdminInMailTemplates() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {templates.map((template) => (
+                {templates && Array.isArray(templates) && templates.map((template: any) => (
                   <TableRow key={template.id}>
                     <TableCell className="font-medium">{template.name}</TableCell>
                     <TableCell>

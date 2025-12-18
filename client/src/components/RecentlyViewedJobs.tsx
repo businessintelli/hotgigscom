@@ -146,10 +146,16 @@ export function RecentlyViewedJobs({ candidateId, limit = 10 }: RecentlyViewedJo
                           <span>{job.location}</span>
                         </div>
                       )}
-                      {job.salaryRange && (
+                      {(job.salaryMin || job.salaryMax) && (
                         <div className="flex items-center gap-1">
                           <DollarSign className="w-4 h-4" />
-                          <span>{job.salaryRange}</span>
+                          <span>
+                            {job.salaryMin && job.salaryMax
+                              ? `$${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}`
+                              : job.salaryMin
+                              ? `From $${job.salaryMin.toLocaleString()}`
+                              : `Up to $${job.salaryMax?.toLocaleString()}`}
+                          </span>
                         </div>
                       )}
                       {job.employmentType && (

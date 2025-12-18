@@ -614,10 +614,10 @@ export const recruiterTools: DatabaseQueryTool[] = [
 
       // Filter by skills if provided
       if (params.skills) {
-        const requiredSkills = params.skills.toLowerCase().split(",").map(s => s.trim());
+        const requiredSkills = params.skills.toLowerCase().split(",").map((s: string) => s.trim());
         candidateList = candidateList.filter(c => {
           const candidateSkills = c.skills ? JSON.parse(c.skills).map((s: string) => s.toLowerCase()) : [];
-          return requiredSkills.some(skill => candidateSkills.includes(skill));
+          return requiredSkills.some((skill: string) => candidateSkills.includes(skill));
         });
       }
 
