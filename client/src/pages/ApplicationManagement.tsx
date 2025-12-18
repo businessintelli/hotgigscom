@@ -175,11 +175,15 @@ export default function ApplicationManagement() {
 
   // Filter applications
   const filteredApplications = applications.filter((app: any) => {
-    const matchesStatus = statusFilter === "all" || app.status === statusFilter;
+    // For guest applications, use different field names
+    const candidateName = app.isGuest ? app.name : app.candidate?.fullName;
+    const candidateEmail = app.isGuest ? app.email : app.candidate?.email;
+    
+    const matchesStatus = statusFilter === "all" || (app.isGuest ? "submitted" : app.status) === statusFilter;
     const matchesJob = !selectedJobId || app.jobId === selectedJobId;
     const matchesSearch = !searchQuery || 
-      app.candidate?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.candidate?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      candidateName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      candidateEmail?.toLowerCase().includes(searchQuery.toLowerCase());
     
     // Smart score filtering
     const matchesOverallScore = !app.resumeProfile || (app.resumeProfile.overallScore || 0) >= minOverallScore;
@@ -662,31 +666,39 @@ export default function ApplicationManagement() {
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row items-start justify-between mb-2 gap-2">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base sm:text-lg text-gray-900 truncate">
-                              {application.candidate?.fullName || "Anonymous Candidate"}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-base sm:text-lg text-gray-900 truncate">
+                                {application.isGuest ? application.name : (application.candidate?.fullName || "Anonymous Candidate")}
+                              </h3>
+                              {application.isGuest && (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                                  <User className="h-3 w-3 mr-1" />
+                                  Guest
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-xs sm:text-sm text-gray-600 truncate">Applied for: {application.job?.title}</p>
                           </div>
                           <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end gap-2">
-                            {getStatusBadge(application.status)}
-                            <SuccessScoreBadge applicationId={application.id} />
+                            {getStatusBadge(application.isGuest ? "submitted" : application.status)}
+                            {!application.isGuest && <SuccessScoreBadge applicationId={application.id} />}
                             <p className="text-xs text-gray-500">
-                              {new Date(application.appliedAt).toLocaleDateString()}
+                              {new Date(application.isGuest ? application.submittedAt : application.appliedAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-3">
-                          {application.candidate?.email && (
+                          {(application.isGuest ? application.email : application.candidate?.email) && (
                             <span className="flex items-center gap-1">
                               <Mail className="h-4 w-4" />
-                              {application.candidate.email}
+                              {application.isGuest ? application.email : application.candidate.email}
                             </span>
                           )}
-                          {application.candidate?.phone && (
+                          {(application.isGuest ? application.phoneNumber : application.candidate?.phone) && (
                             <span className="flex items-center gap-1">
                               <Phone className="h-4 w-4" />
-                              {application.candidate.phone}
+                              {application.isGuest ? application.phoneNumber : application.candidate.phone}
                             </span>
                           )}
                           {(application.candidate?.expectedSalaryMin || application.candidate?.expectedSalaryMax) && (
@@ -793,6 +805,11 @@ export default function ApplicationManagement() {
                         )}
 
                         <div className="flex flex-wrap items-center gap-2 pt-3 border-t">
+                          {application.isGuest && (
+                            <Badge variant="secondary" className="text-xs">
+                              Guest applicant - Invite to register for full features
+                            </Badge>
+                          )}
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -802,7 +819,7 @@ export default function ApplicationManagement() {
                                 setLocation(`/recruiter/candidate-resume/${application.resumeProfileId}${videoParam}`);
                               } else if (application.resumeUrl) {
                                 setSelectedResumeUrl(application.resumeUrl!);
-                                setSelectedResumeFilename(application.resumeFilename || 'resume.pdf');
+                                setSelectedResumeFilename(application.isGuest ? application.resumeFilename : (application.resumeFilename || 'resume.pdf'));
                                 setResumeViewerOpen(true);
                               } else {
                                 toast.error('No resume available');
@@ -826,73 +843,81 @@ export default function ApplicationManagement() {
                               Watch Video
                             </Button>
                           )}
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedApplication(application);
-                              setMessageText("");
-                              setMessageDialogOpen(true);
-                            }}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-1" />
-                            Message
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedApplication(application);
-                              setSelectedCustomerId(null);
-                              setShareDialogOpen(true);
-                            }}
-                          >
-                            <Share2 className="h-4 w-4 mr-1" />
-                            Share with Client
-                          </Button>
-                          <Select
-                            value={application.status}
-                            onValueChange={(value) => handleStatusUpdate(application.id, value as any, application)}
-                          >
-                            <SelectTrigger className="w-[150px] h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="reviewing">Reviewing</SelectItem>
-                              <SelectItem value="shortlisted">Shortlisted</SelectItem>
-                              <SelectItem value="interview">Interview</SelectItem>
-                              <SelectItem value="interviewing">Schedule Interview</SelectItem>
-                              <SelectItem value="offered">Offered</SelectItem>
-                              <SelectItem value="hired">Hired</SelectItem>
-                              <SelectItem value="rejected">Rejected</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const newExpanded = new Set(expandedTimelines);
-                              if (newExpanded.has(application.id)) {
-                                newExpanded.delete(application.id);
-                              } else {
-                                newExpanded.add(application.id);
-                              }
-                              setExpandedTimelines(newExpanded);
-                            }}
-                          >
-                            {expandedTimelines.has(application.id) ? (
-                              <>
-                                <ChevronUp className="h-4 w-4 mr-1" />
-                                Hide Timeline
-                              </>
-                            ) : (
-                              <>
-                                <ChevronDown className="h-4 w-4 mr-1" />
-                                Show Timeline
-                              </>
-                            )}
-                          </Button>
+                          {!application.isGuest && (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedApplication(application);
+                                  setMessageText("");
+                                  setMessageDialogOpen(true);
+                                }}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-1" />
+                                Message
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedApplication(application);
+                                  setSelectedCustomerId(null);
+                                  setShareDialogOpen(true);
+                                }}
+                              >
+                                <Share2 className="h-4 w-4 mr-1" />
+                                Share with Client
+                              </Button>
+                            </>
+                          )}
+                          {!application.isGuest && (
+                            <Select
+                              value={application.status}
+                              onValueChange={(value) => handleStatusUpdate(application.id, value as any, application)}
+                            >
+                              <SelectTrigger className="w-[150px] h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="reviewing">Reviewing</SelectItem>
+                                <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                                <SelectItem value="interview">Interview</SelectItem>
+                                <SelectItem value="interviewing">Schedule Interview</SelectItem>
+                                <SelectItem value="offered">Offered</SelectItem>
+                                <SelectItem value="hired">Hired</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                          {!application.isGuest && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newExpanded = new Set(expandedTimelines);
+                                if (newExpanded.has(application.id)) {
+                                  newExpanded.delete(application.id);
+                                } else {
+                                  newExpanded.add(application.id);
+                                }
+                                setExpandedTimelines(newExpanded);
+                              }}
+                            >
+                              {expandedTimelines.has(application.id) ? (
+                                <>
+                                  <ChevronUp className="h-4 w-4 mr-1" />
+                                  Hide Timeline
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="h-4 w-4 mr-1" />
+                                  Show Timeline
+                                </>
+                              )}
+                            </Button>
+                          )}
                         </div>
 
                         {/* Expandable Timeline */}

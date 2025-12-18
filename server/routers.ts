@@ -2723,8 +2723,19 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       }),
     
     list: protectedProcedure
-      .query(async () => {
-        return await db.getAllApplications();
+      .query(async ({ ctx }) => {
+        // Get regular applications
+        const regularApps = await db.getAllApplications();
+        
+        // Get recruiter profile
+        const recruiterProfile = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiterProfile) return regularApps;
+        
+        // Get guest applications
+        const guestApps = await db.getGuestApplicationsByRecruiter(recruiterProfile.id);
+        
+        // Merge both lists
+        return [...regularApps, ...guestApps];
       }),
     
     getApplicationHistory: protectedProcedure

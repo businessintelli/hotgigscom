@@ -510,6 +510,24 @@ export async function getApplicationsByCandidatePaginated(
   return buildPaginatedResponse(transformedData, totalItems, { page, pageSize });
 }
 
+export async function getGuestApplicationsByRecruiter(recruiterId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get guest applications for jobs posted by this recruiter
+  const result = await db
+    .select()
+    .from(guestApplications)
+    .leftJoin(jobs, eq(guestApplications.jobId, jobs.id))
+    .where(eq(jobs.postedBy, recruiterId));
+  
+  return result.map((row: any) => ({
+    ...row.guest_applications,
+    job: row.jobs,
+    isGuest: true,
+  }));
+}
+
 export async function getAllApplications() {
   const db = await getDb();
   if (!db) return [];

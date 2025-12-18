@@ -3895,3 +3895,16 @@
 - [x] Build application claiming mechanism when user registers with same email
 - [x] Update candidate dashboard to show claimed applications (auto-claimed on login)
 - [x] Test complete guest application workflow end-to-end
+
+## Guest Application Enhancements - Phase 2
+- [x] Update recruiter Application Management to show guest applications
+- [x] Add "Guest" badge to distinguish guest vs registered applications
+- [ ] Add filter to show only guest applications
+- [x] Create guest application detail view for recruiters
+- [ ] Add ability to invite guest applicants to register
+- [ ] Enhance email templates with better branding and formatting
+- [ ] Add email tracking for confirmation emails (opened, clicked)
+- [ ] Test application claiming when user registers with matching email
+- [ ] Implement guest application status check (email + application ID)
+- [ ] Add public status page for guest applicants to track progress
+- [ ] Create notification system for guest applicants (email-based)
