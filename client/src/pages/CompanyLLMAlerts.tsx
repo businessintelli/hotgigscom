@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
@@ -22,7 +22,7 @@ export default function CompanyLLMAlerts() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [companyId, setCompanyId] = useState<number | null>(null);
+  const companyId = user?.companyId || null;
 
   // Form state
   const [alertType, setAlertType] = useState<AlertType>("cost_threshold");
@@ -30,17 +30,6 @@ export default function CompanyLLMAlerts() {
   const [period, setPeriod] = useState<Period>("monthly");
   const [emailRecipients, setEmailRecipients] = useState("");
   const [enabled, setEnabled] = useState(true);
-
-  // Get user's company ID
-  const { data: recruiterProfile } = trpc.getRecruiterProfile.useQuery(undefined, {
-    enabled: !!user,
-  });
-
-  useEffect(() => {
-    if (recruiterProfile?.companyId) {
-      setCompanyId(recruiterProfile.companyId);
-    }
-  }, [recruiterProfile]);
 
   // Queries
   const { data: alerts, isLoading: loadingAlerts } = trpc.llmManagement.getAlerts.useQuery(undefined, {

@@ -965,7 +965,7 @@ export async function deleteInmailTemplate(id: number) {
 }
 
 // Import necessary operators
-import { eq, and, inArray, count, sql, desc } from "drizzle-orm";
+import { eq, and, inArray, count, sql, desc, sum } from "drizzle-orm";
 
 
 // ============================================
@@ -1217,7 +1217,7 @@ export async function getCompanyActivityLogs(companyId: number, limit: number = 
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
-  return await db.select({
+  const results = await db.select({
     log: userActivityLogs,
     user: users
   })
@@ -1226,6 +1226,21 @@ export async function getCompanyActivityLogs(companyId: number, limit: number = 
   .where(eq(userActivityLogs.companyId, companyId))
   .orderBy(desc(userActivityLogs.createdAt))
   .limit(limit);
+  
+  // Map to flat structure with userName
+  return results.map(r => ({
+    id: r.log.id,
+    userId: r.log.userId,
+    companyId: r.log.companyId,
+    action: r.log.action,
+    resource: r.log.resource,
+    resourceId: r.log.resourceId,
+    ipAddress: r.log.ipAddress,
+    userAgent: r.log.userAgent,
+    details: r.log.details,
+    createdAt: r.log.createdAt,
+    userName: r.user.name,
+  }));
 }
 
 /**

@@ -3770,3 +3770,19 @@
 - [x] Ensure RecruiterSettings page uses RecruiterLayout
 - [x] Add "Reports" menu item to RecruiterLayout sidebar
 - [x] Verify all recruiter pages have consistent left collapsible menu
+
+
+## Bug Fixes - Company Admin Pages
+
+- [ ] Fix missing useEffect import in CompanyLLMCostTracking.tsx
+- [ ] Investigate and fix performance issue on CompanyLLMAlerts page (long loading time)
+
+
+## Critical Bug Fixes - Company Admin Dashboard
+
+- [x] Fix nested anchor tags in CompanyAdminLayout logo (line 78-79)
+- [x] Fix missing useEffect import in CompanyLLMCostTracking.tsx
+- [x] Fix database query error in getDashboardStats (userActivityLogs companyId issue)
+- [x] Fix missing getRecruiterProfile tRPC procedure (404 errors) - replaced with direct user.companyId access
+- [x] Fix "sum is not defined" error in company admin queries - added sum import
+- [ ] Investigate and fix performance issue on CompanyLLMAlerts page

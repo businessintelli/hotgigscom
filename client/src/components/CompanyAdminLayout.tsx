@@ -75,13 +75,11 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-border">
             {!isCollapsed && (
-              <Link href="/company-admin/dashboard">
-                <a className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">HG</span>
-                  </div>
-                  <span className="font-bold text-lg">HotGigs</span>
-                </a>
+              <Link href="/company-admin/dashboard" className="flex items-center gap-2">
+                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">HG</span>
+                </div>
+                <span className="font-bold text-lg">HotGigs</span>
               </Link>
             )}
             <Button

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { CompanyAdminLayout } from "@/components/CompanyAdminLayout";
@@ -42,18 +42,7 @@ const COLORS = ["#667eea", "#764ba2", "#f093fb", "#4facfe"];
 export default function CompanyLLMCostTracking() {
   const { user } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange>("30days");
-  const [companyId, setCompanyId] = useState<number | null>(null);
-
-  // Get user's company ID
-  const { data: recruiterProfile } = trpc.getRecruiterProfile.useQuery(undefined, {
-    enabled: !!user,
-  });
-
-  useEffect(() => {
-    if (recruiterProfile?.companyId) {
-      setCompanyId(recruiterProfile.companyId);
-    }
-  }, [recruiterProfile]);
+  const companyId = user?.companyId || null;
 
   // Calculate date range
   const getDateRange = () => {
