@@ -59,6 +59,8 @@ export default function ApplyOnBehalf() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const jobId = parseInt(params?.jobId || "0");
+  const [mode, setMode] = useState<"select" | "upload" | "candidate-select">("select"); // New: mode selection
+  const [selectedCandidateId, setSelectedCandidateId] = useState<number | null>(null);
   const [step, setStep] = useState<"upload" | "review" | "submit" | "success">("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<ParsedResume | null>(null);
@@ -68,6 +70,14 @@ export default function ApplyOnBehalf() {
   const [extendedInfo, setExtendedInfo] = useState<ExtendedCandidateInfo>({});
 
   const { data: job } = trpc.job.getById.useQuery({ id: jobId }, { enabled: !!jobId });
+  const { data: candidates = [] } = trpc.candidate.searchCandidates.useQuery(
+    { query: "", limit: 100 },
+    { enabled: mode === "candidate-select" }
+  );
+  const { data: selectedCandidate } = trpc.candidate.getById.useQuery(
+    { id: selectedCandidateId || 0 },
+    { enabled: !!selectedCandidateId }
+  );
   const parseResumeMutation = trpc.application.parseResumeForRecruiter.useMutation();
   const submitMutation = trpc.application.submitOnBehalf.useMutation();
 
@@ -232,7 +242,146 @@ export default function ApplyOnBehalf() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Mode Selection */}
+            {mode === "select" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">How would you like to proceed?</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card 
+                      className="cursor-pointer hover:border-blue-600 transition-colors"
+                      onClick={() => setMode("upload")}
+                    >
+                      <CardHeader>
+                        <Upload className="w-8 h-8 mb-2 text-blue-600" />
+                        <CardTitle className="text-lg">Upload New Resume</CardTitle>
+                        <CardDescription>
+                          Upload a resume file and we'll extract candidate information
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                    <Card 
+                      className="cursor-pointer hover:border-blue-600 transition-colors"
+                      onClick={() => setMode("candidate-select")}
+                    >
+                      <CardHeader>
+                        <User className="w-8 h-8 mb-2 text-blue-600" />
+                        <CardTitle className="text-lg">Select Existing Candidate</CardTitle>
+                        <CardDescription>
+                          Choose from your candidate database with pre-filled information
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Candidate Selection */}
+            {mode === "candidate-select" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Select Candidate</h3>
+                  <Button variant="outline" onClick={() => setMode("select")}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                </div>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {candidates.map((candidate: any) => (
+                    <Card 
+                      key={candidate.id}
+                      className={`cursor-pointer hover:border-blue-600 transition-colors ${
+                        selectedCandidateId === candidate.id ? "border-blue-600 bg-blue-50" : ""
+                      }`}
+                      onClick={() => {
+                        setSelectedCandidateId(candidate.id);
+                        // Auto-fill data from selected candidate
+                        if (candidate) {
+                          setCandidateData({
+                            personalInfo: {
+                              name: candidate.user?.name || "",
+                              email: candidate.user?.email || "",
+                              phone: candidate.phoneNumber || "",
+                              location: candidate.location || "",
+                              linkedin: candidate.linkedinUrl || "",
+                              github: candidate.githubUrl || "",
+                            },
+                            summary: candidate.bio || "",
+                            skills: candidate.skills ? JSON.parse(candidate.skills) : [],
+                            experience: candidate.experience ? JSON.parse(candidate.experience) : [],
+                            education: candidate.education ? JSON.parse(candidate.education) : [],
+                            totalExperienceYears: candidate.totalExperienceYears || 0,
+                            seniorityLevel: candidate.seniorityLevel || "",
+                          });
+                          
+                          // Auto-fill extended info
+                          const autoFilledInfo: ExtendedCandidateInfo = {};
+                          if (candidate.workAuthorization) autoFilledInfo.workAuthorization = candidate.workAuthorization;
+                          if (candidate.workAuthorizationEndDate) autoFilledInfo.workAuthorizationEndDate = new Date(candidate.workAuthorizationEndDate).toISOString().split('T')[0];
+                          if (candidate.w2EmployerName) autoFilledInfo.w2EmployerName = candidate.w2EmployerName;
+                          if (candidate.nationality) autoFilledInfo.nationality = candidate.nationality;
+                          if (candidate.gender) autoFilledInfo.gender = candidate.gender;
+                          if (candidate.dateOfBirth) autoFilledInfo.dateOfBirth = new Date(candidate.dateOfBirth).toISOString().split('T')[0];
+                          if (candidate.highestEducation) autoFilledInfo.highestEducation = candidate.highestEducation;
+                          if (candidate.specialization) autoFilledInfo.specialization = candidate.specialization;
+                          if (candidate.highestDegreeStartDate) autoFilledInfo.highestDegreeStartDate = new Date(candidate.highestDegreeStartDate).toISOString().split('T')[0];
+                          if (candidate.highestDegreeEndDate) autoFilledInfo.highestDegreeEndDate = new Date(candidate.highestDegreeEndDate).toISOString().split('T')[0];
+                          if (candidate.employmentHistory) autoFilledInfo.employmentHistory = JSON.parse(candidate.employmentHistory);
+                          if (candidate.languagesRead) autoFilledInfo.languagesRead = JSON.parse(candidate.languagesRead);
+                          if (candidate.languagesSpeak) autoFilledInfo.languagesSpeak = JSON.parse(candidate.languagesSpeak);
+                          if (candidate.languagesWrite) autoFilledInfo.languagesWrite = JSON.parse(candidate.languagesWrite);
+                          if (candidate.currentResidenceZipCode) autoFilledInfo.currentResidenceZipCode = candidate.currentResidenceZipCode;
+                          if (candidate.passportNumber) autoFilledInfo.passportNumber = candidate.passportNumber;
+                          if (candidate.sinLast4) autoFilledInfo.sinLast4 = candidate.sinLast4;
+                          if (candidate.linkedinId) autoFilledInfo.linkedinId = candidate.linkedinId;
+                          if (candidate.passportCopyUrl) autoFilledInfo.passportCopyUrl = candidate.passportCopyUrl;
+                          if (candidate.dlCopyUrl) autoFilledInfo.dlCopyUrl = candidate.dlCopyUrl;
+                          if (candidate.currentSalary) autoFilledInfo.currentSalary = candidate.currentSalary;
+                          if (candidate.currentHourlyRate) autoFilledInfo.currentHourlyRate = candidate.currentHourlyRate;
+                          if (candidate.expectedSalary) autoFilledInfo.expectedSalary = candidate.expectedSalary;
+                          if (candidate.expectedHourlyRate) autoFilledInfo.expectedHourlyRate = candidate.expectedHourlyRate;
+                          if (candidate.salaryType) autoFilledInfo.salaryType = candidate.salaryType as 'salary' | 'hourly';
+                          
+                          setExtendedInfo(autoFilledInfo);
+                          setStep("review");
+                          setMode("upload"); // Move to review mode
+                          
+                          toast({
+                            title: "Candidate selected",
+                            description: "Profile information has been auto-filled. Please review and submit.",
+                          });
+                        }
+                      }}
+                    >
+                      <CardHeader className="py-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-base">{candidate.user?.name}</CardTitle>
+                            <CardDescription className="text-sm">
+                              {candidate.user?.email} • {candidate.phoneNumber || "No phone"}
+                            </CardDescription>
+                            {candidate.title && (
+                              <p className="text-sm text-gray-600 mt-1">{candidate.title}</p>
+                            )}
+                          </div>
+                          {selectedCandidateId === candidate.id && (
+                            <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                          )}
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                  {candidates.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">No candidates found</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Progress Steps */}
+            {mode === "upload" && (
+            <>
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -530,6 +679,8 @@ export default function ApplyOnBehalf() {
                   </Button>
                 </div>
               </div>
+            )}
+            </>
             )}
           </CardContent>
         </Card>

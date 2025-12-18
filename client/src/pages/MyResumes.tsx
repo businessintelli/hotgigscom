@@ -115,7 +115,7 @@ export default function MyResumes() {
       reader.onloadend = async () => {
         const base64Data = reader.result as string;
         
-        await createProfileMutation.mutateAsync({
+        const result = await createProfileMutation.mutateAsync({
           candidateId: candidateProfile.id,
           profileName: profileName.trim(),
           fileData: base64Data,
@@ -123,6 +123,21 @@ export default function MyResumes() {
         });
         
         setIsUploading(false);
+        
+        // Redirect to review/edit page with parsed data
+        if (result.parsedData) {
+          setLocation('/candidate/resume-review', {
+            state: {
+              parsedData: result.parsedData,
+              resumeUrl: result.url,
+              fileKey: result.fileKey,
+              fileName: result.fileName,
+              profileName: result.profileName,
+              isDefault: result.isDefault,
+              candidateId: candidateProfile.id,
+            }
+          });
+        }
       };
       reader.onerror = () => {
         toast.error('Failed to read file');

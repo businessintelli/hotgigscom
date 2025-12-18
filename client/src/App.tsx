@@ -55,6 +55,8 @@ import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
 import MyResumes from "./pages/MyResumesNew";
 import ResumeDetail from "./pages/ResumeDetail";
+import ResumeReviewEdit from "./pages/ResumeReviewEdit";
+import CandidateProfile from "./pages/CandidateProfile";
 import CandidateResumeView from "./pages/CandidateResumeView";
 import GuestCandidateProfile from "./pages/GuestCandidateProfile";
 import ChallengeLibrary from "./pages/ChallengeLibrary";
@@ -261,6 +263,8 @@ function Router() {
       <Route path="/saved-jobs" component={SavedJobs} />
       <Route path="/my-resumes" component={MyResumes} />
       <Route path="/candidate/my-resumes" component={MyResumes} />
+      <Route path="/candidate/resume-review" component={ResumeReviewEdit} />
+      <Route path="/candidate/profile" component={CandidateProfile} />
       <Route path="/candidate/resume/:id" component={ResumeDetail} />
       <Route path="/candidate/video-intro" component={VideoIntroductionPage} />
       <Route path="/candidate/career-coach" component={CandidateCareerCoach} />
