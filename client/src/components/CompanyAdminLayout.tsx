@@ -23,7 +23,8 @@ import {
   ChevronDown,
   Sparkles,
   DollarSign,
-  Bell
+  Bell,
+  FileCheck
 } from "lucide-react";
 import { useState } from "react";
 
@@ -52,6 +53,10 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     { name: "AI Assistant", href: "/company-admin/ai-assistant", icon: Sparkles },
     { name: "AI Cost Tracking", href: "/company-admin/llm-cost-tracking", icon: DollarSign },
     { name: "AI Usage Alerts", href: "/company-admin/llm-alerts", icon: Bell },
+    { type: "divider", label: "Analytics" },
+    { name: "Analytics Dashboard", href: "/company-admin/analytics", icon: BarChart3 },
+    { type: "divider", label: "Content Management" },
+    { name: "Template Shares", href: "/company-admin/template-shares", icon: FileCheck },
     { type: "divider", label: "Settings" },
     { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },
   ];

@@ -8,6 +8,8 @@ import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Building2, Users, File
 import { JobShareButton } from "@/components/JobShareButton";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { useLocation, useRoute } from "wouter";
+import { useEffect } from "react";
+import { trackJobView } from "@/lib/trackJobView";
 
 export default function JobDetails() {
   const [, setLocation] = useLocation();
@@ -36,6 +38,13 @@ export default function JobDetails() {
     { jobId },
     { enabled: !!jobId && isRecruiterView }
   );
+  
+  // Track job view when page loads
+  useEffect(() => {
+    if (jobId && job) {
+      trackJobView({ jobId, userId: user?.id }, trpc);
+    }
+  }, [jobId, job, user?.id]);
 
   if (isLoading) {
     return (

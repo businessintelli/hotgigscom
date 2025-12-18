@@ -11,6 +11,10 @@ import {
   customerContacts, InsertCustomerContact,
   jobs, InsertJob,
   jobTemplates, InsertJobTemplate,
+  templateShares, InsertTemplateShare,
+  jobViewAnalytics, InsertJobViewAnalytic,
+  jobViewSessions, InsertJobViewSession,
+  jobApplicationSources, InsertJobApplicationSource,
   jobViews, InsertJobView,
   applications, InsertApplication,
   interviews, InsertInterview,
@@ -2212,4 +2216,244 @@ export async function getJobAnalytics(jobId: number) {
     timeToFill,
     status: job?.status
   };
+}
+
+// Template Sharing operations
+export async function createTemplateShare(data: {
+  templateId: number;
+  sharedBy: number;
+  requestMessage?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [result] = await db.insert(templateShares).values({
+    templateId: data.templateId,
+    sharedBy: data.sharedBy,
+    requestMessage: data.requestMessage,
+    status: 'pending'
+  });
+  
+  return result.insertId;
+}
+
+export async function getPendingTemplateShares(companyId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return db.select({
+    id: templateShares.id,
+    templateId: templateShares.templateId,
+    templateName: jobTemplates.name,
+    templateDescription: jobTemplates.description,
+    sharedBy: templateShares.sharedBy,
+    sharedByName: users.name,
+    requestMessage: templateShares.requestMessage,
+    requestedAt: templateShares.requestedAt,
+    status: templateShares.status
+  })
+  .from(templateShares)
+  .innerJoin(jobTemplates, eq(templateShares.templateId, jobTemplates.id))
+  .innerJoin(users, eq(templateShares.sharedBy, users.id))
+  .where(and(
+    eq(jobTemplates.companyId, companyId),
+    eq(templateShares.status, 'pending')
+  ))
+  .orderBy(desc(templateShares.requestedAt));
+}
+
+export async function approveTemplateShare(shareId: number, reviewedBy: number, reviewNotes?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Get the template share
+  const [share] = await db.select()
+    .from(templateShares)
+    .where(eq(templateShares.id, shareId));
+  
+  if (!share) throw new Error("Template share not found");
+  
+  // Update template to be company-wide
+  await db.update(jobTemplates)
+    .set({ isCompanyWide: true })
+    .where(eq(jobTemplates.id, share.templateId));
+  
+  // Update share status
+  await db.update(templateShares)
+    .set({
+      status: 'approved',
+      reviewedBy,
+      reviewedAt: new Date(),
+      reviewNotes
+    })
+    .where(eq(templateShares.id, shareId));
+}
+
+export async function rejectTemplateShare(shareId: number, reviewedBy: number, reviewNotes?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(templateShares)
+    .set({
+      status: 'rejected',
+      reviewedBy,
+      reviewedAt: new Date(),
+      reviewNotes
+    })
+    .where(eq(templateShares.id, shareId));
+}
+
+export async function getCompanyWideTemplates(companyId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return db.select()
+    .from(jobTemplates)
+    .where(and(
+      eq(jobTemplates.companyId, companyId),
+      eq(jobTemplates.isCompanyWide, true)
+    ))
+    .orderBy(desc(jobTemplates.createdAt));
+}
+
+// Job View Analytics operations
+export async function trackJobViewAnalytics(data: {
+  jobId: number;
+  userId?: number;
+  sessionId: string;
+  source?: string;
+  deviceType?: string;
+  referrer?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Check if this session has viewed this job in the last 5 minutes
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const [existingSession] = await db.select()
+    .from(jobViewSessions)
+    .where(and(
+      eq(jobViewSessions.jobId, data.jobId),
+      eq(jobViewSessions.sessionId, data.sessionId),
+      gt(jobViewSessions.lastViewedAt, fiveMinutesAgo)
+    ));
+  
+  if (existingSession) {
+    // Update last viewed time
+    await db.update(jobViewSessions)
+      .set({ lastViewedAt: new Date() })
+      .where(eq(jobViewSessions.id, existingSession.id));
+    return; // Don't count as a new view
+  }
+  
+  // Record or update session
+  await db.insert(jobViewSessions)
+    .values({
+      jobId: data.jobId,
+      userId: data.userId,
+      sessionId: data.sessionId,
+      lastViewedAt: new Date()
+    })
+    .onDuplicateKeyUpdate({
+      set: { lastViewedAt: new Date() }
+    });
+  
+  // Record the view in analytics
+  const today = new Date().toISOString().split('T')[0];
+  await db.insert(jobViewAnalytics)
+    .values({
+      jobId: data.jobId,
+      userId: data.userId,
+      viewDate: today,
+      viewCount: 1,
+      source: data.source,
+      deviceType: data.deviceType,
+      referrer: data.referrer
+    })
+    .onDuplicateKeyUpdate({
+      set: { viewCount: sql`viewCount + 1` }
+    });
+}
+
+export async function getJobViewTrends(jobId: number, days: number = 30) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  return db.select({
+    date: jobViewAnalytics.viewDate,
+    views: sum(jobViewAnalytics.viewCount).as('views')
+  })
+  .from(jobViewAnalytics)
+  .where(and(
+    eq(jobViewAnalytics.jobId, jobId),
+    gte(jobViewAnalytics.viewDate, startDate.toISOString().split('T')[0])
+  ))
+  .groupBy(jobViewAnalytics.viewDate)
+  .orderBy(jobViewAnalytics.viewDate);
+}
+
+export async function getTopPerformingJobs(companyId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return db.select({
+    jobId: jobs.id,
+    jobTitle: jobs.title,
+    totalViews: sum(jobViewAnalytics.viewCount).as('totalViews'),
+    totalApplications: count(applications.id).as('totalApplications'),
+    conversionRate: sql`(COUNT(${applications.id}) * 100.0 / NULLIF(SUM(${jobViewAnalytics.viewCount}), 0))`.as('conversionRate')
+  })
+  .from(jobs)
+  .leftJoin(jobViewAnalytics, eq(jobs.id, jobViewAnalytics.jobId))
+  .leftJoin(applications, eq(jobs.id, applications.jobId))
+  .where(eq(jobs.companyId, companyId))
+  .groupBy(jobs.id, jobs.title)
+  .orderBy(desc(sql`totalViews`))
+  .limit(limit);
+}
+
+export async function getSourceAttribution(jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return db.select({
+    source: jobViewAnalytics.source,
+    views: sum(jobViewAnalytics.viewCount).as('views')
+  })
+  .from(jobViewAnalytics)
+  .where(eq(jobViewAnalytics.jobId, jobId))
+  .groupBy(jobViewAnalytics.source)
+  .orderBy(desc(sql`views`));
+}
+
+export async function getDeviceAnalytics(jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  return db.select({
+    deviceType: jobViewAnalytics.deviceType,
+    views: sum(jobViewAnalytics.viewCount).as('views')
+  })
+  .from(jobViewAnalytics)
+  .where(eq(jobViewAnalytics.jobId, jobId))
+  .groupBy(jobViewAnalytics.deviceType)
+  .orderBy(desc(sql`views`));
+}
+
+export async function trackApplicationSource(data: {
+  applicationId: number;
+  source?: string;
+  referrer?: string;
+  campaign?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.insert(jobApplicationSources).values(data);
 }

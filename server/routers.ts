@@ -2240,6 +2240,42 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return { success: true };
       }),
     
+    // Share template with company (request approval)
+    shareTemplate: protectedProcedure
+      .input(z.object({
+        templateId: z.number(),
+        requestMessage: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify template ownership
+        const template = await db.getJobTemplateById(input.templateId);
+        if (!template || template.createdBy !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized" });
+        }
+        
+        // Check if already shared or pending
+        const existingShare = await db.getPendingTemplateShares(ctx.user.companyId!);
+        const alreadyShared = existingShare.some(s => s.templateId === input.templateId);
+        if (alreadyShared) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Template share request already pending" });
+        }
+        
+        const shareId = await db.createTemplateShare({
+          templateId: input.templateId,
+          sharedBy: ctx.user.id,
+          requestMessage: input.requestMessage,
+        });
+        
+        return { success: true, shareId };
+      }),
+    
+    // Get company-wide templates
+    getCompanyWideTemplates: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user.companyId) return [];
+        return await db.getCompanyWideTemplates(ctx.user.companyId);
+      }),
+    
     // Get job analytics (views, applications, conversion)
     getJobAnalytics: protectedProcedure
       .input(z.object({ jobId: z.number() }))
@@ -2247,7 +2283,56 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return await db.getJobAnalytics(input.jobId);
       }),
     
-    // Track job view
+    // Track job view with analytics (debounced)
+    trackJobView: publicProcedure
+      .input(z.object({
+        jobId: z.number(),
+        userId: z.number().optional(),
+        sessionId: z.string(),
+        source: z.string().optional(),
+        deviceType: z.string().optional(),
+        referrer: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.trackJobViewAnalytics(input);
+        return { success: true };
+      }),
+    
+    // Get job view trends over time
+    getJobViewTrends: protectedProcedure
+      .input(z.object({
+        jobId: z.number(),
+        days: z.number().default(30),
+      }))
+      .query(async ({ input }) => {
+        return await db.getJobViewTrends(input.jobId, input.days);
+      }),
+    
+    // Get top performing jobs
+    getTopPerformingJobs: protectedProcedure
+      .input(z.object({
+        companyId: z.number(),
+        limit: z.number().default(10),
+      }))
+      .query(async ({ input }) => {
+        return await db.getTopPerformingJobs(input.companyId, input.limit);
+      }),
+    
+    // Get source attribution for a job
+    getSourceAttribution: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSourceAttribution(input.jobId);
+      }),
+    
+    // Get device analytics for a job
+    getDeviceAnalytics: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getDeviceAnalytics(input.jobId);
+      }),
+    
+    // Track job view (legacy)
     trackView: publicProcedure
       .input(z.object({
         jobId: z.number(),

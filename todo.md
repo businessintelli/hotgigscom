@@ -3627,3 +3627,62 @@
 - [x] Add analytics charts/graphs for visual representation
 - [x] Implement backend procedures to calculate metrics
 - [x] Test analytics display with real job data
+
+
+## Phase 4: Template Sharing & Enhanced Analytics (NEW)
+
+### Template Sharing System
+- [x] Create template_shares database table (templateId, sharedBy, status, requestedAt, reviewedAt, reviewedBy)
+- [x] Add isCompanyWide flag to job_templates table
+- [x] Push database schema changes to database
+- [x] Create backend API for template sharing workflow
+  - [x] shareTemplate procedure (recruiter)
+  - [x] getPendingTemplateShares procedure (company admin)
+  - [x] approveTemplateShare procedure (company admin)
+  - [x] rejectTemplateShare procedure (company admin)
+  - [x] getCompanyWideTemplates procedure (all recruiters)
+- [x] Create Company Admin Template Approval page
+  - [x] List pending template share requests
+  - [x] Show template preview
+  - [x] Approve/Reject buttons with reason field
+  - [x] Notification to requester
+- [x] Add "Share with Company" button to template management page
+- [x] Show company-wide templates in template browser
+- [x] Test complete sharing workflow
+
+### Enhanced Analytics Dashboard
+- [x] Create job_view_analytics table (jobId, viewDate, viewCount, source, deviceType)
+- [x] Create job_application_sources table (applicationId, source, referrer, campaign)
+- [x] Enhance existing analytics page with:
+  - [x] Time-series trend charts (views, applications over time)
+  - [x] Top performing jobs table (by views, applications, conversion rate)
+  - [x] Source attribution breakdown (search, direct, referral, social, email)
+  - [x] Device type analytics (desktop, mobile, tablet)
+  - [x] Date range filters (7d, 30d, 90d, custom)
+  - [ ] Comparison mode (compare multiple jobs)
+- [x] Create backend procedures for analytics data
+  - [x] getJobViewTrends
+  - [x] getTopPerformingJobs
+  - [x] getSourceAttribution
+  - [x] getDeviceAnalytics
+- [x] Add export functionality (CSV, PDF)
+- [x] Test analytics with sample data
+
+### Automatic Job View Tracking
+- [x] Create trackJobView utility function
+- [x] Add view tracking to JobDetails page (candidate view)
+- [x] Add view tracking to JobBrowser page (list view)
+- [x] Add view tracking to PublicHome page (public view)
+- [x] Track view source (search, direct, referral, social, email)
+- [x] Track device type (desktop, mobile, tablet)
+- [x] Track user type (candidate, anonymous, recruiter)
+- [x] Implement debouncing (don't count multiple views in 5 minutes)
+- [x] Test view tracking across all pages
+
+### Company Admin Analytics Access
+- [x] Add Analytics menu item to CompanyAdminLayout
+- [x] Create CompanyAdminAnalytics page (company-wide view)
+- [x] Show aggregate analytics for all company jobs
+- [x] Show recruiter performance comparison
+- [x] Add filters by recruiter, date range, job status
+- [x] Test company admin can see all analytics

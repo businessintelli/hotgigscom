@@ -97,7 +97,8 @@ import {
   MessageSquare,
   Bot,
   UserCheck,
-  HelpCircle
+  HelpCircle,
+  Share2
 } from "lucide-react";
 
 export default function RecruiterDashboard() {
@@ -1448,6 +1449,32 @@ function RecruiterDashboardContent() {
                         <p className="text-sm text-gray-500">{template.title} • {template.location}</p>
                       </div>
                       <div className="flex gap-2">
+                        {!template.isCompanyWide && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={async () => {
+                              const message = prompt('Add a message for the company admin (optional):');
+                              try {
+                                await trpc.job.shareTemplate.mutate({
+                                  templateId: template.id,
+                                  requestMessage: message || undefined,
+                                });
+                                toast.success('Template share request submitted for approval');
+                              } catch (error: any) {
+                                toast.error(error.message || 'Failed to share template');
+                              }
+                            }}
+                          >
+                            <Share2 className="h-3 w-3 mr-1" />
+                            Share
+                          </Button>
+                        )}
+                        {template.isCompanyWide && (
+                          <Badge variant="secondary" className="text-xs">
+                            Company-Wide
+                          </Badge>
+                        )}
                         <Button 
                           variant="outline" 
                           size="sm"

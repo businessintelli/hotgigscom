@@ -2036,7 +2036,9 @@ export const jobTemplates = mysqlTable("job_templates", {
   category: varchar("category", { length: 100 }), // e.g., "Engineering", "Sales", "Marketing"
   tags: text("tags"), // JSON array of tags for organization
   createdBy: int("createdBy").notNull().references(() => users.id),
+  companyId: int("companyId").references(() => companies.id, { onDelete: "cascade" }),
   isPublic: boolean("isPublic").default(false), // Whether template is shared with team
+  isCompanyWide: boolean("isCompanyWide").default(false), // Whether template is approved for company-wide use
   usageCount: int("usageCount").default(0).notNull(), // Track how many times template was used
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -2044,6 +2046,74 @@ export const jobTemplates = mysqlTable("job_templates", {
 
 export type JobTemplate = typeof jobTemplates.$inferSelect;
 export type InsertJobTemplate = typeof jobTemplates.$inferInsert;
+
+/**
+ * Template Shares - Track template sharing requests and approvals
+ */
+export const templateShares = mysqlTable("template_shares", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: int("templateId").notNull().references(() => jobTemplates.id, { onDelete: "cascade" }),
+  sharedBy: int("sharedBy").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  requestMessage: text("requestMessage"),
+  reviewNotes: text("reviewNotes"),
+  requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewedBy: int("reviewedBy").references(() => users.id, { onDelete: "set null" }),
+});
+
+export type TemplateShare = typeof templateShares.$inferSelect;
+export type InsertTemplateShare = typeof templateShares.$inferInsert;
+
+/**
+ * Job View Analytics - Aggregated view tracking with source attribution
+ */
+export const jobViewAnalytics = mysqlTable("job_view_analytics", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("jobId").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  userId: int("userId").references(() => users.id, { onDelete: "set null" }),
+  viewDate: date("viewDate").notNull(),
+  viewCount: int("viewCount").default(1).notNull(),
+  source: varchar("source", { length: 50 }),
+  deviceType: varchar("deviceType", { length: 20 }),
+  referrer: varchar("referrer", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type JobViewAnalytic = typeof jobViewAnalytics.$inferSelect;
+export type InsertJobViewAnalytic = typeof jobViewAnalytics.$inferInsert;
+
+/**
+ * Job View Sessions - Track unique viewing sessions for debouncing
+ */
+export const jobViewSessions = mysqlTable("job_view_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("jobId").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  userId: int("userId").references(() => users.id, { onDelete: "set null" }),
+  sessionId: varchar("sessionId", { length: 255 }).notNull(),
+  lastViewedAt: timestamp("lastViewedAt").defaultNow().notNull(),
+});
+
+export type JobViewSession = typeof jobViewSessions.$inferSelect;
+export type InsertJobViewSession = typeof jobViewSessions.$inferInsert;
+
+/**
+ * Job Application Sources - Track where applications came from
+ */
+export const jobApplicationSources = mysqlTable("job_application_sources", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id, { onDelete: "cascade" }),
+  source: varchar("source", { length: 50 }),
+  referrer: varchar("referrer", { length: 255 }),
+  campaign: varchar("campaign", { length: 100 }),
+  utmSource: varchar("utmSource", { length: 100 }),
+  utmMedium: varchar("utmMedium", { length: 100 }),
+  utmCampaign: varchar("utmCampaign", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type JobApplicationSource = typeof jobApplicationSources.$inferSelect;
+export type InsertJobApplicationSource = typeof jobApplicationSources.$inferInsert;
 
 /**
  * Job Views Tracking - Track job post views for analytics

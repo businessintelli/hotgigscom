@@ -67,6 +67,8 @@ import { CompanyAdminTeamMembers } from "./pages/CompanyAdminTeamMembers";
 import { CompanyAdminLinkedInSettings } from "./pages/CompanyAdminLinkedInSettings";
 import { CompanyAdminInMailTemplates } from "./pages/CompanyAdminInMailTemplates";
 import { CompanyAdminCompanySettings } from "./pages/CompanyAdminCompanySettings";
+import CompanyAdminTemplateShares from "./pages/CompanyAdminTemplateShares";
+import CompanyAdminAnalytics from "./pages/CompanyAdminAnalytics";
 import CustomReports from "./pages/company-admin/CustomReports";
 import CustomReportBuilder from "./pages/company-admin/CustomReportBuilder";
 import ReportSchedules from "./pages/company-admin/ReportSchedules";
@@ -212,6 +214,8 @@ function Router() {
       <Route path="/company-admin/master-lists" component={CompanyAdminMasterLists} />
       <Route path="/company-admin/llm-cost-tracking" component={CompanyLLMCostTracking} />
       <Route path="/company-admin/llm-alerts" component={CompanyLLMAlerts} />
+      <Route path="/company-admin/template-shares" component={CompanyAdminTemplateShares} />
+      <Route path="/company-admin/analytics" component={CompanyAdminAnalytics} />
       
       {/* Application Admin Routes */}
       <Route path="/admin/dashboard" component={AdminDashboard} />

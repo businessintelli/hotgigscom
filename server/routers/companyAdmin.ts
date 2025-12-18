@@ -761,4 +761,61 @@ Provide data-driven, actionable insights based on the company's recruitment oper
         response: response.choices[0].message.content || 'I apologize, but I could not generate a response.',
       };
     }),
+  
+  // ============================================
+  // TEMPLATE SHARING MANAGEMENT
+  // ============================================
+  
+  getPendingTemplateShares: companyAdminProcedure.query(async ({ ctx }) => {
+    if (!ctx.user.companyId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'User is not associated with a company',
+      });
+    }
+    
+    return await db.getPendingTemplateShares(ctx.user.companyId);
+  }),
+  
+  approveTemplateShare: companyAdminProcedure
+    .input(z.object({
+      shareId: z.number(),
+      reviewNotes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db.approveTemplateShare(input.shareId, ctx.user.id, input.reviewNotes);
+      
+      // Log the activity
+      await db.logUserActivity({
+        userId: ctx.user.id,
+        companyId: ctx.user.companyId!,
+        action: 'approve_template_share',
+        resource: 'template_shares',
+        resourceId: input.shareId,
+        details: { reviewNotes: input.reviewNotes },
+      });
+      
+      return { success: true };
+    }),
+  
+  rejectTemplateShare: companyAdminProcedure
+    .input(z.object({
+      shareId: z.number(),
+      reviewNotes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db.rejectTemplateShare(input.shareId, ctx.user.id, input.reviewNotes);
+      
+      // Log the activity
+      await db.logUserActivity({
+        userId: ctx.user.id,
+        companyId: ctx.user.companyId!,
+        action: 'reject_template_share',
+        resource: 'template_shares',
+        resourceId: input.shareId,
+        details: { reviewNotes: input.reviewNotes },
+      });
+      
+      return { success: true };
+    }),
 });

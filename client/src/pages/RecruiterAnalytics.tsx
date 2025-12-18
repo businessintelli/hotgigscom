@@ -1,20 +1,58 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, TrendingUp, Users, Clock, Target, ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Download, TrendingUp, Users, Clock, Target, ArrowLeft, Eye, Monitor, Smartphone, Tablet, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { format } from "date-fns";
 
 export default function RecruiterAnalytics() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState<"7" | "30" | "90" | "365">("30");
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   
   const { data: analytics, isLoading } = trpc.recruiter.getAnalytics.useQuery({
     days: parseInt(timeRange),
   });
+  
+  const { data: myJobs } = trpc.job.getMyJobs.useQuery();
+  const { data: topPerformingJobs } = trpc.job.getTopPerformingJobs.useQuery(
+    { companyId: user?.companyId || 0, limit: 10 },
+    { enabled: !!user?.companyId }
+  );
+  
+  const { data: viewTrends } = trpc.job.getJobViewTrends.useQuery(
+    { jobId: selectedJobId || 0, days: parseInt(timeRange) },
+    { enabled: !!selectedJobId }
+  );
+  
+  const { data: sourceAttribution } = trpc.job.getSourceAttribution.useQuery(
+    { jobId: selectedJobId || 0 },
+    { enabled: !!selectedJobId }
+  );
+  
+  const { data: deviceAnalytics } = trpc.job.getDeviceAnalytics.useQuery(
+    { jobId: selectedJobId || 0 },
+    { enabled: !!selectedJobId }
+  );
+  
+  const getDeviceIcon = (deviceType: string) => {
+    switch (deviceType?.toLowerCase()) {
+      case "mobile":
+        return <Smartphone className="h-4 w-4" />;
+      case "tablet":
+        return <Tablet className="h-4 w-4" />;
+      default:
+        return <Monitor className="h-4 w-4" />;
+    }
+  };
 
   const handleExportCSV = () => {
     if (!analytics) return;
@@ -286,6 +324,139 @@ export default function RecruiterAnalytics() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Job Selector for Detailed Analytics */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Detailed Job Analytics
+          </CardTitle>
+          <CardDescription>Select a job to view detailed view tracking and source analytics</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Select
+            value={selectedJobId?.toString() || ""}
+            onValueChange={(v) => setSelectedJobId(parseInt(v))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a job..." />
+            </SelectTrigger>
+            <SelectContent>
+              {myJobs?.map((job: any) => (
+                <SelectItem key={job.id} value={job.id.toString()}>
+                  {job.title} - {job.location}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+      
+      {selectedJobId && (
+        <>
+          {/* View Trends */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                View Trends
+              </CardTitle>
+              <CardDescription>Daily job views over the selected period</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {viewTrends && viewTrends.length > 0 ? (
+                <div className="space-y-2">
+                  {viewTrends.map((trend: any) => (
+                    <div key={trend.date} className="flex items-center justify-between p-2 rounded hover:bg-muted">
+                      <span className="text-sm">{format(new Date(trend.date), "MMM d, yyyy")}</span>
+                      <Badge variant="secondary">{trend.views} views</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No view data available for this period
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Source Attribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Traffic Sources
+              </CardTitle>
+              <CardDescription>Where your job views are coming from</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {sourceAttribution && sourceAttribution.length > 0 ? (
+                <div className="space-y-3">
+                  {sourceAttribution.map((source: any) => {
+                    const total = sourceAttribution.reduce((sum: number, s: any) => sum + parseInt(s.views || 0), 0);
+                    const percentage = total > 0 ? ((parseInt(source.views || 0) / total) * 100).toFixed(1) : "0";
+                    
+                    return (
+                      <div key={source.source} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium capitalize">{source.source || "Unknown"}</span>
+                          <span className="text-muted-foreground">{source.views} views ({percentage}%)</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No source data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Device Analytics */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Monitor className="h-5 w-5" />
+                Device Breakdown
+              </CardTitle>
+              <CardDescription>Devices used to view your job posting</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {deviceAnalytics && deviceAnalytics.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {deviceAnalytics.map((device: any) => (
+                    <Card key={device.deviceType}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {getDeviceIcon(device.deviceType)}
+                            <span className="font-medium capitalize">{device.deviceType || "Unknown"}</span>
+                          </div>
+                          <Badge variant="secondary">{device.views} views</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No device data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
