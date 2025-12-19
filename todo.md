@@ -4120,3 +4120,14 @@
 - [x] Fix undefined length error in CompanyAdminReports component
 - [x] Add proper null checks for all report data arrays
 - [x] Test all report tabs to ensure they load without errors
+
+
+## Deployment Documentation Enhancement (Dec 19, 2025)
+- [x] Review existing DEPLOYMENT.md and automation scripts
+- [x] Add comprehensive deployment overview section with key steps
+- [x] Create detailed local setup guide using install.sh and setup-wizard.sh
+- [x] Document all dependencies and prerequisites
+- [x] Explain seed.mjs script purpose and usage
+- [x] Explain initialize-budgets.mjs script purpose and usage
+- [x] Add troubleshooting section for common deployment issues
+- [ ] Commit updated documentation to GitHub
