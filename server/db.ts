@@ -298,11 +298,22 @@ export async function createCandidate(candidate: InsertCandidate) {
   const db = await getDb();
   if (!db) return null;
   
-  // Sanitize null and empty string values to undefined for optional fields
-  const sanitizedCandidate = {
+  // Sanitize and convert values properly
+  const sanitizedCandidate: any = {
     ...candidate,
+    // Required fields - ensure they have values
     phoneNumber: candidate.phoneNumber && candidate.phoneNumber.trim() !== '' ? candidate.phoneNumber : undefined,
     location: candidate.location && candidate.location.trim() !== '' ? candidate.location : undefined,
+    // Convert array fields to JSON strings if they're arrays
+    employmentHistory: Array.isArray(candidate.employmentHistory) ? JSON.stringify(candidate.employmentHistory) : candidate.employmentHistory,
+    languagesRead: Array.isArray(candidate.languagesRead) ? JSON.stringify(candidate.languagesRead) : candidate.languagesRead,
+    languagesSpeak: Array.isArray(candidate.languagesSpeak) ? JSON.stringify(candidate.languagesSpeak) : candidate.languagesSpeak,
+    languagesWrite: Array.isArray(candidate.languagesWrite) ? JSON.stringify(candidate.languagesWrite) : candidate.languagesWrite,
+    // Ensure date fields are properly formatted or undefined
+    dateOfBirth: candidate.dateOfBirth || undefined,
+    workAuthorizationEndDate: candidate.workAuthorizationEndDate || undefined,
+    highestDegreeStartDate: candidate.highestDegreeStartDate || undefined,
+    highestDegreeEndDate: candidate.highestDegreeEndDate || undefined,
   };
   
   const result = await db.insert(candidates).values(sanitizedCandidate);

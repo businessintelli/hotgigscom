@@ -15,6 +15,7 @@ import RecruiterLayout from '@/components/RecruiterLayout';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { validatePhoneNumber } from '@shared/phoneValidation';
 import JSZip from 'jszip';
+import { CandidateWizard, WizardData } from '@/components/CandidateWizard';
 
 interface EmploymentEntry {
   company: string;
@@ -105,7 +106,7 @@ const INITIAL_FORM_DATA: CandidateFormData = {
 function AddCandidatePageContent() {
   const [, setLocation] = useLocation();
   const [uploadMode, setUploadMode] = useState<'single' | 'bulk-resume' | 'bulk-excel'>('single');
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Choose method, 2: Basic info, 3: Wizard
   const [entryMethod, setEntryMethod] = useState<'resume' | 'manual' | null>(null);
   const [formData, setFormData] = useState<CandidateFormData>(INITIAL_FORM_DATA);
   const [isUploading, setIsUploading] = useState(false);
@@ -226,8 +227,8 @@ function AddCandidatePageContent() {
         description: 'Resume data extracted. Please review and complete any missing fields.',
       });
 
-      // Auto-advance to form
-      setStep(2);
+      // Auto-advance to wizard for additional information
+      setStep(3);
     } catch (error: any) {
       console.error('Error uploading resume:', error);
       setIsParsing(false);
@@ -533,7 +534,7 @@ function AddCandidatePageContent() {
     reader.readAsText(file);
   };
 
-  const handleSubmit = () => {
+  const handleBasicInfoNext = () => {
     // Validate required fields
     if (!formData.name || !formData.name.trim()) {
       toast({
@@ -593,6 +594,12 @@ function AddCandidatePageContent() {
       return;
     }
 
+    // Move to wizard step
+    setStep(3);
+  };
+
+  const handleWizardComplete = (wizardData: WizardData) => {
+    // Submit to backend with merged data
     addCandidateMutation.mutate({
       name: formData.name,
       email: formData.email,
@@ -603,31 +610,31 @@ function AddCandidatePageContent() {
       experience: formData.experience || undefined,
       education: formData.education || undefined,
       bio: formData.bio || undefined,
-      nationality: formData.nationality || undefined,
-      gender: formData.gender || undefined,
-      dateOfBirth: formData.dateOfBirth || undefined,
-      workAuthorization: formData.workAuthorization || undefined,
-      workAuthorizationEndDate: formData.workAuthorizationEndDate || undefined,
-      w2EmployerName: formData.w2EmployerName || undefined,
-      currentSalary: formData.currentSalary || undefined,
-      expectedSalary: formData.expectedSalary || undefined,
-      currentHourlyRate: formData.currentHourlyRate || undefined,
-      expectedHourlyRate: formData.expectedHourlyRate || undefined,
-      salaryType: formData.salaryType,
-      highestEducation: formData.highestEducation || undefined,
-      specialization: formData.specialization || undefined,
-      highestDegreeStartDate: formData.highestDegreeStartDate || undefined,
-      highestDegreeEndDate: formData.highestDegreeEndDate || undefined,
-      employmentHistory: formData.employmentHistory.length > 0 ? formData.employmentHistory : undefined,
-      languagesRead: formData.languagesRead.length > 0 ? formData.languagesRead : undefined,
-      languagesSpeak: formData.languagesSpeak.length > 0 ? formData.languagesSpeak : undefined,
-      languagesWrite: formData.languagesWrite.length > 0 ? formData.languagesWrite : undefined,
-      currentResidenceZipCode: formData.currentResidenceZipCode || undefined,
-      passportNumber: formData.passportNumber || undefined,
-      sinLast4: formData.sinLast4 || undefined,
-      linkedinId: formData.linkedinId || undefined,
-      passportCopyUrl: formData.passportCopyUrl || undefined,
-      dlCopyUrl: formData.dlCopyUrl || undefined,
+      nationality: wizardData.nationality || formData.nationality || undefined,
+      gender: wizardData.gender || formData.gender || undefined,
+      dateOfBirth: wizardData.dateOfBirth ? wizardData.dateOfBirth.toISOString().split('T')[0] : formData.dateOfBirth || undefined,
+      workAuthorization: wizardData.workAuthorization || formData.workAuthorization || undefined,
+      workAuthorizationEndDate: wizardData.workAuthorizationEndDate ? wizardData.workAuthorizationEndDate.toISOString().split('T')[0] : formData.workAuthorizationEndDate || undefined,
+      w2EmployerName: wizardData.w2EmployerName || formData.w2EmployerName || undefined,
+      currentSalary: wizardData.currentSalary?.toString() || formData.currentSalary || undefined,
+      expectedSalary: wizardData.expectedSalary?.toString() || formData.expectedSalary || undefined,
+      currentHourlyRate: wizardData.currentHourlyRate?.toString() || formData.currentHourlyRate || undefined,
+      expectedHourlyRate: wizardData.expectedHourlyRate?.toString() || formData.expectedHourlyRate || undefined,
+      salaryType: wizardData.salaryType || formData.salaryType,
+      highestEducation: wizardData.highestEducation || formData.highestEducation || undefined,
+      specialization: wizardData.specialization || formData.specialization || undefined,
+      highestDegreeStartDate: wizardData.highestDegreeStartDate ? wizardData.highestDegreeStartDate.toISOString().split('T')[0] : formData.highestDegreeStartDate || undefined,
+      highestDegreeEndDate: wizardData.highestDegreeEndDate ? wizardData.highestDegreeEndDate.toISOString().split('T')[0] : formData.highestDegreeEndDate || undefined,
+      employmentHistory: (wizardData.employmentHistory && wizardData.employmentHistory.length > 0) ? wizardData.employmentHistory : (formData.employmentHistory.length > 0 ? formData.employmentHistory : undefined),
+      languagesRead: (wizardData.languagesRead && wizardData.languagesRead.length > 0) ? wizardData.languagesRead : (formData.languagesRead.length > 0 ? formData.languagesRead : undefined),
+      languagesSpeak: (wizardData.languagesSpeak && wizardData.languagesSpeak.length > 0) ? wizardData.languagesSpeak : (formData.languagesSpeak.length > 0 ? formData.languagesSpeak : undefined),
+      languagesWrite: (wizardData.languagesWrite && wizardData.languagesWrite.length > 0) ? wizardData.languagesWrite : (formData.languagesWrite.length > 0 ? formData.languagesWrite : undefined),
+      currentResidenceZipCode: wizardData.currentResidenceZipCode || formData.currentResidenceZipCode || undefined,
+      passportNumber: wizardData.passportNumber || formData.passportNumber || undefined,
+      sinLast4: wizardData.sinLast4 || formData.sinLast4 || undefined,
+      linkedinId: wizardData.linkedinId || formData.linkedinId || undefined,
+      passportCopyUrl: wizardData.passportCopyUrl || formData.passportCopyUrl || undefined,
+      dlCopyUrl: wizardData.dlCopyUrl || formData.dlCopyUrl || undefined,
     });
   };
 
@@ -872,6 +879,49 @@ function AddCandidatePageContent() {
     );
   }
 
+  // Step 3: Wizard for additional information
+  if (step === 3) {
+    return (
+      <RecruiterLayout>
+        <div className="max-w-4xl mx-auto py-8">
+          <CandidateWizard
+            initialData={{
+              salaryType: formData.salaryType,
+              currentSalary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
+              currentHourlyRate: formData.currentHourlyRate ? parseInt(formData.currentHourlyRate) : undefined,
+              expectedSalary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
+              expectedHourlyRate: formData.expectedHourlyRate ? parseInt(formData.expectedHourlyRate) : undefined,
+              workAuthorization: formData.workAuthorization,
+              workAuthorizationEndDate: formData.workAuthorizationEndDate ? new Date(formData.workAuthorizationEndDate) : undefined,
+              w2EmployerName: formData.w2EmployerName,
+              nationality: formData.nationality,
+              gender: formData.gender,
+              dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined,
+              currentResidenceZipCode: formData.currentResidenceZipCode,
+              linkedinId: formData.linkedinId,
+              highestEducation: formData.highestEducation,
+              specialization: formData.specialization,
+              highestDegreeStartDate: formData.highestDegreeStartDate ? new Date(formData.highestDegreeStartDate) : undefined,
+              highestDegreeEndDate: formData.highestDegreeEndDate ? new Date(formData.highestDegreeEndDate) : undefined,
+              employmentHistory: formData.employmentHistory,
+              languagesRead: formData.languagesRead,
+              languagesSpeak: formData.languagesSpeak,
+              languagesWrite: formData.languagesWrite,
+              passportNumber: formData.passportNumber,
+              sinLast4: formData.sinLast4,
+              passportCopyUrl: formData.passportCopyUrl,
+              dlCopyUrl: formData.dlCopyUrl,
+            }}
+            onComplete={handleWizardComplete}
+            onCancel={() => setStep(2)}
+            title="Complete Candidate Profile"
+            description={`Submitting candidate: ${formData.name}`}
+          />
+        </div>
+      </RecruiterLayout>
+    );
+  }
+
   // Step 2: Form (only for single candidate entry)
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -992,17 +1042,9 @@ function AddCandidatePageContent() {
           Cancel
         </Button>
         <Button
-          onClick={handleSubmit}
-          disabled={addCandidateMutation.isPending}
+          onClick={handleBasicInfoNext}
         >
-          {addCandidateMutation.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Adding Candidate...
-            </>
-          ) : (
-            'Add Candidate'
-          )}
+          Next: Additional Information
         </Button>
       </div>
     </div>

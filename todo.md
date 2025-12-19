@@ -4404,3 +4404,14 @@
 - [x] Built ResumeParseWizard dialog component
 - [x] Updated CandidateDashboard upload flow to use wizard
 - [x] Updated MyResumes upload flow to use wizard
+
+## Wizard Implementation for Candidate Data Collection (COMPLETED)
+- [x] Add missing database fields for wizard (compensation type, work authorization end date, W2 employer, nationality, gender, DOB, current residence zip, LinkedIn ID, passport number, SIN last 4, document uploads)
+- [x] Create reusable multi-step wizard component (CandidateWizard.tsx)
+- [x] Integrate wizard into recruiter manual candidate add flow
+- [x] Integrate wizard into recruiter resume upload flow (after parsing)
+- [x] Integrate wizard into guest job application flow (already had comprehensive wizard)
+- [x] Integrate wizard into registered candidate job application flow (already had extended info form)
+- [x] Update backend procedures to handle wizard data properly
+- [x] Fix database insert errors for missing required fields
+- [x] Test all candidate addition flows end-to-end
