@@ -35,6 +35,9 @@ export default function JobApplication() {
   const [showSkillValidation, setShowSkillValidation] = useState(false);
   const [extendedInfo, setExtendedInfo] = useState<ExtendedCandidateInfo>({});
   const [currentSection, setCurrentSection] = useState<string>("resume");
+  const [parsedResumeData, setParsedResumeData] = useState<any>(null);
+  const [showResumeReviewModal, setShowResumeReviewModal] = useState(false);
+  const [pendingResumeUpload, setPendingResumeUpload] = useState<{url: string, filename: string} | null>(null);
   
   // Upload resume mutation
   const uploadResumeMutation = trpc.candidate.uploadResume.useMutation();
@@ -197,7 +200,7 @@ export default function JobApplication() {
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const validTypes = [
@@ -217,7 +220,45 @@ export default function JobApplication() {
       }
       
       setCustomResumeFile(file);
-      toast.success("Resume selected successfully");
+      
+      // Upload and parse resume immediately
+      try {
+        toast.info("Uploading and parsing resume...");
+        
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const fileData = await base64Promise;
+        
+        // Upload to S3 and parse (with autoFill to get parsed data)
+        const uploadResult = await uploadResumeMutation.mutateAsync({
+          candidateId: candidate!.id,
+          fileData,
+          fileName: file.name,
+          autoFill: true, // Enable parsing to get structured data
+        });
+        
+        // Store parsed data and uploaded resume info
+        setParsedResumeData(uploadResult.parsedData);
+        setPendingResumeUpload({
+          url: uploadResult.url,
+          filename: file.name
+        });
+        
+        // Show review modal
+        setShowResumeReviewModal(true);
+        toast.success("Resume uploaded and parsed successfully!");
+      } catch (error: any) {
+        toast.error(`Failed to upload resume: ${error.message}`);
+        setCustomResumeFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
     }
   };
 
@@ -256,30 +297,14 @@ export default function JobApplication() {
       let resumeUrl = candidate.resumeUrl;
       let resumeFilename = candidate.resumeFilename;
 
-      // If using custom resume, upload to S3 first
-      if (useCustomResume && customResumeFile) {
-        toast.info("Uploading resume...");
-        
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(customResumeFile);
-        });
-
-        const fileData = await base64Promise;
-        
-        // Upload to S3 via tRPC (without auto-fill to avoid overwriting profile)
-        const uploadResult = await uploadResumeMutation.mutateAsync({
-          candidateId: candidate.id,
-          fileData,
-          fileName: customResumeFile.name,
-          autoFill: false, // Don't overwrite profile data
-        });
-        
-        resumeUrl = uploadResult.url;
-        resumeFilename = customResumeFile.name;
-        toast.success("Resume uploaded successfully");
+      // If using custom resume, use the pending upload (already uploaded and parsed)
+      if (useCustomResume && pendingResumeUpload) {
+        resumeUrl = pendingResumeUpload.url;
+        resumeFilename = pendingResumeUpload.filename;
+      } else if (useCustomResume && customResumeFile) {
+        // Fallback: if somehow we have a file but no pending upload
+        toast.error("Please wait for resume upload to complete");
+        return;
       }
 
       await submitApplicationMutation.mutateAsync({
@@ -803,6 +828,138 @@ export default function JobApplication() {
         resumeUrl={previewResumeUrl}
         resumeFilename={previewResumeFilename}
       />
+
+      {/* Resume Review Modal */}
+      {showResumeReviewModal && parsedResumeData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Review Extracted Information
+              </CardTitle>
+              <CardDescription>
+                Please review the information extracted from your resume. You can edit your profile later if needed.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Personal Information */}
+              {parsedResumeData.personalInfo && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-sm text-gray-700">Personal Information</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2 text-sm">
+                    {parsedResumeData.personalInfo.name && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Name:</span>
+                        <span className="font-medium">{parsedResumeData.personalInfo.name}</span>
+                      </div>
+                    )}
+                    {parsedResumeData.personalInfo.email && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Email:</span>
+                        <span className="font-medium">{parsedResumeData.personalInfo.email}</span>
+                      </div>
+                    )}
+                    {parsedResumeData.personalInfo.phone && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Phone:</span>
+                        <span className="font-medium">{parsedResumeData.personalInfo.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Skills */}
+              {parsedResumeData.skills && parsedResumeData.skills.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-sm text-gray-700">Skills</h3>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex flex-wrap gap-2">
+                      {parsedResumeData.skills.map((skill: string, index: number) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Experience */}
+              {parsedResumeData.experience && parsedResumeData.experience.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-sm text-gray-700">Experience</h3>
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
+                    {parsedResumeData.experience.map((exp: any, index: number) => (
+                      <div key={index} className="border-b border-purple-200 last:border-0 pb-3 last:pb-0">
+                        <p className="font-medium text-sm">{exp.title}</p>
+                        <p className="text-sm text-gray-600">{exp.company}</p>
+                        {exp.duration && (
+                          <p className="text-xs text-gray-500">{exp.duration}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Education */}
+              {parsedResumeData.education && parsedResumeData.education.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-sm text-gray-700">Education</h3>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
+                    {parsedResumeData.education.map((edu: any, index: number) => (
+                      <div key={index} className="border-b border-orange-200 last:border-0 pb-3 last:pb-0">
+                        <p className="font-medium text-sm">{edu.degree}</p>
+                        <p className="text-sm text-gray-600">{edu.institution}</p>
+                        {edu.year && (
+                          <p className="text-xs text-gray-500">{edu.year}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  <strong>Note:</strong> This information has been automatically extracted and saved to your profile. You can edit it later from your dashboard.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowResumeReviewModal(false);
+                    setParsedResumeData(null);
+                    setPendingResumeUpload(null);
+                    setCustomResumeFile(null);
+                    setUseCustomResume(false);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowResumeReviewModal(false);
+                    toast.success("Resume information confirmed. You can now complete your application.");
+                  }}
+                >
+                  Confirm & Continue
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

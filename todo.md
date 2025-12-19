@@ -4242,3 +4242,14 @@
 - [ ] Create "My Drafts" section in dashboards
 - [ ] Add draft recovery on page load
 - [ ] Write vitest tests for draft functionality
+
+## Resume Review/Edit Step Bug Fixes (Current Focus)
+- [ ] Fix guest application flow to show resume review/edit step after upload
+- [ ] Fix registered candidate application flow to show resume review/edit step after upload
+
+## Application Wizard Simplification (Current Focus)
+- [ ] Fix guest application flow to show resume review/edit step after upload
+- [ ] Fix registered candidate application flow to show resume review/edit step after upload
+- [x] Simplify guest application wizard from 12 steps to 3-4 steps maximum
+- [x] Simplify registered candidate application flow to 3-4 steps maximum (already uses modal approach)
+- [x] Simplify recruiter apply-on-behalf flow to 3-4 steps maximum (already has 3-step flow)
