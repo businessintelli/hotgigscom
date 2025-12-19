@@ -6641,6 +6641,42 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
 
   // Guest Application router - for users applying without registration
   guestApplication: router({
+    // Parse resume and extract information (without creating application)
+    parseResume: publicProcedure
+      .input(z.object({
+        resumeBase64: z.string(), // base64 data URL
+        resumeFilename: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          // Extract base64 data and mime type
+          const matches = input.resumeBase64.match(/^data:(.+);base64,(.+)$/);
+          if (!matches) {
+            throw new Error('Invalid file data format');
+          }
+          
+          const mimeType = matches[1];
+          const base64Data = matches[2];
+          const resumeBuffer = Buffer.from(base64Data, 'base64');
+          
+          // Extract text from resume
+          const resumeText = await extractResumeText(resumeBuffer, mimeType);
+          
+          // Parse resume with AI
+          const parsedResume = await parseResumeWithAI(resumeText);
+          
+          return {
+            parsedData: parsedResume,
+          };
+        } catch (error: any) {
+          console.error('Resume parsing error:', error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Failed to parse resume: ${error.message}`,
+          });
+        }
+      }),
+
     // Submit guest application with resume upload
     submit: publicProcedure
       .input(z.object({

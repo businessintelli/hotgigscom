@@ -4253,3 +4253,10 @@
 - [x] Simplify guest application wizard from 12 steps to 3-4 steps maximum
 - [x] Simplify registered candidate application flow to 3-4 steps maximum (already uses modal approach)
 - [x] Simplify recruiter apply-on-behalf flow to 3-4 steps maximum (already has 3-step flow)
+
+## Guest Application Wizard - AI Parsing Feature
+- [x] Create backend procedure to parse resume without creating application (parseResume endpoint)
+- [x] Update GuestApplicationWizard to call parseResume after file upload
+- [x] Display parsed data (name, email, phone, skills, experience, education) for review/edit
+- [x] Allow user to edit parsed information before final submission
+- [x] Submit complete application with edited data to guestApplication.submit endpoint
