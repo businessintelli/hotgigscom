@@ -48,7 +48,8 @@ import {
   customReports, InsertCustomReport,
   reportSchedules, InsertReportSchedule,
   reportExecutions, InsertReportExecution,
-  guestApplications, InsertGuestApplication
+  guestApplications, InsertGuestApplication,
+  bulkUploadJobs, InsertBulkUploadJob
 } from "../drizzle/schema";
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
@@ -3264,4 +3265,118 @@ export async function canAccessTemplate(userId: number, templateId: number, comp
   }
   
   return false;
+}
+
+// ============================================
+// Bulk Upload Jobs Functions
+// ============================================
+
+export async function createBulkUploadJob(jobData: Omit<InsertBulkUploadJob, 'id' | 'createdAt' | 'updatedAt'>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const result = await db.insert(bulkUploadJobs).values(jobData);
+  return { id: Number(result[0].insertId), ...jobData };
+}
+
+export async function updateBulkUploadJobStatus(
+  jobId: number, 
+  status: 'pending' | 'processing' | 'completed' | 'failed',
+  updates: Partial<InsertBulkUploadJob>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(bulkUploadJobs)
+    .set({ status, ...updates })
+    .where(eq(bulkUploadJobs.id, jobId));
+}
+
+export async function getBulkUploadJobById(jobId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select()
+    .from(bulkUploadJobs)
+    .where(eq(bulkUploadJobs.id, jobId))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function getBulkUploadJobsByRecruiter(recruiterId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select()
+    .from(bulkUploadJobs)
+    .where(eq(bulkUploadJobs.recruiterId, recruiterId))
+    .orderBy(desc(bulkUploadJobs.createdAt));
+}
+
+export async function sendBulkUploadCompletionEmail(params: {
+  jobId: number;
+  recipientEmail: string;
+  recipientName: string;
+  fileName: string;
+  totalRecords: number;
+  successCount: number;
+  failureCount: number;
+  failedRecordsUrl?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  
+  try {
+    // Import email service
+    const { sendEmail } = await import('./_core/email');
+    
+    const subject = `Bulk Upload Complete: ${params.fileName}`;
+    const html = `
+      <h2>Bulk Candidate Upload Complete</h2>
+      <p>Hello ${params.recipientName},</p>
+      <p>Your bulk candidate upload has finished processing.</p>
+      
+      <h3>Summary</h3>
+      <ul>
+        <li><strong>File:</strong> ${params.fileName}</li>
+        <li><strong>Total Records:</strong> ${params.totalRecords}</li>
+        <li><strong>Successfully Imported:</strong> ${params.successCount}</li>
+        <li><strong>Failed:</strong> ${params.failureCount}</li>
+      </ul>
+      
+      ${params.failureCount > 0 && params.failedRecordsUrl ? `
+        <p>
+          <strong>Failed Records:</strong> 
+          <a href="${params.failedRecordsUrl}">Download failed records CSV</a>
+        </p>
+        <p>You can review and correct the failed records, then re-upload them.</p>
+      ` : ''}
+      
+      <p>
+        <a href="${process.env.VITE_FRONTEND_FORGE_API_URL || 'https://app.hotgigs.com'}/recruiter/bulk-upload-history">
+          View Upload History
+        </a>
+      </p>
+      
+      <p>Thank you for using HotGigs!</p>
+    `;
+    
+    await sendEmail({
+      to: params.recipientEmail,
+      subject,
+      html,
+    });
+    
+    // Mark email as sent
+    await db.update(bulkUploadJobs)
+      .set({ 
+        emailNotificationSent: true,
+        emailSentAt: new Date()
+      })
+      .where(eq(bulkUploadJobs.id, params.jobId));
+      
+  } catch (error) {
+    console.error('[sendBulkUploadCompletionEmail] Error:', error);
+  }
 }

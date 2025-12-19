@@ -2270,4 +2270,34 @@ export const jobDrafts = mysqlTable("job_drafts", {
 export type JobDraft = typeof jobDrafts.$inferSelect;
 export type InsertJobDraft = typeof jobDrafts.$inferInsert;
 
+/**
+ * Bulk Upload Jobs - Track background processing of bulk candidate uploads
+ */
+export const bulkUploadJobs = mysqlTable("bulk_upload_jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  userId: int("userId").notNull().references(() => users.id),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileSize: int("fileSize").notNull(), // in bytes
+  fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
+  fileKey: varchar("fileKey", { length: 500 }).notNull(),
+  fileType: varchar("fileType", { length: 50 }).notNull(), // 'zip', 'excel', 'csv'
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  totalRecords: int("totalRecords").default(0).notNull(),
+  successCount: int("successCount").default(0).notNull(),
+  failureCount: int("failureCount").default(0).notNull(),
+  errorMessage: text("errorMessage"),
+  failedRecordsUrl: varchar("failedRecordsUrl", { length: 500 }), // CSV file with failed records
+  failedRecordsKey: varchar("failedRecordsKey", { length: 500 }),
+  processingStartedAt: timestamp("processingStartedAt"),
+  processingCompletedAt: timestamp("processingCompletedAt"),
+  emailNotificationSent: boolean("emailNotificationSent").default(false).notNull(),
+  emailSentAt: timestamp("emailSentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BulkUploadJob = typeof bulkUploadJobs.$inferSelect;
+export type InsertBulkUploadJob = typeof bulkUploadJobs.$inferInsert;
+
 

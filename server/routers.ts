@@ -1811,11 +1811,19 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     bulkUploadResumes: protectedProcedure
       .input(z.object({
         zipFileData: z.string(), // base64 encoded ZIP file
+        fileName: z.string(),
+        fileSize: z.number(),
         jobId: z.number().optional(), // Optional: rank against this job
         autoCreateProfiles: z.boolean().optional().default(true),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { zipFileData, jobId, autoCreateProfiles } = input;
+        const { zipFileData, fileName, fileSize, jobId, autoCreateProfiles } = input;
+        
+        // Check file size limits (200MB for ZIP)
+        const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
+        if (fileSize > MAX_FILE_SIZE) {
+          throw new Error(`File size exceeds maximum limit of 200MB`);
+        }
         
         // Extract base64 data
         const matches = zipFileData.match(/^data:(.+);base64,(.+)$/);
@@ -1827,7 +1835,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         const buffer = Buffer.from(base64Data, 'base64');
         
         // Import bulk upload service
-        const { processBulkResumeUpload, validateBulkUploadZip } = await import('./bulkResumeUpload');
+        const { validateBulkUploadZip } = await import('./bulkResumeUpload');
         
         // Validate ZIP file
         const validation = validateBulkUploadZip(buffer);
@@ -1835,14 +1843,118 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           throw new Error(validation.error || 'Invalid ZIP file');
         }
         
-        // Process bulk upload
-        const result = await processBulkResumeUpload(buffer, {
+        // Upload ZIP file to S3 for background processing
+        const { storagePut } = await import('./storage');
+        const fileKey = `bulk-uploads/${ctx.user.id}-${Date.now()}-${fileName}`;
+        const { url: fileUrl } = await storagePut(fileKey, buffer, 'application/zip');
+        
+        // Get recruiter ID
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) {
+          throw new Error('Recruiter profile not found');
+        }
+        
+        // Create bulk upload job record
+        const jobRecord = await db.createBulkUploadJob({
+          recruiterId: recruiter.id,
           userId: ctx.user.id,
-          jobId,
-          autoCreateProfiles,
+          fileName,
+          fileSize,
+          fileUrl,
+          fileKey,
+          fileType: 'zip',
+          status: 'pending',
         });
         
-        return result;
+        // Start background processing (non-blocking)
+        setImmediate(async () => {
+          try {
+            await db.updateBulkUploadJobStatus(jobRecord.id, 'processing', {
+              processingStartedAt: new Date(),
+            });
+            
+            const { processBulkResumeUpload } = await import('./bulkResumeUpload');
+            const result = await processBulkResumeUpload(buffer, {
+              userId: ctx.user.id,
+              jobId,
+              autoCreateProfiles,
+            });
+            
+            // Generate failed records CSV if there are failures
+            let failedRecordsUrl: string | undefined;
+            let failedRecordsKey: string | undefined;
+            
+            if (result.failedCount > 0) {
+              const failedRecords = result.candidates.filter(c => !c.success);
+              const csvContent = [
+                ['Filename', 'Error'],
+                ...failedRecords.map(r => [r.filename, r.error || 'Unknown error'])
+              ].map(row => row.join(',')).join('\n');
+              
+              failedRecordsKey = `bulk-uploads/failed-${jobRecord.id}-${Date.now()}.csv`;
+              const { url } = await storagePut(failedRecordsKey, csvContent, 'text/csv');
+              failedRecordsUrl = url;
+            }
+            
+            // Update job record with results
+            await db.updateBulkUploadJobStatus(jobRecord.id, 'completed', {
+              totalRecords: result.totalFiles,
+              successCount: result.successCount,
+              failureCount: result.failedCount,
+              failedRecordsUrl,
+              failedRecordsKey,
+              processingCompletedAt: new Date(),
+            });
+            
+            // Send email notification
+            await db.sendBulkUploadCompletionEmail({
+              jobId: jobRecord.id,
+              recipientEmail: ctx.user.email!,
+              recipientName: ctx.user.name || 'Recruiter',
+              fileName,
+              totalRecords: result.totalFiles,
+              successCount: result.successCount,
+              failureCount: result.failedCount,
+              failedRecordsUrl,
+            });
+            
+          } catch (error: any) {
+            await db.updateBulkUploadJobStatus(jobRecord.id, 'failed', {
+              errorMessage: error.message,
+              processingCompletedAt: new Date(),
+            });
+          }
+        });
+        
+        return { jobId: jobRecord.id, status: 'pending', message: 'Upload started. You will receive an email when processing completes.' };
+      }),
+
+    // Get bulk upload history
+    getBulkUploadHistory: protectedProcedure
+      .query(async ({ ctx }) => {
+        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
+        if (!recruiter) {
+          throw new Error('Recruiter profile not found');
+        }
+        
+        return await db.getBulkUploadJobsByRecruiter(recruiter.id);
+      }),
+
+    // Get bulk upload job details
+    getBulkUploadJob: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const job = await db.getBulkUploadJobById(input.jobId);
+        if (!job) {
+          throw new Error('Bulk upload job not found');
+        }
+        
+        // Verify ownership
+        if (job.userId !== ctx.user.id) {
+          throw new Error('Unauthorized');
+        }
+        
+        return job;
       }),
 
     // Profile sharing - create secure share link
