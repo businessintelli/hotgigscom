@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { validateApplicationForm } from "@/lib/validation";
+import { AdditionalInfoFields } from "@/components/AdditionalInfoFields";
 
 interface GuestApplicationWizardProps {
   jobId: number;
@@ -30,6 +31,28 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
     email: "",
     phoneNumber: "",
     coverLetter: "",
+    // Additional fields
+    compensationType: "",
+    workAuthorization: "",
+    workAuthorizationEndDate: "",
+    w2EmployerName: "",
+    nationality: "",
+    gender: "",
+    dateOfBirth: "",
+    currentResidenceZipCode: "",
+    linkedinId: "",
+    highestEducation: "",
+    specialization: "",
+    degreeStartDate: "",
+    degreeEndDate: "",
+    employmentHistory: "",
+    languagesRead: [] as string[],
+    languagesSpeak: [] as string[],
+    languagesWrite: [] as string[],
+    passportNumber: "",
+    sinLast4: "",
+    passportCopyFile: null as File | null,
+    dlCopyFile: null as File | null,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -150,8 +173,8 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
     }
 
     if (currentStep === "success") {
-      // Redirect to jobs page
-      setLocation("/jobs");
+      // Redirect to home page (jobs page requires auth)
+      setLocation("/");
       return;
     }
   };
@@ -169,25 +192,84 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
     }
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64 = event.target?.result as string;
-        
-        await submitMutation.mutateAsync({
-          jobId,
-          email: formData.email,
-          name: formData.name,
-          phoneNumber: formData.phoneNumber || undefined,
-          coverLetter: formData.coverLetter || undefined,
-          resumeFile: {
-            data: base64.split(',')[1], // Remove data URL prefix
-            filename: resumeFile.name,
-            mimeType: resumeFile.type,
-          },
-          extendedInfo: {},
+      // Helper function to convert file to base64
+      const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
         });
       };
-      reader.readAsDataURL(resumeFile);
+
+      // Convert resume to base64
+      const resumeBase64 = await fileToBase64(resumeFile);
+      
+      // Convert document files to base64 if they exist
+      let passportCopyBase64: string | undefined;
+      let dlCopyBase64: string | undefined;
+      
+      if (formData.passportCopyFile) {
+        passportCopyBase64 = await fileToBase64(formData.passportCopyFile);
+      }
+      
+      if (formData.dlCopyFile) {
+        dlCopyBase64 = await fileToBase64(formData.dlCopyFile);
+      }
+      
+      // Build extended info object
+      const extendedInfo: Record<string, any> = {
+        compensationType: formData.compensationType || undefined,
+        workAuthorization: formData.workAuthorization || undefined,
+        workAuthorizationEndDate: formData.workAuthorizationEndDate || undefined,
+        w2EmployerName: formData.w2EmployerName || undefined,
+        nationality: formData.nationality || undefined,
+        gender: formData.gender || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        currentResidenceZipCode: formData.currentResidenceZipCode || undefined,
+        linkedinId: formData.linkedinId || undefined,
+        highestEducation: formData.highestEducation || undefined,
+        specialization: formData.specialization || undefined,
+        degreeStartDate: formData.degreeStartDate || undefined,
+        degreeEndDate: formData.degreeEndDate || undefined,
+        employmentHistory: formData.employmentHistory || undefined,
+        languagesRead: formData.languagesRead.length > 0 ? formData.languagesRead : undefined,
+        languagesSpeak: formData.languagesSpeak.length > 0 ? formData.languagesSpeak : undefined,
+        languagesWrite: formData.languagesWrite.length > 0 ? formData.languagesWrite : undefined,
+        passportNumber: formData.passportNumber || undefined,
+        sinLast4: formData.sinLast4 || undefined,
+      };
+      
+      // Add document files if present
+      if (passportCopyBase64 && formData.passportCopyFile) {
+        extendedInfo.passportCopy = {
+          data: passportCopyBase64.split(',')[1],
+          filename: formData.passportCopyFile.name,
+          mimeType: formData.passportCopyFile.type,
+        };
+      }
+      
+      if (dlCopyBase64 && formData.dlCopyFile) {
+        extendedInfo.dlCopy = {
+          data: dlCopyBase64.split(',')[1],
+          filename: formData.dlCopyFile.name,
+          mimeType: formData.dlCopyFile.type,
+        };
+      }
+      
+      await submitMutation.mutateAsync({
+        jobId,
+        email: formData.email,
+        name: formData.name,
+        phoneNumber: formData.phoneNumber || undefined,
+        coverLetter: formData.coverLetter || undefined,
+        resumeFile: {
+          data: resumeBase64.split(',')[1], // Remove data URL prefix
+          filename: resumeFile.name,
+          mimeType: resumeFile.type,
+        },
+        extendedInfo,
+      });
     } catch (error: any) {
       toast.error(`Failed to submit application: ${error.message}`);
     }
@@ -449,6 +531,15 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
                 <p className="text-sm text-red-500">{errors.coverLetter}</p>
               )}
             </div>
+          </div>
+
+          {/* Additional Information Fields */}
+          <div className="border-t pt-6">
+            <AdditionalInfoFields
+              formData={formData}
+              onChange={(field, value) => setFormData({ ...formData, [field]: value })}
+              errors={errors}
+            />
           </div>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

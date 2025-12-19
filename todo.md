@@ -4260,3 +4260,36 @@
 - [x] Display parsed data (name, email, phone, skills, experience, education) for review/edit
 - [x] Allow user to edit parsed information before final submission
 - [x] Submit complete application with edited data to guestApplication.submit endpoint
+
+## Guest Application Wizard - Additional Information Fields (Extended)
+- [ ] Add Compensation Information section (Compensation Type dropdown)
+- [ ] Add Work Authorization section (Work Authorization dropdown, End Date, W2 Employer Name, Nationality)
+- [ ] Add Personal Information section (Gender dropdown, Date of Birth, Current Residence Zip Code, LinkedIn ID)
+- [ ] Add Highest Education section (Education Level dropdown, Specialization, Degree Start/End Dates)
+- [ ] Add Recent Employment section with Add Employment button and dynamic employment history list
+- [ ] Add Language Proficiency section (Read/Speak/Write multi-select chips for common languages)
+- [ ] Add Identification section (Passport Number, Last 4 digits of SIN)
+- [ ] Add Document Uploads section (Passport/Green Card/Visa Copy, Driver's License Copy)
+- [ ] Keep existing Cover Letter field (optional)
+- [ ] Update form state management to handle all new fields
+- [ ] Update submit mutation to include all extendedInfo fields
+- [ ] Add proper validation for required vs optional fields
+- [ ] Test complete flow with all fields populated
+
+## Guest Application Wizard - Bug Fixes
+- [x] Fix "Browse More Jobs" button redirect after successful submission (now goes to home page)
+- [x] Update handleSubmit to include all extendedInfo fields in the submission
+- [ ] Add validation for required additional fields before submission
+- [x] Handle document file uploads (passport copy, driver's license copy) in submission
+
+## Guest Application Wizard - Extended Information Fields (Completed)
+- [x] Add Compensation Information section (compensation type dropdown)
+- [x] Add Work Authorization section (status, end date, W2 employer, nationality)
+- [x] Add Personal Information section (gender, DOB, zip code, LinkedIn)
+- [x] Add Highest Education section (level, specialization, dates)
+- [x] Add Recent Employment and Address section (dynamic list with add/remove)
+- [x] Add Language Proficiency section (multi-select chips for read/speak/write)
+- [x] Add Identification section (passport number, SIN last 4)
+- [x] Add Document Uploads section (passport copy, driver's license copy)
+- [x] Update handleSubmit to include all extendedInfo fields and document uploads
+- [x] Create modular AdditionalInfoFields component for better maintainability
