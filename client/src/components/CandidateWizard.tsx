@@ -108,7 +108,7 @@ export function CandidateWizard({
   const [data, setData] = useState<WizardData>(initialData);
   const [employmentEntry, setEmploymentEntry] = useState({ company: "", address: "", startDate: "", endDate: "" });
 
-  const totalSteps = showCoverLetter ? 7 : 6;
+  const totalSteps = showCoverLetter ? 4 : 3;
 
   const updateData = (field: keyof WizardData, value: any) => {
     setData(prev => ({ ...prev, [field]: value }));
@@ -628,13 +628,36 @@ export function CandidateWizard({
         {renderStepIndicator()}
 
         <div className="min-h-[400px]">
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
-          {currentStep === 5 && renderStep5()}
-          {currentStep === 6 && renderStep6()}
-          {currentStep === 7 && showCoverLetter && renderStep7()}
+          {currentStep === 1 && (
+            <div className="space-y-6">
+              {renderStep1()}
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-4 text-lg">Work Authorization</h3>
+                {renderStep2()}
+              </div>
+            </div>
+          )}
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              <h3 className="font-semibold mb-4 text-lg">Education</h3>
+              {renderStep3()}
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-4 text-lg">Employment History</h3>
+                {renderStep4()}
+              </div>
+            </div>
+          )}
+          {currentStep === 3 && (
+            <div className="space-y-6">
+              <h3 className="font-semibold mb-4 text-lg">Language Proficiency</h3>
+              {renderStep5()}
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-4 text-lg">Identification Documents</h3>
+                {renderStep6()}
+              </div>
+            </div>
+          )}
+          {currentStep === 4 && showCoverLetter && renderStep7()}
         </div>
 
         <div className="flex justify-between mt-6">

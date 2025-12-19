@@ -353,11 +353,13 @@
 - [ ] Add date range filter for analytics
 - [ ] Implement chart components using recharts or similar library
 - [ ] Add export analytics report functionality
-- [ ] Test analytics dashboard with sample data
-
-## Bug Fix: Missing Job Creation Route (COMPLETED)
+- [ ] Test analytics dashboard with sample data## Bug Fix: Missing Job Creation Route (COMPLETED)
 - [x] Check App.tsx for /recruiter/jobs/create route
-- [x] Add missing route or fix routing configuration
+- [x] Add missing route
+
+## Bug Fix: Add Candidate Wizard Issues (Current Focus)
+- [x] Fix duplicate sidebar in add-candidate wizard page
+- [x] Simplify wizard to maximum 3 stepsg configuration
 - [ ] Test job creation page access
 
 ## Bug Fix: Mock User Context Not Detecting Recruiter Routes (COMPLETED)

@@ -882,8 +882,7 @@ function AddCandidatePageContent() {
   // Step 3: Wizard for additional information
   if (step === 3) {
     return (
-      <RecruiterLayout>
-        <div className="max-w-4xl mx-auto py-8">
+        <div className="max-w-4xl mx-auto space-y-6">
           <CandidateWizard
             initialData={{
               salaryType: formData.salaryType,
@@ -918,7 +917,6 @@ function AddCandidatePageContent() {
             description={`Submitting candidate: ${formData.name}`}
           />
         </div>
-      </RecruiterLayout>
     );
   }
 
