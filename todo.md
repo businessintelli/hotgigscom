@@ -157,6 +157,10 @@
 ## Known Issues
 - [x] Fix Select component empty string value error in company admin dashboard
 - [x] Fix database query error for jobs listing
+- [x] Fix missing db.getApplicationsByCandidate function error
+- [x] Fix missing db.getRecommendedJobsForCandidate function error
+- [x] Fix missing db.getInterviewsByCandidateId function error
+- [x] Fix recruiter candidate upload employmentHistory schema mismatch
 
 ## Future Enhancements
 - AI-powered candidate sourcing from social media

@@ -516,6 +516,11 @@ export async function getApplicationsByCandidateId(candidateId: number) {
   return db.select().from(applications).where(eq(applications.candidateId, candidateId));
 }
 
+// Alias for compatibility
+export async function getApplicationsByCandidate(candidateId: number) {
+  return getApplicationsByCandidateId(candidateId);
+}
+
 /**
  * Get applications by candidate with pagination and full job details
  */
@@ -644,6 +649,27 @@ export async function updateInterview(id: number, updates: Partial<InsertIntervi
   const db = await getDb();
   if (!db) return;
   await db.update(interviews).set(updates).where(eq(interviews.id, id));
+}
+
+export async function getInterviewsByCandidateId(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all applications for this candidate
+  const candidateApplications = await db
+    .select({ id: applications.id })
+    .from(applications)
+    .where(eq(applications.candidateId, candidateId));
+  
+  if (candidateApplications.length === 0) return [];
+  
+  const applicationIds = candidateApplications.map(app => app.id);
+  
+  // Get all interviews for these applications
+  return db
+    .select()
+    .from(interviews)
+    .where(inArray(interviews.applicationId, applicationIds));
 }
 
 // Interview Question operations
@@ -825,6 +851,25 @@ export async function clearRecentlyViewedJobs(candidateId: number) {
     .where(eq(recentlyViewedJobs.candidateId, candidateId));
   
   return { success: true };
+}
+
+/**
+ * Get recommended jobs for a candidate based on their profile
+ * This is a simple implementation that returns recent active jobs
+ * TODO: Implement AI-based matching algorithm
+ */
+export async function getRecommendedJobsForCandidate(candidateId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // For now, return recent active jobs
+  // In the future, this should use AI matching based on candidate skills and experience
+  return db
+    .select()
+    .from(jobs)
+    .where(eq(jobs.status, 'active'))
+    .orderBy(desc(jobs.createdAt))
+    .limit(limit);
 }
 
 // Fraud Detection Event operations
