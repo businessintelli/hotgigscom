@@ -1603,6 +1603,47 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return { success: true };
       }),
     
+    // Parse resume without auto-filling profile (for wizard flow)
+    parseResumeOnly: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // base64 encoded file
+        fileName: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { fileData, fileName } = input;
+        
+        // Extract base64 data and mime type
+        const matches = fileData.match(/^data:(.+);base64,(.+)$/);
+        if (!matches) {
+          throw new Error('Invalid file data format');
+        }
+        
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        try {
+          // Extract text from PDF/DOCX
+          const resumeText = await extractResumeText(buffer, mimeType);
+          
+          // Parse with AI (new advanced parser)
+          const parsedData = await parseResumeWithAI(resumeText);
+          
+          // Run bias detection on resume text
+          const biasDetectionResult = await detectResumeBias(resumeText, 0);
+          
+          return { 
+            success: true, 
+            parsedData, 
+            biasDetection: biasDetectionResult,
+            resumeText 
+          };
+        } catch (error) {
+          console.error('Resume parsing failed:', error);
+          throw new Error('Failed to parse resume. Please try again.');
+        }
+      }),
+    
     uploadResume: protectedProcedure
       .input(z.object({
         candidateId: z.number(),

@@ -40,6 +40,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import ResumeParseWizard from "@/components/ResumeParseWizard";
 import { 
   Briefcase, 
   FileText, 
@@ -154,6 +155,13 @@ function CandidateDashboardContent() {
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Resume parse wizard state
+  const [showParseWizard, setShowParseWizard] = useState(false);
+  const [parsedResumeData, setParsedResumeData] = useState<any>(null);
+  const [parsedBiasDetection, setParsedBiasDetection] = useState<any>(null);
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [uploadedFileData, setUploadedFileData] = useState('');
 
   // Fetch candidate profile
   const { data: candidate, isLoading: candidateLoading, refetch: refetchCandidate } = trpc.candidate.getByUserId.useQuery(
@@ -196,10 +204,28 @@ function CandidateDashboardContent() {
     },
   });
 
+  // Parse resume without auto-filling
+  const parseResumeMutation = trpc.candidate.parseResumeOnly.useMutation({
+    onSuccess: (data) => {
+      setParsedResumeData(data.parsedData);
+      setParsedBiasDetection(data.biasDetection);
+      setShowParseWizard(true);
+      toast.success('Resume parsed successfully! Review the data below.');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to parse resume: ${error.message}`);
+    },
+  });
+  
+  // Upload resume with parsed data after wizard confirmation
   const uploadResumeMutation = trpc.candidate.uploadResume.useMutation({
     onSuccess: () => {
-      toast.success("Resume uploaded successfully");
+      toast.success("Resume uploaded and profile updated successfully");
       refetchCandidate();
+      setShowParseWizard(false);
+      setParsedResumeData(null);
+      setUploadedFileData('');
+      setUploadedFileName('');
     },
     onError: (error: any) => {
       toast.error(`Failed to upload resume: ${error.message}`);
@@ -246,16 +272,42 @@ function CandidateDashboardContent() {
       return;
     }
 
+    toast.info('Parsing resume with AI...');
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
-      await uploadResumeMutation.mutateAsync({
-        candidateId: candidate?.id || 0,
+      setUploadedFileData(base64);
+      setUploadedFileName(file.name);
+      
+      // Parse resume first to show wizard
+      await parseResumeMutation.mutateAsync({
         fileName: file.name,
         fileData: base64,
       });
     };
     reader.readAsDataURL(file);
+  };
+  
+  // Handle wizard confirmation - upload resume with auto-fill
+  const handleWizardConfirm = async (editedData: any) => {
+    if (!candidate?.id || !uploadedFileData) return;
+    
+    // Upload resume with auto-fill enabled
+    await uploadResumeMutation.mutateAsync({
+      candidateId: candidate.id,
+      fileName: uploadedFileName,
+      fileData: uploadedFileData,
+      autoFill: true, // Auto-fill with the reviewed data
+    });
+  };
+  
+  // Handle wizard cancel
+  const handleWizardCancel = () => {
+    setShowParseWizard(false);
+    setParsedResumeData(null);
+    setUploadedFileData('');
+    setUploadedFileName('');
+    toast.info('Resume upload cancelled');
   };
 
   const handleUpdateProfile = () => {
@@ -363,6 +415,17 @@ function CandidateDashboardContent() {
       <CandidateOnboarding 
         open={showOnboarding} 
         onComplete={() => setShowOnboarding(false)} 
+      />
+      
+      {/* Resume Parse Wizard */}
+      <ResumeParseWizard
+        open={showParseWizard}
+        onOpenChange={setShowParseWizard}
+        parsedData={parsedResumeData}
+        biasDetection={parsedBiasDetection}
+        fileName={uploadedFileName}
+        onConfirm={handleWizardConfirm}
+        onCancel={handleWizardCancel}
       />
       
       <div className="min-h-screen bg-gray-50 flex">

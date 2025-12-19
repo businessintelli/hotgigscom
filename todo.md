@@ -4390,3 +4390,13 @@
 - [ ] Test background processing with large ZIP files
 - [ ] Test email notifications
 - [ ] Test upload history page and failed records download
+
+
+## Bug: Single Resume Import Missing AI Parser Wizard
+- [x] Fix single resume import for candidates to trigger AI parser wizard (like bulk import)
+- [x] Currently it's just parsing and prompting user to add manually
+- [x] Should show wizard with parsed data for review before adding to database
+- [x] Created parseResumeOnly backend procedure
+- [x] Built ResumeParseWizard dialog component
+- [x] Updated CandidateDashboard upload flow to use wizard
+- [x] Updated MyResumes upload flow to use wizard
