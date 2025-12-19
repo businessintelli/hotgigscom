@@ -4486,3 +4486,8 @@
 - [ ] Test salary validation
 - [ ] Test skills/domains separation with sample resumes
 - [ ] Verify all forms have inline validation hints
+
+## Bug Fixes - Salary Field Validation (Current Session - Dec 19, 2025)
+- [x] Fix salary field validation - convert string to number in candidate import form
+- [x] Analyze and fix other potential errors in recruiter candidate import flow
+- [x] Fix missing candidateSuccessPredictions import causing Associates page error

@@ -13,9 +13,9 @@ import * as authService from "./authService";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
-import { applicationHistory } from "../drizzle/schema";
+import { applicationHistory, candidateSuccessPredictions } from "../drizzle/schema";
 import { desc, eq, or, and } from "drizzle-orm";
-import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns } from "../drizzle/schema";
+import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns, candidateSuccessPredictions } from "../drizzle/schema";
 
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
