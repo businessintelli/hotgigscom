@@ -92,6 +92,7 @@
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.64.0",
     "react-pdf": "^10.2.0",
+    "react-phone-number-input": "^3.4.14",
     "react-quill": "^2.0.0",
     "react-resizable-panels": "^3.0.6",
     "recharts": "^2.15.4",

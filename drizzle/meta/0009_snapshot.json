@@ -1,161 +1,11 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "c4df8860-6f0f-4a93-beb8-cfbc4bf7c7c6",
-  "prevId": "df8ea298-bab5-4be1-bc8a-a397a1eb0423",
+  "id": "4f45d481-a71d-4ac6-9763-554097652919",
+  "prevId": "d854b5be-5c86-446d-b796-75ece91fc6ed",
   "tables": {
-    "ai_notification_preferences": {
-      "name": "ai_notification_preferences",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "userId": {
-          "name": "userId",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "jobMatchAlerts": {
-          "name": "jobMatchAlerts",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "profileImprovementSuggestions": {
-          "name": "profileImprovementSuggestions",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "applicationStatusUpdates": {
-          "name": "applicationStatusUpdates",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "interviewReminders": {
-          "name": "interviewReminders",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "topCandidateDigest": {
-          "name": "topCandidateDigest",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "digestFrequency": {
-          "name": "digestFrequency",
-          "type": "enum('daily','weekly','realtime')",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'daily'"
-        },
-        "newApplicationAlerts": {
-          "name": "newApplicationAlerts",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "biasAlerts": {
-          "name": "biasAlerts",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "pipelineInsights": {
-          "name": "pipelineInsights",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "emailNotifications": {
-          "name": "emailNotifications",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "inAppNotifications": {
-          "name": "inAppNotifications",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "onUpdate": true,
-          "default": "(now())"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "ai_notification_preferences_userId_users_id_fk": {
-          "name": "ai_notification_preferences_userId_users_id_fk",
-          "tableFrom": "ai_notification_preferences",
-          "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "ai_notification_preferences_id": {
-          "name": "ai_notification_preferences_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraint": {}
-    },
-    "ai_notification_queue": {
-      "name": "ai_notification_queue",
+    "aiNotificationQueue": {
+      "name": "aiNotificationQueue",
       "columns": {
         "id": {
           "name": "id",
@@ -254,9 +104,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "ai_notification_queue_userId_users_id_fk": {
-          "name": "ai_notification_queue_userId_users_id_fk",
-          "tableFrom": "ai_notification_queue",
+        "aiNotificationQueue_userId_users_id_fk": {
+          "name": "aiNotificationQueue_userId_users_id_fk",
+          "tableFrom": "aiNotificationQueue",
           "tableTo": "users",
           "columnsFrom": [
             "userId"
@@ -269,8 +119,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "ai_notification_queue_id": {
-          "name": "ai_notification_queue_id",
+        "aiNotificationQueue_id": {
+          "name": "aiNotificationQueue_id",
           "columns": [
             "id"
           ]
@@ -3114,6 +2964,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "domains": {
+          "name": "domains",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "experience": {
           "name": "experience",
           "type": "text",
@@ -5403,6 +5260,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "domains": {
+          "name": "domains",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "experience": {
           "name": "experience",
           "type": "text",
@@ -7636,6 +7500,20 @@
         },
         "responsibilities": {
           "name": "responsibilities",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "skills": {
+          "name": "skills",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "domains": {
+          "name": "domains",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

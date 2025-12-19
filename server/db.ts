@@ -334,6 +334,22 @@ export async function getCandidateById(id: number) {
   return result[0] || null;
 }
 
+export async function getCandidateByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return null;
+  // Join with users table to get candidate by email
+  const result = await db
+    .select({
+      candidate: candidates,
+      user: users
+    })
+    .from(candidates)
+    .innerJoin(users, eq(candidates.userId, users.id))
+    .where(eq(users.email, email))
+    .limit(1);
+  return result[0] || null;
+}
+
 export async function updateCandidate(userId: number, updates: Partial<InsertCandidate>) {
   const db = await getDb();
   if (!db) return;

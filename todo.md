@@ -4417,3 +4417,72 @@
 - [x] Update backend procedures to handle wizard data properly
 - [x] Fix database insert errors for missing required fields
 - [x] Test all candidate addition flows end-to-end
+
+## Form Validation & Data Quality Improvements (Current Focus)
+
+### Duplicate Detection
+- [x] Implement email-based duplicate detection for recruiter manual add (already exists at line 786-788)
+- [x] Add duplicate check for recruiter bulk resume upload (already exists at line 118-129)
+- [ ] Add duplicate check for candidate resume upload
+- [ ] Add duplicate check for guest application flow
+- [ ] Add duplicate check for recruiter "apply on behalf" flow
+- [ ] Add duplicate check for company admin bulk import
+- [x] Create checkDuplicateCandidate backend procedure
+- [ ] Create UI notification when duplicate is found with option to view existing profile
+
+### Enhanced Phone Number Input
+- [ ] Create PhoneInputWithCountry component with country code dropdown
+- [ ] Add searchable country code dropdown with flags
+- [ ] Implement auto-suggest for country names
+- [ ] Separate country code and phone number storage in database
+- [ ] Update all forms to use new phone component (candidate profile, job application, add candidate, etc.)
+- [ ] Add phone number format validation per country
+
+### Email Validation
+- [ ] Implement strict email format validation (alphanumeric@xxx.com)
+- [ ] Add real-time email validation feedback
+- [ ] Check email domain validity
+- [ ] Update all forms with enhanced email validation
+
+### Address Auto-Population
+- [ ] Research and integrate free geocoding API (Google Maps, OpenCage, Nominatim)
+- [ ] Implement zip code to city/state auto-fill
+- [ ] Add address autocomplete functionality
+- [ ] Update candidate profile form with address auto-population
+- [ ] Update job creation form with location auto-complete
+
+### Salary Validation
+- [ ] Add numeric-only validation for salary fields
+- [ ] Implement thousand separators for better readability
+- [ ] Add currency symbol display
+- [ ] Validate salary range (min < max)
+- [ ] Update all salary input fields across the platform
+
+### Skills vs Domains Separation (LLM-Powered)
+- [x] Create LLM prompt for skills/domains categorization
+- [x] Define domain categories (Auto, Public, Govt, Technology, Manufacturing, Healthcare, Health Insurance, Auto Insurance, Pharma, etc.)
+- [x] Define skill categories (Java, Oracle, Python, LLM, AI/ML, GenAI, React, etc.)
+- [x] Create backend service: separateSkillsAndDomains(rawText)
+- [x] Add domains field to candidates table
+- [x] Add domains field to jobs table
+- [x] Add domains field to guest_applications table
+- [x] Update resume parser to separate skills and domains
+
+### Apply LLM Separation Across All Flows
+- [ ] Candidate resume upload flow - separate skills/domains
+- [ ] Candidate job application flow - separate skills/domains
+- [ ] Recruiter manual add candidate - separate skills/domains
+- [ ] Recruiter bulk resume upload - separate skills/domains
+- [ ] Recruiter "apply on behalf" - separate skills/domains
+- [ ] Guest application flow - separate skills/domains
+- [ ] Company admin bulk import - separate skills/domains
+- [ ] Update all display components to show both skills and domains separately
+
+### Testing
+- [ ] Test duplicate detection across all flows
+- [ ] Test phone input with various country codes
+- [ ] Test email validation with valid/invalid formats
+- [ ] Test address auto-population
+- [ ] Test salary validation
+- [ ] Test skills/domains separation with sample resumes
+- [ ] Verify all forms have inline validation hints

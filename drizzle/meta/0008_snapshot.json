@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "df8ea298-bab5-4be1-bc8a-a397a1eb0423",
-  "prevId": "bca45651-f7cd-49ff-8968-424b4ecfc3b4",
+  "id": "e553dfa7-7628-4d5a-abbe-c15816cfe1b0",
+  "prevId": "d854b5be-5c86-446d-b796-75ece91fc6ed",
   "tables": {
     "aiNotificationPreferences": {
       "name": "aiNotificationPreferences",
@@ -3114,6 +3114,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "domains": {
+          "name": "domains",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "experience": {
           "name": "experience",
           "type": "text",
@@ -5403,6 +5410,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "domains": {
+          "name": "domains",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "experience": {
           "name": "experience",
           "type": "text",
@@ -7636,6 +7650,20 @@
         },
         "responsibilities": {
           "name": "responsibilities",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "skills": {
+          "name": "skills",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "domains": {
+          "name": "domains",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

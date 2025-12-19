@@ -60,14 +60,26 @@ export function validatePhoneNumber(phone: string): string | null {
 }
 
 /**
- * Validate email format
+ * Validate email format (stricter validation)
  */
 export function validateEmail(email: string): string | null {
   if (!email) return null;
   
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Stricter email validation: alphanumeric@xxx.com
+  const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!emailRegex.test(email)) {
-    return 'Please enter a valid email address';
+    return 'Please enter a valid email address (e.g., user@example.com)';
+  }
+  
+  // Check for consecutive dots
+  if (email.includes('..')) {
+    return 'Email cannot contain consecutive dots';
+  }
+  
+  // Check if starts or ends with special characters
+  const localPart = email.split('@')[0];
+  if (localPart.startsWith('.') || localPart.endsWith('.')) {
+    return 'Email cannot start or end with a dot';
   }
   
   return null;
@@ -248,4 +260,52 @@ export function formatPhoneNumber(phone: string): string {
   
   // International format: just add spaces
   return cleaned.replace(/(\d{3})(?=\d)/g, '$1 ');
+}
+
+/**
+ * Format salary with thousand separators
+ */
+export function formatSalary(salary: number | string): string {
+  const numValue = typeof salary === 'string' ? parseFloat(salary.replace(/,/g, '')) : salary;
+  
+  if (isNaN(numValue)) {
+    return '';
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(numValue);
+}
+
+/**
+ * Parse formatted salary string to number
+ */
+export function parseSalary(formattedSalary: string): number {
+  return parseFloat(formattedSalary.replace(/[^0-9.-]+/g, ''));
+}
+
+/**
+ * Validate zip code format
+ */
+export function validateZipCode(zipCode: string, country: string = 'US'): string | null {
+  if (!zipCode) return null;
+
+  if (country === 'US') {
+    // US zip code: 5 digits or 5+4 format
+    const usZipRegex = /^\d{5}(-\d{4})?$/;
+    if (!usZipRegex.test(zipCode)) {
+      return 'Please enter a valid US zip code (e.g., 12345 or 12345-6789)';
+    }
+  } else if (country === 'CA') {
+    // Canadian postal code: A1A 1A1
+    const caPostalRegex = /^[A-Z]\d[A-Z] ?\d[A-Z]\d$/i;
+    if (!caPostalRegex.test(zipCode)) {
+      return 'Please enter a valid Canadian postal code (e.g., A1A 1A1)';
+    }
+  }
+
+  return null;
 }

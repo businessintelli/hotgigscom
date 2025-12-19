@@ -1536,6 +1536,30 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return { response: assistantMessage?.content || 'Sorry, I could not generate a response.' };
       }),
 
+    // Check for duplicate candidate by email
+    checkDuplicateCandidate: protectedProcedure
+      .input(z.object({
+        email: z.string().email("Valid email is required"),
+      }))
+      .query(async ({ input }) => {
+        const existing = await db.getCandidateByEmail(input.email);
+        if (existing) {
+          return {
+            isDuplicate: true,
+            candidate: {
+              id: existing.candidate.id,
+              name: existing.user.name,
+              email: existing.user.email,
+              phoneNumber: existing.candidate.phoneNumber,
+              location: existing.candidate.location,
+              skills: existing.candidate.skills,
+              createdAt: existing.candidate.createdAt,
+            }
+          };
+        }
+        return { isDuplicate: false, candidate: null };
+      }),
+
     getProfile: protectedProcedure.query(async ({ ctx }) => {
       return await db.getCandidateByUserId(ctx.user.id);
     }),

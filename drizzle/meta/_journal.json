@@ -57,6 +57,20 @@
       "when": 1766124490294,
       "tag": "0007_sparkling_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1766139909161,
+      "tag": "0008_red_deathbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1766139974119,
+      "tag": "0009_sharp_rocket_racer",
+      "breakpoints": true
     }
   ]
 }

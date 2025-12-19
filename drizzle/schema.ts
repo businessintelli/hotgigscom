@@ -73,6 +73,7 @@ export const candidates = mysqlTable("candidates", {
   location: varchar("location", { length: 255 }).notNull(),
   bio: text("bio"),
   skills: text("skills"), // JSON array of skills
+  domains: text("domains"), // JSON array of industry domains (Auto, Public, Govt, Technology, Healthcare, etc.)
   experience: text("experience"),
   education: text("education"),
   resumeUrl: varchar("resumeUrl", { length: 500 }),
@@ -229,6 +230,8 @@ export const jobs = mysqlTable("jobs", {
   description: text("description").notNull(),
   requirements: text("requirements"),
   responsibilities: text("responsibilities"),
+  skills: text("skills"), // JSON array of required skills
+  domains: text("domains"), // JSON array of industry domains
   location: varchar("location", { length: 255 }).notNull(),
   employmentType: mysqlEnum("employmentType", ["full-time", "part-time", "contract", "temporary", "internship"]).default("full-time"),
   salaryMin: int("salaryMin"),
@@ -1382,7 +1385,9 @@ export type InsertAlgorithmPerformance = typeof algorithmPerformance.$inferInser
 
 /**
  * AI Notification Preferences - User preferences for proactive AI notifications
+ * COMMENTED OUT: Table already exists in database
  */
+/*
 export const aiNotificationPreferences = mysqlTable("aiNotificationPreferences", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id),
@@ -1403,9 +1408,10 @@ export const aiNotificationPreferences = mysqlTable("aiNotificationPreferences",
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+*/
 
-export type AiNotificationPreference = typeof aiNotificationPreferences.$inferSelect;
-export type InsertAiNotificationPreference = typeof aiNotificationPreferences.$inferInsert;
+// export type AINotificationPreferences = typeof aiNotificationPreferences.$inferSelect;
+// export type InsertAINotificationPreferences = typeof aiNotificationPreferences.$inferInsert;
 
 /**
  * AI Notification Queue - Queue for proactive AI-generated notifications
@@ -2211,6 +2217,7 @@ export const guestApplications = mysqlTable("guest_applications", {
   // AI parsed data from resume
   parsedResumeData: text("parsedResumeData"), // Full ParsedResume JSON
   skills: text("skills"), // JSON array of skills
+  domains: text("domains"), // JSON array of industry domains
   experience: text("experience"),
   education: text("education"),
   totalExperienceYears: int("totalExperienceYears"),
