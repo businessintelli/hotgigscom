@@ -4130,4 +4130,31 @@
 - [x] Explain seed.mjs script purpose and usage
 - [x] Explain initialize-budgets.mjs script purpose and usage
 - [x] Add troubleshooting section for common deployment issues
-- [ ] Commit updated documentation to GitHub
+- [x] Commit updated documentation to GitHub
+
+
+## Apply on Behalf Form Bug Fix (Dec 19, 2025)
+- [x] Fix location field validation error in Apply on Behalf form (allow null/undefined values)
+
+
+## Database Validation Enforcement Audit (Dec 19, 2025)
+- [ ] Audit candidates table schema for required fields (name, email, location, phone, etc.)
+- [ ] Audit jobs table schema for required fields
+- [ ] Audit applications table schema for required fields
+- [ ] Review Apply on Behalf form validation
+- [ ] Review candidate profile forms validation
+- [ ] Review job creation forms validation
+- [ ] Make location field required in candidates table
+- [ ] Add frontend validation for required location field
+- [ ] Update tRPC schemas to match database constraints
+- [ ] Test all forms with validation enforcement
+
+- [x] Audit candidates table schema for required fields (name, email, location, phone, etc.)
+- [x] Audit jobs table schema for required fields
+- [x] Audit applications table schema for required fields
+- [x] Review Apply on Behalf form validation
+- [x] Make location field required in Apply on Behalf form
+- [x] Make phone field required in Apply on Behalf form
+- [x] Add frontend validation for required location field
+- [x] Add frontend validation for required phone field
+- [x] Update tRPC schemas to match database constraints (phone and location required)

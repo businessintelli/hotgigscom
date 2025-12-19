@@ -158,8 +158,8 @@ export default function ApplyOnBehalf() {
           candidateData: {
             name: candidateData.personalInfo.name,
             email: candidateData.personalInfo.email,
-            phone: candidateData.personalInfo.phone,
-            location: candidateData.personalInfo.location,
+            phone: candidateData.personalInfo.phone || '',
+            location: candidateData.personalInfo.location || '',
             skills: candidateData.skills,
             experience: candidateData.experience,
             education: candidateData.education,
@@ -512,19 +512,21 @@ export default function ApplyOnBehalf() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="phone">Phone</Label>
+                      <Label htmlFor="phone">Phone *</Label>
                       <Input
                         id="phone"
                         value={candidateData.personalInfo.phone || ''}
                         onChange={(e) => updateCandidateField('personalInfo.phone', e.target.value)}
+                        required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="location">Location</Label>
+                      <Label htmlFor="location">Location *</Label>
                       <Input
                         id="location"
                         value={candidateData.personalInfo.location || ''}
                         onChange={(e) => updateCandidateField('personalInfo.location', e.target.value)}
+                        required
                       />
                     </div>
                   </div>
@@ -598,7 +600,21 @@ export default function ApplyOnBehalf() {
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
-                  <Button onClick={() => setStep("submit")}>
+                  <Button 
+                    onClick={() => {
+                      // Validate required fields before proceeding
+                      if (!candidateData.personalInfo.name || !candidateData.personalInfo.email || 
+                          !candidateData.personalInfo.phone || !candidateData.personalInfo.location) {
+                        toast({
+                          title: "Missing required fields",
+                          description: "Please fill in all required fields: Name, Email, Phone, and Location",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      setStep("submit");
+                    }}
+                  >
                     Continue
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
