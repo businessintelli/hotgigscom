@@ -37,6 +37,8 @@ export default function MyResumes() {
   const [profileName, setProfileName] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [parsedResumeData, setParsedResumeData] = useState<any>(null);
+  const [showResumeReviewModal, setShowResumeReviewModal] = useState(false);
 
   // Get candidate profile
   const { data: candidateProfile } = trpc.candidate.getProfile.useQuery(undefined, {
@@ -52,51 +54,15 @@ export default function MyResumes() {
   const utils = trpc.useUtils();
 
   // Mutations
-  const createProfileMutation = trpc.resumeProfile.createResumeProfile.useMutation({
+  const uploadResumeMutation = trpc.candidate.uploadResume.useMutation({
     onSuccess: (result) => {
-      console.log('[MyResumes] onSuccess called with result:', result);
-      console.log('[MyResumes] result.parsedData exists?', !!result.parsedData);
-      console.log('[MyResumes] profileName:', profileName);
-      console.log('[MyResumes] candidateProfile?.id:', candidateProfile?.id);
-      
       setIsUploading(false);
+      toast.success('Resume uploaded and parsed successfully!');
       
-      // Redirect to review/edit page with parsed data
-      if (result.parsedData) {
-        console.log('[MyResumes] Parsed data found, preparing redirect');
-        toast.success('Resume parsed! Redirecting to review page...');
-        
-        const dataToStore = {
-          parsedData: result.parsedData,
-          resumeUrl: result.url,
-          fileKey: result.fileKey,
-          fileName: result.fileName,
-          profileName: profileName.trim(),
-          isDefault: result.isDefault,
-          candidateId: candidateProfile?.id,
-          scores: result.scores,
-        };
-        
-        console.log('[MyResumes] Storing data in sessionStorage:', dataToStore);
-        sessionStorage.setItem('resumeReviewData', JSON.stringify(dataToStore));
-        console.log('[MyResumes] Data stored, closing dialog');
-        
-        setUploadDialogOpen(false);
-        console.log('[MyResumes] Dialog closed, setting timeout for redirect');
-        
-        setTimeout(() => {
-          console.log('[MyResumes] Executing redirect to /candidate/resume-review');
-          setLocation('/candidate/resume-review');
-          console.log('[MyResumes] setLocation called');
-        }, 100);
-      } else {
-        console.log('[MyResumes] No parsed data, showing success message');
-        toast.success('Resume uploaded successfully!');
-        setUploadDialogOpen(false);
-        setProfileName('');
-        setSelectedFile(null);
-        refetchProfiles();
-      }
+      // Store parsed data and show review modal
+      setParsedResumeData(result.parsedData);
+      setShowResumeReviewModal(true);
+      setUploadDialogOpen(false);
     },
     onError: (error) => {
       console.error('[MyResumes] onError called:', error);
@@ -175,15 +141,13 @@ export default function MyResumes() {
         reader.readAsDataURL(selectedFile);
       });
       
-      console.log('[handleUpload] Calling mutation with data');
-      // Call mutation - onSuccess callback will handle the redirect
-      createProfileMutation.mutate({
+      // Call uploadResume mutation with autoFill enabled
+      uploadResumeMutation.mutate({
         candidateId: candidateProfile.id,
-        profileName: profileName.trim(),
         fileData: base64Data,
         fileName: selectedFile.name,
+        autoFill: true, // Enable AI parsing
       });
-      console.log('[handleUpload] Mutation called');
     } catch (error) {
       console.error('[handleUpload] Error:', error);
       toast.error('Failed to process file');
@@ -398,6 +362,126 @@ export default function MyResumes() {
           </CardContent>
         </Card>
         </div>
+
+        {/* Resume Review Modal */}
+        {showResumeReviewModal && parsedResumeData && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Review Extracted Information
+                </CardTitle>
+                <CardDescription>
+                  AI has extracted the following information from your resume. This has been saved to your profile.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Personal Information */}
+                {parsedResumeData.personalInfo && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-gray-700">Personal Information</h3>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2 text-sm">
+                      {parsedResumeData.personalInfo.name && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Name:</span>
+                          <span className="font-medium">{parsedResumeData.personalInfo.name}</span>
+                        </div>
+                      )}
+                      {parsedResumeData.personalInfo.email && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="font-medium">{parsedResumeData.personalInfo.email}</span>
+                        </div>
+                      )}
+                      {parsedResumeData.personalInfo.phone && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Phone:</span>
+                          <span className="font-medium">{parsedResumeData.personalInfo.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Skills */}
+                {parsedResumeData.skills && parsedResumeData.skills.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-gray-700">Skills</h3>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex flex-wrap gap-2">
+                        {parsedResumeData.skills.map((skill: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Experience */}
+                {parsedResumeData.experience && parsedResumeData.experience.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-gray-700">Experience</h3>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
+                      {parsedResumeData.experience.map((exp: any, index: number) => (
+                        <div key={index} className="border-b border-purple-200 last:border-0 pb-3 last:pb-0">
+                          <p className="font-medium text-sm">{exp.title}</p>
+                          <p className="text-sm text-gray-600">{exp.company}</p>
+                          {exp.duration && (
+                            <p className="text-xs text-gray-500">{exp.duration}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Education */}
+                {parsedResumeData.education && parsedResumeData.education.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-gray-700">Education</h3>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
+                      {parsedResumeData.education.map((edu: any, index: number) => (
+                        <div key={index} className="border-b border-orange-200 last:border-0 pb-3 last:pb-0">
+                          <p className="font-medium text-sm">{edu.degree}</p>
+                          <p className="text-sm text-gray-600">{edu.institution}</p>
+                          {edu.year && (
+                            <p className="text-xs text-gray-500">{edu.year}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-700">
+                    <strong>Note:</strong> This information has been automatically extracted and saved to your profile. You can edit it from your profile settings.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    onClick={() => {
+                      setShowResumeReviewModal(false);
+                      setParsedResumeData(null);
+                      setSelectedFile(null);
+                      setProfileName('');
+                      refetchProfiles();
+                    }}
+                  >
+                    Done
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </CandidateLayout>
   );

@@ -4331,3 +4331,10 @@
 - [x] Wizard-based review/edit interface with 4 steps (Basic Info, Experience, Education, Additional)
 - [x] Update resume profile in database after editing
 - [ ] Test complete workflow in fresh browser session (pending cache issue resolution)
+
+
+## Resume Upload - Reuse Working Implementation (Current Focus)
+- [x] Update MyResumes.tsx to use existing trpc.candidate.uploadResume mutation
+- [x] Copy review modal pattern from JobApplication.tsx
+- [x] Test upload → parse → review → save workflow
+- [ ] Remove unused ResumeUploadNew.tsx and resumeProfileRouter.ts code
