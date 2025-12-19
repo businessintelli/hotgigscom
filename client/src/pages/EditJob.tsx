@@ -12,6 +12,8 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { useToast } from "@/hooks/use-toast";
+import { validateJobForm, validatePhoneNumber } from "@/lib/validation";
+import { useFieldValidation } from "@/hooks/useFormValidation";
 
 export default function EditJob() {
   const [, setLocation] = useLocation();
@@ -26,6 +28,8 @@ export default function EditJob() {
   );
 
   const { data: customers } = trpc.customer.list.useQuery();
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     title: "",
@@ -80,6 +84,19 @@ export default function EditJob() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate form
+    const validationErrors = validateJobForm(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setErrors({});
     updateMutation.mutate({
       id: jobId,
       title: formData.title,
@@ -151,10 +168,22 @@ export default function EditJob() {
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, title: e.target.value });
+                    if (errors.title) {
+                      setErrors({ ...errors, title: "" });
+                    }
+                  }}
+                  onBlur={() => {
+                    if (formData.title && formData.title.length < 3) {
+                      setErrors({ ...errors, title: "Job title must be at least 3 characters" });
+                    }
+                  }}
                   placeholder="e.g., Senior Software Engineer"
                   required
+                  className={errors.title ? "border-red-500" : ""}
                 />
+                {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
               </div>
 
               {/* Description */}
@@ -167,7 +196,9 @@ export default function EditJob() {
                   placeholder="Describe the role, team, and company culture..."
                   rows={6}
                   required
+                  className={errors.description ? "border-red-500" : ""}
                 />
+                {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
               </div>
 
               {/* Requirements */}
@@ -235,7 +266,9 @@ export default function EditJob() {
                     value={formData.salaryMin}
                     onChange={(e) => setFormData({ ...formData, salaryMin: e.target.value })}
                     placeholder="e.g., 80000"
+                    className={errors.salaryMin ? "border-red-500" : ""}
                   />
+                  {errors.salaryMin && <p className="text-sm text-red-500 mt-1">{errors.salaryMin}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="salaryMax">Maximum Salary</Label>
@@ -245,7 +278,9 @@ export default function EditJob() {
                     value={formData.salaryMax}
                     onChange={(e) => setFormData({ ...formData, salaryMax: e.target.value })}
                     placeholder="e.g., 120000"
+                    className={errors.salaryMax ? "border-red-500" : ""}
                   />
+                  {errors.salaryMax && <p className="text-sm text-red-500 mt-1">{errors.salaryMax}</p>}
                 </div>
               </div>
 

@@ -4179,7 +4179,7 @@
 - [x] Create phone number formatting utility
 - [x] Add international phone number support
 - [x] Create PhoneInput component with auto-formatting
-- [ ] Test phone number validation with various formats
+- [x] Test phone number validation with various formats
 
 ### Form Validation Extensions
 - [x] Add validation to CandidateProfile page (name, email, phone, location)
@@ -4198,4 +4198,17 @@
 - [ ] Update recruiter.updateProfile schema with required fields
 - [x] Add phone number validation to all schemas
 - [x] Add email format validation to all schemas
-- [ ] Test all backend validation with invalid inputs
+- [x] Test all backend validation with invalid inputs
+
+## Extended Form Validation (Current Focus)
+- [ ] Audit EditJob page for validation requirements
+- [ ] Audit RecruiterOnboarding page for validation requirements
+- [ ] Audit CandidateOnboarding page for validation requirements
+- [ ] Audit GuestApplicationWizard page for validation requirements
+- [x] Implement validation for EditJob page
+- [x] Implement validation for RecruiterOnboarding page
+- [x] Implement validation for CandidateOnboarding page
+- [x] Implement validation for GuestApplicationWizard page
+- [x] Add real-time field validation with inline error messages
+- [x] Write vitest tests for all validation utilities
+- [x] Test all validation flows end-to-end

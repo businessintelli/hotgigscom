@@ -9,6 +9,7 @@ import { Upload, FileText, User, Mail, Phone, CheckCircle, Loader2, ArrowLeft, A
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { validateApplicationForm, validateEmail, validatePhoneNumber } from "@/lib/validation";
 
 interface GuestApplicationWizardProps {
   jobId: number;
@@ -78,6 +79,7 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
 
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [dlFile, setDlFile] = useState<File | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const submitMutation = trpc.guestApplication.submit.useMutation({
     onSuccess: (data) => {
@@ -159,15 +161,26 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
     }
 
     if (currentStep === "basic") {
+      // Validate basic info
+      const validationErrors = validateApplicationForm({
+        fullName: formData.name,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber || undefined,
+        coverLetter: formData.coverLetter || undefined,
+      });
+      
       if (!formData.name || !formData.email) {
-        toast.error("Please fill in name and email");
+        validationErrors.name = validationErrors.fullName || "Name is required";
+        validationErrors.email = validationErrors.email || "Email is required";
+      }
+      
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        toast.error("Please fix the errors in the form");
         return;
       }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        toast.error("Please enter a valid email address");
-        return;
-      }
+      
+      setErrors({});
     }
 
     if (currentStepIndex < steps.length - 1) {
@@ -279,7 +292,9 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="John Doe"
+            className={errors.name || errors.fullName ? "border-red-500" : ""}
           />
+          {(errors.name || errors.fullName) && <p className="text-sm text-red-500 mt-1">{errors.name || errors.fullName}</p>}
         </div>
 
         <div className="space-y-2">
@@ -288,9 +303,24 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
             id="email"
             type="email"
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, email: e.target.value });
+              if (errors.email) {
+                setErrors({ ...errors, email: "" });
+              }
+            }}
+            onBlur={() => {
+              if (formData.email) {
+                const error = validateEmail(formData.email);
+                if (error) {
+                  setErrors({ ...errors, email: error });
+                }
+              }
+            }}
             placeholder="john@example.com"
+            className={errors.email ? "border-red-500" : ""}
           />
+          {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
         </div>
 
         <div className="space-y-2">
@@ -298,9 +328,24 @@ export function GuestApplicationWizard({ jobId, jobTitle, companyName }: GuestAp
           <Input
             id="phoneNumber"
             value={formData.phoneNumber}
-            onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+            className={errors.phoneNumber ? "border-red-500" : ""}
+            onChange={(e) => {
+              setFormData({ ...formData, phoneNumber: e.target.value });
+              if (errors.phoneNumber) {
+                setErrors({ ...errors, phoneNumber: "" });
+              }
+            }}
+            onBlur={() => {
+              if (formData.phoneNumber) {
+                const error = validatePhoneNumber(formData.phoneNumber);
+                if (error) {
+                  setErrors({ ...errors, phoneNumber: error });
+                }
+              }
+            }}
             placeholder="+1 (555) 123-4567"
           />
+          {errors.phoneNumber && <p className="text-sm text-red-500 mt-1">{errors.phoneNumber}</p>}
         </div>
 
         <div className="space-y-2">

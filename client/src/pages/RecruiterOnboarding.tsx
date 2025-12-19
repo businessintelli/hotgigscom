@@ -12,6 +12,7 @@ import { APP_TITLE } from "@/const";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
+import { validateRecruiterProfile, validatePhoneNumber } from "@/lib/validation";
 
 export default function RecruiterOnboarding() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -32,6 +33,9 @@ export default function RecruiterOnboarding() {
   
   // Step 2: Bio
   const [bio, setBio] = useState("");
+  
+  // Validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Check if recruiter profile exists
   const { data: profile, isLoading: profileLoading } = trpc.recruiter.getProfile.useQuery(
@@ -75,6 +79,19 @@ export default function RecruiterOnboarding() {
   const handleNext = async () => {
     try {
       if (currentStep === 1) {
+        // Validate company info
+        const validationErrors = validateRecruiterProfile({
+          companyName,
+          phoneNumber: phoneNumber || undefined,
+        });
+        
+        if (Object.keys(validationErrors).length > 0) {
+          setErrors(validationErrors);
+          toast.error('Please fix the errors in the form');
+          return;
+        }
+        
+        setErrors({});
         // Save company info
         await updateStepMutation.mutateAsync({
           step: 1,
@@ -149,7 +166,9 @@ export default function RecruiterOnboarding() {
                     placeholder="e.g., Acme Corp"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
+                    className={errors.companyName ? "border-red-500" : ""}
                   />
+                  {errors.companyName && <p className="text-sm text-red-500 mt-1">{errors.companyName}</p>}
                 </div>
                 
                 <div className="space-y-2">
@@ -161,9 +180,23 @@ export default function RecruiterOnboarding() {
                       type="tel"
                       placeholder="+1 (555) 123-4567"
                       value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="pl-10"
+                      onChange={(e) => {
+                        setPhoneNumber(e.target.value);
+                        if (errors.phoneNumber) {
+                          setErrors({ ...errors, phoneNumber: "" });
+                        }
+                      }}
+                      onBlur={() => {
+                        if (phoneNumber) {
+                          const error = validatePhoneNumber(phoneNumber);
+                          if (error) {
+                            setErrors({ ...errors, phoneNumber: error });
+                          }
+                        }
+                      }}
+                      className={`pl-10 ${errors.phoneNumber ? "border-red-500" : ""}`}
                     />
+                    {errors.phoneNumber && <p className="text-sm text-red-500 mt-1">{errors.phoneNumber}</p>}
                   </div>
                 </div>
               </div>

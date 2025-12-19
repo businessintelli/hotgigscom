@@ -13,6 +13,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
+import { validateCandidateProfile, validatePhoneNumber } from "@/lib/validation";
 
 export default function CandidateOnboarding() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -42,6 +43,9 @@ export default function CandidateOnboarding() {
   const [expectedSalaryMin, setExpectedSalaryMin] = useState("");
   const [expectedSalaryMax, setExpectedSalaryMax] = useState("");
   const [willingToRelocate, setWillingToRelocate] = useState(false);
+  
+  // Validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Check if candidate profile exists
   const { data: profile, isLoading: profileLoading } = trpc.candidate.getProfile.useQuery(
@@ -85,6 +89,20 @@ export default function CandidateOnboarding() {
   const handleNext = async () => {
     try {
       if (currentStep === 1) {
+        // Validate basic info
+        const validationErrors = validateCandidateProfile({
+          fullName: title,
+          phoneNumber: phoneNumber || undefined,
+          location: location || undefined,
+        });
+        
+        if (Object.keys(validationErrors).length > 0) {
+          setErrors(validationErrors);
+          toast.error('Please fix the errors in the form');
+          return;
+        }
+        
+        setErrors({});
         // Save basic info
         await updateStepMutation.mutateAsync({
           step: 1,
@@ -171,7 +189,9 @@ export default function CandidateOnboarding() {
                     placeholder="e.g., Senior Software Engineer"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    className={errors.fullName ? "border-red-500" : ""}
                   />
+                  {errors.fullName && <p className="text-sm text-red-500 mt-1">{errors.fullName}</p>}
                 </div>
                 
                 <div className="space-y-2">
@@ -183,9 +203,23 @@ export default function CandidateOnboarding() {
                       type="tel"
                       placeholder="+1 (555) 123-4567"
                       value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="pl-10"
+                      onChange={(e) => {
+                        setPhoneNumber(e.target.value);
+                        if (errors.phoneNumber) {
+                          setErrors({ ...errors, phoneNumber: "" });
+                        }
+                      }}
+                      onBlur={() => {
+                        if (phoneNumber) {
+                          const error = validatePhoneNumber(phoneNumber);
+                          if (error) {
+                            setErrors({ ...errors, phoneNumber: error });
+                          }
+                        }
+                      }}
+                      className={`pl-10 ${errors.phoneNumber ? "border-red-500" : ""}`}
                     />
+                    {errors.phoneNumber && <p className="text-sm text-red-500 mt-1">{errors.phoneNumber}</p>}
                   </div>
                 </div>
                 
