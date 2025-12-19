@@ -4293,3 +4293,41 @@
 - [x] Add Document Uploads section (passport copy, driver's license copy)
 - [x] Update handleSubmit to include all extendedInfo fields and document uploads
 - [x] Create modular AdditionalInfoFields component for better maintainability
+
+## Resume Upload & Parsing Bug Fix (Current Focus)
+- [ ] Fix resume upload error ("not available" error) in candidate my-resumes page
+- [ ] Implement multi-step wizard UI (Upload → Review & Edit → Submit)
+- [ ] Add resume parsing with LLM to extract structured data
+- [ ] Build review step with editable parsed data
+- [ ] Add additional information form fields (compensation, work authorization, personal info, education, employment history, language proficiency, identification, document uploads)
+- [ ] Allow users to edit parsed resume data before final submission
+- [ ] Test complete resume upload and parsing workflow
+
+## Resume Upload Workflow Rebuild (URGENT)
+- [ ] Simplify backend createResumeProfile to properly return parsedData
+- [ ] Fix frontend MyResumes mutation onSuccess callback to redirect correctly  
+- [ ] Ensure sessionStorage data transfer works between pages
+- [ ] Test complete flow: Upload → AI Parse → Review Wizard → Save to DB
+- [ ] Verify all wizard fields display parsed data correctly
+
+## Simplified Resume Workflow (Database-Based) - Current Focus
+- [ ] Update backend createResumeProfile to save parsed resume to database immediately
+- [ ] Return database ID from createResumeProfile mutation
+- [ ] Update ResumeUploadNew frontend to redirect to /candidate/resume-edit/:id
+- [ ] Update ResumeReviewEdit page to fetch data from database by ID
+- [ ] Implement save functionality to update existing database record
+- [ ] Fix left sidebar navigation to show proper candidate menu items
+
+
+## Resume Upload & Parsing Workflow (COMPLETED)
+- [x] Fix resume upload error ("not available")
+- [x] Implement database-first workflow (save immediately, then redirect to edit)
+- [x] Create ResumeUploadNew.tsx page with clean upload interface
+- [x] Update backend createResumeProfile to save to database immediately
+- [x] Add /candidate/resume-edit/:id route
+- [x] Backend returns resume ID after successful upload
+- [x] Frontend redirects to edit page with database ID
+- [x] ResumeReviewEdit fetches data from database using ID
+- [x] Wizard-based review/edit interface with 4 steps (Basic Info, Experience, Education, Additional)
+- [x] Update resume profile in database after editing
+- [ ] Test complete workflow in fresh browser session (pending cache issue resolution)

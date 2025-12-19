@@ -80,17 +80,31 @@ export const resumeProfileRouter = router({
       // Check if this is the first profile (make it default)
       const isDefault = count === 0;
       
-      // Return parsed data for review instead of auto-saving
-      // Frontend will show review/edit page and then call saveResumeProfile
+      // Save to database immediately with parsed data
+      const resumeProfile = await db.createResumeProfile({
+        candidateId,
+        profileName,
+        resumeUrl: url,
+        resumeFileKey: fileKey,
+        resumeFilename: fileName,
+        parsedData: parsedData ? JSON.stringify(parsedData) : null,
+        domainMatchScore: scores?.domainMatchScore || 0,
+        skillMatchScore: scores?.skillMatchScore || 0,
+        experienceScore: scores?.experienceScore || 0,
+        overallScore: scores?.overallScore || 0,
+        primaryDomain: scores?.primaryDomain || null,
+        totalExperienceYears: scores?.totalExperienceYears || 0,
+        topDomains: scores?.topDomains ? JSON.stringify(scores.topDomains) : null,
+        topSkills: scores?.topSkills ? JSON.stringify(scores.topSkills) : null,
+        isDefault,
+        uploadedAt: new Date(),
+      });
+      
+      // Return the database ID so frontend can redirect to edit page
       return { 
         success: true, 
-        url, 
-        fileKey,
-        parsedData,
-        scores,
-        isDefault,
+        id: resumeProfile.id,
         profileName,
-        fileName
       };
     }),
   

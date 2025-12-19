@@ -53,15 +53,55 @@ export default function MyResumes() {
 
   // Mutations
   const createProfileMutation = trpc.resumeProfile.createResumeProfile.useMutation({
-    onSuccess: () => {
-      toast.success('Resume profile uploaded successfully!');
-      setUploadDialogOpen(false);
-      setProfileName('');
-      setSelectedFile(null);
-      refetchProfiles();
+    onSuccess: (result) => {
+      console.log('[MyResumes] onSuccess called with result:', result);
+      console.log('[MyResumes] result.parsedData exists?', !!result.parsedData);
+      console.log('[MyResumes] profileName:', profileName);
+      console.log('[MyResumes] candidateProfile?.id:', candidateProfile?.id);
+      
+      setIsUploading(false);
+      
+      // Redirect to review/edit page with parsed data
+      if (result.parsedData) {
+        console.log('[MyResumes] Parsed data found, preparing redirect');
+        toast.success('Resume parsed! Redirecting to review page...');
+        
+        const dataToStore = {
+          parsedData: result.parsedData,
+          resumeUrl: result.url,
+          fileKey: result.fileKey,
+          fileName: result.fileName,
+          profileName: profileName.trim(),
+          isDefault: result.isDefault,
+          candidateId: candidateProfile?.id,
+          scores: result.scores,
+        };
+        
+        console.log('[MyResumes] Storing data in sessionStorage:', dataToStore);
+        sessionStorage.setItem('resumeReviewData', JSON.stringify(dataToStore));
+        console.log('[MyResumes] Data stored, closing dialog');
+        
+        setUploadDialogOpen(false);
+        console.log('[MyResumes] Dialog closed, setting timeout for redirect');
+        
+        setTimeout(() => {
+          console.log('[MyResumes] Executing redirect to /candidate/resume-review');
+          setLocation('/candidate/resume-review');
+          console.log('[MyResumes] setLocation called');
+        }, 100);
+      } else {
+        console.log('[MyResumes] No parsed data, showing success message');
+        toast.success('Resume uploaded successfully!');
+        setUploadDialogOpen(false);
+        setProfileName('');
+        setSelectedFile(null);
+        refetchProfiles();
+      }
     },
     onError: (error) => {
+      console.error('[MyResumes] onError called:', error);
       toast.error(error.message || 'Failed to upload resume profile');
+      setIsUploading(false);
     },
   });
 
@@ -106,45 +146,47 @@ export default function MyResumes() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !profileName.trim() || !candidateProfile) return;
+    console.log('[handleUpload] Starting upload process');
+    console.log('[handleUpload] selectedFile:', selectedFile?.name);
+    console.log('[handleUpload] profileName:', profileName);
+    console.log('[handleUpload] candidateProfile:', candidateProfile?.id);
+    
+    if (!selectedFile || !profileName.trim() || !candidateProfile) {
+      console.log('[handleUpload] Missing required fields, aborting');
+      return;
+    }
 
     setIsUploading(true);
+    console.log('[handleUpload] Set isUploading to true');
+    
     try {
+      console.log('[handleUpload] Reading file...');
       // Convert file to base64
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Data = reader.result as string;
-        
-        const result = await createProfileMutation.mutateAsync({
-          candidateId: candidateProfile.id,
-          profileName: profileName.trim(),
-          fileData: base64Data,
-          fileName: selectedFile.name,
-        });
-        
-        setIsUploading(false);
-        
-        // Redirect to review/edit page with parsed data
-        if (result.parsedData) {
-          setLocation('/candidate/resume-review', {
-            state: {
-              parsedData: result.parsedData,
-              resumeUrl: result.url,
-              fileKey: result.fileKey,
-              fileName: result.fileName,
-              profileName: result.profileName,
-              isDefault: result.isDefault,
-              candidateId: candidateProfile.id,
-            }
-          });
-        }
-      };
-      reader.onerror = () => {
-        toast.error('Failed to read file');
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(selectedFile);
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          console.log('[handleUpload] File read complete');
+          resolve(reader.result as string);
+        };
+        reader.onerror = () => {
+          console.error('[handleUpload] File read error');
+          reject(new Error('Failed to read file'));
+        };
+        reader.readAsDataURL(selectedFile);
+      });
+      
+      console.log('[handleUpload] Calling mutation with data');
+      // Call mutation - onSuccess callback will handle the redirect
+      createProfileMutation.mutate({
+        candidateId: candidateProfile.id,
+        profileName: profileName.trim(),
+        fileData: base64Data,
+        fileName: selectedFile.name,
+      });
+      console.log('[handleUpload] Mutation called');
     } catch (error) {
+      console.error('[handleUpload] Error:', error);
+      toast.error('Failed to process file');
       setIsUploading(false);
     }
   };
@@ -184,9 +226,9 @@ export default function MyResumes() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Upload New Resume Profile</DialogTitle>
+                <DialogTitle>Upload New Resume</DialogTitle>
                 <DialogDescription>
-                  Give your resume a name and upload the file. You can have up to 5 different profiles.
+                  Upload a resume and we'll automatically parse it with AI to extract skills, experience, and more.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -222,7 +264,7 @@ export default function MyResumes() {
                   onClick={handleUpload}
                   disabled={!selectedFile || !profileName.trim() || isUploading}
                 >
-                  {isUploading ? 'Uploading...' : 'Upload Resume'}
+                  {isUploading ? 'Parsing...' : 'Upload with AI Parsing'}
                 </Button>
               </div>
             </DialogContent>

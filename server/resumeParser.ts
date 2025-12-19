@@ -519,7 +519,9 @@ function calculateSkillStrength(skill: string, parsedResume: ParsedResume): numb
     .map(exp => (exp.description || '').toLowerCase())
     .join(' ');
 
-  const skillMentions = (experienceDescriptions.match(new RegExp(skill, 'gi')) || []).length;
+  // Escape special regex characters in skill name
+  const escapedSkill = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const skillMentions = (experienceDescriptions.match(new RegExp(escapedSkill, 'gi')) || []).length;
   strength += Math.min(skillMentions * 5, 30);
 
   const recentExperience = parsedResume.experience.slice(0, 2);

@@ -55,6 +55,7 @@ import JobDetails from "./pages/JobDetails";
 import MyApplications from "./pages/MyApplications";
 import SavedJobs from "./pages/SavedJobs";
 import MyResumes from "./pages/MyResumesNew";
+import ResumeUploadNew from "./pages/ResumeUploadNew";
 import ResumeDetail from "./pages/ResumeDetail";
 import ResumeReviewEdit from "./pages/ResumeReviewEdit";
 import CandidateProfile from "./pages/CandidateProfile";
@@ -265,7 +266,9 @@ function Router() {
       <Route path="/saved-jobs" component={SavedJobs} />
       <Route path="/my-resumes" component={MyResumes} />
       <Route path="/candidate/my-resumes" component={MyResumes} />
+      <Route path="/candidate/resume-upload" component={ResumeUploadNew} />
       <Route path="/candidate/resume-review" component={ResumeReviewEdit} />
+      <Route path="/candidate/resume-edit/:id" component={ResumeReviewEdit} />
       <Route path="/candidate/profile" component={CandidateProfile} />
       <Route path="/candidate/resume/:id" component={ResumeDetail} />
       <Route path="/candidate/video-intro" component={VideoIntroductionPage} />
