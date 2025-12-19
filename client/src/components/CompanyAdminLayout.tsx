@@ -61,6 +61,7 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     { type: "divider", label: "Analytics" },
     { name: "Analytics Dashboard", href: "/company-admin/analytics", icon: BarChart3 },
     { type: "divider", label: "Content Management" },
+    { name: "Job Templates", href: "/recruiter/template-management", icon: FileText },
     { name: "Template Shares", href: "/company-admin/template-shares", icon: FileCheck },
     { type: "divider", label: "Settings" },
     { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },

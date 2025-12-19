@@ -4270,3 +4270,45 @@
 - [x] Test template creation and usage flow
 - [x] Test template access control (personal vs company-wide)
 - [x] Verify draft deletion after successful job posting
+
+
+## Template Management Dashboard & Enhanced Workflow (NEW)
+
+### Backend Enhancements
+- [x] Add getTemplateStatistics procedure (usage count, last used date, created by info)
+- [x] Add searchTemplates procedure with filtering by category, tags, usage
+- [x] Add bulkDeleteTemplates procedure for batch operations
+- [x] Add duplicateTemplate procedure for copying templates
+
+### Template Management Dashboard
+- [x] Create TemplateManagement page at /recruiter/template-management
+- [x] Add advanced filtering UI (category, tags, date range, usage count)
+- [x] Add search functionality for template names and descriptions
+- [x] Add sorting options (name, date, usage count, category)
+- [x] Add template preview modal
+- [x] Add bulk actions (delete multiple templates)
+- [x] Add usage statistics display (times used, last used date)
+- [x] Add edit template functionality
+- [x] Add duplicate template functionality
+- [x] Wrap page with RecruiterLayout for sidebar navigation
+
+### Job Posting Workflow Enhancement
+- [x] Add "Save as Template" checkbox to CreateJob form
+- [x] Add template metadata fields (name, category, tags) that appear when checkbox is checked
+- [x] Update job.create procedure to accept saveAsTemplate flag and template metadata
+- [x] Backend automatically creates template when job is posted with saveAsTemplate flag
+- [ ] Show success message with option to view templates after job is posted
+- [ ] Add same functionality to EditJob page
+
+### Navigation
+- [x] Add "Templates" menu item to RecruiterLayout sidebar
+- [x] Add "Templates" menu item to CompanyAdminLayout sidebar
+
+### Testing
+- [x] Verify Template Management page loads with sidebar
+- [x] Verify empty state displays correctly
+- [ ] Test creating a job with save-as-template enabled
+- [ ] Test template filtering and search with actual data
+- [ ] Test bulk operations
+- [ ] Test template preview, edit, and duplicate
+- [ ] Verify access control (personal vs company-wide templates)

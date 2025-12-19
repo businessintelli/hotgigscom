@@ -2362,22 +2362,28 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       return await db.getJobsByRecruiter(ctx.user.id);
     }),
     
+    // Create new job
     create: protectedProcedure
       .input(z.object({
-        title: z.string().min(1, "Job title is required"),
-        description: z.string().min(1, "Job description is required"),
+        title: z.string(),
+        companyName: z.string().optional(),
+        description: z.string(),
         requirements: z.string().optional(),
         responsibilities: z.string().optional(),
-        location: z.string().min(1, "Location is required"),
-        employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
+        location: z.string().optional(),
+        employmentType: z.enum(["full-time", "part-time", "contract", "internship"]).optional(),
+        experienceLevel: z.enum(["entry", "mid", "senior", "lead", "executive"]).optional(),
         salaryMin: z.number().optional(),
         salaryMax: z.number().optional(),
         salaryCurrency: z.string().optional(),
         customerId: z.number().optional(),
-        contactId: z.number().optional(),
         applicationDeadline: z.date().optional(),
         status: z.enum(["draft", "active", "closed", "filled"]).optional(),
         isPublic: z.boolean().optional(),
+        saveAsTemplate: z.boolean().optional(),
+        templateName: z.string().optional(),
+        templateCategory: z.string().optional(),
+        templateTags: z.array(z.string()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Create the job first
@@ -2399,6 +2405,33 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         } catch (error) {
           console.error('Job bias detection failed:', error);
           // Don't fail the job creation if bias detection fails
+        }
+        
+        // Save as template if requested
+        if (input.saveAsTemplate && input.templateName) {
+          try {
+            await db.createJobTemplate({
+              name: input.templateName,
+              title: input.title,
+              companyName: input.companyName,
+              description: input.description,
+              requirements: input.requirements,
+              responsibilities: input.responsibilities,
+              location: input.location,
+              jobType: input.employmentType,
+              experienceLevel: input.experienceLevel,
+              salaryMin: input.salaryMin,
+              salaryMax: input.salaryMax,
+              category: input.templateCategory,
+              tags: input.templateTags ? JSON.stringify(input.templateTags) : undefined,
+              createdBy: ctx.user.id,
+              companyId: ctx.user.companyId,
+              isCompanyWide: false,
+            });
+          } catch (error) {
+            console.error('Failed to save template:', error);
+            // Don't fail job creation if template save fails
+          }
         }
         
         return { success: true, id: jobId, biasDetection: biasDetectionResult };
@@ -2833,6 +2866,188 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           preferredSkills: template.preferredSkills ? JSON.parse(template.preferredSkills) : [],
           tags: template.tags ? JSON.parse(template.tags) : [],
         };
+      }),
+    
+    // Get template statistics with usage history
+    getTemplateStatistics: protectedProcedure
+      .input(z.object({ templateId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        // Check access
+        const canAccess = await db.canAccessTemplate(ctx.user.id, input.templateId, ctx.user.companyId);
+        if (!canAccess) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot access this template" });
+        }
+        
+        const template = await db.getJobTemplateById(input.templateId);
+        if (!template) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
+        }
+        
+        // Get creator info
+        const creator = await db.getUserById(template.createdBy);
+        
+        return {
+          usageCount: template.usageCount || 0,
+          lastUsedAt: template.lastUsedAt,
+          createdAt: template.createdAt,
+          createdBy: {
+            id: creator?.id,
+            name: creator?.name,
+            email: creator?.email,
+          },
+          isCompanyWide: template.isCompanyWide || false,
+        };
+      }),
+    
+    // Search templates with advanced filtering
+    searchTemplates: protectedProcedure
+      .input(z.object({
+        query: z.string().optional(),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        minUsageCount: z.number().optional(),
+        maxUsageCount: z.number().optional(),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        sortBy: z.enum(['name', 'createdAt', 'usageCount', 'lastUsedAt']).optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const templates = await db.getAccessibleJobTemplates(ctx.user.id, ctx.user.companyId);
+        
+        let filtered = templates.map(t => ({
+          ...t,
+          requiredSkills: t.requiredSkills ? JSON.parse(t.requiredSkills) : [],
+          preferredSkills: t.preferredSkills ? JSON.parse(t.preferredSkills) : [],
+          tags: t.tags ? JSON.parse(t.tags) : [],
+        }));
+        
+        // Apply filters
+        if (input.query) {
+          const query = input.query.toLowerCase();
+          filtered = filtered.filter(t => 
+            t.name?.toLowerCase().includes(query) ||
+            t.title?.toLowerCase().includes(query) ||
+            t.description?.toLowerCase().includes(query)
+          );
+        }
+        
+        if (input.category) {
+          filtered = filtered.filter(t => t.category === input.category);
+        }
+        
+        if (input.tags && input.tags.length > 0) {
+          filtered = filtered.filter(t => {
+            const templateTags = t.tags || [];
+            return input.tags!.some(tag => templateTags.includes(tag));
+          });
+        }
+        
+        if (input.minUsageCount !== undefined) {
+          filtered = filtered.filter(t => (t.usageCount || 0) >= input.minUsageCount!);
+        }
+        
+        if (input.maxUsageCount !== undefined) {
+          filtered = filtered.filter(t => (t.usageCount || 0) <= input.maxUsageCount!);
+        }
+        
+        if (input.dateFrom) {
+          const dateFrom = new Date(input.dateFrom);
+          filtered = filtered.filter(t => new Date(t.createdAt) >= dateFrom);
+        }
+        
+        if (input.dateTo) {
+          const dateTo = new Date(input.dateTo);
+          filtered = filtered.filter(t => new Date(t.createdAt) <= dateTo);
+        }
+        
+        // Apply sorting
+        const sortBy = input.sortBy || 'usageCount';
+        const sortOrder = input.sortOrder || 'desc';
+        
+        filtered.sort((a, b) => {
+          let aVal: any = a[sortBy];
+          let bVal: any = b[sortBy];
+          
+          if (sortBy === 'createdAt' || sortBy === 'lastUsedAt') {
+            aVal = aVal ? new Date(aVal).getTime() : 0;
+            bVal = bVal ? new Date(bVal).getTime() : 0;
+          }
+          
+          if (sortOrder === 'asc') {
+            return aVal > bVal ? 1 : -1;
+          } else {
+            return aVal < bVal ? 1 : -1;
+          }
+        });
+        
+        return filtered;
+      }),
+    
+    // Bulk delete templates
+    bulkDeleteTemplates: protectedProcedure
+      .input(z.object({ templateIds: z.array(z.number()) }))
+      .mutation(async ({ ctx, input }) => {
+        const deleted = [];
+        const failed = [];
+        
+        for (const templateId of input.templateIds) {
+          try {
+            const template = await db.getJobTemplateById(templateId);
+            if (!template || template.createdBy !== ctx.user.id) {
+              failed.push({ templateId, reason: 'Not authorized' });
+              continue;
+            }
+            
+            await db.deleteJobTemplate(templateId);
+            deleted.push(templateId);
+          } catch (error) {
+            failed.push({ templateId, reason: 'Delete failed' });
+          }
+        }
+        
+        return { deleted, failed };
+      }),
+    
+    // Duplicate template
+    duplicateTemplate: protectedProcedure
+      .input(z.object({ 
+        templateId: z.number(),
+        newName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check access
+        const canAccess = await db.canAccessTemplate(ctx.user.id, input.templateId, ctx.user.companyId);
+        if (!canAccess) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot access this template" });
+        }
+        
+        const template = await db.getJobTemplateById(input.templateId);
+        if (!template) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
+        }
+        
+        // Create duplicate
+        const newTemplateId = await db.createJobTemplate({
+          name: input.newName || `${template.name} (Copy)`,
+          title: template.title,
+          companyName: template.companyName,
+          description: template.description,
+          location: template.location,
+          jobType: template.jobType,
+          experienceLevel: template.experienceLevel,
+          salaryMin: template.salaryMin,
+          salaryMax: template.salaryMax,
+          requiredSkills: template.requiredSkills,
+          preferredSkills: template.preferredSkills,
+          category: template.category,
+          tags: template.tags,
+          createdBy: ctx.user.id,
+          companyId: ctx.user.companyId,
+          isCompanyWide: false, // Duplicates are always personal
+        });
+        
+        return { success: true, templateId: newTemplateId };
       }),
     
     // Update template

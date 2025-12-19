@@ -41,6 +41,7 @@ import CandidateSearch from "./pages/CandidateSearch";
 import AddCandidatePage from "./pages/AddCandidatePage";
 import AdvancedCandidateSearch from "./pages/AdvancedCandidateSearch";
 import EmailTemplateManager from "./pages/EmailTemplateManager";
+import TemplateManagement from "./pages/TemplateManagement";
 import CampaignBuilder from "./pages/CampaignBuilder";
 import FollowUpSequenceBuilder from './pages/FollowUpSequenceBuilder';
 import RecruiterSourcingCampaigns from './pages/RecruiterSourcingCampaigns';
@@ -176,6 +177,7 @@ function Router() {
       <Route path="/recruiter/add-candidate" component={AddCandidatePage} />
       <Route path="/recruiter/advanced-search" component={AdvancedCandidateSearch} />
       <Route path="/recruiter/email-templates" component={EmailTemplateManager} />
+      <Route path="/recruiter/template-management" component={TemplateManagement} />
       <Route path="/recruiter/campaigns" component={CampaignBuilder} />
       <Route path="/recruiter/sequences" component={FollowUpSequenceBuilder} />
       <Route path="/recruiter/sourcing-campaigns" component={RecruiterSourcingCampaigns} />

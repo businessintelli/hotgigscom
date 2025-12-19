@@ -67,6 +67,14 @@ export default function CreateJob() {
 
   // Skill matrix state
   const [skillRequirements, setSkillRequirements] = useState<SkillRequirement[]>([]);
+  
+  // Save as template state
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [templateMetadata, setTemplateMetadata] = useState({
+    name: "",
+    category: "",
+    tags: [] as string[],
+  });
 
   // Fetch recruiter profile
   const { data: recruiter } = trpc.recruiter.getProfile.useQuery(
@@ -289,6 +297,14 @@ Format the output as JSON with keys: title, description, responsibilities, requi
       }
     }
 
+    // Validate template metadata if saving as template
+    if (saveAsTemplate) {
+      if (!templateMetadata.name.trim()) {
+        toast.error("Please provide a template name");
+        return;
+      }
+    }
+    
     await createJobMutation.mutateAsync({
       title: manualForm.title,
       description: manualForm.description,
@@ -303,6 +319,10 @@ Format the output as JSON with keys: title, description, responsibilities, requi
       applicationDeadline: manualForm.applicationDeadline ? new Date(manualForm.applicationDeadline) : undefined,
       status: "active",
       isPublic: true,
+      saveAsTemplate: saveAsTemplate,
+      templateName: saveAsTemplate ? templateMetadata.name : undefined,
+      templateCategory: saveAsTemplate ? templateMetadata.category : undefined,
+      templateTags: saveAsTemplate && templateMetadata.tags.length > 0 ? templateMetadata.tags : undefined,
     });
   };
 
@@ -551,6 +571,62 @@ Format the output as JSON with keys: title, description, responsibilities, requi
                   />
                 </div>
 
+                {/* Save as Template Section */}
+                <div className="border-t pt-4 mt-6">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <input
+                      type="checkbox"
+                      id="saveAsTemplate"
+                      checked={saveAsTemplate}
+                      onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="saveAsTemplate" className="text-sm font-medium cursor-pointer">
+                      Save this job as a template for future use
+                    </Label>
+                  </div>
+                  
+                  {saveAsTemplate && (
+                    <div className="space-y-4 p-4 bg-muted rounded-lg">
+                      <div>
+                        <Label htmlFor="templateName">Template Name *</Label>
+                        <Input
+                          id="templateName"
+                          placeholder="e.g., Senior Software Engineer Template"
+                          value={templateMetadata.name}
+                          onChange={(e) => setTemplateMetadata({ ...templateMetadata, name: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="templateCategory">Category (Optional)</Label>
+                        <Input
+                          id="templateCategory"
+                          placeholder="e.g., Engineering, Sales, Marketing"
+                          value={templateMetadata.category}
+                          onChange={(e) => setTemplateMetadata({ ...templateMetadata, category: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="templateTags">Tags (Optional)</Label>
+                        <Input
+                          id="templateTags"
+                          placeholder="Enter tags separated by commas"
+                          value={templateMetadata.tags.join(", ")}
+                          onChange={(e) => {
+                            const tags = e.target.value.split(",").map(t => t.trim()).filter(t => t);
+                            setTemplateMetadata({ ...templateMetadata, tags });
+                          }}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Example: remote, senior, full-time
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex gap-2 pt-4">
                   <Button
                     onClick={handleManualSubmit}
@@ -565,7 +641,7 @@ Format the output as JSON with keys: title, description, responsibilities, requi
                     ) : (
                       <>
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Post Job
+                        Post Job {saveAsTemplate && "& Save Template"}
                       </>
                     )}
                   </Button>
