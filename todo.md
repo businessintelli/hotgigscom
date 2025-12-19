@@ -4363,3 +4363,12 @@
 - [x] Add validation for uploaded Excel data
 - [x] Implement template download functionality
 - [x] Implement template upload and job creation
+
+## Bulk Candidate Upload Enhancement (Current Focus)
+- [x] Review existing bulk upload implementation on Add Candidate page
+- [x] Add bulk upload option with ZIP file support (multiple resumes)
+- [x] Add Excel import option for candidate data
+- [x] Ensure bulk upload is accessible to both recruiters and company admins
+- [x] Test bulk upload with multiple resumes in ZIP format
+- [x] Test Excel import functionality
+- [x] Verify candidates are properly added to database

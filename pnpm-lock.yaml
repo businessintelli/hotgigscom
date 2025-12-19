@@ -190,6 +190,9 @@ importers:
       jspdf-autotable:
         specifier: ^5.0.2
         version: 5.0.2(jspdf@3.0.4)
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       libphonenumber-js:
         specifier: ^1.12.31
         version: 1.12.31
