@@ -341,6 +341,12 @@ Format the output as JSON with keys: title, description, responsibilities, requi
     }
   };
 
+  // Download Excel template mutation
+  const downloadTemplateMutation = trpc.job.downloadExcelTemplate.useMutation();
+  
+  // Upload Excel jobs mutation
+  const uploadExcelJobsMutation = trpc.job.uploadExcelJobs.useMutation();
+
   // Handle Excel import
   const handleExcelImport = async () => {
     if (!excelFile) {
@@ -350,19 +356,70 @@ Format the output as JSON with keys: title, description, responsibilities, requi
 
     setIsUploading(true);
     try {
-      // TODO: Implement Excel parsing and bulk job creation
-      // For now, showing a success message
-      toast.success("Excel import feature coming soon!");
-      setIsUploading(false);
+      // First, upload the file to S3
+      const formData = new FormData();
+      formData.append('file', excelFile);
+      
+      // Upload file to storage
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file');
+      }
+      
+      const { url: fileUrl } = await uploadResponse.json();
+      
+      // Parse and create jobs from Excel
+      const result = await uploadExcelJobsMutation.mutateAsync({ fileUrl });
+      
+      if (result.success) {
+        toast.success(
+          `Successfully imported ${result.createdCount} of ${result.totalCount} jobs!`
+        );
+        
+        if (result.errors && result.errors.length > 0) {
+          console.warn('Import errors:', result.errors);
+          toast.warning(`${result.errors.length} warnings occurred during import`);
+        }
+        
+        // Clear file and redirect to dashboard
+        setExcelFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        setTimeout(() => {
+          setLocation('/recruiter/dashboard');
+        }, 1500);
+      } else {
+        toast.error('Failed to import jobs. Please check the file format.');
+        if (result.errors && result.errors.length > 0) {
+          console.error('Import errors:', result.errors);
+          result.errors.slice(0, 3).forEach(err => toast.error(err));
+        }
+      }
     } catch (error) {
+      console.error('Excel import error:', error);
       toast.error("Failed to import jobs from Excel");
+    } finally {
       setIsUploading(false);
     }
   };
 
   // Download Excel template
-  const handleDownloadTemplate = () => {
-    toast.info("Excel template download coming soon!");
+  const handleDownloadTemplate = async () => {
+    try {
+      toast.info('Generating template...');
+      const result = await downloadTemplateMutation.mutateAsync();
+      
+      // Open the template URL in a new tab to download
+      window.open(result.url, '_blank');
+      toast.success('Template downloaded successfully!');
+    } catch (error) {
+      console.error('Template download error:', error);
+      toast.error('Failed to download template');
+    }
   };
 
   if (!user) {

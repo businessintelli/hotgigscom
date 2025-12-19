@@ -4350,3 +4350,16 @@
 - [x] Test approval flow updates template to company-wide
 - [x] Test rejection flow with notes
 - [x] Test notification delivery to both parties
+
+## Critical Bug Fixes - Database Tables Missing (Dec 19, 2025 - Current)
+- [x] Fix missing job_templates table causing /recruiter/jobs page to crash
+- [x] Fix missing job_drafts table causing /recruiter/create-job page to crash
+- [x] Fix "or is not defined" import error in backend routers
+
+## Excel Template for Bulk Job Import (Current Focus)
+- [x] Create Excel template generation endpoint with all manual job fields
+- [x] Include skill matrix sheet in Excel template
+- [x] Implement Excel file parsing for job import
+- [x] Add validation for uploaded Excel data
+- [x] Implement template download functionality
+- [x] Implement template upload and job creation

@@ -14,9 +14,8 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
 import { applicationHistory } from "../drizzle/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq, or, and } from "drizzle-orm";
 import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
 
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
@@ -57,6 +56,7 @@ import { calculateJobMatch, screenAndRankCandidates } from './ai-matching';
 import { detectResumeBias, detectJobDescriptionBias } from './services/biasDetection';
 import { getHiringTrends, getTimeToHireMetrics as getPredictiveTimeToHire, getPipelineHealth, predictSuccessRate } from './predictive-analytics';
 import { getAutomationAnalytics } from './services/automationAnalytics';
+import { generateJobTemplate, parseJobExcel } from './excelJobTemplate';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -2465,6 +2465,78 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       .mutation(async ({ input }) => {
         await db.deleteJob(input.id);
         return { success: true };
+      }),
+    
+    // Download Excel template for bulk job import
+    downloadExcelTemplate: protectedProcedure
+      .mutation(async () => {
+        const result = await generateJobTemplate();
+        return { url: result.url, key: result.key };
+      }),
+    
+    // Upload and parse Excel file for bulk job import
+    uploadExcelJobs: protectedProcedure
+      .input(z.object({
+        fileUrl: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Download the file from the URL
+        const response = await fetch(input.fileUrl);
+        if (!response.ok) {
+          throw new Error('Failed to download file');
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        // Parse the Excel file
+        const parseResult = await parseJobExcel(buffer);
+        
+        if (!parseResult.success) {
+          return {
+            success: false,
+            errors: parseResult.errors,
+            createdCount: 0,
+          };
+        }
+        
+        // Create jobs from parsed data
+        const createdJobs: number[] = [];
+        const errors: string[] = [];
+        
+        for (const jobData of parseResult.jobs) {
+          try {
+            // Create the job
+            const result = await db.createJob({
+              ...jobData,
+              postedBy: ctx.user.id,
+            });
+            
+            const jobId = result.insertId;
+            createdJobs.push(jobId);
+            
+            // Create skill requirements if any
+            if (jobData.skills && jobData.skills.length > 0) {
+              try {
+                await db.createJobSkillRequirements(jobId, jobData.skills);
+              } catch (error) {
+                console.error(`Failed to create skills for job ${jobId}:`, error);
+                errors.push(`Job "${jobData.title}" created but skills failed to save`);
+              }
+            }
+          } catch (error) {
+            console.error('Failed to create job:', error);
+            errors.push(`Failed to create job "${jobData.title}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
+        
+        return {
+          success: createdJobs.length > 0,
+          createdCount: createdJobs.length,
+          totalCount: parseResult.jobs.length,
+          createdJobIds: createdJobs,
+          errors: [...parseResult.errors, ...errors],
+        };
       }),
     
     bulkClose: protectedProcedure
