@@ -33,7 +33,6 @@ import AIInterviewPage from "@/pages/AIInterviewPage";
 import ResumeRankingDashboard from "@/pages/ResumeRankingDashboard";
 import BulkResumeUpload from "@/pages/BulkResumeUpload";
 import BulkCandidateImport from "@/pages/BulkCandidateImport";
-import BulkUploadHistory from "@/pages/BulkUploadHistory";
 import CustomerManagement from "@/pages/CustomerManagement";
 import JobApplication from "./pages/JobApplication";
 import GuestJobApplication from "./pages/GuestJobApplication";
@@ -42,7 +41,6 @@ import CandidateSearch from "./pages/CandidateSearch";
 import AddCandidatePage from "./pages/AddCandidatePage";
 import AdvancedCandidateSearch from "./pages/AdvancedCandidateSearch";
 import EmailTemplateManager from "./pages/EmailTemplateManager";
-import TemplateManagement from "./pages/TemplateManagement";
 import CampaignBuilder from "./pages/CampaignBuilder";
 import FollowUpSequenceBuilder from './pages/FollowUpSequenceBuilder';
 import RecruiterSourcingCampaigns from './pages/RecruiterSourcingCampaigns';
@@ -171,7 +169,6 @@ function Router() {
       <Route path="/recruiter/interview-playback" component={InterviewPlayback} />
       <Route path="/recruiter/bulk-upload" component={BulkResumeUpload} />
       <Route path="/recruiter/bulk-import" component={BulkCandidateImport} />
-      <Route path="/recruiter/bulk-upload-history" component={BulkUploadHistory} />
        <Route path="/recruiter/interview-calendar" component={InterviewCalendar} />
       <Route path="/recruiter/resume-ranking" component={ResumeRankingDashboard} />
       <Route path="/recruiter/customers" component={CustomerManagement} />
@@ -179,7 +176,6 @@ function Router() {
       <Route path="/recruiter/add-candidate" component={AddCandidatePage} />
       <Route path="/recruiter/advanced-search" component={AdvancedCandidateSearch} />
       <Route path="/recruiter/email-templates" component={EmailTemplateManager} />
-      <Route path="/recruiter/template-management" component={TemplateManagement} />
       <Route path="/recruiter/campaigns" component={CampaignBuilder} />
       <Route path="/recruiter/sequences" component={FollowUpSequenceBuilder} />
       <Route path="/recruiter/sourcing-campaigns" component={RecruiterSourcingCampaigns} />

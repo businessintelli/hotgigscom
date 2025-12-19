@@ -27,8 +27,6 @@ import {
   FileCheck
 } from "lucide-react";
 import { useState } from "react";
-import { trpc } from "@/lib/trpc";
-import { Badge } from "@/components/ui/badge";
 
 interface CompanyAdminLayoutProps {
   children: React.ReactNode;
@@ -39,12 +37,6 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
-  // Fetch pending template share requests count
-  const { data: pendingShares = [] } = trpc.templateShare.getShareRequests.useQuery(
-    undefined,
-    { enabled: user?.role === 'company_admin' }
-  );
 
   const navigation = [
     // Core
@@ -69,7 +61,6 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
     { type: "divider", label: "Analytics" },
     { name: "Analytics Dashboard", href: "/company-admin/analytics", icon: BarChart3 },
     { type: "divider", label: "Content Management" },
-    { name: "Job Templates", href: "/recruiter/template-management", icon: FileText },
     { name: "Template Shares", href: "/company-admin/template-shares", icon: FileCheck },
     { type: "divider", label: "Settings" },
     { name: "Company Settings", href: "/company-admin/company-settings", icon: Settings },
@@ -135,8 +126,6 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
               }
               
               const Icon = item.icon;
-              const showBadge = item.href === '/company-admin/template-shares' && pendingShares.length > 0;
-              
               return (
                 <Link 
                   key={item.href} 
@@ -151,19 +140,7 @@ export function CompanyAdminLayout({ children }: CompanyAdminLayoutProps) {
                   title={isCollapsed ? item.name : undefined}
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />
-                  {!isCollapsed && (
-                    <span className="flex items-center gap-2 flex-1">
-                      {item.name}
-                      {showBadge && (
-                        <Badge variant="destructive" className="ml-auto">
-                          {pendingShares.length}
-                        </Badge>
-                      )}
-                    </span>
-                  )}
-                  {isCollapsed && showBadge && (
-                    <div className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
-                  )}
+                  {!isCollapsed && item.name}
                 </Link>
               );
             })}

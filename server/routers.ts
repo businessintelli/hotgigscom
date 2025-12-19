@@ -13,9 +13,10 @@ import * as authService from "./authService";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
-import { applicationHistory, candidateSuccessPredictions } from "../drizzle/schema";
-import { desc, eq, or, and } from "drizzle-orm";
-import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns, candidateSuccessPredictions } from "../drizzle/schema";
+import { applicationHistory } from "../drizzle/schema";
+import { desc } from "drizzle-orm";
+import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 import { storagePut } from "./storage";
 import { extractResumeText, parseResumeWithAI } from "./resumeParser";
@@ -56,7 +57,6 @@ import { calculateJobMatch, screenAndRankCandidates } from './ai-matching';
 import { detectResumeBias, detectJobDescriptionBias } from './services/biasDetection';
 import { getHiringTrends, getTimeToHireMetrics as getPredictiveTimeToHire, getPipelineHealth, predictSuccessRate } from './predictive-analytics';
 import { getAutomationAnalytics } from './services/automationAnalytics';
-import { generateJobTemplate, parseJobExcel } from './excelJobTemplate';
 
 // Helper to generate random suffix for file keys
 function randomSuffix() {
@@ -751,11 +751,11 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         highestDegreeStartDate: z.string().optional(),
         highestDegreeEndDate: z.string().optional(),
         // Employment History
-        employmentHistory: z.union([z.string(), z.array(z.any())]).optional(), // JSON string or array
+        employmentHistory: z.string().optional(), // JSON string
         // Languages
-        languagesRead: z.union([z.string(), z.array(z.any())]).optional(), // JSON string or array
-        languagesSpeak: z.union([z.string(), z.array(z.any())]).optional(), // JSON string or array
-        languagesWrite: z.union([z.string(), z.array(z.any())]).optional(), // JSON string or array
+        languagesRead: z.string().optional(), // JSON array
+        languagesSpeak: z.string().optional(), // JSON array
+        languagesWrite: z.string().optional(), // JSON array
         // Address
         currentResidenceZipCode: z.string().optional(),
         // Identification
@@ -1536,30 +1536,6 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         return { response: assistantMessage?.content || 'Sorry, I could not generate a response.' };
       }),
 
-    // Check for duplicate candidate by email
-    checkDuplicateCandidate: protectedProcedure
-      .input(z.object({
-        email: z.string().email("Valid email is required"),
-      }))
-      .query(async ({ input }) => {
-        const existing = await db.getCandidateByEmail(input.email);
-        if (existing) {
-          return {
-            isDuplicate: true,
-            candidate: {
-              id: existing.candidate.id,
-              name: existing.user.name,
-              email: existing.user.email,
-              phoneNumber: existing.candidate.phoneNumber,
-              location: existing.candidate.location,
-              skills: existing.candidate.skills,
-              createdAt: existing.candidate.createdAt,
-            }
-          };
-        }
-        return { isDuplicate: false, candidate: null };
-      }),
-
     getProfile: protectedProcedure.query(async ({ ctx }) => {
       return await db.getCandidateByUserId(ctx.user.id);
     }),
@@ -1625,47 +1601,6 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         if (!candidate) throw new Error('Candidate profile not found');
         await db.updateCandidate(candidate.id, input);
         return { success: true };
-      }),
-    
-    // Parse resume without auto-filling profile (for wizard flow)
-    parseResumeOnly: protectedProcedure
-      .input(z.object({
-        fileData: z.string(), // base64 encoded file
-        fileName: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const { fileData, fileName } = input;
-        
-        // Extract base64 data and mime type
-        const matches = fileData.match(/^data:(.+);base64,(.+)$/);
-        if (!matches) {
-          throw new Error('Invalid file data format');
-        }
-        
-        const mimeType = matches[1];
-        const base64Data = matches[2];
-        const buffer = Buffer.from(base64Data, 'base64');
-        
-        try {
-          // Extract text from PDF/DOCX
-          const resumeText = await extractResumeText(buffer, mimeType);
-          
-          // Parse with AI (new advanced parser)
-          const parsedData = await parseResumeWithAI(resumeText);
-          
-          // Run bias detection on resume text
-          const biasDetectionResult = await detectResumeBias(resumeText, 0);
-          
-          return { 
-            success: true, 
-            parsedData, 
-            biasDetection: biasDetectionResult,
-            resumeText 
-          };
-        } catch (error) {
-          console.error('Resume parsing failed:', error);
-          throw new Error('Failed to parse resume. Please try again.');
-        }
       }),
     
     uploadResume: protectedProcedure
@@ -1876,19 +1811,11 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     bulkUploadResumes: protectedProcedure
       .input(z.object({
         zipFileData: z.string(), // base64 encoded ZIP file
-        fileName: z.string(),
-        fileSize: z.number(),
         jobId: z.number().optional(), // Optional: rank against this job
         autoCreateProfiles: z.boolean().optional().default(true),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { zipFileData, fileName, fileSize, jobId, autoCreateProfiles } = input;
-        
-        // Check file size limits (200MB for ZIP)
-        const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
-        if (fileSize > MAX_FILE_SIZE) {
-          throw new Error(`File size exceeds maximum limit of 200MB`);
-        }
+        const { zipFileData, jobId, autoCreateProfiles } = input;
         
         // Extract base64 data
         const matches = zipFileData.match(/^data:(.+);base64,(.+)$/);
@@ -1900,7 +1827,7 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         const buffer = Buffer.from(base64Data, 'base64');
         
         // Import bulk upload service
-        const { validateBulkUploadZip } = await import('./bulkResumeUpload');
+        const { processBulkResumeUpload, validateBulkUploadZip } = await import('./bulkResumeUpload');
         
         // Validate ZIP file
         const validation = validateBulkUploadZip(buffer);
@@ -1908,118 +1835,14 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           throw new Error(validation.error || 'Invalid ZIP file');
         }
         
-        // Upload ZIP file to S3 for background processing
-        const { storagePut } = await import('./storage');
-        const fileKey = `bulk-uploads/${ctx.user.id}-${Date.now()}-${fileName}`;
-        const { url: fileUrl } = await storagePut(fileKey, buffer, 'application/zip');
-        
-        // Get recruiter ID
-        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
-        if (!recruiter) {
-          throw new Error('Recruiter profile not found');
-        }
-        
-        // Create bulk upload job record
-        const jobRecord = await db.createBulkUploadJob({
-          recruiterId: recruiter.id,
+        // Process bulk upload
+        const result = await processBulkResumeUpload(buffer, {
           userId: ctx.user.id,
-          fileName,
-          fileSize,
-          fileUrl,
-          fileKey,
-          fileType: 'zip',
-          status: 'pending',
+          jobId,
+          autoCreateProfiles,
         });
         
-        // Start background processing (non-blocking)
-        setImmediate(async () => {
-          try {
-            await db.updateBulkUploadJobStatus(jobRecord.id, 'processing', {
-              processingStartedAt: new Date(),
-            });
-            
-            const { processBulkResumeUpload } = await import('./bulkResumeUpload');
-            const result = await processBulkResumeUpload(buffer, {
-              userId: ctx.user.id,
-              jobId,
-              autoCreateProfiles,
-            });
-            
-            // Generate failed records CSV if there are failures
-            let failedRecordsUrl: string | undefined;
-            let failedRecordsKey: string | undefined;
-            
-            if (result.failedCount > 0) {
-              const failedRecords = result.candidates.filter(c => !c.success);
-              const csvContent = [
-                ['Filename', 'Error'],
-                ...failedRecords.map(r => [r.filename, r.error || 'Unknown error'])
-              ].map(row => row.join(',')).join('\n');
-              
-              failedRecordsKey = `bulk-uploads/failed-${jobRecord.id}-${Date.now()}.csv`;
-              const { url } = await storagePut(failedRecordsKey, csvContent, 'text/csv');
-              failedRecordsUrl = url;
-            }
-            
-            // Update job record with results
-            await db.updateBulkUploadJobStatus(jobRecord.id, 'completed', {
-              totalRecords: result.totalFiles,
-              successCount: result.successCount,
-              failureCount: result.failedCount,
-              failedRecordsUrl,
-              failedRecordsKey,
-              processingCompletedAt: new Date(),
-            });
-            
-            // Send email notification
-            await db.sendBulkUploadCompletionEmail({
-              jobId: jobRecord.id,
-              recipientEmail: ctx.user.email!,
-              recipientName: ctx.user.name || 'Recruiter',
-              fileName,
-              totalRecords: result.totalFiles,
-              successCount: result.successCount,
-              failureCount: result.failedCount,
-              failedRecordsUrl,
-            });
-            
-          } catch (error: any) {
-            await db.updateBulkUploadJobStatus(jobRecord.id, 'failed', {
-              errorMessage: error.message,
-              processingCompletedAt: new Date(),
-            });
-          }
-        });
-        
-        return { jobId: jobRecord.id, status: 'pending', message: 'Upload started. You will receive an email when processing completes.' };
-      }),
-
-    // Get bulk upload history
-    getBulkUploadHistory: protectedProcedure
-      .query(async ({ ctx }) => {
-        const recruiter = await db.getRecruiterByUserId(ctx.user.id);
-        if (!recruiter) {
-          throw new Error('Recruiter profile not found');
-        }
-        
-        return await db.getBulkUploadJobsByRecruiter(recruiter.id);
-      }),
-
-    // Get bulk upload job details
-    getBulkUploadJob: protectedProcedure
-      .input(z.object({ jobId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        const job = await db.getBulkUploadJobById(input.jobId);
-        if (!job) {
-          throw new Error('Bulk upload job not found');
-        }
-        
-        // Verify ownership
-        if (job.userId !== ctx.user.id) {
-          throw new Error('Unauthorized');
-        }
-        
-        return job;
+        return result;
       }),
 
     // Profile sharing - create secure share link
@@ -2539,28 +2362,22 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       return await db.getJobsByRecruiter(ctx.user.id);
     }),
     
-    // Create new job
     create: protectedProcedure
       .input(z.object({
-        title: z.string(),
-        companyName: z.string().optional(),
-        description: z.string(),
+        title: z.string().min(1, "Job title is required"),
+        description: z.string().min(1, "Job description is required"),
         requirements: z.string().optional(),
         responsibilities: z.string().optional(),
-        location: z.string().optional(),
-        employmentType: z.enum(["full-time", "part-time", "contract", "internship"]).optional(),
-        experienceLevel: z.enum(["entry", "mid", "senior", "lead", "executive"]).optional(),
+        location: z.string().min(1, "Location is required"),
+        employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
         salaryMin: z.number().optional(),
         salaryMax: z.number().optional(),
         salaryCurrency: z.string().optional(),
         customerId: z.number().optional(),
+        contactId: z.number().optional(),
         applicationDeadline: z.date().optional(),
         status: z.enum(["draft", "active", "closed", "filled"]).optional(),
         isPublic: z.boolean().optional(),
-        saveAsTemplate: z.boolean().optional(),
-        templateName: z.string().optional(),
-        templateCategory: z.string().optional(),
-        templateTags: z.array(z.string()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Create the job first
@@ -2582,33 +2399,6 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         } catch (error) {
           console.error('Job bias detection failed:', error);
           // Don't fail the job creation if bias detection fails
-        }
-        
-        // Save as template if requested
-        if (input.saveAsTemplate && input.templateName) {
-          try {
-            await db.createJobTemplate({
-              name: input.templateName,
-              title: input.title,
-              companyName: input.companyName,
-              description: input.description,
-              requirements: input.requirements,
-              responsibilities: input.responsibilities,
-              location: input.location,
-              jobType: input.employmentType,
-              experienceLevel: input.experienceLevel,
-              salaryMin: input.salaryMin,
-              salaryMax: input.salaryMax,
-              category: input.templateCategory,
-              tags: input.templateTags ? JSON.stringify(input.templateTags) : undefined,
-              createdBy: ctx.user.id,
-              companyId: ctx.user.companyId,
-              isCompanyWide: false,
-            });
-          } catch (error) {
-            console.error('Failed to save template:', error);
-            // Don't fail job creation if template save fails
-          }
         }
         
         return { success: true, id: jobId, biasDetection: biasDetectionResult };
@@ -2642,78 +2432,6 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       .mutation(async ({ input }) => {
         await db.deleteJob(input.id);
         return { success: true };
-      }),
-    
-    // Download Excel template for bulk job import
-    downloadExcelTemplate: protectedProcedure
-      .mutation(async () => {
-        const result = await generateJobTemplate();
-        return { url: result.url, key: result.key };
-      }),
-    
-    // Upload and parse Excel file for bulk job import
-    uploadExcelJobs: protectedProcedure
-      .input(z.object({
-        fileUrl: z.string(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        // Download the file from the URL
-        const response = await fetch(input.fileUrl);
-        if (!response.ok) {
-          throw new Error('Failed to download file');
-        }
-        
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        
-        // Parse the Excel file
-        const parseResult = await parseJobExcel(buffer);
-        
-        if (!parseResult.success) {
-          return {
-            success: false,
-            errors: parseResult.errors,
-            createdCount: 0,
-          };
-        }
-        
-        // Create jobs from parsed data
-        const createdJobs: number[] = [];
-        const errors: string[] = [];
-        
-        for (const jobData of parseResult.jobs) {
-          try {
-            // Create the job
-            const result = await db.createJob({
-              ...jobData,
-              postedBy: ctx.user.id,
-            });
-            
-            const jobId = result.insertId;
-            createdJobs.push(jobId);
-            
-            // Create skill requirements if any
-            if (jobData.skills && jobData.skills.length > 0) {
-              try {
-                await db.createJobSkillRequirements(jobId, jobData.skills);
-              } catch (error) {
-                console.error(`Failed to create skills for job ${jobId}:`, error);
-                errors.push(`Job "${jobData.title}" created but skills failed to save`);
-              }
-            }
-          } catch (error) {
-            console.error('Failed to create job:', error);
-            errors.push(`Failed to create job "${jobData.title}": ${error instanceof Error ? error.message : 'Unknown error'}`);
-          }
-        }
-        
-        return {
-          success: createdJobs.length > 0,
-          createdCount: createdJobs.length,
-          totalCount: parseResult.jobs.length,
-          createdJobIds: createdJobs,
-          errors: [...parseResult.errors, ...errors],
-        };
       }),
     
     bulkClose: protectedProcedure
@@ -2984,375 +2702,6 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         await db.updateJob(input.jobId, updates);
         return { success: true };
       }),
-    
-    // ============================================
-    // Job Draft Auto-Save Procedures
-    // ============================================
-    
-    // Save or update job draft
-    saveDraft: protectedProcedure
-      .input(z.object({
-        title: z.string().optional(),
-        companyName: z.string().optional(),
-        description: z.string().optional(),
-        requirements: z.string().optional(),
-        responsibilities: z.string().optional(),
-        location: z.string().optional(),
-        employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
-        salaryMin: z.number().optional(),
-        salaryMax: z.number().optional(),
-        salaryCurrency: z.string().optional(),
-        customerId: z.number().optional(),
-        contactId: z.number().optional(),
-        applicationDeadline: z.date().optional(),
-        experienceLevel: z.string().optional(),
-        educationLevel: z.string().optional(),
-        requiredSkills: z.array(z.string()).optional(),
-        preferredSkills: z.array(z.string()).optional(),
-        benefits: z.string().optional(),
-        remotePolicy: z.string().optional(),
-        travelRequirement: z.string().optional(),
-        securityClearance: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const draftData: any = { ...input };
-        
-        // Convert arrays to JSON strings for storage
-        if (input.requiredSkills) {
-          draftData.requiredSkills = JSON.stringify(input.requiredSkills);
-        }
-        if (input.preferredSkills) {
-          draftData.preferredSkills = JSON.stringify(input.preferredSkills);
-        }
-        
-        const draftId = await db.upsertJobDraft(ctx.user.id, draftData);
-        return { success: true, draftId };
-      }),
-    
-    // Get user's job draft
-    getDraft: protectedProcedure.query(async ({ ctx }) => {
-      const draft = await db.getJobDraftByUser(ctx.user.id);
-      
-      if (!draft) return null;
-      
-      // Parse JSON fields back to arrays
-      return {
-        ...draft,
-        requiredSkills: draft.requiredSkills ? JSON.parse(draft.requiredSkills) : [],
-        preferredSkills: draft.preferredSkills ? JSON.parse(draft.preferredSkills) : [],
-      };
-    }),
-    
-    // Delete job draft
-    deleteDraft: protectedProcedure.mutation(async ({ ctx }) => {
-      await db.deleteJobDraft(ctx.user.id);
-      return { success: true };
-    }),
-    
-    // ============================================
-    // Enhanced Job Template Procedures
-    // ============================================
-    
-    // Get accessible templates (own + company-wide)
-    getAccessibleTemplates: protectedProcedure.query(async ({ ctx }) => {
-      const templates = await db.getAccessibleJobTemplates(ctx.user.id, ctx.user.companyId);
-      
-      // Parse JSON fields
-      return templates.map(t => ({
-        ...t,
-        requiredSkills: t.requiredSkills ? JSON.parse(t.requiredSkills) : [],
-        preferredSkills: t.preferredSkills ? JSON.parse(t.preferredSkills) : [],
-        tags: t.tags ? JSON.parse(t.tags) : [],
-      }));
-    }),
-    
-    // Get template by ID
-    getTemplateById: protectedProcedure
-      .input(z.object({ templateId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        // Check access
-        const canAccess = await db.canAccessTemplate(ctx.user.id, input.templateId, ctx.user.companyId);
-        if (!canAccess) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot access this template" });
-        }
-        
-        const template = await db.getJobTemplateById(input.templateId);
-        if (!template) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
-        }
-        
-        // Parse JSON fields
-        return {
-          ...template,
-          requiredSkills: template.requiredSkills ? JSON.parse(template.requiredSkills) : [],
-          preferredSkills: template.preferredSkills ? JSON.parse(template.preferredSkills) : [],
-          tags: template.tags ? JSON.parse(template.tags) : [],
-        };
-      }),
-    
-    // Use template to create job (records usage)
-    useTemplate: protectedProcedure
-      .input(z.object({ templateId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        // Check access
-        const canAccess = await db.canAccessTemplate(ctx.user.id, input.templateId, ctx.user.companyId);
-        if (!canAccess) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot access this template" });
-        }
-        
-        const template = await db.getJobTemplateById(input.templateId);
-        if (!template) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
-        }
-        
-        // Record usage
-        await db.recordTemplateUsage(input.templateId);
-        
-        // Return template data
-        return {
-          ...template,
-          requiredSkills: template.requiredSkills ? JSON.parse(template.requiredSkills) : [],
-          preferredSkills: template.preferredSkills ? JSON.parse(template.preferredSkills) : [],
-          tags: template.tags ? JSON.parse(template.tags) : [],
-        };
-      }),
-    
-    // Get template statistics with usage history
-    getTemplateStatistics: protectedProcedure
-      .input(z.object({ templateId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        // Check access
-        const canAccess = await db.canAccessTemplate(ctx.user.id, input.templateId, ctx.user.companyId);
-        if (!canAccess) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot access this template" });
-        }
-        
-        const template = await db.getJobTemplateById(input.templateId);
-        if (!template) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
-        }
-        
-        // Get creator info
-        const creator = await db.getUserById(template.createdBy);
-        
-        return {
-          usageCount: template.usageCount || 0,
-          lastUsedAt: template.lastUsedAt,
-          createdAt: template.createdAt,
-          createdBy: {
-            id: creator?.id,
-            name: creator?.name,
-            email: creator?.email,
-          },
-          isCompanyWide: template.isCompanyWide || false,
-        };
-      }),
-    
-    // Search templates with advanced filtering
-    searchTemplates: protectedProcedure
-      .input(z.object({
-        query: z.string().optional(),
-        category: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        minUsageCount: z.number().optional(),
-        maxUsageCount: z.number().optional(),
-        dateFrom: z.string().optional(),
-        dateTo: z.string().optional(),
-        sortBy: z.enum(['name', 'createdAt', 'usageCount', 'lastUsedAt']).optional(),
-        sortOrder: z.enum(['asc', 'desc']).optional(),
-      }))
-      .query(async ({ ctx, input }) => {
-        const templates = await db.getAccessibleJobTemplates(ctx.user.id, ctx.user.companyId);
-        
-        let filtered = templates.map(t => ({
-          ...t,
-          requiredSkills: t.requiredSkills ? JSON.parse(t.requiredSkills) : [],
-          preferredSkills: t.preferredSkills ? JSON.parse(t.preferredSkills) : [],
-          tags: t.tags ? JSON.parse(t.tags) : [],
-        }));
-        
-        // Apply filters
-        if (input.query) {
-          const query = input.query.toLowerCase();
-          filtered = filtered.filter(t => 
-            t.name?.toLowerCase().includes(query) ||
-            t.title?.toLowerCase().includes(query) ||
-            t.description?.toLowerCase().includes(query)
-          );
-        }
-        
-        if (input.category) {
-          filtered = filtered.filter(t => t.category === input.category);
-        }
-        
-        if (input.tags && input.tags.length > 0) {
-          filtered = filtered.filter(t => {
-            const templateTags = t.tags || [];
-            return input.tags!.some(tag => templateTags.includes(tag));
-          });
-        }
-        
-        if (input.minUsageCount !== undefined) {
-          filtered = filtered.filter(t => (t.usageCount || 0) >= input.minUsageCount!);
-        }
-        
-        if (input.maxUsageCount !== undefined) {
-          filtered = filtered.filter(t => (t.usageCount || 0) <= input.maxUsageCount!);
-        }
-        
-        if (input.dateFrom) {
-          const dateFrom = new Date(input.dateFrom);
-          filtered = filtered.filter(t => new Date(t.createdAt) >= dateFrom);
-        }
-        
-        if (input.dateTo) {
-          const dateTo = new Date(input.dateTo);
-          filtered = filtered.filter(t => new Date(t.createdAt) <= dateTo);
-        }
-        
-        // Apply sorting
-        const sortBy = input.sortBy || 'usageCount';
-        const sortOrder = input.sortOrder || 'desc';
-        
-        filtered.sort((a, b) => {
-          let aVal: any = a[sortBy];
-          let bVal: any = b[sortBy];
-          
-          if (sortBy === 'createdAt' || sortBy === 'lastUsedAt') {
-            aVal = aVal ? new Date(aVal).getTime() : 0;
-            bVal = bVal ? new Date(bVal).getTime() : 0;
-          }
-          
-          if (sortOrder === 'asc') {
-            return aVal > bVal ? 1 : -1;
-          } else {
-            return aVal < bVal ? 1 : -1;
-          }
-        });
-        
-        return filtered;
-      }),
-    
-    // Bulk delete templates
-    bulkDeleteTemplates: protectedProcedure
-      .input(z.object({ templateIds: z.array(z.number()) }))
-      .mutation(async ({ ctx, input }) => {
-        const deleted = [];
-        const failed = [];
-        
-        for (const templateId of input.templateIds) {
-          try {
-            const template = await db.getJobTemplateById(templateId);
-            if (!template || template.createdBy !== ctx.user.id) {
-              failed.push({ templateId, reason: 'Not authorized' });
-              continue;
-            }
-            
-            await db.deleteJobTemplate(templateId);
-            deleted.push(templateId);
-          } catch (error) {
-            failed.push({ templateId, reason: 'Delete failed' });
-          }
-        }
-        
-        return { deleted, failed };
-      }),
-    
-    // Duplicate template
-    duplicateTemplate: protectedProcedure
-      .input(z.object({ 
-        templateId: z.number(),
-        newName: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        // Check access
-        const canAccess = await db.canAccessTemplate(ctx.user.id, input.templateId, ctx.user.companyId);
-        if (!canAccess) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot access this template" });
-        }
-        
-        const template = await db.getJobTemplateById(input.templateId);
-        if (!template) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
-        }
-        
-        // Create duplicate
-        const newTemplateId = await db.createJobTemplate({
-          name: input.newName || `${template.name} (Copy)`,
-          title: template.title,
-          companyName: template.companyName,
-          description: template.description,
-          location: template.location,
-          jobType: template.jobType,
-          experienceLevel: template.experienceLevel,
-          salaryMin: template.salaryMin,
-          salaryMax: template.salaryMax,
-          requiredSkills: template.requiredSkills,
-          preferredSkills: template.preferredSkills,
-          category: template.category,
-          tags: template.tags,
-          createdBy: ctx.user.id,
-          companyId: ctx.user.companyId,
-          isCompanyWide: false, // Duplicates are always personal
-        });
-        
-        return { success: true, templateId: newTemplateId };
-      }),
-    
-    // Update template
-    updateTemplate: protectedProcedure
-      .input(z.object({
-        templateId: z.number(),
-        name: z.string().optional(),
-        templateDescription: z.string().optional(),
-        title: z.string().optional(),
-        companyName: z.string().optional(),
-        description: z.string().optional(),
-        requirements: z.string().optional(),
-        responsibilities: z.string().optional(),
-        location: z.string().optional(),
-        employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
-        salaryMin: z.number().optional(),
-        salaryMax: z.number().optional(),
-        salaryCurrency: z.string().optional(),
-        customerId: z.number().optional(),
-        contactId: z.number().optional(),
-        experienceLevel: z.string().optional(),
-        educationLevel: z.string().optional(),
-        requiredSkills: z.array(z.string()).optional(),
-        preferredSkills: z.array(z.string()).optional(),
-        benefits: z.string().optional(),
-        remotePolicy: z.string().optional(),
-        travelRequirement: z.string().optional(),
-        securityClearance: z.string().optional(),
-        category: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        isPublic: z.boolean().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const { templateId, ...data } = input;
-        
-        // Check ownership
-        const template = await db.getJobTemplateById(templateId);
-        if (!template || template.createdBy !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized" });
-        }
-        
-        // Convert arrays to JSON
-        const updateData: any = { ...data };
-        if (data.requiredSkills) {
-          updateData.requiredSkills = JSON.stringify(data.requiredSkills);
-        }
-        if (data.preferredSkills) {
-          updateData.preferredSkills = JSON.stringify(data.preferredSkills);
-        }
-        if (data.tags) {
-          updateData.tags = JSON.stringify(data.tags);
-        }
-        
-        await db.updateJobTemplate(templateId, updateData);
-        return { success: true };
-      }),
   }),
 
   application: router({
@@ -3420,10 +2769,10 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             specialization: input.extendedInfo.specialization,
             highestDegreeStartDate: input.extendedInfo.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
             highestDegreeEndDate: input.extendedInfo.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
-            employmentHistory: input.extendedInfo.employmentHistory ? (typeof input.extendedInfo.employmentHistory === 'string' ? input.extendedInfo.employmentHistory : JSON.stringify(input.extendedInfo.employmentHistory)) : undefined,
-            languagesRead: input.extendedInfo.languagesRead ? (typeof input.extendedInfo.languagesRead === 'string' ? input.extendedInfo.languagesRead : JSON.stringify(input.extendedInfo.languagesRead)) : undefined,
-            languagesSpeak: input.extendedInfo.languagesSpeak ? (typeof input.extendedInfo.languagesSpeak === 'string' ? input.extendedInfo.languagesSpeak : JSON.stringify(input.extendedInfo.languagesSpeak)) : undefined,
-            languagesWrite: input.extendedInfo.languagesWrite ? (typeof input.extendedInfo.languagesWrite === 'string' ? input.extendedInfo.languagesWrite : JSON.stringify(input.extendedInfo.languagesWrite)) : undefined,
+            employmentHistory: input.extendedInfo.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+            languagesRead: input.extendedInfo.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+            languagesSpeak: input.extendedInfo.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+            languagesWrite: input.extendedInfo.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
             currentResidenceZipCode: input.extendedInfo.currentResidenceZipCode,
             passportNumber: input.extendedInfo.passportNumber,
             sinLast4: input.extendedInfo.sinLast4,
@@ -3452,10 +2801,10 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           specialization: input.extendedInfo?.specialization,
           highestDegreeStartDate: input.extendedInfo?.highestDegreeStartDate,
           highestDegreeEndDate: input.extendedInfo?.highestDegreeEndDate,
-          employmentHistory: input.extendedInfo?.employmentHistory ? (typeof input.extendedInfo.employmentHistory === 'string' ? input.extendedInfo.employmentHistory : JSON.stringify(input.extendedInfo.employmentHistory)) : undefined,
-          languagesRead: input.extendedInfo?.languagesRead ? (typeof input.extendedInfo.languagesRead === 'string' ? input.extendedInfo.languagesRead : JSON.stringify(input.extendedInfo.languagesRead)) : undefined,
-          languagesSpeak: input.extendedInfo?.languagesSpeak ? (typeof input.extendedInfo.languagesSpeak === 'string' ? input.extendedInfo.languagesSpeak : JSON.stringify(input.extendedInfo.languagesSpeak)) : undefined,
-          languagesWrite: input.extendedInfo?.languagesWrite ? (typeof input.extendedInfo.languagesWrite === 'string' ? input.extendedInfo.languagesWrite : JSON.stringify(input.extendedInfo.languagesWrite)) : undefined,
+          employmentHistory: input.extendedInfo?.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+          languagesRead: input.extendedInfo?.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+          languagesSpeak: input.extendedInfo?.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+          languagesWrite: input.extendedInfo?.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
           currentResidenceZipCode: input.extendedInfo?.currentResidenceZipCode,
           passportNumber: input.extendedInfo?.passportNumber,
           sinLast4: input.extendedInfo?.sinLast4,
@@ -4157,10 +3506,10 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                 specialization: input.extendedInfo.specialization,
                 highestDegreeStartDate: input.extendedInfo.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
                 highestDegreeEndDate: input.extendedInfo.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
-                employmentHistory: input.extendedInfo.employmentHistory ? (typeof input.extendedInfo.employmentHistory === 'string' ? input.extendedInfo.employmentHistory : JSON.stringify(input.extendedInfo.employmentHistory)) : undefined,
-                languagesRead: input.extendedInfo.languagesRead ? (typeof input.extendedInfo.languagesRead === 'string' ? input.extendedInfo.languagesRead : JSON.stringify(input.extendedInfo.languagesRead)) : undefined,
-                languagesSpeak: input.extendedInfo.languagesSpeak ? (typeof input.extendedInfo.languagesSpeak === 'string' ? input.extendedInfo.languagesSpeak : JSON.stringify(input.extendedInfo.languagesSpeak)) : undefined,
-                languagesWrite: input.extendedInfo.languagesWrite ? (typeof input.extendedInfo.languagesWrite === 'string' ? input.extendedInfo.languagesWrite : JSON.stringify(input.extendedInfo.languagesWrite)) : undefined,
+                employmentHistory: input.extendedInfo.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+                languagesRead: input.extendedInfo.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+                languagesSpeak: input.extendedInfo.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+                languagesWrite: input.extendedInfo.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
                 currentResidenceZipCode: input.extendedInfo.currentResidenceZipCode,
                 passportNumber: input.extendedInfo.passportNumber,
                 sinLast4: input.extendedInfo.sinLast4,
@@ -4212,10 +3561,10 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
               specialization: input.extendedInfo.specialization,
               highestDegreeStartDate: input.extendedInfo.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
               highestDegreeEndDate: input.extendedInfo.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
-              employmentHistory: input.extendedInfo.employmentHistory ? (typeof input.extendedInfo.employmentHistory === 'string' ? input.extendedInfo.employmentHistory : JSON.stringify(input.extendedInfo.employmentHistory)) : undefined,
-              languagesRead: input.extendedInfo.languagesRead ? (typeof input.extendedInfo.languagesRead === 'string' ? input.extendedInfo.languagesRead : JSON.stringify(input.extendedInfo.languagesRead)) : undefined,
-              languagesSpeak: input.extendedInfo.languagesSpeak ? (typeof input.extendedInfo.languagesSpeak === 'string' ? input.extendedInfo.languagesSpeak : JSON.stringify(input.extendedInfo.languagesSpeak)) : undefined,
-              languagesWrite: input.extendedInfo.languagesWrite ? (typeof input.extendedInfo.languagesWrite === 'string' ? input.extendedInfo.languagesWrite : JSON.stringify(input.extendedInfo.languagesWrite)) : undefined,
+              employmentHistory: input.extendedInfo.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+              languagesRead: input.extendedInfo.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+              languagesSpeak: input.extendedInfo.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+              languagesWrite: input.extendedInfo.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
               currentResidenceZipCode: input.extendedInfo.currentResidenceZipCode,
               passportNumber: input.extendedInfo.passportNumber,
               sinLast4: input.extendedInfo.sinLast4,
@@ -7399,10 +6748,10 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             specialization: input.extendedInfo?.specialization,
             highestDegreeStartDate: input.extendedInfo?.highestDegreeStartDate,
             highestDegreeEndDate: input.extendedInfo?.highestDegreeEndDate,
-            employmentHistory: input.extendedInfo?.employmentHistory ? (typeof input.extendedInfo.employmentHistory === 'string' ? input.extendedInfo.employmentHistory : JSON.stringify(input.extendedInfo.employmentHistory)) : undefined,
-            languagesRead: input.extendedInfo?.languagesRead ? (typeof input.extendedInfo.languagesRead === 'string' ? input.extendedInfo.languagesRead : JSON.stringify(input.extendedInfo.languagesRead)) : undefined,
-            languagesSpeak: input.extendedInfo?.languagesSpeak ? (typeof input.extendedInfo.languagesSpeak === 'string' ? input.extendedInfo.languagesSpeak : JSON.stringify(input.extendedInfo.languagesSpeak)) : undefined,
-            languagesWrite: input.extendedInfo?.languagesWrite ? (typeof input.extendedInfo.languagesWrite === 'string' ? input.extendedInfo.languagesWrite : JSON.stringify(input.extendedInfo.languagesWrite)) : undefined,
+            employmentHistory: input.extendedInfo?.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+            languagesRead: input.extendedInfo?.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+            languagesSpeak: input.extendedInfo?.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+            languagesWrite: input.extendedInfo?.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
             currentResidenceZipCode: input.extendedInfo?.currentResidenceZipCode,
             passportNumber: input.extendedInfo?.passportNumber,
             sinLast4: input.extendedInfo?.sinLast4,
@@ -7495,10 +6844,10 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                       specialization: input.extendedInfo?.specialization,
                       highestDegreeStartDate: input.extendedInfo?.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
                       highestDegreeEndDate: input.extendedInfo?.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
-                      employmentHistory: input.extendedInfo?.employmentHistory ? (typeof input.extendedInfo.employmentHistory === 'string' ? input.extendedInfo.employmentHistory : JSON.stringify(input.extendedInfo.employmentHistory)) : undefined,
-                      languagesRead: input.extendedInfo?.languagesRead ? (typeof input.extendedInfo.languagesRead === 'string' ? input.extendedInfo.languagesRead : JSON.stringify(input.extendedInfo.languagesRead)) : undefined,
-                      languagesSpeak: input.extendedInfo?.languagesSpeak ? (typeof input.extendedInfo.languagesSpeak === 'string' ? input.extendedInfo.languagesSpeak : JSON.stringify(input.extendedInfo.languagesSpeak)) : undefined,
-                      languagesWrite: input.extendedInfo?.languagesWrite ? (typeof input.extendedInfo.languagesWrite === 'string' ? input.extendedInfo.languagesWrite : JSON.stringify(input.extendedInfo.languagesWrite)) : undefined,
+                      employmentHistory: input.extendedInfo?.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+                      languagesRead: input.extendedInfo?.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+                      languagesSpeak: input.extendedInfo?.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+                      languagesWrite: input.extendedInfo?.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
                       currentResidenceZipCode: input.extendedInfo?.currentResidenceZipCode,
                       passportNumber: input.extendedInfo?.passportNumber,
                       sinLast4: input.extendedInfo?.sinLast4,
@@ -7556,10 +6905,10 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
                     specialization: input.extendedInfo?.specialization,
                     highestDegreeStartDate: input.extendedInfo?.highestDegreeStartDate ? new Date(input.extendedInfo.highestDegreeStartDate) : undefined,
                     highestDegreeEndDate: input.extendedInfo?.highestDegreeEndDate ? new Date(input.extendedInfo.highestDegreeEndDate) : undefined,
-                    employmentHistory: input.extendedInfo?.employmentHistory ? (typeof input.extendedInfo.employmentHistory === 'string' ? input.extendedInfo.employmentHistory : JSON.stringify(input.extendedInfo.employmentHistory)) : undefined,
-                    languagesRead: input.extendedInfo?.languagesRead ? (typeof input.extendedInfo.languagesRead === 'string' ? input.extendedInfo.languagesRead : JSON.stringify(input.extendedInfo.languagesRead)) : undefined,
-                    languagesSpeak: input.extendedInfo?.languagesSpeak ? (typeof input.extendedInfo.languagesSpeak === 'string' ? input.extendedInfo.languagesSpeak : JSON.stringify(input.extendedInfo.languagesSpeak)) : undefined,
-                    languagesWrite: input.extendedInfo?.languagesWrite ? (typeof input.extendedInfo.languagesWrite === 'string' ? input.extendedInfo.languagesWrite : JSON.stringify(input.extendedInfo.languagesWrite)) : undefined,
+                    employmentHistory: input.extendedInfo?.employmentHistory ? JSON.stringify(input.extendedInfo.employmentHistory) : undefined,
+                    languagesRead: input.extendedInfo?.languagesRead ? JSON.stringify(input.extendedInfo.languagesRead) : undefined,
+                    languagesSpeak: input.extendedInfo?.languagesSpeak ? JSON.stringify(input.extendedInfo.languagesSpeak) : undefined,
+                    languagesWrite: input.extendedInfo?.languagesWrite ? JSON.stringify(input.extendedInfo.languagesWrite) : undefined,
                     currentResidenceZipCode: input.extendedInfo?.currentResidenceZipCode,
                     passportNumber: input.extendedInfo?.passportNumber,
                     sinLast4: input.extendedInfo?.sinLast4,
@@ -7845,169 +7194,6 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
           console.error('Error sending invitation:', error);
           throw new Error(`Failed to send invitation: ${error.message}`);
         }
-      }),
-  }),
-
-  // Template Sharing Workflow
-  templateShare: router({
-    // Request to share a personal template company-wide
-    requestShare: protectedProcedure
-      .input(z.object({
-        templateId: z.number(),
-        requestMessage: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        // Verify template exists and belongs to user
-        const template = await db.getJobTemplateById(input.templateId);
-        if (!template) {
-          throw new Error('Template not found');
-        }
-        if (template.createdBy !== ctx.user.id) {
-          throw new Error('You can only request sharing for your own templates');
-        }
-        if (template.isCompanyWide) {
-          throw new Error('This template is already company-wide');
-        }
-        if (!ctx.user.companyId) {
-          throw new Error('You must be part of a company to share templates');
-        }
-
-        // Create share request
-        const shareId = await db.createTemplateShare({
-          templateId: input.templateId,
-          sharedBy: ctx.user.id,
-          requestMessage: input.requestMessage,
-        });
-
-        // Notify company admins
-        const companyAdmins = await db.getCompanyAdmins(ctx.user.companyId);
-        for (const admin of companyAdmins) {
-          await notificationHelpers.createNotification({
-            userId: admin.userId,
-            type: 'template_share_request',
-            title: 'New Template Share Request',
-            message: `${ctx.user.name} has requested to make "${template.name}" available company-wide`,
-            isRead: false,
-            relatedEntityType: 'template_share',
-            relatedEntityId: shareId,
-            actionUrl: '/company-admin/template-share-requests',
-          });
-        }
-
-        return { success: true, shareId };
-      }),
-
-    // Get all share requests for company admin
-    getShareRequests: protectedProcedure
-      .query(async ({ ctx }) => {
-        if (ctx.user.role !== 'company_admin') {
-          throw new Error('Only company admins can view share requests');
-        }
-        if (!ctx.user.companyId) {
-          throw new Error('Company admin must be associated with a company');
-        }
-
-        return await db.getPendingTemplateShares(ctx.user.companyId);
-      }),
-
-    // Approve a share request
-    approveShare: protectedProcedure
-      .input(z.object({
-        shareId: z.number(),
-        reviewNotes: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'company_admin') {
-          throw new Error('Only company admins can approve share requests');
-        }
-
-        await db.approveTemplateShare(input.shareId, ctx.user.id, input.reviewNotes);
-
-        // Get share details to notify requester
-        const dbInstance = await getDb();
-        if (dbInstance) {
-          const [share] = await dbInstance.select()
-            .from(db.templateShares)
-            .where(eq(db.templateShares.id, input.shareId));
-          
-          if (share) {
-            const template = await db.getJobTemplateById(share.templateId);
-            await notificationHelpers.createNotification({
-              userId: share.sharedBy,
-              type: 'template_share_approved',
-              title: 'Template Share Request Approved',
-              message: `Your request to share "${template?.name}" company-wide has been approved`,
-              isRead: false,
-              relatedEntityType: 'template',
-              relatedEntityId: share.templateId,
-              actionUrl: '/recruiter/templates',
-            });
-          }
-        }
-
-        return { success: true };
-      }),
-
-    // Reject a share request
-    rejectShare: protectedProcedure
-      .input(z.object({
-        shareId: z.number(),
-        reviewNotes: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'company_admin') {
-          throw new Error('Only company admins can reject share requests');
-        }
-
-        await db.rejectTemplateShare(input.shareId, ctx.user.id, input.reviewNotes);
-
-        // Get share details to notify requester
-        const dbInstance = await getDb();
-        if (dbInstance) {
-          const [share] = await dbInstance.select()
-            .from(db.templateShares)
-            .where(eq(db.templateShares.id, input.shareId));
-          
-          if (share) {
-            const template = await db.getJobTemplateById(share.templateId);
-            await notificationHelpers.createNotification({
-              userId: share.sharedBy,
-              type: 'template_share_rejected',
-              title: 'Template Share Request Declined',
-              message: `Your request to share "${template?.name}" company-wide was declined${input.reviewNotes ? ': ' + input.reviewNotes : ''}`,
-              isRead: false,
-              relatedEntityType: 'template',
-              relatedEntityId: share.templateId,
-              actionUrl: '/recruiter/templates',
-            });
-          }
-        }
-
-        return { success: true };
-      }),
-
-    // Get my share request history (for recruiters)
-    getMyShareRequests: protectedProcedure
-      .query(async ({ ctx }) => {
-        const dbInstance = await getDb();
-        if (!dbInstance) throw new Error('Database not initialized');
-
-        const shares = await dbInstance.select({
-          id: db.templateShares.id,
-          templateId: db.templateShares.templateId,
-          templateName: db.jobTemplates.name,
-          requestMessage: db.templateShares.requestMessage,
-          status: db.templateShares.status,
-          requestedAt: db.templateShares.requestedAt,
-          reviewedAt: db.templateShares.reviewedAt,
-          reviewNotes: db.templateShares.reviewNotes,
-        })
-        .from(db.templateShares)
-        .innerJoin(db.jobTemplates, eq(db.templateShares.templateId, db.jobTemplates.id))
-        .where(eq(db.templateShares.sharedBy, ctx.user.id))
-        .orderBy(desc(db.templateShares.requestedAt));
-
-        return shares;
       }),
   }),
 });

@@ -73,7 +73,6 @@ export const candidates = mysqlTable("candidates", {
   location: varchar("location", { length: 255 }).notNull(),
   bio: text("bio"),
   skills: text("skills"), // JSON array of skills
-  domains: text("domains"), // JSON array of industry domains (Auto, Public, Govt, Technology, Healthcare, etc.)
   experience: text("experience"),
   education: text("education"),
   resumeUrl: varchar("resumeUrl", { length: 500 }),
@@ -230,8 +229,6 @@ export const jobs = mysqlTable("jobs", {
   description: text("description").notNull(),
   requirements: text("requirements"),
   responsibilities: text("responsibilities"),
-  skills: text("skills"), // JSON array of required skills
-  domains: text("domains"), // JSON array of industry domains
   location: varchar("location", { length: 255 }).notNull(),
   employmentType: mysqlEnum("employmentType", ["full-time", "part-time", "contract", "temporary", "internship"]).default("full-time"),
   salaryMin: int("salaryMin"),
@@ -1385,9 +1382,7 @@ export type InsertAlgorithmPerformance = typeof algorithmPerformance.$inferInser
 
 /**
  * AI Notification Preferences - User preferences for proactive AI notifications
- * COMMENTED OUT: Table already exists in database
  */
-/*
 export const aiNotificationPreferences = mysqlTable("aiNotificationPreferences", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id),
@@ -1408,10 +1403,9 @@ export const aiNotificationPreferences = mysqlTable("aiNotificationPreferences",
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-*/
 
-// export type AINotificationPreferences = typeof aiNotificationPreferences.$inferSelect;
-// export type InsertAINotificationPreferences = typeof aiNotificationPreferences.$inferInsert;
+export type AiNotificationPreference = typeof aiNotificationPreferences.$inferSelect;
+export type InsertAiNotificationPreference = typeof aiNotificationPreferences.$inferInsert;
 
 /**
  * AI Notification Queue - Queue for proactive AI-generated notifications
@@ -2080,7 +2074,6 @@ export type InsertNotificationDeliveryLog = typeof notificationDeliveryLogs.$inf
 export const jobTemplates = mysqlTable("job_templates", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(), // Template name
-  templateDescription: text("templateDescription"), // Template description
   title: varchar("title", { length: 255 }).notNull(),
   companyName: varchar("companyName", { length: 255 }),
   description: text("description").notNull(),
@@ -2091,17 +2084,6 @@ export const jobTemplates = mysqlTable("job_templates", {
   salaryMin: int("salaryMin"),
   salaryMax: int("salaryMax"),
   salaryCurrency: varchar("salaryCurrency", { length: 10 }).default("USD"),
-  customerId: int("customerId").references(() => customers.id),
-  contactId: int("contactId").references(() => customerContacts.id),
-  // Extended fields
-  experienceLevel: varchar("experienceLevel", { length: 50 }),
-  educationLevel: varchar("educationLevel", { length: 100 }),
-  requiredSkills: text("requiredSkills"), // JSON array
-  preferredSkills: text("preferredSkills"), // JSON array
-  benefits: text("benefits"),
-  remotePolicy: varchar("remotePolicy", { length: 50 }),
-  travelRequirement: varchar("travelRequirement", { length: 50 }),
-  securityClearance: varchar("securityClearance", { length: 100 }),
   category: varchar("category", { length: 100 }), // e.g., "Engineering", "Sales", "Marketing"
   tags: text("tags"), // JSON array of tags for organization
   createdBy: int("createdBy").notNull().references(() => users.id),
@@ -2109,7 +2091,6 @@ export const jobTemplates = mysqlTable("job_templates", {
   isPublic: boolean("isPublic").default(false), // Whether template is shared with team
   isCompanyWide: boolean("isCompanyWide").default(false), // Whether template is approved for company-wide use
   usageCount: int("usageCount").default(0).notNull(), // Track how many times template was used
-  lastUsedAt: timestamp("lastUsedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -2217,7 +2198,6 @@ export const guestApplications = mysqlTable("guest_applications", {
   // AI parsed data from resume
   parsedResumeData: text("parsedResumeData"), // Full ParsedResume JSON
   skills: text("skills"), // JSON array of skills
-  domains: text("domains"), // JSON array of industry domains
   experience: text("experience"),
   education: text("education"),
   totalExperienceYears: int("totalExperienceYears"),
@@ -2237,74 +2217,3 @@ export const guestApplications = mysqlTable("guest_applications", {
 
 export type GuestApplication = typeof guestApplications.$inferSelect;
 export type InsertGuestApplication = typeof guestApplications.$inferInsert;
-
-/**
- * Job Drafts - Auto-save functionality for job creation
- * Stores temporary job data while recruiter is creating a job
- */
-export const jobDrafts = mysqlTable("job_drafts", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
-  // Job fields
-  title: varchar("title", { length: 255 }),
-  companyName: varchar("companyName", { length: 255 }),
-  description: text("description"),
-  requirements: text("requirements"),
-  responsibilities: text("responsibilities"),
-  location: varchar("location", { length: 255 }),
-  employmentType: mysqlEnum("employmentType", ["full-time", "part-time", "contract", "temporary", "internship"]),
-  salaryMin: int("salaryMin"),
-  salaryMax: int("salaryMax"),
-  salaryCurrency: varchar("salaryCurrency", { length: 10 }).default("USD"),
-  customerId: int("customerId").references(() => customers.id),
-  contactId: int("contactId").references(() => customerContacts.id),
-  applicationDeadline: timestamp("applicationDeadline"),
-  // Extended fields
-  experienceLevel: varchar("experienceLevel", { length: 50 }),
-  educationLevel: varchar("educationLevel", { length: 100 }),
-  requiredSkills: text("requiredSkills"), // JSON array
-  preferredSkills: text("preferredSkills"), // JSON array
-  benefits: text("benefits"),
-  remotePolicy: varchar("remotePolicy", { length: 50 }),
-  travelRequirement: varchar("travelRequirement", { length: 50 }),
-  securityClearance: varchar("securityClearance", { length: 100 }),
-  // Metadata
-  lastSavedAt: timestamp("lastSavedAt").defaultNow().onUpdateNow().notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type JobDraft = typeof jobDrafts.$inferSelect;
-export type InsertJobDraft = typeof jobDrafts.$inferInsert;
-
-/**
- * Bulk Upload Jobs - Track background processing of bulk candidate uploads
- */
-export const bulkUploadJobs = mysqlTable("bulk_upload_jobs", {
-  id: int("id").autoincrement().primaryKey(),
-  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
-  userId: int("userId").notNull().references(() => users.id),
-  fileName: varchar("fileName", { length: 255 }).notNull(),
-  fileSize: int("fileSize").notNull(), // in bytes
-  fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
-  fileKey: varchar("fileKey", { length: 500 }).notNull(),
-  fileType: varchar("fileType", { length: 50 }).notNull(), // 'zip', 'excel', 'csv'
-  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
-  totalRecords: int("totalRecords").default(0).notNull(),
-  successCount: int("successCount").default(0).notNull(),
-  failureCount: int("failureCount").default(0).notNull(),
-  errorMessage: text("errorMessage"),
-  failedRecordsUrl: varchar("failedRecordsUrl", { length: 500 }), // CSV file with failed records
-  failedRecordsKey: varchar("failedRecordsKey", { length: 500 }),
-  processingStartedAt: timestamp("processingStartedAt"),
-  processingCompletedAt: timestamp("processingCompletedAt"),
-  emailNotificationSent: boolean("emailNotificationSent").default(false).notNull(),
-  emailSentAt: timestamp("emailSentAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type BulkUploadJob = typeof bulkUploadJobs.$inferSelect;
-export type InsertBulkUploadJob = typeof bulkUploadJobs.$inferInsert;
-
-

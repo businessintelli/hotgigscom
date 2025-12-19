@@ -47,23 +47,6 @@ export default function CustomerManagement() {
     { enabled: !!recruiter?.id }
   );
 
-  // Filter customers - must be before usePagination
-  const filteredCustomers = customers.filter((customer: any) =>
-    !searchQuery ||
-    customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.industry?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Pagination hook - must be called unconditionally
-  const {
-    currentPage,
-    totalPages,
-    paginatedItems: paginatedCustomers,
-    goToPage,
-    nextPage,
-    prevPage,
-  } = usePagination(filteredCustomers, ITEMS_PER_PAGE);
-
   // Create customer mutation
   const createMutation = trpc.customer.create.useMutation({
     onSuccess: () => {
@@ -102,18 +85,6 @@ export default function CustomerManagement() {
     },
   });
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      industry: "",
-      website: "",
-      description: "",
-      contactEmail: "",
-      contactPhone: "",
-      address: "",
-    });
-  };
-
   if (authLoading || customersLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -126,6 +97,18 @@ export default function CustomerManagement() {
     setLocation("/");
     return null;
   }
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      industry: "",
+      website: "",
+      description: "",
+      contactEmail: "",
+      contactPhone: "",
+      address: "",
+    });
+  };
 
   const handleCreate = () => {
     if (!formData.name) {
@@ -166,7 +149,21 @@ export default function CustomerManagement() {
     }
   };
 
+  // Filter customers
+  const filteredCustomers = customers.filter((customer: any) =>
+    !searchQuery ||
+    customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    customer.industry?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedCustomers,
+    goToPage,
+    nextPage,
+    prevPage,
+  } = usePagination(filteredCustomers, ITEMS_PER_PAGE);
 
   return (
     <RecruiterLayout title="Clients">

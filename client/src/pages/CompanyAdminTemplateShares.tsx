@@ -20,12 +20,12 @@ export default function CompanyAdminTemplateShares() {
   const [reviewAction, setReviewAction] = useState<"approve" | "reject">("approve");
 
   const utils = trpc.useUtils();
-  const { data: pendingShares, isLoading } = trpc.templateShare.getShareRequests.useQuery();
+  const { data: pendingShares, isLoading } = trpc.companyAdmin.getPendingTemplateShares.useQuery();
 
-  const approveMutation = trpc.templateShare.approveShare.useMutation({
+  const approveMutation = trpc.companyAdmin.approveTemplateShare.useMutation({
     onSuccess: () => {
       toast.success("Template approved and shared company-wide");
-      utils.templateShare.getShareRequests.invalidate();
+      utils.companyAdmin.getPendingTemplateShares.invalidate();
       setShowReviewDialog(false);
       setReviewNotes("");
       setSelectedShare(null);
@@ -35,10 +35,10 @@ export default function CompanyAdminTemplateShares() {
     },
   });
 
-  const rejectMutation = trpc.templateShare.rejectShare.useMutation({
+  const rejectMutation = trpc.companyAdmin.rejectTemplateShare.useMutation({
     onSuccess: () => {
       toast.success("Template share request rejected");
-      utils.templateShare.getShareRequests.invalidate();
+      utils.companyAdmin.getPendingTemplateShares.invalidate();
       setShowReviewDialog(false);
       setReviewNotes("");
       setSelectedShare(null);

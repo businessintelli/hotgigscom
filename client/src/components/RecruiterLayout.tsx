@@ -43,7 +43,6 @@ const sidebarItems = [
   // Core
   { icon: LayoutDashboard, label: "Dashboard", path: "/recruiter/dashboard" },
   { icon: Briefcase, label: "Jobs", path: "/recruiter/jobs" },
-  { icon: FileText, label: "Templates", path: "/recruiter/template-management" },
   { icon: Users, label: "Candidates", path: "/recruiter/search-candidates" },
   { icon: FileText, label: "Applications", path: "/recruiter/applications" },
   { type: "divider", label: "Team & Clients" },

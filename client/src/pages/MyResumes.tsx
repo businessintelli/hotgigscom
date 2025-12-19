@@ -29,7 +29,6 @@ import {
 import { FileText, Upload, Star, Trash2, Download, Plus, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocation } from 'wouter';
-import ResumeParseWizard from '@/components/ResumeParseWizard';
 
 export default function MyResumes() {
   const [, setLocation] = useLocation();
@@ -38,13 +37,6 @@ export default function MyResumes() {
   const [profileName, setProfileName] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  
-  // Resume parse wizard state
-  const [showParseWizard, setShowParseWizard] = useState(false);
-  const [parsedResumeData, setParsedResumeData] = useState<any>(null);
-  const [parsedBiasDetection, setParsedBiasDetection] = useState<any>(null);
-  const [uploadedFileName, setUploadedFileName] = useState('');
-  const [uploadedFileData, setUploadedFileData] = useState('');
 
   // Get candidate profile
   const { data: candidateProfile } = trpc.candidate.getProfile.useQuery(undefined, {
@@ -59,31 +51,13 @@ export default function MyResumes() {
 
   const utils = trpc.useUtils();
 
-  // Parse resume mutation
-  const parseResumeMutation = trpc.candidate.parseResumeOnly.useMutation({
-    onSuccess: (data) => {
-      setParsedResumeData(data.parsedData);
-      setParsedBiasDetection(data.biasDetection);
-      setShowParseWizard(true);
-      setUploadDialogOpen(false); // Close upload dialog
-      toast.success('Resume parsed successfully! Review the data below.');
-    },
-    onError: (error: any) => {
-      toast.error(`Failed to parse resume: ${error.message}`);
-      setIsUploading(false);
-    },
-  });
-
   // Mutations
   const createProfileMutation = trpc.resumeProfile.createResumeProfile.useMutation({
     onSuccess: () => {
       toast.success('Resume profile uploaded successfully!');
-      setShowParseWizard(false);
+      setUploadDialogOpen(false);
       setProfileName('');
       setSelectedFile(null);
-      setUploadedFileData('');
-      setUploadedFileName('');
-      setParsedResumeData(null);
       refetchProfiles();
     },
     onError: (error) => {
@@ -135,23 +109,35 @@ export default function MyResumes() {
     if (!selectedFile || !profileName.trim() || !candidateProfile) return;
 
     setIsUploading(true);
-    toast.info('Parsing resume with AI...');
-    
     try {
       // Convert file to base64
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Data = reader.result as string;
-        setUploadedFileData(base64Data);
-        setUploadedFileName(selectedFile.name);
         
-        // Parse resume first to show wizard
-        await parseResumeMutation.mutateAsync({
-          fileName: selectedFile.name,
+        const result = await createProfileMutation.mutateAsync({
+          candidateId: candidateProfile.id,
+          profileName: profileName.trim(),
           fileData: base64Data,
+          fileName: selectedFile.name,
         });
         
         setIsUploading(false);
+        
+        // Redirect to review/edit page with parsed data
+        if (result.parsedData) {
+          setLocation('/candidate/resume-review', {
+            state: {
+              parsedData: result.parsedData,
+              resumeUrl: result.url,
+              fileKey: result.fileKey,
+              fileName: result.fileName,
+              profileName: result.profileName,
+              isDefault: result.isDefault,
+              candidateId: candidateProfile.id,
+            }
+          });
+        }
       };
       reader.onerror = () => {
         toast.error('Failed to read file');
@@ -161,30 +147,6 @@ export default function MyResumes() {
     } catch (error) {
       setIsUploading(false);
     }
-  };
-  
-  // Handle wizard confirmation
-  const handleWizardConfirm = async (editedData: any) => {
-    if (!candidateProfile || !uploadedFileData || !profileName.trim()) return;
-    
-    // Create resume profile with the reviewed data
-    await createProfileMutation.mutateAsync({
-      candidateId: candidateProfile.id,
-      profileName: profileName.trim(),
-      fileData: uploadedFileData,
-      fileName: uploadedFileName,
-    });
-  };
-  
-  // Handle wizard cancel
-  const handleWizardCancel = () => {
-    setShowParseWizard(false);
-    setParsedResumeData(null);
-    setUploadedFileData('');
-    setUploadedFileName('');
-    setProfileName('');
-    setSelectedFile(null);
-    toast.info('Resume upload cancelled');
   };
 
   const handleSetDefault = (profileId: number) => {
@@ -203,17 +165,6 @@ export default function MyResumes() {
 
   return (
     <CandidateLayout title="My Resumes">
-      {/* Resume Parse Wizard */}
-      <ResumeParseWizard
-        open={showParseWizard}
-        onOpenChange={setShowParseWizard}
-        parsedData={parsedResumeData}
-        biasDetection={parsedBiasDetection}
-        fileName={uploadedFileName}
-        onConfirm={handleWizardConfirm}
-        onCancel={handleWizardCancel}
-      />
-      
       <div className="container mx-auto py-8">
         <div className="max-w-5xl mx-auto">
         {/* Header */}

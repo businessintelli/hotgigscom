@@ -10,7 +10,6 @@ import {
   customers, InsertCustomer,
   customerContacts, InsertCustomerContact,
   jobs, InsertJob,
-  jobDrafts, InsertJobDraft,
   jobTemplates, InsertJobTemplate,
   templateShares, InsertTemplateShare,
   jobViewAnalytics, InsertJobViewAnalytic,
@@ -48,13 +47,9 @@ import {
   customReports, InsertCustomReport,
   reportSchedules, InsertReportSchedule,
   reportExecutions, InsertReportExecution,
-  guestApplications, InsertGuestApplication,
-  bulkUploadJobs, InsertBulkUploadJob
+  guestApplications, InsertGuestApplication
 } from "../drizzle/schema";
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
-
-// Re-export schema tables for use in routers
-export { templateShares, jobTemplates };
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _initializationPromise: Promise<ReturnType<typeof drizzle> | null> | null = null;
@@ -298,22 +293,11 @@ export async function createCandidate(candidate: InsertCandidate) {
   const db = await getDb();
   if (!db) return null;
   
-  // Sanitize and convert values properly
-  const sanitizedCandidate: any = {
+  // Sanitize null and empty string values to undefined for optional fields
+  const sanitizedCandidate = {
     ...candidate,
-    // Required fields - ensure they have values
     phoneNumber: candidate.phoneNumber && candidate.phoneNumber.trim() !== '' ? candidate.phoneNumber : undefined,
     location: candidate.location && candidate.location.trim() !== '' ? candidate.location : undefined,
-    // Convert array fields to JSON strings if they're arrays
-    employmentHistory: Array.isArray(candidate.employmentHistory) ? JSON.stringify(candidate.employmentHistory) : candidate.employmentHistory,
-    languagesRead: Array.isArray(candidate.languagesRead) ? JSON.stringify(candidate.languagesRead) : candidate.languagesRead,
-    languagesSpeak: Array.isArray(candidate.languagesSpeak) ? JSON.stringify(candidate.languagesSpeak) : candidate.languagesSpeak,
-    languagesWrite: Array.isArray(candidate.languagesWrite) ? JSON.stringify(candidate.languagesWrite) : candidate.languagesWrite,
-    // Ensure date fields are properly formatted or undefined
-    dateOfBirth: candidate.dateOfBirth || undefined,
-    workAuthorizationEndDate: candidate.workAuthorizationEndDate || undefined,
-    highestDegreeStartDate: candidate.highestDegreeStartDate || undefined,
-    highestDegreeEndDate: candidate.highestDegreeEndDate || undefined,
   };
   
   const result = await db.insert(candidates).values(sanitizedCandidate);
@@ -331,22 +315,6 @@ export async function getCandidateById(id: number) {
   const db = await getDb();
   if (!db) return null;
   const result = await db.select().from(candidates).where(eq(candidates.id, id)).limit(1);
-  return result[0] || null;
-}
-
-export async function getCandidateByEmail(email: string) {
-  const db = await getDb();
-  if (!db) return null;
-  // Join with users table to get candidate by email
-  const result = await db
-    .select({
-      candidate: candidates,
-      user: users
-    })
-    .from(candidates)
-    .innerJoin(users, eq(candidates.userId, users.id))
-    .where(eq(users.email, email))
-    .limit(1);
   return result[0] || null;
 }
 
@@ -543,11 +511,6 @@ export async function getApplicationsByCandidateId(candidateId: number) {
   return db.select().from(applications).where(eq(applications.candidateId, candidateId));
 }
 
-// Alias for compatibility
-export async function getApplicationsByCandidate(candidateId: number) {
-  return getApplicationsByCandidateId(candidateId);
-}
-
 /**
  * Get applications by candidate with pagination and full job details
  */
@@ -676,27 +639,6 @@ export async function updateInterview(id: number, updates: Partial<InsertIntervi
   const db = await getDb();
   if (!db) return;
   await db.update(interviews).set(updates).where(eq(interviews.id, id));
-}
-
-export async function getInterviewsByCandidateId(candidateId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  // Get all applications for this candidate
-  const candidateApplications = await db
-    .select({ id: applications.id })
-    .from(applications)
-    .where(eq(applications.candidateId, candidateId));
-  
-  if (candidateApplications.length === 0) return [];
-  
-  const applicationIds = candidateApplications.map(app => app.id);
-  
-  // Get all interviews for these applications
-  return db
-    .select()
-    .from(interviews)
-    .where(inArray(interviews.applicationId, applicationIds));
 }
 
 // Interview Question operations
@@ -878,25 +820,6 @@ export async function clearRecentlyViewedJobs(candidateId: number) {
     .where(eq(recentlyViewedJobs.candidateId, candidateId));
   
   return { success: true };
-}
-
-/**
- * Get recommended jobs for a candidate based on their profile
- * This is a simple implementation that returns recent active jobs
- * TODO: Implement AI-based matching algorithm
- */
-export async function getRecommendedJobsForCandidate(candidateId: number, limit: number = 10) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  // For now, return recent active jobs
-  // In the future, this should use AI matching based on candidate skills and experience
-  return db
-    .select()
-    .from(jobs)
-    .where(eq(jobs.status, 'active'))
-    .orderBy(desc(jobs.createdAt))
-    .limit(limit);
 }
 
 // Fraud Detection Event operations
@@ -3199,256 +3122,4 @@ export async function updateGuestApplicationInvitation(guestAppId: number) {
       invitationCount: currentCount + 1
     })
     .where(eq(guestApplications.id, guestAppId));
-}
-
-// ============================================
-// Job Drafts Functions (Auto-save)
-// ============================================
-
-/**
- * Create or update a job draft for auto-save
- */
-export async function upsertJobDraft(userId: number, draftData: Partial<InsertJobDraft>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  // Check if draft already exists for this user
-  const existing = await db.select()
-    .from(jobDrafts)
-    .where(eq(jobDrafts.userId, userId))
-    .limit(1);
-  
-  if (existing.length > 0) {
-    // Update existing draft
-    await db.update(jobDrafts)
-      .set({
-        ...draftData,
-        lastSavedAt: new Date(),
-        updatedAt: new Date()
-      })
-      .where(eq(jobDrafts.userId, userId));
-    return existing[0].id;
-  } else {
-    // Create new draft
-    const [result] = await db.insert(jobDrafts).values({
-      userId,
-      ...draftData,
-      lastSavedAt: new Date()
-    });
-    return result.insertId;
-  }
-}
-
-/**
- * Get the latest job draft for a user
- */
-export async function getJobDraftByUser(userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  const [draft] = await db.select()
-    .from(jobDrafts)
-    .where(eq(jobDrafts.userId, userId))
-    .orderBy(desc(jobDrafts.lastSavedAt))
-    .limit(1);
-  
-  return draft || null;
-}
-
-/**
- * Delete a job draft
- */
-export async function deleteJobDraft(userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  await db.delete(jobDrafts)
-    .where(eq(jobDrafts.userId, userId));
-}
-
-// ============================================
-// Enhanced Job Template Functions
-// ============================================
-
-/**
- * Get job templates accessible to a user (own + company-wide)
- */
-export async function getAccessibleJobTemplates(userId: number, companyId: number | null) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  if (!companyId) {
-    // No company - only return user's own templates
-    return await db.select()
-      .from(jobTemplates)
-      .where(eq(jobTemplates.createdBy, userId))
-      .orderBy(desc(jobTemplates.usageCount), desc(jobTemplates.createdAt));
-  }
-  
-  // Return user's own templates + company-wide templates
-  return await db.select()
-    .from(jobTemplates)
-    .where(
-      or(
-        eq(jobTemplates.createdBy, userId),
-        and(
-          eq(jobTemplates.companyId, companyId),
-          eq(jobTemplates.isCompanyWide, true)
-        )
-      )
-    )
-    .orderBy(desc(jobTemplates.usageCount), desc(jobTemplates.createdAt));
-}
-
-/**
- * Increment template usage count and update last used timestamp
- */
-export async function recordTemplateUsage(templateId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  await db.execute(sql`
-    UPDATE job_templates 
-    SET usageCount = usageCount + 1,
-        lastUsedAt = NOW()
-    WHERE id = ${templateId}
-  `);
-}
-
-/**
- * Check if user can access a template
- */
-export async function canAccessTemplate(userId: number, templateId: number, companyId: number | null) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  const [template] = await db.select()
-    .from(jobTemplates)
-    .where(eq(jobTemplates.id, templateId));
-  
-  if (!template) return false;
-  
-  // User is the creator
-  if (template.createdBy === userId) return true;
-  
-  // Template is company-wide and user is in the same company
-  if (companyId && template.companyId === companyId && template.isCompanyWide) {
-    return true;
-  }
-  
-  return false;
-}
-
-// ============================================
-// Bulk Upload Jobs Functions
-// ============================================
-
-export async function createBulkUploadJob(jobData: Omit<InsertBulkUploadJob, 'id' | 'createdAt' | 'updatedAt'>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  const result = await db.insert(bulkUploadJobs).values(jobData);
-  return { id: Number(result[0].insertId), ...jobData };
-}
-
-export async function updateBulkUploadJobStatus(
-  jobId: number, 
-  status: 'pending' | 'processing' | 'completed' | 'failed',
-  updates: Partial<InsertBulkUploadJob>
-) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not initialized");
-  
-  await db.update(bulkUploadJobs)
-    .set({ status, ...updates })
-    .where(eq(bulkUploadJobs.id, jobId));
-}
-
-export async function getBulkUploadJobById(jobId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const result = await db.select()
-    .from(bulkUploadJobs)
-    .where(eq(bulkUploadJobs.id, jobId))
-    .limit(1);
-  
-  return result[0] || null;
-}
-
-export async function getBulkUploadJobsByRecruiter(recruiterId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return db.select()
-    .from(bulkUploadJobs)
-    .where(eq(bulkUploadJobs.recruiterId, recruiterId))
-    .orderBy(desc(bulkUploadJobs.createdAt));
-}
-
-export async function sendBulkUploadCompletionEmail(params: {
-  jobId: number;
-  recipientEmail: string;
-  recipientName: string;
-  fileName: string;
-  totalRecords: number;
-  successCount: number;
-  failureCount: number;
-  failedRecordsUrl?: string;
-}) {
-  const db = await getDb();
-  if (!db) return;
-  
-  try {
-    // Import email service
-    const { sendEmail } = await import('./_core/email');
-    
-    const subject = `Bulk Upload Complete: ${params.fileName}`;
-    const html = `
-      <h2>Bulk Candidate Upload Complete</h2>
-      <p>Hello ${params.recipientName},</p>
-      <p>Your bulk candidate upload has finished processing.</p>
-      
-      <h3>Summary</h3>
-      <ul>
-        <li><strong>File:</strong> ${params.fileName}</li>
-        <li><strong>Total Records:</strong> ${params.totalRecords}</li>
-        <li><strong>Successfully Imported:</strong> ${params.successCount}</li>
-        <li><strong>Failed:</strong> ${params.failureCount}</li>
-      </ul>
-      
-      ${params.failureCount > 0 && params.failedRecordsUrl ? `
-        <p>
-          <strong>Failed Records:</strong> 
-          <a href="${params.failedRecordsUrl}">Download failed records CSV</a>
-        </p>
-        <p>You can review and correct the failed records, then re-upload them.</p>
-      ` : ''}
-      
-      <p>
-        <a href="${process.env.VITE_FRONTEND_FORGE_API_URL || 'https://app.hotgigs.com'}/recruiter/bulk-upload-history">
-          View Upload History
-        </a>
-      </p>
-      
-      <p>Thank you for using HotGigs!</p>
-    `;
-    
-    await sendEmail({
-      to: params.recipientEmail,
-      subject,
-      html,
-    });
-    
-    // Mark email as sent
-    await db.update(bulkUploadJobs)
-      .set({ 
-        emailNotificationSent: true,
-        emailSentAt: new Date()
-      })
-      .where(eq(bulkUploadJobs.id, params.jobId));
-      
-  } catch (error) {
-    console.error('[sendBulkUploadCompletionEmail] Error:', error);
-  }
 }

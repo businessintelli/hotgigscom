@@ -22,12 +22,10 @@ import {
   Download,
   CheckCircle,
 } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import SkillMatrixBuilder, { SkillRequirement } from "@/components/SkillMatrixBuilder";
-import TemplateSelector from "@/components/TemplateSelector";
-import SaveAsTemplateDialog from "@/components/SaveAsTemplateDialog";
 
 export default function CreateJob() {
   const { user } = useAuth();
@@ -67,14 +65,6 @@ export default function CreateJob() {
 
   // Skill matrix state
   const [skillRequirements, setSkillRequirements] = useState<SkillRequirement[]>([]);
-  
-  // Save as template state
-  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
-  const [templateMetadata, setTemplateMetadata] = useState({
-    name: "",
-    category: "",
-    tags: [] as string[],
-  });
 
   // Fetch recruiter profile
   const { data: recruiter } = trpc.recruiter.getProfile.useQuery(
@@ -86,81 +76,6 @@ export default function CreateJob() {
   const { data: customers } = trpc.customer.list.useQuery(undefined, {
     enabled: !!recruiter?.id,
   });
-
-  // Draft auto-save queries and mutations
-  const { data: savedDraft } = trpc.job.getDraft.useQuery(undefined, {
-    enabled: !!user?.id,
-  });
-
-  const saveDraftMutation = trpc.job.saveDraft.useMutation();
-  const deleteDraftMutation = trpc.job.deleteDraft.useMutation();
-
-  // Load saved draft on mount
-  useEffect(() => {
-    if (savedDraft && activeTab === "manual") {
-      setManualForm({
-        title: savedDraft.title || "",
-        description: savedDraft.description || "",
-        requirements: savedDraft.requirements || "",
-        responsibilities: savedDraft.responsibilities || "",
-        location: savedDraft.location || "",
-        employmentType: savedDraft.employmentType || "full-time",
-        salaryMin: savedDraft.salaryMin?.toString() || "",
-        salaryMax: savedDraft.salaryMax?.toString() || "",
-        salaryCurrency: savedDraft.salaryCurrency || "USD",
-        customerId: savedDraft.customerId?.toString() || "",
-        applicationDeadline: savedDraft.applicationDeadline 
-          ? new Date(savedDraft.applicationDeadline).toISOString().split('T')[0] 
-          : "",
-      });
-      toast.info("Draft loaded", { description: "Your previous work has been restored" });
-    }
-  }, [savedDraft, activeTab]);
-
-  // Auto-save draft every 30 seconds
-  useEffect(() => {
-    if (activeTab !== "manual") return;
-
-    const hasContent = manualForm.title || manualForm.description || manualForm.requirements;
-    if (!hasContent) return;
-
-    const autoSaveInterval = setInterval(() => {
-      saveDraftMutation.mutate({
-        title: manualForm.title || undefined,
-        companyName: undefined, // Not in current form
-        description: manualForm.description || undefined,
-        requirements: manualForm.requirements || undefined,
-        responsibilities: manualForm.responsibilities || undefined,
-        location: manualForm.location || undefined,
-        employmentType: manualForm.employmentType as any,
-        salaryMin: manualForm.salaryMin ? parseInt(manualForm.salaryMin) : undefined,
-        salaryMax: manualForm.salaryMax ? parseInt(manualForm.salaryMax) : undefined,
-        salaryCurrency: manualForm.salaryCurrency || undefined,
-        customerId: manualForm.customerId ? parseInt(manualForm.customerId) : undefined,
-        applicationDeadline: manualForm.applicationDeadline ? new Date(manualForm.applicationDeadline) : undefined,
-      });
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(autoSaveInterval);
-  }, [manualForm, activeTab, saveDraftMutation]);
-
-  // Handle template selection
-  const handleTemplateSelect = useCallback((template: any) => {
-    setManualForm({
-      title: template.title || "",
-      description: template.description || "",
-      requirements: template.requirements || "",
-      responsibilities: template.responsibilities || "",
-      location: template.location || "",
-      employmentType: template.employmentType || "full-time",
-      salaryMin: template.salaryMin?.toString() || "",
-      salaryMax: template.salaryMax?.toString() || "",
-      salaryCurrency: template.salaryCurrency || "USD",
-      customerId: template.customerId?.toString() || "",
-      applicationDeadline: "",
-    });
-    setActiveTab("manual");
-  }, []);
 
   // Create job mutation
   const setSkillRequirementsMutation = trpc.skillMatrix.setJobSkillRequirements.useMutation();
@@ -177,12 +92,6 @@ export default function CreateJob() {
         } catch (error) {
           console.error('Failed to save skill requirements:', error);
         }
-      }
-      // Delete draft after successful job creation
-      try {
-        await deleteDraftMutation.mutateAsync();
-      } catch (error) {
-        console.error('Failed to delete draft:', error);
       }
       toast.success("Job posted successfully!");
       setLocation("/recruiter/dashboard");
@@ -297,14 +206,6 @@ Format the output as JSON with keys: title, description, responsibilities, requi
       }
     }
 
-    // Validate template metadata if saving as template
-    if (saveAsTemplate) {
-      if (!templateMetadata.name.trim()) {
-        toast.error("Please provide a template name");
-        return;
-      }
-    }
-    
     await createJobMutation.mutateAsync({
       title: manualForm.title,
       description: manualForm.description,
@@ -319,10 +220,6 @@ Format the output as JSON with keys: title, description, responsibilities, requi
       applicationDeadline: manualForm.applicationDeadline ? new Date(manualForm.applicationDeadline) : undefined,
       status: "active",
       isPublic: true,
-      saveAsTemplate: saveAsTemplate,
-      templateName: saveAsTemplate ? templateMetadata.name : undefined,
-      templateCategory: saveAsTemplate ? templateMetadata.category : undefined,
-      templateTags: saveAsTemplate && templateMetadata.tags.length > 0 ? templateMetadata.tags : undefined,
     });
   };
 
@@ -341,12 +238,6 @@ Format the output as JSON with keys: title, description, responsibilities, requi
     }
   };
 
-  // Download Excel template mutation
-  const downloadTemplateMutation = trpc.job.downloadExcelTemplate.useMutation();
-  
-  // Upload Excel jobs mutation
-  const uploadExcelJobsMutation = trpc.job.uploadExcelJobs.useMutation();
-
   // Handle Excel import
   const handleExcelImport = async () => {
     if (!excelFile) {
@@ -356,70 +247,19 @@ Format the output as JSON with keys: title, description, responsibilities, requi
 
     setIsUploading(true);
     try {
-      // First, upload the file to S3
-      const formData = new FormData();
-      formData.append('file', excelFile);
-      
-      // Upload file to storage
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file');
-      }
-      
-      const { url: fileUrl } = await uploadResponse.json();
-      
-      // Parse and create jobs from Excel
-      const result = await uploadExcelJobsMutation.mutateAsync({ fileUrl });
-      
-      if (result.success) {
-        toast.success(
-          `Successfully imported ${result.createdCount} of ${result.totalCount} jobs!`
-        );
-        
-        if (result.errors && result.errors.length > 0) {
-          console.warn('Import errors:', result.errors);
-          toast.warning(`${result.errors.length} warnings occurred during import`);
-        }
-        
-        // Clear file and redirect to dashboard
-        setExcelFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        
-        setTimeout(() => {
-          setLocation('/recruiter/dashboard');
-        }, 1500);
-      } else {
-        toast.error('Failed to import jobs. Please check the file format.');
-        if (result.errors && result.errors.length > 0) {
-          console.error('Import errors:', result.errors);
-          result.errors.slice(0, 3).forEach(err => toast.error(err));
-        }
-      }
+      // TODO: Implement Excel parsing and bulk job creation
+      // For now, showing a success message
+      toast.success("Excel import feature coming soon!");
+      setIsUploading(false);
     } catch (error) {
-      console.error('Excel import error:', error);
       toast.error("Failed to import jobs from Excel");
-    } finally {
       setIsUploading(false);
     }
   };
 
   // Download Excel template
-  const handleDownloadTemplate = async () => {
-    try {
-      toast.info('Generating template...');
-      const result = await downloadTemplateMutation.mutateAsync();
-      
-      // Open the template URL in a new tab to download
-      window.open(result.url, '_blank');
-      toast.success('Template downloaded successfully!');
-    } catch (error) {
-      console.error('Template download error:', error);
-      toast.error('Failed to download template');
-    }
+  const handleDownloadTemplate = () => {
+    toast.info("Excel template download coming soon!");
   };
 
   if (!user) {
@@ -474,12 +314,6 @@ Format the output as JSON with keys: title, description, responsibilities, requi
 
               {/* Manual Entry Tab */}
               <TabsContent value="manual" className="space-y-4 mt-6">
-                {/* Template actions */}
-                <div className="flex gap-2 mb-4">
-                  <TemplateSelector onSelectTemplate={handleTemplateSelect} />
-                  <SaveAsTemplateDialog formData={manualForm} />
-                </div>
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <Label htmlFor="title">Job Title *</Label>
@@ -628,62 +462,6 @@ Format the output as JSON with keys: title, description, responsibilities, requi
                   />
                 </div>
 
-                {/* Save as Template Section */}
-                <div className="border-t pt-4 mt-6">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <input
-                      type="checkbox"
-                      id="saveAsTemplate"
-                      checked={saveAsTemplate}
-                      onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <Label htmlFor="saveAsTemplate" className="text-sm font-medium cursor-pointer">
-                      Save this job as a template for future use
-                    </Label>
-                  </div>
-                  
-                  {saveAsTemplate && (
-                    <div className="space-y-4 p-4 bg-muted rounded-lg">
-                      <div>
-                        <Label htmlFor="templateName">Template Name *</Label>
-                        <Input
-                          id="templateName"
-                          placeholder="e.g., Senior Software Engineer Template"
-                          value={templateMetadata.name}
-                          onChange={(e) => setTemplateMetadata({ ...templateMetadata, name: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="templateCategory">Category (Optional)</Label>
-                        <Input
-                          id="templateCategory"
-                          placeholder="e.g., Engineering, Sales, Marketing"
-                          value={templateMetadata.category}
-                          onChange={(e) => setTemplateMetadata({ ...templateMetadata, category: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="templateTags">Tags (Optional)</Label>
-                        <Input
-                          id="templateTags"
-                          placeholder="Enter tags separated by commas"
-                          value={templateMetadata.tags.join(", ")}
-                          onChange={(e) => {
-                            const tags = e.target.value.split(",").map(t => t.trim()).filter(t => t);
-                            setTemplateMetadata({ ...templateMetadata, tags });
-                          }}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Example: remote, senior, full-time
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
                 <div className="flex gap-2 pt-4">
                   <Button
                     onClick={handleManualSubmit}
@@ -698,7 +476,7 @@ Format the output as JSON with keys: title, description, responsibilities, requi
                     ) : (
                       <>
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Post Job {saveAsTemplate && "& Save Template"}
+                        Post Job
                       </>
                     )}
                   </Button>
@@ -709,19 +487,6 @@ Format the output as JSON with keys: title, description, responsibilities, requi
                     Cancel
                   </Button>
                 </div>
-                
-                {/* Auto-save indicator */}
-                {saveDraftMutation.isPending && (
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Saving draft...
-                  </div>
-                )}
-                {savedDraft && !saveDraftMutation.isPending && (
-                  <div className="text-sm text-muted-foreground mt-2">
-                    Draft auto-saved at {new Date(savedDraft.updatedAt).toLocaleTimeString()}
-                  </div>
-                )}
               </TabsContent>
 
               {/* AI Generate Tab */}

@@ -50,7 +50,6 @@ export interface ParsedResume {
   };
   summary?: string;
   skills: string[];
-  domains?: string[]; // Industry domains separated from skills
   experience: Array<{
     title?: string;
     company?: string;
@@ -294,15 +293,9 @@ Instructions:
     // Calculate metadata
     const metadata = calculateMetadata(parsedData);
 
-    // Separate skills and domains using LLM
-    const { separateSkillsAndDomainsFromResume } = await import('./skillsDomainsSeparation');
-    const { skills, domains } = await separateSkillsAndDomainsFromResume(parsedData);
-
     return {
       rawText: resumeText,
       ...parsedData,
-      skills: skills.length > 0 ? skills : parsedData.skills, // Use separated skills or fallback to original
-      domains, // Add domains field
       metadata
     };
   } catch (error: any) {

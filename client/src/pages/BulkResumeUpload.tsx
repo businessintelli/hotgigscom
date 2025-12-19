@@ -39,33 +39,17 @@ export default function BulkResumeUpload() {
     setIsDragging(false);
 
     const file = e.dataTransfer.files[0];
-    if (file) {
-      // Check file size (200MB limit)
-      const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error('File size exceeds maximum limit of 200MB');
-        return;
-      }
-      
-      if (file.name.endsWith('.zip')) {
-        setSelectedFile(file);
-        setUploadResult(null);
-      } else {
-        toast.error('Please upload a ZIP file');
-      }
+    if (file && file.name.endsWith('.zip')) {
+      setSelectedFile(file);
+      setUploadResult(null);
+    } else {
+      toast.error('Please upload a ZIP file');
     }
   }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (200MB limit)
-      const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error('File size exceeds maximum limit of 200MB');
-        return;
-      }
-      
       if (file.name.endsWith('.zip')) {
         setSelectedFile(file);
         setUploadResult(null);
@@ -90,19 +74,12 @@ export default function BulkResumeUpload() {
         try {
           const result = await bulkUploadMutation.mutateAsync({
             zipFileData: base64Data,
-            fileName: selectedFile.name,
-            fileSize: selectedFile.size,
             jobId: selectedJobId,
             autoCreateProfiles,
           });
 
           setUploadResult(result);
-          toast.success(result.message || 'Upload started successfully!');
-          
-          // Redirect to upload history after a short delay
-          setTimeout(() => {
-            setLocation('/recruiter/bulk-upload-history');
-          }, 2000);
+          toast.success(`Successfully processed ${result.successCount} resumes!`);
         } catch (error) {
           console.error('Upload failed:', error);
           toast.error(error instanceof Error ? error.message : 'Upload failed');
@@ -215,19 +192,13 @@ export default function BulkResumeUpload() {
                     {selectedFile ? selectedFile.name : 'Drop your ZIP file here'}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    or click to browse (max 200MB per ZIP)
+                    or click to browse (max 100 resumes per ZIP)
                   </p>
                 </div>
                 {selectedFile && (
-                  <div className="mt-2 space-y-1">
-                    <Badge variant="secondary">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB / 200 MB
-                    </Badge>
-                    <Progress 
-                      value={(selectedFile.size / (200 * 1024 * 1024)) * 100} 
-                      className="h-1 w-48 mx-auto"
-                    />
-                  </div>
+                  <Badge variant="secondary" className="mt-2">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </Badge>
                 )}
               </div>
             </label>
