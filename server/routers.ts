@@ -2702,6 +2702,193 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         await db.updateJob(input.jobId, updates);
         return { success: true };
       }),
+    
+    // ============================================
+    // Job Draft Auto-Save Procedures
+    // ============================================
+    
+    // Save or update job draft
+    saveDraft: protectedProcedure
+      .input(z.object({
+        title: z.string().optional(),
+        companyName: z.string().optional(),
+        description: z.string().optional(),
+        requirements: z.string().optional(),
+        responsibilities: z.string().optional(),
+        location: z.string().optional(),
+        employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
+        salaryMin: z.number().optional(),
+        salaryMax: z.number().optional(),
+        salaryCurrency: z.string().optional(),
+        customerId: z.number().optional(),
+        contactId: z.number().optional(),
+        applicationDeadline: z.date().optional(),
+        experienceLevel: z.string().optional(),
+        educationLevel: z.string().optional(),
+        requiredSkills: z.array(z.string()).optional(),
+        preferredSkills: z.array(z.string()).optional(),
+        benefits: z.string().optional(),
+        remotePolicy: z.string().optional(),
+        travelRequirement: z.string().optional(),
+        securityClearance: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const draftData: any = { ...input };
+        
+        // Convert arrays to JSON strings for storage
+        if (input.requiredSkills) {
+          draftData.requiredSkills = JSON.stringify(input.requiredSkills);
+        }
+        if (input.preferredSkills) {
+          draftData.preferredSkills = JSON.stringify(input.preferredSkills);
+        }
+        
+        const draftId = await db.upsertJobDraft(ctx.user.id, draftData);
+        return { success: true, draftId };
+      }),
+    
+    // Get user's job draft
+    getDraft: protectedProcedure.query(async ({ ctx }) => {
+      const draft = await db.getJobDraftByUser(ctx.user.id);
+      
+      if (!draft) return null;
+      
+      // Parse JSON fields back to arrays
+      return {
+        ...draft,
+        requiredSkills: draft.requiredSkills ? JSON.parse(draft.requiredSkills) : [],
+        preferredSkills: draft.preferredSkills ? JSON.parse(draft.preferredSkills) : [],
+      };
+    }),
+    
+    // Delete job draft
+    deleteDraft: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.deleteJobDraft(ctx.user.id);
+      return { success: true };
+    }),
+    
+    // ============================================
+    // Enhanced Job Template Procedures
+    // ============================================
+    
+    // Get accessible templates (own + company-wide)
+    getAccessibleTemplates: protectedProcedure.query(async ({ ctx }) => {
+      const templates = await db.getAccessibleJobTemplates(ctx.user.id, ctx.user.companyId);
+      
+      // Parse JSON fields
+      return templates.map(t => ({
+        ...t,
+        requiredSkills: t.requiredSkills ? JSON.parse(t.requiredSkills) : [],
+        preferredSkills: t.preferredSkills ? JSON.parse(t.preferredSkills) : [],
+        tags: t.tags ? JSON.parse(t.tags) : [],
+      }));
+    }),
+    
+    // Get template by ID
+    getTemplateById: protectedProcedure
+      .input(z.object({ templateId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        // Check access
+        const canAccess = await db.canAccessTemplate(ctx.user.id, input.templateId, ctx.user.companyId);
+        if (!canAccess) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot access this template" });
+        }
+        
+        const template = await db.getJobTemplateById(input.templateId);
+        if (!template) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
+        }
+        
+        // Parse JSON fields
+        return {
+          ...template,
+          requiredSkills: template.requiredSkills ? JSON.parse(template.requiredSkills) : [],
+          preferredSkills: template.preferredSkills ? JSON.parse(template.preferredSkills) : [],
+          tags: template.tags ? JSON.parse(template.tags) : [],
+        };
+      }),
+    
+    // Use template to create job (records usage)
+    useTemplate: protectedProcedure
+      .input(z.object({ templateId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // Check access
+        const canAccess = await db.canAccessTemplate(ctx.user.id, input.templateId, ctx.user.companyId);
+        if (!canAccess) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot access this template" });
+        }
+        
+        const template = await db.getJobTemplateById(input.templateId);
+        if (!template) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
+        }
+        
+        // Record usage
+        await db.recordTemplateUsage(input.templateId);
+        
+        // Return template data
+        return {
+          ...template,
+          requiredSkills: template.requiredSkills ? JSON.parse(template.requiredSkills) : [],
+          preferredSkills: template.preferredSkills ? JSON.parse(template.preferredSkills) : [],
+          tags: template.tags ? JSON.parse(template.tags) : [],
+        };
+      }),
+    
+    // Update template
+    updateTemplate: protectedProcedure
+      .input(z.object({
+        templateId: z.number(),
+        name: z.string().optional(),
+        templateDescription: z.string().optional(),
+        title: z.string().optional(),
+        companyName: z.string().optional(),
+        description: z.string().optional(),
+        requirements: z.string().optional(),
+        responsibilities: z.string().optional(),
+        location: z.string().optional(),
+        employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
+        salaryMin: z.number().optional(),
+        salaryMax: z.number().optional(),
+        salaryCurrency: z.string().optional(),
+        customerId: z.number().optional(),
+        contactId: z.number().optional(),
+        experienceLevel: z.string().optional(),
+        educationLevel: z.string().optional(),
+        requiredSkills: z.array(z.string()).optional(),
+        preferredSkills: z.array(z.string()).optional(),
+        benefits: z.string().optional(),
+        remotePolicy: z.string().optional(),
+        travelRequirement: z.string().optional(),
+        securityClearance: z.string().optional(),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { templateId, ...data } = input;
+        
+        // Check ownership
+        const template = await db.getJobTemplateById(templateId);
+        if (!template || template.createdBy !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized" });
+        }
+        
+        // Convert arrays to JSON
+        const updateData: any = { ...data };
+        if (data.requiredSkills) {
+          updateData.requiredSkills = JSON.stringify(data.requiredSkills);
+        }
+        if (data.preferredSkills) {
+          updateData.preferredSkills = JSON.stringify(data.preferredSkills);
+        }
+        if (data.tags) {
+          updateData.tags = JSON.stringify(data.tags);
+        }
+        
+        await db.updateJobTemplate(templateId, updateData);
+        return { success: true };
+      }),
   }),
 
   application: router({

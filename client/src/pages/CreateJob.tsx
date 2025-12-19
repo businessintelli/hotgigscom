@@ -22,10 +22,12 @@ import {
   Download,
   CheckCircle,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import SkillMatrixBuilder, { SkillRequirement } from "@/components/SkillMatrixBuilder";
+import TemplateSelector from "@/components/TemplateSelector";
+import SaveAsTemplateDialog from "@/components/SaveAsTemplateDialog";
 
 export default function CreateJob() {
   const { user } = useAuth();
@@ -77,6 +79,81 @@ export default function CreateJob() {
     enabled: !!recruiter?.id,
   });
 
+  // Draft auto-save queries and mutations
+  const { data: savedDraft } = trpc.job.getDraft.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
+
+  const saveDraftMutation = trpc.job.saveDraft.useMutation();
+  const deleteDraftMutation = trpc.job.deleteDraft.useMutation();
+
+  // Load saved draft on mount
+  useEffect(() => {
+    if (savedDraft && activeTab === "manual") {
+      setManualForm({
+        title: savedDraft.title || "",
+        description: savedDraft.description || "",
+        requirements: savedDraft.requirements || "",
+        responsibilities: savedDraft.responsibilities || "",
+        location: savedDraft.location || "",
+        employmentType: savedDraft.employmentType || "full-time",
+        salaryMin: savedDraft.salaryMin?.toString() || "",
+        salaryMax: savedDraft.salaryMax?.toString() || "",
+        salaryCurrency: savedDraft.salaryCurrency || "USD",
+        customerId: savedDraft.customerId?.toString() || "",
+        applicationDeadline: savedDraft.applicationDeadline 
+          ? new Date(savedDraft.applicationDeadline).toISOString().split('T')[0] 
+          : "",
+      });
+      toast.info("Draft loaded", { description: "Your previous work has been restored" });
+    }
+  }, [savedDraft, activeTab]);
+
+  // Auto-save draft every 30 seconds
+  useEffect(() => {
+    if (activeTab !== "manual") return;
+
+    const hasContent = manualForm.title || manualForm.description || manualForm.requirements;
+    if (!hasContent) return;
+
+    const autoSaveInterval = setInterval(() => {
+      saveDraftMutation.mutate({
+        title: manualForm.title || undefined,
+        companyName: undefined, // Not in current form
+        description: manualForm.description || undefined,
+        requirements: manualForm.requirements || undefined,
+        responsibilities: manualForm.responsibilities || undefined,
+        location: manualForm.location || undefined,
+        employmentType: manualForm.employmentType as any,
+        salaryMin: manualForm.salaryMin ? parseInt(manualForm.salaryMin) : undefined,
+        salaryMax: manualForm.salaryMax ? parseInt(manualForm.salaryMax) : undefined,
+        salaryCurrency: manualForm.salaryCurrency || undefined,
+        customerId: manualForm.customerId ? parseInt(manualForm.customerId) : undefined,
+        applicationDeadline: manualForm.applicationDeadline ? new Date(manualForm.applicationDeadline) : undefined,
+      });
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [manualForm, activeTab, saveDraftMutation]);
+
+  // Handle template selection
+  const handleTemplateSelect = useCallback((template: any) => {
+    setManualForm({
+      title: template.title || "",
+      description: template.description || "",
+      requirements: template.requirements || "",
+      responsibilities: template.responsibilities || "",
+      location: template.location || "",
+      employmentType: template.employmentType || "full-time",
+      salaryMin: template.salaryMin?.toString() || "",
+      salaryMax: template.salaryMax?.toString() || "",
+      salaryCurrency: template.salaryCurrency || "USD",
+      customerId: template.customerId?.toString() || "",
+      applicationDeadline: "",
+    });
+    setActiveTab("manual");
+  }, []);
+
   // Create job mutation
   const setSkillRequirementsMutation = trpc.skillMatrix.setJobSkillRequirements.useMutation();
   
@@ -92,6 +169,12 @@ export default function CreateJob() {
         } catch (error) {
           console.error('Failed to save skill requirements:', error);
         }
+      }
+      // Delete draft after successful job creation
+      try {
+        await deleteDraftMutation.mutateAsync();
+      } catch (error) {
+        console.error('Failed to delete draft:', error);
       }
       toast.success("Job posted successfully!");
       setLocation("/recruiter/dashboard");
@@ -314,6 +397,12 @@ Format the output as JSON with keys: title, description, responsibilities, requi
 
               {/* Manual Entry Tab */}
               <TabsContent value="manual" className="space-y-4 mt-6">
+                {/* Template actions */}
+                <div className="flex gap-2 mb-4">
+                  <TemplateSelector onSelectTemplate={handleTemplateSelect} />
+                  <SaveAsTemplateDialog formData={manualForm} />
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <Label htmlFor="title">Job Title *</Label>
@@ -487,6 +576,19 @@ Format the output as JSON with keys: title, description, responsibilities, requi
                     Cancel
                   </Button>
                 </div>
+                
+                {/* Auto-save indicator */}
+                {saveDraftMutation.isPending && (
+                  <div className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Saving draft...
+                  </div>
+                )}
+                {savedDraft && !saveDraftMutation.isPending && (
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Draft auto-saved at {new Date(savedDraft.updatedAt).toLocaleTimeString()}
+                  </div>
+                )}
               </TabsContent>
 
               {/* AI Generate Tab */}

@@ -4242,3 +4242,31 @@
 - [ ] Create "My Drafts" section in dashboards
 - [ ] Add draft recovery on page load
 - [ ] Write vitest tests for draft functionality
+
+## Draft Auto-Save & Job Templates (NEW)
+- [ ] Create database schema for job drafts (auto-save functionality)
+- [ ] Create database schema for job templates
+- [ ] Implement backend procedures for draft auto-save (create, update, retrieve, delete)
+- [ ] Implement backend procedures for template management (create, list, get, update, delete, use)
+- [ ] Build template management UI for recruiters and company admins
+- [ ] Add template selection to CreateJob page (alongside manual and AI methods)
+- [ ] Integrate auto-save functionality into CreateJob form
+- [ ] Add draft recovery on page load
+- [ ] Test draft auto-save across different scenarios
+- [ ] Test template creation and usage workflows
+
+## Draft Auto-Save & Job Templates (COMPLETED)
+- [x] Add job_drafts table to schema
+- [x] Add job_templates table enhancements (tags, usage tracking)
+- [x] Create backend procedures for draft auto-save (saveDraft, getDraft, deleteDraft)
+- [x] Create backend procedures for template management (getAccessibleTemplates, useTemplate, updateTemplate)
+- [x] Build TemplateSelector component for choosing templates
+- [x] Build SaveAsTemplateDialog component for saving jobs as templates
+- [x] Integrate auto-save functionality into CreateJob page (30-second interval)
+- [x] Add template loading functionality to CreateJob page
+- [x] Add draft restoration on page load
+- [x] Add auto-save indicator UI
+- [x] Test draft auto-save with manual job creation
+- [x] Test template creation and usage flow
+- [x] Test template access control (personal vs company-wide)
+- [x] Verify draft deletion after successful job posting

@@ -50,6 +50,13 @@
       "when": 1766118614011,
       "tag": "0006_past_korg",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1766124490294,
+      "tag": "0007_sparkling_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

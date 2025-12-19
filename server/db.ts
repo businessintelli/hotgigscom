@@ -10,6 +10,7 @@ import {
   customers, InsertCustomer,
   customerContacts, InsertCustomerContact,
   jobs, InsertJob,
+  jobDrafts, InsertJobDraft,
   jobTemplates, InsertJobTemplate,
   templateShares, InsertTemplateShare,
   jobViewAnalytics, InsertJobViewAnalytic,
@@ -3122,4 +3123,142 @@ export async function updateGuestApplicationInvitation(guestAppId: number) {
       invitationCount: currentCount + 1
     })
     .where(eq(guestApplications.id, guestAppId));
+}
+
+// ============================================
+// Job Drafts Functions (Auto-save)
+// ============================================
+
+/**
+ * Create or update a job draft for auto-save
+ */
+export async function upsertJobDraft(userId: number, draftData: Partial<InsertJobDraft>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  // Check if draft already exists for this user
+  const existing = await db.select()
+    .from(jobDrafts)
+    .where(eq(jobDrafts.userId, userId))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    // Update existing draft
+    await db.update(jobDrafts)
+      .set({
+        ...draftData,
+        lastSavedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(jobDrafts.userId, userId));
+    return existing[0].id;
+  } else {
+    // Create new draft
+    const [result] = await db.insert(jobDrafts).values({
+      userId,
+      ...draftData,
+      lastSavedAt: new Date()
+    });
+    return result.insertId;
+  }
+}
+
+/**
+ * Get the latest job draft for a user
+ */
+export async function getJobDraftByUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [draft] = await db.select()
+    .from(jobDrafts)
+    .where(eq(jobDrafts.userId, userId))
+    .orderBy(desc(jobDrafts.lastSavedAt))
+    .limit(1);
+  
+  return draft || null;
+}
+
+/**
+ * Delete a job draft
+ */
+export async function deleteJobDraft(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.delete(jobDrafts)
+    .where(eq(jobDrafts.userId, userId));
+}
+
+// ============================================
+// Enhanced Job Template Functions
+// ============================================
+
+/**
+ * Get job templates accessible to a user (own + company-wide)
+ */
+export async function getAccessibleJobTemplates(userId: number, companyId: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  if (!companyId) {
+    // No company - only return user's own templates
+    return await db.select()
+      .from(jobTemplates)
+      .where(eq(jobTemplates.createdBy, userId))
+      .orderBy(desc(jobTemplates.usageCount), desc(jobTemplates.createdAt));
+  }
+  
+  // Return user's own templates + company-wide templates
+  return await db.select()
+    .from(jobTemplates)
+    .where(
+      or(
+        eq(jobTemplates.createdBy, userId),
+        and(
+          eq(jobTemplates.companyId, companyId),
+          eq(jobTemplates.isCompanyWide, true)
+        )
+      )
+    )
+    .orderBy(desc(jobTemplates.usageCount), desc(jobTemplates.createdAt));
+}
+
+/**
+ * Increment template usage count and update last used timestamp
+ */
+export async function recordTemplateUsage(templateId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.execute(sql`
+    UPDATE job_templates 
+    SET usageCount = usageCount + 1,
+        lastUsedAt = NOW()
+    WHERE id = ${templateId}
+  `);
+}
+
+/**
+ * Check if user can access a template
+ */
+export async function canAccessTemplate(userId: number, templateId: number, companyId: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [template] = await db.select()
+    .from(jobTemplates)
+    .where(eq(jobTemplates.id, templateId));
+  
+  if (!template) return false;
+  
+  // User is the creator
+  if (template.createdBy === userId) return true;
+  
+  // Template is company-wide and user is in the same company
+  if (companyId && template.companyId === companyId && template.isCompanyWide) {
+    return true;
+  }
+  
+  return false;
 }
