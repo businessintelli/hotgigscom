@@ -52,6 +52,9 @@ import {
 } from "../drizzle/schema";
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
+// Re-export schema tables for use in routers
+export { templateShares, jobTemplates };
+
 let _db: ReturnType<typeof drizzle> | null = null;
 let _initializationPromise: Promise<ReturnType<typeof drizzle> | null> | null = null;
 

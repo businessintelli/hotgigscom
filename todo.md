@@ -4312,3 +4312,41 @@
 - [ ] Test bulk operations
 - [ ] Test template preview, edit, and duplicate
 - [ ] Verify access control (personal vs company-wide templates)
+
+## Template Sharing Workflow with Approval System (NEW)
+
+### Database Schema
+- [x] Create templateShareRequests table (id, templateId, requestedBy, status, requestedAt, reviewedBy, reviewedAt, reviewNotes)
+- [x] Add indexes for efficient querying
+
+### Backend API
+- [x] Add requestTemplateShare procedure (recruiter creates share request)
+- [x] Add getShareRequests procedure (company admin views pending requests)
+- [x] Add approveShareRequest procedure (company admin approves, template becomes company-wide)
+- [x] Add rejectShareRequest procedure (company admin rejects with reason)
+- [x] Add getMyShareRequests procedure (recruiter views their request history)
+
+### Notifications
+- [x] Send notification to company admin when share request is created
+- [x] Send notification to recruiter when request is approved
+- [x] Send notification to recruiter when request is rejected
+
+### UI - Recruiter Side
+- [x] Add "Request Company-Wide Sharing" button to Template Management page
+- [x] Create RequestShareDialog component with justification field
+- [x] Show request status badges (pending, approved, rejected) on template cards
+- [x] Add "My Share Requests" tab to view request history
+
+### UI - Company Admin Side
+- [x] Create TemplateShareRequests page at /company-admin/template-share-requests
+- [x] Show pending requests with template preview
+- [x] Add approve/reject actions with notes field
+- [x] Add notification badge showing pending request count
+- [x] Add to company admin sidebar navigation
+
+### Testing
+- [x] Test recruiter can request sharing for personal templates
+- [x] Test company admin receives notification
+- [x] Test approval flow updates template to company-wide
+- [x] Test rejection flow with notes
+- [x] Test notification delivery to both parties

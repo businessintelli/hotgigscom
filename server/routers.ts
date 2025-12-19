@@ -7598,6 +7598,169 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         }
       }),
   }),
+
+  // Template Sharing Workflow
+  templateShare: router({
+    // Request to share a personal template company-wide
+    requestShare: protectedProcedure
+      .input(z.object({
+        templateId: z.number(),
+        requestMessage: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify template exists and belongs to user
+        const template = await db.getJobTemplateById(input.templateId);
+        if (!template) {
+          throw new Error('Template not found');
+        }
+        if (template.createdBy !== ctx.user.id) {
+          throw new Error('You can only request sharing for your own templates');
+        }
+        if (template.isCompanyWide) {
+          throw new Error('This template is already company-wide');
+        }
+        if (!ctx.user.companyId) {
+          throw new Error('You must be part of a company to share templates');
+        }
+
+        // Create share request
+        const shareId = await db.createTemplateShare({
+          templateId: input.templateId,
+          sharedBy: ctx.user.id,
+          requestMessage: input.requestMessage,
+        });
+
+        // Notify company admins
+        const companyAdmins = await db.getCompanyAdmins(ctx.user.companyId);
+        for (const admin of companyAdmins) {
+          await notificationHelpers.createNotification({
+            userId: admin.userId,
+            type: 'template_share_request',
+            title: 'New Template Share Request',
+            message: `${ctx.user.name} has requested to make "${template.name}" available company-wide`,
+            isRead: false,
+            relatedEntityType: 'template_share',
+            relatedEntityId: shareId,
+            actionUrl: '/company-admin/template-share-requests',
+          });
+        }
+
+        return { success: true, shareId };
+      }),
+
+    // Get all share requests for company admin
+    getShareRequests: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Only company admins can view share requests');
+        }
+        if (!ctx.user.companyId) {
+          throw new Error('Company admin must be associated with a company');
+        }
+
+        return await db.getPendingTemplateShares(ctx.user.companyId);
+      }),
+
+    // Approve a share request
+    approveShare: protectedProcedure
+      .input(z.object({
+        shareId: z.number(),
+        reviewNotes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Only company admins can approve share requests');
+        }
+
+        await db.approveTemplateShare(input.shareId, ctx.user.id, input.reviewNotes);
+
+        // Get share details to notify requester
+        const dbInstance = await getDb();
+        if (dbInstance) {
+          const [share] = await dbInstance.select()
+            .from(db.templateShares)
+            .where(eq(db.templateShares.id, input.shareId));
+          
+          if (share) {
+            const template = await db.getJobTemplateById(share.templateId);
+            await notificationHelpers.createNotification({
+              userId: share.sharedBy,
+              type: 'template_share_approved',
+              title: 'Template Share Request Approved',
+              message: `Your request to share "${template?.name}" company-wide has been approved`,
+              isRead: false,
+              relatedEntityType: 'template',
+              relatedEntityId: share.templateId,
+              actionUrl: '/recruiter/templates',
+            });
+          }
+        }
+
+        return { success: true };
+      }),
+
+    // Reject a share request
+    rejectShare: protectedProcedure
+      .input(z.object({
+        shareId: z.number(),
+        reviewNotes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'company_admin') {
+          throw new Error('Only company admins can reject share requests');
+        }
+
+        await db.rejectTemplateShare(input.shareId, ctx.user.id, input.reviewNotes);
+
+        // Get share details to notify requester
+        const dbInstance = await getDb();
+        if (dbInstance) {
+          const [share] = await dbInstance.select()
+            .from(db.templateShares)
+            .where(eq(db.templateShares.id, input.shareId));
+          
+          if (share) {
+            const template = await db.getJobTemplateById(share.templateId);
+            await notificationHelpers.createNotification({
+              userId: share.sharedBy,
+              type: 'template_share_rejected',
+              title: 'Template Share Request Declined',
+              message: `Your request to share "${template?.name}" company-wide was declined${input.reviewNotes ? ': ' + input.reviewNotes : ''}`,
+              isRead: false,
+              relatedEntityType: 'template',
+              relatedEntityId: share.templateId,
+              actionUrl: '/recruiter/templates',
+            });
+          }
+        }
+
+        return { success: true };
+      }),
+
+    // Get my share request history (for recruiters)
+    getMyShareRequests: protectedProcedure
+      .query(async ({ ctx }) => {
+        const dbInstance = await getDb();
+        if (!dbInstance) throw new Error('Database not initialized');
+
+        const shares = await dbInstance.select({
+          id: db.templateShares.id,
+          templateId: db.templateShares.templateId,
+          templateName: db.jobTemplates.name,
+          requestMessage: db.templateShares.requestMessage,
+          status: db.templateShares.status,
+          requestedAt: db.templateShares.requestedAt,
+          reviewedAt: db.templateShares.reviewedAt,
+          reviewNotes: db.templateShares.reviewNotes,
+        })
+        .from(db.templateShares)
+        .innerJoin(db.jobTemplates, eq(db.templateShares.templateId, db.jobTemplates.id))
+        .where(eq(db.templateShares.sharedBy, ctx.user.id))
+        .orderBy(desc(db.templateShares.requestedAt));
+
+        return shares;
+      }),
+  }),
 });
 
 

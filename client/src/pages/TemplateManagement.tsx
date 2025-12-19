@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Filter, Trash2, Copy, Edit, BarChart3, Calendar, Tag, Briefcase, TrendingUp, Eye } from "lucide-react";
+import { Search, Filter, Trash2, Copy, Edit, BarChart3, Calendar, Tag, Briefcase, TrendingUp, Eye, Share2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function TemplateManagement() {
@@ -38,6 +38,13 @@ function TemplateManagementContent() {
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [shareRequestTemplate, setShareRequestTemplate] = useState<any>(null);
+  const [shareRequestMessage, setShareRequestMessage] = useState("");
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showShareHistoryDialog, setShowShareHistoryDialog] = useState(false);
+  
+  // Fetch share request history
+  const { data: shareRequests = [] } = trpc.templateShare.getMyShareRequests.useQuery();
   
   // Fetch templates with search
   const { data: templates = [], isLoading } = trpc.job.searchTemplates.useQuery({
@@ -95,6 +102,20 @@ function TemplateManagementContent() {
     },
     onError: (error) => {
       toast({ title: "Failed to update template", description: error.message, variant: "destructive" });
+    },
+  });
+  
+  // Share request mutation
+  const shareRequestMutation = trpc.templateShare.requestShare.useMutation({
+    onSuccess: () => {
+      toast({ title: "Share request submitted", description: "Company admins will review your request" });
+      utils.templateShare.getMyShareRequests.invalidate();
+      setShowShareDialog(false);
+      setShareRequestMessage("");
+      setShareRequestTemplate(null);
+    },
+    onError: (error) => {
+      toast({ title: "Failed to submit request", description: error.message, variant: "destructive" });
     },
   });
   
@@ -167,11 +188,26 @@ function TemplateManagementContent() {
   
   return (
     <div className="py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Template Management</h1>
-        <p className="text-muted-foreground">
-          Manage your job posting templates with advanced filtering and organization
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">Template Management</h1>
+          <p className="text-muted-foreground">
+            Manage your job posting templates with advanced filtering and organization
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setShowShareHistoryDialog(true)}
+          className="flex items-center gap-2"
+        >
+          <Share2 className="h-4 w-4" />
+          My Share Requests
+          {shareRequests.filter(r => r.status === 'pending').length > 0 && (
+            <Badge variant="secondary" className="ml-1">
+              {shareRequests.filter(r => r.status === 'pending').length}
+            </Badge>
+          )}
+        </Button>
       </div>
       
       {/* Search and Filter Bar */}
@@ -374,6 +410,24 @@ function TemplateManagementContent() {
                   </Badge>
                 )}
                 
+                {!template.isCompanyWide && shareRequests.find(req => req.templateId === template.id) && (
+                  <Badge 
+                    variant={shareRequests.find(req => req.templateId === template.id)?.status === 'pending' ? 'secondary' : 
+                            shareRequests.find(req => req.templateId === template.id)?.status === 'approved' ? 'default' : 'destructive'}
+                    className="w-fit"
+                  >
+                    {shareRequests.find(req => req.templateId === template.id)?.status === 'pending' && (
+                      <><Clock className="h-3 w-3 mr-1" />Share Pending</>
+                    )}
+                    {shareRequests.find(req => req.templateId === template.id)?.status === 'approved' && (
+                      <><CheckCircle className="h-3 w-3 mr-1" />Share Approved</>
+                    )}
+                    {shareRequests.find(req => req.templateId === template.id)?.status === 'rejected' && (
+                      <><XCircle className="h-3 w-3 mr-1" />Share Rejected</>
+                    )}
+                  </Badge>
+                )}
+                
                 <div className="flex gap-2">
                   <Dialog>
                     <DialogTrigger asChild>
@@ -535,6 +589,19 @@ function TemplateManagementContent() {
                     <Copy className="h-4 w-4" />
                   </Button>
                   
+                  {!template.isCompanyWide && !shareRequests.find(req => req.templateId === template.id && req.status === 'pending') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShareRequestTemplate(template);
+                        setShowShareDialog(true);
+                      }}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
                   <Button
                     variant="outline"
                     size="sm"
@@ -553,6 +620,119 @@ function TemplateManagementContent() {
           ))}
         </div>
       )}
+      
+      {/* Share Request Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Company-Wide Sharing</DialogTitle>
+            <DialogDescription>
+              Request to make this template available to all recruiters in your company
+            </DialogDescription>
+          </DialogHeader>
+          {shareRequestTemplate && (
+            <div className="space-y-4">
+              <div>
+                <Label className="font-semibold">Template</Label>
+                <p className="text-sm mt-1">{shareRequestTemplate.name}</p>
+                <p className="text-xs text-muted-foreground">{shareRequestTemplate.title}</p>
+              </div>
+              <div>
+                <Label htmlFor="shareMessage">Message to Admins (Optional)</Label>
+                <Textarea
+                  id="shareMessage"
+                  placeholder="Explain why this template would benefit the team..."
+                  value={shareRequestMessage}
+                  onChange={(e) => setShareRequestMessage(e.target.value)}
+                  rows={4}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowShareDialog(false);
+                setShareRequestMessage("");
+                setShareRequestTemplate(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (shareRequestTemplate) {
+                  shareRequestMutation.mutate({
+                    templateId: shareRequestTemplate.id,
+                    requestMessage: shareRequestMessage || undefined,
+                  });
+                }
+              }}
+              disabled={shareRequestMutation.isPending}
+            >
+              {shareRequestMutation.isPending ? "Submitting..." : "Submit Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Share History Dialog */}
+      <Dialog open={showShareHistoryDialog} onOpenChange={setShowShareHistoryDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>My Share Requests</DialogTitle>
+            <DialogDescription>
+              View the status of your template share requests
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {shareRequests.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No share requests yet
+              </p>
+            ) : (
+              shareRequests.map((request) => (
+                <Card key={request.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-base">{request.templateName}</CardTitle>
+                        <CardDescription className="text-xs mt-1">
+                          Requested {formatDistanceToNow(new Date(request.requestedAt), { addSuffix: true })}
+                        </CardDescription>
+                      </div>
+                      <Badge 
+                        variant={request.status === 'pending' ? 'secondary' : 
+                                request.status === 'approved' ? 'default' : 'destructive'}
+                      >
+                        {request.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  {(request.requestMessage || request.reviewNotes) && (
+                    <CardContent className="space-y-2">
+                      {request.requestMessage && (
+                        <div>
+                          <Label className="text-xs">Your Message</Label>
+                          <p className="text-sm text-muted-foreground">{request.requestMessage}</p>
+                        </div>
+                      )}
+                      {request.reviewNotes && (
+                        <div>
+                          <Label className="text-xs">Admin Response</Label>
+                          <p className="text-sm text-muted-foreground">{request.reviewNotes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
