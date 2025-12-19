@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { validatePhoneNumber } from "@shared/phoneValidation";
 
 export default function CandidateProfile() {
   const { user } = useAuth();
@@ -92,6 +94,36 @@ export default function CandidateProfile() {
 
   const handleSave = () => {
     if (!editedProfile) return;
+
+    // Validate required fields
+    if (!editedProfile.phoneNumber || !editedProfile.phoneNumber.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Phone number is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editedProfile.location || !editedProfile.location.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Location is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate phone number format
+    const phoneValidation = validatePhoneNumber(editedProfile.phoneNumber);
+    if (!phoneValidation.isValid) {
+      toast({
+        title: "Validation Error",
+        description: phoneValidation.error || "Invalid phone number format",
+        variant: "destructive",
+      });
+      return;
+    }
 
     updateProfileMutation.mutate({
       title: editedProfile.title,
@@ -215,19 +247,20 @@ export default function CandidateProfile() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Phone Number</Label>
-                      <Input
+                      <Label>Phone Number <span className="text-destructive">*</span></Label>
+                      <PhoneInput
                         value={editedProfile.phoneNumber}
-                        onChange={(e) => setEditedProfile({ ...editedProfile, phoneNumber: e.target.value })}
-                        placeholder="+1 (555) 123-4567"
+                        onChange={(value) => setEditedProfile({ ...editedProfile, phoneNumber: value })}
+                        required
                       />
                     </div>
                     <div>
-                      <Label>Location</Label>
+                      <Label>Location <span className="text-destructive">*</span></Label>
                       <Input
                         value={editedProfile.location}
                         onChange={(e) => setEditedProfile({ ...editedProfile, location: e.target.value })}
                         placeholder="San Francisco, CA"
+                        required
                       />
                     </div>
                   </div>

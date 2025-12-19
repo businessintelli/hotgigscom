@@ -719,12 +719,12 @@ Be professional, data-driven, and provide actionable insights. Use tools to get 
         // Basic candidate information (required)
         name: z.string().min(1, "Name is required"),
         email: z.string().email("Valid email is required"),
-        phone: z.string().optional(),
+        phone: z.string().min(1, "Phone number is required"),
         // Optional resume file
         resumeFile: z.any().optional(),
         // Optional manual fields
         title: z.string().optional(),
-        location: z.string().optional(),
+        location: z.string().min(1, "Location is required"),
         skills: z.string().optional(),
         experience: z.string().optional(),
         education: z.string().optional(),
@@ -1560,18 +1560,46 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     
     updateProfile: protectedProcedure
       .input(z.object({
-        id: z.number(),
         title: z.string().optional(),
-        phoneNumber: z.string().optional(),
-        location: z.string().optional(),
+        phoneNumber: z.string().min(1, "Phone number is required"),
+        location: z.string().min(1, "Location is required"),
         bio: z.string().optional(),
         skills: z.string().optional(),
         experience: z.string().optional(),
         education: z.string().optional(),
+        linkedinUrl: z.string().optional(),
+        githubUrl: z.string().optional(),
+        // Extended candidate information
+        currentSalary: z.number().optional(),
+        currentHourlyRate: z.number().optional(),
+        expectedSalary: z.number().optional(),
+        expectedHourlyRate: z.number().optional(),
+        salaryType: z.enum(['salary', 'hourly']).optional(),
+        workAuthorization: z.string().optional(),
+        workAuthorizationEndDate: z.string().optional(),
+        w2EmployerName: z.string().optional(),
+        nationality: z.string().optional(),
+        gender: z.string().optional(),
+        dateOfBirth: z.string().optional(),
+        highestEducation: z.string().optional(),
+        specialization: z.string().optional(),
+        highestDegreeStartDate: z.string().optional(),
+        highestDegreeEndDate: z.string().optional(),
+        employmentHistory: z.string().optional(),
+        languagesRead: z.string().optional(),
+        languagesSpeak: z.string().optional(),
+        languagesWrite: z.string().optional(),
+        currentResidenceZipCode: z.string().optional(),
+        passportNumber: z.string().optional(),
+        sinLast4: z.string().optional(),
+        linkedinId: z.string().optional(),
+        passportCopyUrl: z.string().optional(),
+        dlCopyUrl: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        await db.updateCandidate(id, data);
+      .mutation(async ({ ctx, input }) => {
+        const candidate = await db.getCandidateByUserId(ctx.user.id);
+        if (!candidate) throw new Error('Candidate profile not found');
+        await db.updateCandidate(candidate.id, input);
         return { success: true };
       }),
     
@@ -2336,11 +2364,11 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     
     create: protectedProcedure
       .input(z.object({
-        title: z.string(),
-        description: z.string(),
+        title: z.string().min(1, "Job title is required"),
+        description: z.string().min(1, "Job description is required"),
         requirements: z.string().optional(),
         responsibilities: z.string().optional(),
-        location: z.string().optional(),
+        location: z.string().min(1, "Location is required"),
         employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
         salaryMin: z.number().optional(),
         salaryMax: z.number().optional(),
@@ -2379,11 +2407,11 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
-        title: z.string().optional(),
-        description: z.string().optional(),
+        title: z.string().min(1, "Job title is required").optional(),
+        description: z.string().min(1, "Job description is required").optional(),
         requirements: z.string().optional(),
         responsibilities: z.string().optional(),
-        location: z.string().optional(),
+        location: z.string().min(1, "Location is required").optional(),
         employmentType: z.enum(["full-time", "part-time", "contract", "temporary", "internship"]).optional(),
         salaryMin: z.number().optional(),
         salaryMax: z.number().optional(),

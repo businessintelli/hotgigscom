@@ -4158,3 +4158,44 @@
 - [x] Add frontend validation for required location field
 - [x] Add frontend validation for required phone field
 - [x] Update tRPC schemas to match database constraints (phone and location required)
+
+## Comprehensive Validation & Phone Number Formatting (Current Focus)
+
+### Database Schema Constraints
+- [x] Add .notNull() constraint to candidates.name
+- [x] Add .notNull() constraint to candidates.email
+- [x] Add .notNull() constraint to candidates.phoneNumber
+- [x] Add .notNull() constraint to candidates.location
+- [x] Add .notNull() constraint to jobs.title
+- [x] Add .notNull() constraint to jobs.companyName
+- [x] Add .notNull() constraint to jobs.location
+- [x] Add .notNull() constraint to applications.candidateId
+- [x] Add .notNull() constraint to applications.jobId
+- [x] Run database migration (pnpm db:push) to apply constraints
+
+### Phone Number Validation & Formatting
+- [x] Install libphonenumber-js library
+- [x] Create phone number validation utility in shared/validation.ts
+- [x] Create phone number formatting utility
+- [x] Add international phone number support
+- [x] Create PhoneInput component with auto-formatting
+- [ ] Test phone number validation with various formats
+
+### Form Validation Extensions
+- [x] Add validation to CandidateProfile page (name, email, phone, location)
+- [x] Add validation to CreateJob page (title, company, location, description)
+- [ ] Add validation to EditJob page
+- [x] Add validation to AddCandidatePage (name, email, phone)
+- [ ] Add validation to RecruiterOnboarding (company name, phone)
+- [ ] Add validation to CandidateOnboarding (title, location)
+- [ ] Add validation to JobApplication page (resume required)
+- [ ] Add validation to GuestApplicationWizard (name, email, phone)
+
+### Backend Validation Updates
+- [x] Update candidate.updateProfile schema with required fields
+- [x] Update job.create schema with required fields
+- [x] Update job.update schema with required fields
+- [ ] Update recruiter.updateProfile schema with required fields
+- [x] Add phone number validation to all schemas
+- [x] Add email format validation to all schemas
+- [ ] Test all backend validation with invalid inputs

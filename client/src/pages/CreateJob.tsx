@@ -158,14 +158,40 @@ Format the output as JSON with keys: title, description, responsibilities, requi
 
   // Handle manual job creation
   const handleManualSubmit = async () => {
-    if (!manualForm.title || !manualForm.description) {
-      toast.error("Please fill in at least title and description");
+    // Validate required fields
+    if (!manualForm.title || !manualForm.title.trim()) {
+      toast.error("Job title is required");
+      return;
+    }
+
+    if (!manualForm.description || !manualForm.description.trim()) {
+      toast.error("Job description is required");
+      return;
+    }
+
+    if (!manualForm.location || !manualForm.location.trim()) {
+      toast.error("Location is required");
+      return;
+    }
+
+    if (!recruiter?.companyName) {
+      toast.error("Please complete your recruiter profile with company name");
       return;
     }
 
     if (!recruiter?.id) {
       toast.error("Recruiter profile not found");
       return;
+    }
+
+    // Validate salary range if provided
+    if (manualForm.salaryMin && manualForm.salaryMax) {
+      const min = parseInt(manualForm.salaryMin);
+      const max = parseInt(manualForm.salaryMax);
+      if (min > max) {
+        toast.error("Minimum salary cannot be greater than maximum salary");
+        return;
+      }
     }
 
     // Validate deadline if provided

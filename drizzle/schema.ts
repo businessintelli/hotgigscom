@@ -69,8 +69,8 @@ export const candidates = mysqlTable("candidates", {
   addedBy: int("addedBy").references(() => recruiters.id), // Recruiter who added this candidate
   source: varchar("source", { length: 50 }), // 'self-registered', 'recruiter-manual', 'recruiter-resume', 'bulk-upload', 'guest-application'
   title: varchar("title", { length: 255 }),
-  phoneNumber: varchar("phoneNumber", { length: 50 }),
-  location: varchar("location", { length: 255 }),
+  phoneNumber: varchar("phoneNumber", { length: 50 }).notNull(),
+  location: varchar("location", { length: 255 }).notNull(),
   bio: text("bio"),
   skills: text("skills"), // JSON array of skills
   experience: text("experience"),
@@ -225,11 +225,11 @@ export type InsertCustomerContact = typeof customerContacts.$inferInsert;
 export const jobs = mysqlTable("jobs", {
   id: int("id").autoincrement().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
-  companyName: varchar("companyName", { length: 255 }),
+  companyName: varchar("companyName", { length: 255 }).notNull(),
   description: text("description").notNull(),
   requirements: text("requirements"),
   responsibilities: text("responsibilities"),
-  location: varchar("location", { length: 255 }),
+  location: varchar("location", { length: 255 }).notNull(),
   employmentType: mysqlEnum("employmentType", ["full-time", "part-time", "contract", "temporary", "internship"]).default("full-time"),
   salaryMin: int("salaryMin"),
   salaryMax: int("salaryMax"),
@@ -2077,7 +2077,7 @@ export const jobTemplates = mysqlTable("job_templates", {
   description: text("description").notNull(),
   requirements: text("requirements"),
   responsibilities: text("responsibilities"),
-  location: varchar("location", { length: 255 }),
+  location: varchar("location", { length: 255 }).notNull(),
   employmentType: mysqlEnum("employmentType", ["full-time", "part-time", "contract", "temporary", "internship"]).default("full-time"),
   salaryMin: int("salaryMin"),
   salaryMax: int("salaryMax"),

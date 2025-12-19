@@ -11,6 +11,8 @@ import { trpc } from '@/lib/trpc';
 import { Upload, FileText, Loader2, Check, X, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RecruiterLayout from '@/components/RecruiterLayout';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { validatePhoneNumber } from '@shared/phoneValidation';
 
 interface EmploymentEntry {
   company: string;
@@ -236,10 +238,59 @@ function AddCandidatePageContent() {
 
   const handleSubmit = () => {
     // Validate required fields
-    if (!formData.name || !formData.email) {
+    if (!formData.name || !formData.name.trim()) {
       toast({
-        title: 'Missing required fields',
-        description: 'Please fill in name and email',
+        title: 'Validation Error',
+        description: 'Candidate name is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.email || !formData.email.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Email is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter a valid email address',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.phone || !formData.phone.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Phone number is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate phone number format
+    const phoneValidation = validatePhoneNumber(formData.phone);
+    if (!phoneValidation.isValid) {
+      toast({
+        title: 'Validation Error',
+        description: phoneValidation.error || 'Invalid phone number format',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.location || !formData.location.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Location is required',
         variant: 'destructive',
       });
       return;
