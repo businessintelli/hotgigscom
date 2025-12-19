@@ -4212,3 +4212,33 @@
 - [x] Add real-time field validation with inline error messages
 - [x] Write vitest tests for all validation utilities
 - [x] Test all validation flows end-to-end
+
+
+## UX Enhancements: Password Strength, File Upload Validation, Save Draft (Current Focus)
+
+### Password Strength Indicator
+- [x] Create PasswordStrengthIndicator component with visual feedback
+- [x] Add password strength validation utility functions
+- [ ] Integrate into RecruiterOnboarding page
+- [ ] Integrate into CandidateOnboarding page
+- [x] Write vitest tests for password strength validation
+
+### File Upload Validation & Progress
+- [x] Create FileUploadValidator component with visual feedback
+- [x] Add file size validation (max 5MB for resumes)
+- [x] Add file type validation (PDF, DOCX for resumes)
+- [x] Add upload progress bar
+- [x] Show file preview after upload
+- [ ] Integrate into resume upload flows
+- [ ] Integrate into document upload flows
+- [ ] Write vitest tests for file upload validation
+
+### Save Draft Feature
+- [x] Add draft status to jobs table schema
+- [x] Add draft status to applications table schema
+- [x] Create auto-save functionality with debouncing (useDraftAutoSave hook)
+- [ ] Add "Save as Draft" button to CreateJob page
+- [ ] Add "Save as Draft" button to JobApplication page
+- [ ] Create "My Drafts" section in dashboards
+- [ ] Add draft recovery on page load
+- [ ] Write vitest tests for draft functionality

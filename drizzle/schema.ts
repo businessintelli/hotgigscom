@@ -237,6 +237,7 @@ export const jobs = mysqlTable("jobs", {
   customerId: int("customerId").references(() => customers.id),
   contactId: int("contactId").references(() => customerContacts.id),
   status: mysqlEnum("status", ["draft", "active", "closed", "filled"]).default("draft"),
+  isDraft: boolean("isDraft").default(true).notNull(), // For auto-save draft functionality
   isPublic: boolean("isPublic").default(false),
   postedBy: int("postedBy").notNull().references(() => users.id),
   applicationDeadline: timestamp("applicationDeadline"),
@@ -269,6 +270,7 @@ export const applications = mysqlTable("applications", {
   resumeUrl: varchar("resumeUrl", { length: 500 }),
   resumeFilename: varchar("resumeFilename", { length: 255 }),
   status: mysqlEnum("status", ["submitted", "reviewing", "shortlisted", "interviewing", "offered", "rejected", "withdrawn"]).default("submitted"),
+  isDraft: boolean("isDraft").default(true).notNull(), // For auto-save draft functionality
   aiScore: int("aiScore"), // AI matching score 0-100
   notes: text("notes"),
   // Compensation fields
