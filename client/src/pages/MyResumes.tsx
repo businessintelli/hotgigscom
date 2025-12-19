@@ -38,7 +38,18 @@ export default function MyResumes() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [parsedResumeData, setParsedResumeData] = useState<any>(null);
+  const [resumeUrl, setResumeUrl] = useState<string>('');
   const [showResumeReviewModal, setShowResumeReviewModal] = useState(false);
+  
+  // Additional wizard fields
+  const [residenceZip, setResidenceZip] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [gender, setGender] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [workAuthorization, setWorkAuthorization] = useState('');
+  const [salaryExpectation, setSalaryExpectation] = useState('');
+  const [willingToRelocate, setWillingToRelocate] = useState(false);
+  const [noticePeriod, setNoticePeriod] = useState('');
 
   // Get candidate profile
   const { data: candidateProfile } = trpc.candidate.getProfile.useQuery(undefined, {
@@ -57,12 +68,18 @@ export default function MyResumes() {
   const uploadResumeMutation = trpc.candidate.uploadResume.useMutation({
     onSuccess: (result) => {
       setIsUploading(false);
-      toast.success('Resume uploaded and parsed successfully!');
+      toast.success('Resume parsed successfully! Please review and confirm.');
       
-      // Store parsed data and show review modal
+      // Store parsed data, URL, and show review modal
       setParsedResumeData(result.parsedData);
+      setResumeUrl(result.url);
       setShowResumeReviewModal(true);
       setUploadDialogOpen(false);
+      
+      // Pre-fill wizard fields from parsed data if available
+      if (result.parsedData?.personalInfo) {
+        setLinkedinUrl(result.parsedData.personalInfo.linkedin || '');
+      }
     },
     onError: (error) => {
       console.error('[MyResumes] onError called:', error);
@@ -71,6 +88,32 @@ export default function MyResumes() {
     },
   });
 
+  const saveResumeAfterReviewMutation = trpc.candidate.saveResumeAfterReview.useMutation({
+    onSuccess: () => {
+      toast.success('Resume saved successfully!');
+      setShowResumeReviewModal(false);
+      refetchProfiles();
+      utils.candidate.getProfile.invalidate();
+      // Reset form
+      setProfileName('');
+      setSelectedFile(null);
+      setParsedResumeData(null);
+      setResumeUrl('');
+      // Reset wizard fields
+      setResidenceZip('');
+      setLinkedinUrl('');
+      setGender('');
+      setDateOfBirth('');
+      setWorkAuthorization('');
+      setSalaryExpectation('');
+      setWillingToRelocate(false);
+      setNoticePeriod('');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to save resume');
+    },
+  });
+  
   const setDefaultMutation = trpc.resumeProfile.setDefaultResumeProfile.useMutation({
     onSuccess: () => {
       toast.success('Default profile updated');
@@ -112,6 +155,7 @@ export default function MyResumes() {
   };
 
   const handleUpload = async () => {
+    console.log('[handleUpload] TIMESTAMP: 2025-12-19-09:07:00 - CODE IS FRESH!');
     console.log('[handleUpload] Starting upload process');
     console.log('[handleUpload] selectedFile:', selectedFile?.name);
     console.log('[handleUpload] profileName:', profileName);
@@ -141,12 +185,13 @@ export default function MyResumes() {
         reader.readAsDataURL(selectedFile);
       });
       
-      // Call uploadResume mutation with autoFill enabled
+      // Call uploadResume mutation with skipAutoSave to get parsed data without saving
       uploadResumeMutation.mutate({
         candidateId: candidateProfile.id,
         fileData: base64Data,
         fileName: selectedFile.name,
         autoFill: true, // Enable AI parsing
+        skipAutoSave: true, // Don't save yet, show review modal first
       });
     } catch (error) {
       console.error('[handleUpload] Error:', error);
@@ -165,6 +210,30 @@ export default function MyResumes() {
 
   const handleDelete = (profileId: number) => {
     deleteProfileMutation.mutate({ id: profileId });
+  };
+  
+  const handleConfirmResume = () => {
+    if (!candidateProfile || !parsedResumeData || !resumeUrl || !selectedFile) {
+      toast.error('Missing required data');
+      return;
+    }
+    
+    saveResumeAfterReviewMutation.mutate({
+      candidateId: candidateProfile.id,
+      resumeUrl,
+      resumeFilename: selectedFile.name,
+      parsedData: parsedResumeData,
+      additionalData: {
+        residenceZip: residenceZip || undefined,
+        linkedinUrl: linkedinUrl || undefined,
+        gender: gender || undefined,
+        dateOfBirth: dateOfBirth || undefined,
+        workAuthorization: workAuthorization || undefined,
+        salaryExpectation: salaryExpectation ? parseInt(salaryExpectation) : undefined,
+        willingToRelocate,
+        noticePeriod: noticePeriod || undefined,
+      },
+    });
   };
 
   const canAddMore = resumeProfiles.length < 5;
@@ -363,119 +432,232 @@ export default function MyResumes() {
         </Card>
         </div>
 
-        {/* Resume Review Modal */}
+        {/* Review Modal with Wizard Fields */}
         {showResumeReviewModal && parsedResumeData && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Review Extracted Information
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  Review & Complete Your Resume Profile
                 </CardTitle>
                 <CardDescription>
-                  AI has extracted the following information from your resume. This has been saved to your profile.
+                  AI has extracted information from your resume. Please review, edit if needed, and fill in additional details before saving.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Personal Information */}
+                {/* Personal Information - Read Only Display */}
                 {parsedResumeData.personalInfo && (
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-sm text-gray-700">Personal Information</h3>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2 text-sm">
+                    <h3 className="font-semibold text-lg border-b pb-2">Personal Information (Extracted)</h3>
+                    <div className="grid grid-cols-2 gap-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
                       {parsedResumeData.personalInfo.name && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Name:</span>
-                          <span className="font-medium">{parsedResumeData.personalInfo.name}</span>
+                        <div>
+                          <Label className="text-xs text-gray-600">Name</Label>
+                          <p className="font-medium">{parsedResumeData.personalInfo.name}</p>
                         </div>
                       )}
                       {parsedResumeData.personalInfo.email && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Email:</span>
-                          <span className="font-medium">{parsedResumeData.personalInfo.email}</span>
+                        <div>
+                          <Label className="text-xs text-gray-600">Email</Label>
+                          <p className="font-medium">{parsedResumeData.personalInfo.email}</p>
                         </div>
                       )}
                       {parsedResumeData.personalInfo.phone && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Phone:</span>
-                          <span className="font-medium">{parsedResumeData.personalInfo.phone}</span>
+                        <div>
+                          <Label className="text-xs text-gray-600">Phone</Label>
+                          <p className="font-medium">{parsedResumeData.personalInfo.phone}</p>
+                        </div>
+                      )}
+                      {parsedResumeData.personalInfo.location && (
+                        <div>
+                          <Label className="text-xs text-gray-600">Location</Label>
+                          <p className="font-medium">{parsedResumeData.personalInfo.location}</p>
                         </div>
                       )}
                     </div>
                   </div>
                 )}
 
-                {/* Skills */}
-                {parsedResumeData.skills && parsedResumeData.skills.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-sm text-gray-700">Skills</h3>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex flex-wrap gap-2">
-                        {parsedResumeData.skills.map((skill: string, index: number) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
+                {/* Additional Details - Editable Wizard Fields */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg border-b pb-2">Additional Details</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="residenceZip">Residence ZIP Code</Label>
+                      <Input
+                        id="residenceZip"
+                        value={residenceZip}
+                        onChange={(e) => setResidenceZip(e.target.value)}
+                        placeholder="e.g., 94105"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="linkedinUrl">LinkedIn Profile URL</Label>
+                      <Input
+                        id="linkedinUrl"
+                        value={linkedinUrl}
+                        onChange={(e) => setLinkedinUrl(e.target.value)}
+                        placeholder="https://linkedin.com/in/yourprofile"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="gender">Gender</Label>
+                      <select
+                        id="gender"
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Select...</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="non-binary">Non-binary</option>
+                        <option value="prefer-not-to-say">Prefer not to say</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                      <Input
+                        id="dateOfBirth"
+                        type="date"
+                        value={dateOfBirth}
+                        onChange={(e) => setDateOfBirth(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="workAuthorization">Work Authorization</Label>
+                      <select
+                        id="workAuthorization"
+                        value={workAuthorization}
+                        onChange={(e) => setWorkAuthorization(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Select...</option>
+                        <option value="us-citizen">US Citizen</option>
+                        <option value="green-card">Green Card Holder</option>
+                        <option value="h1b">H1B Visa</option>
+                        <option value="opt">OPT</option>
+                        <option value="cpt">CPT</option>
+                        <option value="need-sponsorship">Need Sponsorship</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="salaryExpectation">Salary Expectation (Annual USD)</Label>
+                      <Input
+                        id="salaryExpectation"
+                        type="number"
+                        value={salaryExpectation}
+                        onChange={(e) => setSalaryExpectation(e.target.value)}
+                        placeholder="e.g., 120000"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="noticePeriod">Notice Period</Label>
+                      <select
+                        id="noticePeriod"
+                        value={noticePeriod}
+                        onChange={(e) => setNoticePeriod(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Select...</option>
+                        <option value="immediate">Immediate</option>
+                        <option value="2-weeks">2 Weeks</option>
+                        <option value="1-month">1 Month</option>
+                        <option value="2-months">2 Months</option>
+                        <option value="3-months">3 Months</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="willingToRelocate"
+                        checked={willingToRelocate}
+                        onChange={(e) => setWillingToRelocate(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="willingToRelocate" className="font-normal">
+                        Willing to relocate
+                      </Label>
                     </div>
                   </div>
-                )}
-
-                {/* Experience */}
-                {parsedResumeData.experience && parsedResumeData.experience.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-sm text-gray-700">Experience</h3>
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
-                      {parsedResumeData.experience.map((exp: any, index: number) => (
-                        <div key={index} className="border-b border-purple-200 last:border-0 pb-3 last:pb-0">
-                          <p className="font-medium text-sm">{exp.title}</p>
-                          <p className="text-sm text-gray-600">{exp.company}</p>
-                          {exp.duration && (
-                            <p className="text-xs text-gray-500">{exp.duration}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Education */}
-                {parsedResumeData.education && parsedResumeData.education.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-sm text-gray-700">Education</h3>
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
-                      {parsedResumeData.education.map((edu: any, index: number) => (
-                        <div key={index} className="border-b border-orange-200 last:border-0 pb-3 last:pb-0">
-                          <p className="font-medium text-sm">{edu.degree}</p>
-                          <p className="text-sm text-gray-600">{edu.institution}</p>
-                          {edu.year && (
-                            <p className="text-xs text-gray-500">{edu.year}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-700">
-                    <strong>Note:</strong> This information has been automatically extracted and saved to your profile. You can edit it from your profile settings.
-                  </p>
                 </div>
 
-                <div className="flex justify-end gap-2">
+                {/* Skills Summary */}
+                {parsedResumeData.skills && parsedResumeData.skills.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg border-b pb-2">Skills Extracted</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedResumeData.skills.slice(0, 20).map((skill: string, index: number) => (
+                        <Badge key={index} variant="secondary">{skill}</Badge>
+                      ))}
+                      {parsedResumeData.skills.length > 20 && (
+                        <Badge variant="outline">+{parsedResumeData.skills.length - 20} more</Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Experience Summary */}
+                {parsedResumeData.experience && parsedResumeData.experience.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg border-b pb-2">Experience Extracted</h3>
+                    <div className="space-y-2">
+                      {parsedResumeData.experience.slice(0, 3).map((exp: any, index: number) => (
+                        <div key={index} className="bg-gray-50 rounded-lg p-3">
+                          <p className="font-medium text-sm">{exp.title} at {exp.company}</p>
+                          {exp.duration && <p className="text-xs text-gray-600">{exp.duration}</p>}
+                        </div>
+                      ))}
+                      {parsedResumeData.experience.length > 3 && (
+                        <p className="text-sm text-gray-600">+{parsedResumeData.experience.length - 3} more positions</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Education Summary */}
+                {parsedResumeData.education && parsedResumeData.education.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg border-b pb-2">Education Extracted</h3>
+                    <div className="space-y-2">
+                      {parsedResumeData.education.map((edu: any, index: number) => (
+                        <div key={index} className="bg-gray-50 rounded-lg p-3">
+                          <p className="font-medium text-sm">{edu.degree}</p>
+                          <p className="text-sm text-gray-600">{edu.institution}</p>
+                          {edu.year && <p className="text-xs text-gray-600">{edu.year}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button
+                    variant="outline"
                     onClick={() => {
                       setShowResumeReviewModal(false);
                       setParsedResumeData(null);
-                      setSelectedFile(null);
-                      setProfileName('');
-                      refetchProfiles();
+                      setResumeUrl('');
                     }}
                   >
-                    Done
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmResume}
+                    disabled={saveResumeAfterReviewMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {saveResumeAfterReviewMutation.isPending ? 'Saving...' : 'Save Resume Profile'}
                   </Button>
                 </div>
               </CardContent>

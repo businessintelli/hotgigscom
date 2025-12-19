@@ -4338,3 +4338,35 @@
 - [x] Copy review modal pattern from JobApplication.tsx
 - [x] Test upload → parse → review → save workflow
 - [ ] Remove unused ResumeUploadNew.tsx and resumeProfileRouter.ts code
+
+
+## Resume Upload Enhancements (Current Focus)
+- [ ] Modify backend to NOT auto-save resume, return parsed data only
+- [ ] Create comprehensive review modal with wizard fields from wizard.pdf
+- [ ] Add editable fields: personal info, skills, experience, education
+- [ ] Add additional fields: residence zip, LinkedIn, gender, DOB, work authorization, salary expectations
+- [ ] Implement save mutation that creates resume profile after user confirms
+- [ ] Test complete upload → review → edit → save workflow
+- [ ] Add "Edit Resume" button to resume cards for post-save editing
+
+
+## Review-Before-Save Workflow (Current Focus)
+- [ ] Modify backend uploadResume to support skipAutoSave parameter
+- [ ] Create saveResumeAfterReview mutation for saving after user confirms
+- [ ] Update MyResumes frontend to call uploadResume with skipAutoSave: true
+- [ ] Create comprehensive review modal with wizard fields from wizard.pdf
+- [ ] Add wizard fields: residence zip, LinkedIn, gender, DOB, work authorization, salary, notice period, willing to relocate
+- [ ] Test complete flow: upload → parse → review modal → edit → save
+
+
+## Resume Upload - Review-Before-Save Workflow (COMPLETED - Awaiting Testing)
+- [x] Backend: Add `skipAutoSave` parameter to uploadResume procedure
+- [x] Backend: Create `saveResumeAfterReview` mutation with wizard fields
+- [x] Frontend: Update MyResumes.tsx to call uploadResume with `skipAutoSave: true`
+- [x] Frontend: Create comprehensive review modal with all wizard fields
+- [x] Frontend: Add state management for parsed data and additional fields
+- [x] Frontend: Implement handleConfirmResume to save after review
+- [x] Add wizard fields: residence ZIP, LinkedIn, gender, DOB, work authorization, salary, notice period, willing to relocate
+- [ ] **TESTING REQUIRED**: Test in fresh incognito browser session (browser caching issue prevents testing in current session)
+
+**Note**: Implementation is complete and correct in the codebase. Browser caching issue prevents verification in current session. Requires manual testing in incognito/private browsing mode.

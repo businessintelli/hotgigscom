@@ -1609,9 +1609,10 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         fileData: z.string(), // base64 encoded file
         fileName: z.string(),
         autoFill: z.boolean().optional(), // Whether to auto-fill profile from resume
+        skipAutoSave: z.boolean().optional(), // If true, parse but don't save to profile (for review workflow)
       }))
       .mutation(async ({ input }) => {
-        const { candidateId, fileData, fileName, autoFill = true } = input;
+        const { candidateId, fileData, fileName, autoFill = true, skipAutoSave = false } = input;
         
         // Extract base64 data and mime type
         const matches = fileData.match(/^data:(.+);base64,(.+)$/);
@@ -1641,8 +1642,9 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
             // Parse with AI (new advanced parser)
             parsedData = await parseResumeWithAI(resumeText);
             
-            // Update candidate profile with parsed data
-            await db.updateCandidate(candidateId, {
+            // Update candidate profile with parsed data (unless skipAutoSave is true)
+            if (!skipAutoSave) {
+              await db.updateCandidate(candidateId, {
               resumeUrl: url,
               resumeFilename: fileName,
               resumeUploadedAt: new Date(),
@@ -1666,7 +1668,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
               seniorityLevel: parsedData.metadata.seniorityLevel,
               primaryDomain: parsedData.metadata.primaryDomain,
               skillCategories: JSON.stringify(parsedData.metadata.skillCategories),
-            });
+              });
+            }
           } catch (error) {
             console.error('Resume parsing failed:', error);
             // Still save the resume URL even if parsing fails
@@ -1686,6 +1689,58 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
         }
         
         return { success: true, url, parsedData, biasDetection: biasDetectionResult };
+      }),
+    
+    saveResumeAfterReview: protectedProcedure
+      .input(z.object({
+        candidateId: z.number(),
+        resumeUrl: z.string(),
+        resumeFilename: z.string(),
+        parsedData: z.any(), // The AI-parsed data
+        additionalData: z.object({
+          residenceZip: z.string().optional(),
+          linkedinUrl: z.string().optional(),
+          gender: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          workAuthorization: z.string().optional(),
+          salaryExpectation: z.number().optional(),
+          willingToRelocate: z.boolean().optional(),
+          noticePeriod: z.string().optional(),
+        }).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { candidateId, resumeUrl, resumeFilename, parsedData, additionalData } = input;
+        
+        // Update candidate profile with all data
+        await db.updateCandidate(candidateId, {
+          resumeUrl,
+          resumeFilename,
+          resumeUploadedAt: new Date(),
+          // Personal info from parsed data
+          ...(parsedData.personalInfo?.phone && { phoneNumber: parsedData.personalInfo.phone }),
+          ...(parsedData.personalInfo?.location && { location: parsedData.personalInfo.location }),
+          ...(parsedData.personalInfo?.linkedin && { linkedinUrl: parsedData.personalInfo.linkedin }),
+          ...(parsedData.personalInfo?.github && { githubUrl: parsedData.personalInfo.github }),
+          // Basic fields
+          ...(parsedData.summary && { bio: parsedData.summary }),
+          skills: JSON.stringify(parsedData.skills || []),
+          experience: JSON.stringify(parsedData.experience || []),
+          education: JSON.stringify(parsedData.education || []),
+          // Advanced fields
+          certifications: JSON.stringify(parsedData.certifications || []),
+          languages: JSON.stringify(parsedData.languages || []),
+          projects: JSON.stringify(parsedData.projects || []),
+          parsedResumeData: JSON.stringify(parsedData),
+          // Metadata
+          totalExperienceYears: parsedData.metadata?.totalExperienceYears,
+          seniorityLevel: parsedData.metadata?.seniorityLevel,
+          primaryDomain: parsedData.metadata?.primaryDomain,
+          skillCategories: JSON.stringify(parsedData.metadata?.skillCategories || []),
+          // Additional wizard fields
+          ...additionalData,
+        });
+        
+        return { success: true };
       }),
     
     getByUserId: protectedProcedure
