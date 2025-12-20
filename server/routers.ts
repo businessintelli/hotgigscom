@@ -15,7 +15,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "./authEmails";
 import { getDb } from "./db";
 import { applicationHistory } from "../drizzle/schema";
 import { desc } from "drizzle-orm";
-import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns } from "../drizzle/schema";
+import { codingChallenges, codingSubmissions, candidates, emailUnsubscribes, users, sourcingCampaigns, sourcedCandidates, emailCampaigns, candidateSuccessPredictions } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 import { storagePut } from "./storage";

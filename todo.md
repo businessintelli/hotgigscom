@@ -3782,6 +3782,11 @@
 - [ ] Fix missing useEffect import in CompanyLLMCostTracking.tsx
 - [ ] Investigate and fix performance issue on CompanyLLMAlerts page (long loading time)
 
+## Bug Fixes - Application Status Change Error (December 20, 2025)
+- [x] Fix "candidateSuccessPredictions is not defined" error when changing application status to "offered"
+- [x] Added candidateSuccessPredictions to imports in server/routers.ts
+- [x] Tested status change from Pending to Offered - works without errors
+
 
 ## Critical Bug Fixes - Company Admin Dashboard
 
