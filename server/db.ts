@@ -55,7 +55,10 @@ import {
   interviewAnalysis, InsertInterviewAnalysis,
   candidateSelections, InsertCandidateSelection,
   onboardingChecklists, InsertOnboardingChecklist,
-  onboardingChecklistItems, InsertOnboardingChecklistItem
+  onboardingChecklistItems, InsertOnboardingChecklistItem,
+  offers, InsertOffer,
+  offerNegotiations, InsertOfferNegotiation,
+  offerTemplates, InsertOfferTemplate
 } from "../drizzle/schema";
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
@@ -1193,7 +1196,7 @@ export async function deleteInmailTemplate(id: number) {
 }
 
 // Import necessary operators
-import { eq, and, inArray, count, sql, desc, sum } from "drizzle-orm";
+import { eq, and, inArray, count, sql, desc, sum, asc, gte, lte } from "drizzle-orm";
 
 
 // ============================================
@@ -3615,4 +3618,349 @@ export async function getBotInterviewSessionsByDateRange(
   }
 
   return await query;
+}
+
+// ===========================
+// Offer Management Functions
+// ===========================
+
+/**
+ * Create a new job offer
+ */
+export async function createOffer(data: InsertOffer) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [offer] = await db.insert(offers).values(data).$returningId();
+  return offer.id;
+}
+
+/**
+ * Get offer by ID with full details
+ */
+export async function getOfferById(offerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const results = await db.select()
+    .from(offers)
+    .leftJoin(applications, eq(offers.applicationId, applications.id))
+    .leftJoin(jobs, eq(offers.jobId, jobs.id))
+    .leftJoin(candidates, eq(offers.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .leftJoin(recruiters, eq(offers.recruiterId, recruiters.id))
+    .where(eq(offers.id, offerId))
+    .limit(1);
+  
+  if (results.length === 0) return null;
+  
+  const row = results[0];
+  return {
+    ...row.offers,
+    application: row.applications,
+    job: row.jobs,
+    candidate: {
+      ...row.candidates,
+      user: row.users
+    },
+    recruiter: row.recruiters
+  };
+}
+
+/**
+ * Get offer by application ID
+ */
+export async function getOfferByApplicationId(applicationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [offer] = await db.select()
+    .from(offers)
+    .where(eq(offers.applicationId, applicationId))
+    .orderBy(desc(offers.createdAt));
+  
+  return offer || null;
+}
+
+/**
+ * Get all offers for a recruiter with pagination and filters
+ */
+export async function getOffersByRecruiter(
+  recruiterId: number,
+  params: PaginationParams & {
+    status?: string;
+    search?: string;
+  }
+): Promise<PaginatedResponse<any>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const { limit, offset, page, pageSize } = getPaginationLimitOffset(params);
+  
+  // Build conditions
+  const conditions = [eq(offers.recruiterId, recruiterId)];
+  
+  if (params.status) {
+    conditions.push(eq(offers.status, params.status as any));
+  }
+  
+  // Get total count
+  const [countResult] = await db.select({ count: count() })
+    .from(offers)
+    .where(and(...conditions));
+  
+  const totalItems = countResult?.count || 0;
+  
+  // Get offers with related data
+  const results = await db.select()
+    .from(offers)
+    .leftJoin(applications, eq(offers.applicationId, applications.id))
+    .leftJoin(jobs, eq(offers.jobId, jobs.id))
+    .leftJoin(candidates, eq(offers.candidateId, candidates.id))
+    .leftJoin(users, eq(candidates.userId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(offers.createdAt))
+    .limit(limit)
+    .offset(offset);
+  
+  const data = results.map(row => ({
+    ...row.offers,
+    application: row.applications,
+    job: row.jobs,
+    candidate: {
+      ...row.candidates,
+      user: row.users,
+      fullName: `${row.candidates?.firstName || ''} ${row.candidates?.lastName || ''}`.trim()
+    }
+  }));
+  
+  return buildPaginatedResponse(data, totalItems, { page, pageSize });
+}
+
+/**
+ * Get all offers for a candidate
+ */
+export async function getOffersByCandidate(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db.select()
+    .from(offers)
+    .leftJoin(jobs, eq(offers.jobId, jobs.id))
+    .leftJoin(applications, eq(offers.applicationId, applications.id))
+    .leftJoin(recruiters, eq(offers.recruiterId, recruiters.id))
+    .leftJoin(users, eq(recruiters.userId, users.id))
+    .where(eq(offers.candidateId, candidateId))
+    .orderBy(desc(offers.createdAt));
+  
+  return results.map(row => ({
+    ...row.offers,
+    job: row.jobs,
+    application: row.applications,
+    recruiter: {
+      ...row.recruiters,
+      user: row.users
+    }
+  }));
+}
+
+/**
+ * Update offer
+ */
+export async function updateOffer(offerId: number, data: Partial<InsertOffer>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(offers)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(offers.id, offerId));
+}
+
+/**
+ * Get offer statistics for a recruiter
+ */
+export async function getOfferStatsByRecruiter(recruiterId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const allOffers = await db.select()
+    .from(offers)
+    .where(eq(offers.recruiterId, recruiterId));
+  
+  const stats = {
+    total: allOffers.length,
+    draft: 0,
+    sent: 0,
+    viewed: 0,
+    negotiating: 0,
+    accepted: 0,
+    rejected: 0,
+    withdrawn: 0,
+    expired: 0,
+    acceptanceRate: 0,
+    avgTimeToAccept: 0
+  };
+  
+  let totalAcceptTime = 0;
+  let acceptedCount = 0;
+  
+  allOffers.forEach(offer => {
+    if (offer.status && stats.hasOwnProperty(offer.status)) {
+      stats[offer.status as keyof typeof stats]++;
+    }
+    
+    if (offer.status === 'accepted' && offer.sentAt && offer.acceptedAt) {
+      const timeToAccept = offer.acceptedAt.getTime() - offer.sentAt.getTime();
+      totalAcceptTime += timeToAccept;
+      acceptedCount++;
+    }
+  });
+  
+  stats.acceptanceRate = stats.sent > 0 
+    ? Math.round((stats.accepted / stats.sent) * 100) 
+    : 0;
+  
+  stats.avgTimeToAccept = acceptedCount > 0 
+    ? Math.round(totalAcceptTime / acceptedCount / (1000 * 60 * 60 * 24)) // Convert to days
+    : 0;
+  
+  return stats;
+}
+
+// ===========================
+// Offer Negotiation Functions
+// ===========================
+
+/**
+ * Create offer negotiation entry
+ */
+export async function createOfferNegotiation(data: InsertOfferNegotiation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [negotiation] = await db.insert(offerNegotiations).values(data).$returningId();
+  
+  // Update offer negotiation count
+  await db.execute(sql`
+    UPDATE offers 
+    SET negotiationCount = negotiationCount + 1,
+        lastNegotiationAt = NOW()
+    WHERE id = ${data.offerId}
+  `);
+  
+  return negotiation.id;
+}
+
+/**
+ * Get negotiations for an offer
+ */
+export async function getOfferNegotiations(offerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db.select()
+    .from(offerNegotiations)
+    .leftJoin(users, eq(offerNegotiations.userId, users.id))
+    .where(eq(offerNegotiations.offerId, offerId))
+    .orderBy(asc(offerNegotiations.createdAt));
+  
+  return results.map(row => ({
+    ...row.offerNegotiations,
+    user: row.users
+  }));
+}
+
+/**
+ * Update negotiation status
+ */
+export async function updateOfferNegotiation(negotiationId: number, data: Partial<InsertOfferNegotiation>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(offerNegotiations)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(offerNegotiations.id, negotiationId));
+}
+
+// ===========================
+// Offer Template Functions
+// ===========================
+
+/**
+ * Create offer template
+ */
+export async function createOfferTemplate(data: InsertOfferTemplate) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [template] = await db.insert(offerTemplates).values(data).$returningId();
+  return template.id;
+}
+
+/**
+ * Get offer templates for a recruiter
+ */
+export async function getOfferTemplatesByRecruiter(recruiterId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select()
+    .from(offerTemplates)
+    .where(and(
+      eq(offerTemplates.recruiterId, recruiterId),
+      eq(offerTemplates.isActive, true)
+    ))
+    .orderBy(desc(offerTemplates.usageCount), desc(offerTemplates.createdAt));
+}
+
+/**
+ * Get offer template by ID
+ */
+export async function getOfferTemplateById(templateId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [template] = await db.select()
+    .from(offerTemplates)
+    .where(eq(offerTemplates.id, templateId));
+  
+  return template || null;
+}
+
+/**
+ * Update offer template
+ */
+export async function updateOfferTemplate(templateId: number, data: Partial<InsertOfferTemplate>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(offerTemplates)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(offerTemplates.id, templateId));
+}
+
+/**
+ * Delete offer template
+ */
+export async function deleteOfferTemplate(templateId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(offerTemplates)
+    .set({ isActive: false })
+    .where(eq(offerTemplates.id, templateId));
+}
+
+/**
+ * Increment template usage count
+ */
+export async function incrementOfferTemplateUsage(templateId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.execute(sql`
+    UPDATE offer_templates 
+    SET usageCount = usageCount + 1
+    WHERE id = ${templateId}
+  `);
 }

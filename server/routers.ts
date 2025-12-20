@@ -51,6 +51,7 @@ import { backupRouter } from './routers/backup';
 import { botInterviewRouter } from './botInterviewRouter';
 import { botInterviewAnalyticsRouter } from './botInterviewAnalytics';
 import { selectionOnboardingRouter } from './selectionOnboardingRouter';
+import { offerManagementRouter } from './routers/offerManagement';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
 import { generateInterviewRescheduledEmail } from './emails/interviewRescheduledEmail';
@@ -101,6 +102,7 @@ export const appRouter = router({
   botInterview: botInterviewRouter,
   botInterviewAnalytics: botInterviewAnalyticsRouter,
   selectionOnboarding: selectionOnboardingRouter,
+  offerManagement: offerManagementRouter,
   
   // AI Chat router for career coach and recruiting assistant
   ai: router({

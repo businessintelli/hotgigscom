@@ -98,6 +98,9 @@ import AdminLLMAlerts from "./pages/AdminLLMAlerts";
 import AdminLLMFallback from "./pages/AdminLLMFallback";
 import CompanyLLMCostTracking from "./pages/CompanyLLMCostTracking";
 import CompanyLLMAlerts from "./pages/CompanyLLMAlerts";
+import OfferManagement from "./pages/OfferManagement";
+import CreateOffer from "./pages/CreateOffer";
+import CandidateOffers from "./pages/CandidateOffers";
 import BotInterview from "./pages/BotInterview";
 import OnboardingChecklist from "./pages/OnboardingChecklist";
 import OfferAcceptance from "./pages/OfferAcceptance";
@@ -194,6 +197,9 @@ function Router() {
       <Route path="/recruiter/notification-preferences" component={RecruiterNotificationPreferences} />
       <Route path="/recruiter/selection-review/:jobId" component={SelectionReview} />
       <Route path="/recruiter/bot-interview-analytics" component={BotInterviewAnalytics} />
+      <Route path="/recruiter/offers" component={OfferManagement} />
+      <Route path="/recruiter/offers/create" component={CreateOffer} />
+      <Route path="/offer-management" component={OfferManagement} />
       <Route path="/recruiter/candidate-resume/:id" component={CandidateResumeView} />
       <Route path="/recruiter/guest-candidate/:id" component={GuestCandidateProfile} />
       <Route path="/select-role" component={SelectRole} />
@@ -286,6 +292,7 @@ function Router() {
       <Route path="/candidate/notification-preferences" component={NotificationPreferences} />
       <Route path="/candidate/bot-interview/:applicationId" component={BotInterview} />
       <Route path="/candidate/offer/:applicationId" component={OfferAcceptance} />
+      <Route path="/candidate/offers" component={CandidateOffers} />
       <Route path="/candidate/onboarding-checklist/:candidateId" component={OnboardingChecklist} />
       <Route path="/candidate/messages" component={Messages} />
       <Route path="/recruiter/ai-assistant" component={RecruiterAIAssistant} />

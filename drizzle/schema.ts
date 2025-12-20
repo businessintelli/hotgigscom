@@ -2431,3 +2431,154 @@ export const onboardingChecklistItems = mysqlTable("onboardingChecklistItems", {
 
 export type OnboardingChecklistItem = typeof onboardingChecklistItems.$inferSelect;
 export type InsertOnboardingChecklistItem = typeof onboardingChecklistItems.$inferInsert;
+
+/**
+ * Job offers table - tracks formal job offers made to candidates
+ */
+export const offers = mysqlTable("offers", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  
+  // Offer details
+  offerTitle: varchar("offerTitle", { length: 255 }).notNull(),
+  offerLetterUrl: varchar("offerLetterUrl", { length: 500 }), // S3 URL for signed offer letter PDF
+  
+  // Compensation
+  salaryType: mysqlEnum("salaryType", ["annual", "hourly", "contract"]).notNull(),
+  baseSalary: int("baseSalary").notNull(), // Annual salary or hourly rate in USD
+  signOnBonus: int("signOnBonus").default(0),
+  performanceBonus: int("performanceBonus").default(0),
+  equityShares: int("equityShares").default(0),
+  equityValue: int("equityValue").default(0),
+  otherCompensation: text("otherCompensation"), // JSON for additional compensation details
+  totalCompensation: int("totalCompensation").notNull(), // Calculated total
+  
+  // Benefits
+  healthInsurance: boolean("healthInsurance").default(false),
+  dentalInsurance: boolean("dentalInsurance").default(false),
+  visionInsurance: boolean("visionInsurance").default(false),
+  retirement401k: boolean("retirement401k").default(false),
+  retirement401kMatch: varchar("retirement401kMatch", { length: 100 }), // e.g., "50% up to 6%"
+  paidTimeOff: int("paidTimeOff"), // Days per year
+  sickLeave: int("sickLeave"), // Days per year
+  parentalLeave: int("parentalLeave"), // Weeks
+  otherBenefits: text("otherBenefits"), // JSON array of additional benefits
+  
+  // Work details
+  startDate: date("startDate"),
+  workLocation: varchar("workLocation", { length: 255 }),
+  workType: mysqlEnum("workType", ["remote", "hybrid", "onsite"]).notNull(),
+  department: varchar("department", { length: 255 }),
+  reportingTo: varchar("reportingTo", { length: 255 }), // Manager name/title
+  
+  // Offer status and timeline
+  status: mysqlEnum("status", ["draft", "sent", "viewed", "negotiating", "accepted", "rejected", "withdrawn", "expired"]).default("draft").notNull(),
+  sentAt: timestamp("sentAt"),
+  viewedAt: timestamp("viewedAt"),
+  expiresAt: timestamp("expiresAt"), // Offer expiration date
+  respondedAt: timestamp("respondedAt"),
+  acceptedAt: timestamp("acceptedAt"),
+  rejectedAt: timestamp("rejectedAt"),
+  withdrawnAt: timestamp("withdrawnAt"),
+  
+  // Negotiation tracking
+  negotiationCount: int("negotiationCount").default(0),
+  lastNegotiationAt: timestamp("lastNegotiationAt"),
+  
+  // Response and notes
+  candidateResponse: text("candidateResponse"), // Candidate's message when accepting/rejecting
+  rejectionReason: text("rejectionReason"),
+  recruiterNotes: text("recruiterNotes"),
+  internalNotes: text("internalNotes"), // Private notes not visible to candidate
+  
+  // Additional terms
+  probationPeriod: int("probationPeriod"), // In months
+  noticePeriod: int("noticePeriod"), // In months
+  nonCompeteClause: boolean("nonCompeteClause").default(false),
+  nonCompeteDuration: int("nonCompeteDuration"), // In months
+  relocationAssistance: boolean("relocationAssistance").default(false),
+  relocationAmount: int("relocationAmount"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Offer = typeof offers.$inferSelect;
+export type InsertOffer = typeof offers.$inferInsert;
+
+/**
+ * Offer negotiation history - tracks back-and-forth negotiations
+ */
+export const offerNegotiations = mysqlTable("offerNegotiations", {
+  id: int("id").autoincrement().primaryKey(),
+  offerId: int("offerId").notNull().references(() => offers.id),
+  
+  // Who initiated this negotiation round
+  initiatedBy: mysqlEnum("initiatedBy", ["candidate", "recruiter"]).notNull(),
+  userId: int("userId").notNull().references(() => users.id),
+  
+  // Negotiation details
+  message: text("message").notNull(),
+  proposedChanges: text("proposedChanges"), // JSON object with proposed changes
+  
+  // Specific negotiation items
+  proposedSalary: int("proposedSalary"),
+  proposedSignOnBonus: int("proposedSignOnBonus"),
+  proposedStartDate: date("proposedStartDate"),
+  proposedWorkType: varchar("proposedWorkType", { length: 50 }),
+  proposedPTO: int("proposedPTO"),
+  otherRequests: text("otherRequests"),
+  
+  // Response tracking
+  status: mysqlEnum("status", ["pending", "accepted", "rejected", "countered"]).default("pending").notNull(),
+  respondedAt: timestamp("respondedAt"),
+  responseMessage: text("responseMessage"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OfferNegotiation = typeof offerNegotiations.$inferSelect;
+export type InsertOfferNegotiation = typeof offerNegotiations.$inferInsert;
+
+/**
+ * Offer templates - reusable offer templates for common positions
+ */
+export const offerTemplates = mysqlTable("offerTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  
+  templateName: varchar("templateName", { length: 255 }).notNull(),
+  jobTitle: varchar("jobTitle", { length: 255 }).notNull(),
+  department: varchar("department", { length: 255 }),
+  
+  // Default compensation ranges
+  salaryType: mysqlEnum("salaryType", ["annual", "hourly", "contract"]).notNull(),
+  minSalary: int("minSalary").notNull(),
+  maxSalary: int("maxSalary").notNull(),
+  typicalSignOnBonus: int("typicalSignOnBonus").default(0),
+  typicalPerformanceBonus: int("typicalPerformanceBonus").default(0),
+  
+  // Default benefits
+  benefits: text("benefits"), // JSON object with standard benefits
+  
+  // Default terms
+  workType: mysqlEnum("workType", ["remote", "hybrid", "onsite"]).notNull(),
+  probationPeriod: int("probationPeriod"),
+  noticePeriod: int("noticePeriod"),
+  
+  // Template content
+  offerLetterTemplate: text("offerLetterTemplate"), // Markdown/HTML template with placeholders
+  
+  isActive: boolean("isActive").default(true).notNull(),
+  usageCount: int("usageCount").default(0),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OfferTemplate = typeof offerTemplates.$inferSelect;
+export type InsertOfferTemplate = typeof offerTemplates.$inferInsert;

@@ -42,7 +42,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { 
   Briefcase, 
-  FileText, 
+  FileText,
+  FileCheck, 
   Eye, 
   TrendingUp, 
   Upload, 
@@ -102,6 +103,7 @@ const sidebarItems: SidebarItem[] = [
   { type: "divider", label: "Job Search" },
   { icon: Search, label: "Browse Jobs", path: "/jobs", badge: null },
   { icon: Briefcase, label: "My Applications", path: "/my-applications", badge: null },
+  { icon: FileCheck, label: "My Offers", path: "/candidate/offers", badge: null },
   { icon: Heart, label: "Saved Jobs", path: "/saved-jobs", badge: null },
   { icon: Star, label: "Recommendations", path: "/recommendations", badge: null },
   { type: "divider", label: "Schedule & Team" },
