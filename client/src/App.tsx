@@ -98,6 +98,9 @@ import AdminLLMAlerts from "./pages/AdminLLMAlerts";
 import AdminLLMFallback from "./pages/AdminLLMFallback";
 import CompanyLLMCostTracking from "./pages/CompanyLLMCostTracking";
 import CompanyLLMAlerts from "./pages/CompanyLLMAlerts";
+import BotInterview from "./pages/BotInterview";
+import OnboardingChecklist from "./pages/OnboardingChecklist";
+import SelectionReview from "./pages/SelectionReview";
 import AdminDatabase from "./pages/AdminDatabase";
 import AdminLinkedInSettings from "./pages/AdminLinkedInSettings";
 import AdminInMailTemplates from "./pages/AdminInMailTemplates";
@@ -187,6 +190,7 @@ function Router() {
       <Route path="/recruiter/active-associates" component={ActiveAssociates} />
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
       <Route path="/recruiter/notification-preferences" component={RecruiterNotificationPreferences} />
+      <Route path="/recruiter/selection-review/:jobId" component={SelectionReview} />
       <Route path="/recruiter/candidate-resume/:id" component={CandidateResumeView} />
       <Route path="/recruiter/guest-candidate/:id" component={GuestCandidateProfile} />
       <Route path="/select-role" component={SelectRole} />
@@ -277,6 +281,8 @@ function Router() {
       <Route path="/candidate/associates" component={CandidateAssociates} />
       <Route path="/candidate/settings" component={CandidateSettings} />
       <Route path="/candidate/notification-preferences" component={NotificationPreferences} />
+      <Route path="/candidate/bot-interview/:applicationId" component={BotInterview} />
+      <Route path="/candidate/onboarding-checklist/:candidateId" component={OnboardingChecklist} />
       <Route path="/candidate/messages" component={Messages} />
       <Route path="/recruiter/ai-assistant" component={RecruiterAIAssistant} />
       <Route path="/recruiter/settings" component={RecruiterSettings} />

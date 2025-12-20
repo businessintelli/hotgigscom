@@ -2219,3 +2219,215 @@ export const guestApplications = mysqlTable("guest_applications", {
 
 export type GuestApplication = typeof guestApplications.$inferSelect;
 export type InsertGuestApplication = typeof guestApplications.$inferInsert;
+
+/**
+ * Bot interview sessions - tracks AI-powered interview sessions with candidates
+ */
+export const botInterviewSessions = mysqlTable("botInterviewSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  sessionStatus: mysqlEnum("sessionStatus", ["not-started", "in-progress", "completed", "abandoned"]).default("not-started").notNull(),
+  currentQuestionIndex: int("currentQuestionIndex").default(0).notNull(),
+  totalQuestions: int("totalQuestions").notNull(),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  lastActivityAt: timestamp("lastActivityAt").defaultNow().notNull(),
+  // Session metadata
+  sessionDuration: int("sessionDuration"), // total time in seconds
+  questionsAnswered: int("questionsAnswered").default(0).notNull(),
+  averageResponseTime: int("averageResponseTime"), // in seconds
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BotInterviewSession = typeof botInterviewSessions.$inferSelect;
+export type InsertBotInterviewSession = typeof botInterviewSessions.$inferInsert;
+
+/**
+ * Bot interview questions - stores AI-generated questions for bot interviews
+ */
+export const botInterviewQuestions = mysqlTable("botInterviewQuestions", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull().references(() => botInterviewSessions.id),
+  questionText: text("questionText").notNull(),
+  questionType: mysqlEnum("questionType", ["technical", "behavioral", "situational", "experience", "general"]).notNull(),
+  orderIndex: int("orderIndex").notNull(),
+  expectedDuration: int("expectedDuration").default(120), // seconds
+  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).default("medium"),
+  category: varchar("category", { length: 100 }), // e.g., "problem-solving", "communication", "technical-skills"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BotInterviewQuestion = typeof botInterviewQuestions.$inferSelect;
+export type InsertBotInterviewQuestion = typeof botInterviewQuestions.$inferInsert;
+
+/**
+ * Bot interview responses - stores candidate responses to bot interview questions
+ */
+export const botInterviewResponses = mysqlTable("botInterviewResponses", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull().references(() => botInterviewSessions.id),
+  questionId: int("questionId").notNull().references(() => botInterviewQuestions.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  responseType: mysqlEnum("responseType", ["text", "audio", "video"]).notNull(),
+  textResponse: text("textResponse"),
+  audioUrl: text("audioUrl"),
+  videoUrl: text("videoUrl"),
+  transcription: text("transcription"),
+  duration: int("duration"), // response time in seconds
+  // AI evaluation fields
+  aiScore: int("aiScore"), // 0-100
+  aiEvaluation: text("aiEvaluation"),
+  relevanceScore: int("relevanceScore"), // 0-100
+  clarityScore: int("clarityScore"), // 0-100
+  depthScore: int("depthScore"), // 0-100
+  strengths: text("strengths"), // JSON array
+  weaknesses: text("weaknesses"), // JSON array
+  recommendations: text("recommendations"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BotInterviewResponse = typeof botInterviewResponses.$inferSelect;
+export type InsertBotInterviewResponse = typeof botInterviewResponses.$inferInsert;
+
+/**
+ * Interview analysis - comprehensive AI analysis of completed interviews
+ */
+export const interviewAnalysis = mysqlTable("interviewAnalysis", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull().references(() => botInterviewSessions.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  // Overall scores
+  overallScore: int("overallScore").notNull(), // 0-100
+  technicalScore: int("technicalScore"), // 0-100
+  behavioralScore: int("behavioralScore"), // 0-100
+  communicationScore: int("communicationScore"), // 0-100
+  problemSolvingScore: int("problemSolvingScore"), // 0-100
+  cultureFitScore: int("cultureFitScore"), // 0-100
+  // Detailed analysis
+  strengths: text("strengths"), // JSON array of key strengths
+  weaknesses: text("weaknesses"), // JSON array of areas for improvement
+  skillsAssessed: text("skillsAssessed"), // JSON array of skills evaluated
+  skillGaps: text("skillGaps"), // JSON array of missing skills
+  recommendations: text("recommendations"), // AI recommendations
+  detailedReport: text("detailedReport"), // Full analysis report
+  // Decision support
+  hiringRecommendation: mysqlEnum("hiringRecommendation", ["strong-yes", "yes", "maybe", "no", "strong-no"]).notNull(),
+  confidenceLevel: int("confidenceLevel").notNull(), // 0-100
+  riskFactors: text("riskFactors"), // JSON array of potential concerns
+  // Metadata
+  analysisVersion: varchar("analysisVersion", { length: 50 }).default("1.0"),
+  analyzedAt: timestamp("analyzedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InterviewAnalysis = typeof interviewAnalysis.$inferSelect;
+export type InsertInterviewAnalysis = typeof interviewAnalysis.$inferInsert;
+
+/**
+ * Candidate selections - tracks selection/rejection decisions
+ */
+export const candidateSelections = mysqlTable("candidateSelections", {
+  id: int("id").autoincrement().primaryKey(),
+  applicationId: int("applicationId").notNull().references(() => applications.id),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  analysisId: int("analysisId").references(() => interviewAnalysis.id),
+  // Decision
+  decision: mysqlEnum("decision", ["selected", "rejected", "pending-review", "waitlisted"]).notNull(),
+  decisionType: mysqlEnum("decisionType", ["automatic", "manual", "hybrid"]).notNull(),
+  decisionMaker: int("decisionMaker").references(() => recruiters.id), // null for automatic decisions
+  // Reasoning
+  selectionReason: text("selectionReason"),
+  rejectionReason: text("rejectionReason"),
+  rejectionCategory: varchar("rejectionCategory", { length: 100 }), // e.g., "skills-mismatch", "experience-insufficient", "cultural-fit"
+  internalNotes: text("internalNotes"), // Private notes for recruiters
+  // Thresholds used for automatic decisions
+  scoreThreshold: int("scoreThreshold"), // Minimum score required
+  autoSelectionEnabled: boolean("autoSelectionEnabled").default(false),
+  // Notification tracking
+  candidateNotified: boolean("candidateNotified").default(false).notNull(),
+  notifiedAt: timestamp("notifiedAt"),
+  notificationMethod: varchar("notificationMethod", { length: 50 }), // "email", "sms", "both"
+  // Metadata
+  decidedAt: timestamp("decidedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CandidateSelection = typeof candidateSelections.$inferSelect;
+export type InsertCandidateSelection = typeof candidateSelections.$inferInsert;
+
+/**
+ * Onboarding checklists - templates and instances for selected candidates
+ */
+export const onboardingChecklists = mysqlTable("onboardingChecklists", {
+  id: int("id").autoincrement().primaryKey(),
+  candidateId: int("candidateId").notNull().references(() => candidates.id),
+  jobId: int("jobId").notNull().references(() => jobs.id),
+  selectionId: int("selectionId").notNull().references(() => candidateSelections.id),
+  recruiterId: int("recruiterId").notNull().references(() => recruiters.id),
+  // Status tracking
+  status: mysqlEnum("status", ["not-started", "in-progress", "completed", "on-hold"]).default("not-started").notNull(),
+  startDate: date("startDate"),
+  targetCompletionDate: date("targetCompletionDate"),
+  actualCompletionDate: date("actualCompletionDate"),
+  // Progress metrics
+  totalTasks: int("totalTasks").default(0).notNull(),
+  completedTasks: int("completedTasks").default(0).notNull(),
+  progressPercentage: int("progressPercentage").default(0).notNull(),
+  // Metadata
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OnboardingChecklist = typeof onboardingChecklists.$inferSelect;
+export type InsertOnboardingChecklist = typeof onboardingChecklists.$inferInsert;
+
+/**
+ * Onboarding checklist items - individual tasks within onboarding
+ */
+export const onboardingChecklistItems = mysqlTable("onboardingChecklistItems", {
+  id: int("id").autoincrement().primaryKey(),
+  checklistId: int("checklistId").notNull().references(() => onboardingChecklists.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }), // e.g., "documentation", "equipment", "training", "system-access"
+  taskType: mysqlEnum("taskType", ["document-upload", "form-completion", "training-video", "system-setup", "meeting", "other"]).notNull(),
+  // Status and priority
+  status: mysqlEnum("status", ["pending", "in-progress", "completed", "blocked", "skipped"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  orderIndex: int("orderIndex").default(0).notNull(),
+  // Timing
+  dueDate: date("dueDate"),
+  completedAt: timestamp("completedAt"),
+  estimatedDuration: int("estimatedDuration"), // in minutes
+  // Dependencies
+  dependsOnItemId: int("dependsOnItemId"), // Task dependency (self-reference)
+  blockedReason: text("blockedReason"),
+  // Document/link attachments
+  documentUrl: varchar("documentUrl", { length: 500 }),
+  documentName: varchar("documentName", { length: 255 }),
+  instructionsUrl: varchar("instructionsUrl", { length: 500 }),
+  // Completion tracking
+  completedBy: varchar("completedBy", { length: 100 }), // "candidate", "recruiter", "system"
+  verifiedBy: int("verifiedBy").references(() => recruiters.id),
+  verifiedAt: timestamp("verifiedAt"),
+  completionNotes: text("completionNotes"),
+  // Reminders
+  reminderSent: boolean("reminderSent").default(false),
+  lastReminderAt: timestamp("lastReminderAt"),
+  reminderCount: int("reminderCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OnboardingChecklistItem = typeof onboardingChecklistItems.$inferSelect;
+export type InsertOnboardingChecklistItem = typeof onboardingChecklistItems.$inferInsert;

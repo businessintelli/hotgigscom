@@ -4377,3 +4377,54 @@
 
 - [x] Fix interview display issue - interviews are created but not showing in the list (Fixed: added JOINs to include candidate, job, and application data in getInterviewsByRecruiterId query)
 - [ ] Add firstName and lastName fields to candidates table schema and update all related queries and forms
+
+## Bot Interview, Analysis, Selection & Onboarding System (Current Focus)
+- [x] Design database schema for bot interviews, analysis results, and onboarding
+  - [x] Create interview_sessions table with status tracking
+  - [x] Create interview_analysis table for AI evaluation results
+  - [x] Create candidate_selections table for selection/rejection tracking
+  - [x] Create onboarding_tasks table for onboarding workflow
+  - [x] Create onboarding_progress table for tracking completion
+- [x] Implement bot interview system
+  - [x] Create AI-powered interview bot with dynamic question generation
+  - [x] Build real-time chat interface for bot interviews
+  - [x] Implement question flow logic based on job requirements
+  - [x] Add support for text and voice responses
+  - [x] Store interview responses with timestamps
+  - [x] Track interview session progress and completion
+- [x] Build AI analysis engine
+  - [x] Implement comprehensive response evaluation algorithm
+  - [x] Generate skill assessment scores
+  - [x] Analyze communication quality and clarity
+  - [x] Evaluate technical knowledge and problem-solving
+  - [x] Create detailed analysis reports with strengths/weaknesses
+  - [x] Calculate overall candidate suitability score
+- [x] Create selection/rejection workflow
+  - [x] Build decision engine based on analysis scores
+  - [x] Implement configurable threshold settings for auto-selection
+  - [x] Create manual review interface for borderline cases
+  - [x] Add bulk selection/rejection actions
+  - [x] Send automated email notifications to candidates
+  - [x] Track rejection reasons and feedback
+- [x] Implement automated onboarding process
+  - [x] Design onboarding task templates (documents, forms, training)
+  - [x] Create onboarding checklist for selected candidates
+  - [x] Build document upload system for onboarding
+  - [x] Implement task completion tracking
+  - [ ] Add automated reminder system for pending tasks
+  - [x] Create onboarding progress dashboard
+  - [x] Send welcome emails with onboarding instructions
+- [x] Build UI components
+  - [x] Create bot interview chat interface for candidates
+  - [x] Build interview analysis dashboard for recruiters
+  - [x] Design selection/rejection review interface
+  - [x] Create onboarding portal for selected candidates
+  - [x] Build onboarding management dashboard for recruiters
+  - [ ] Add real-time status updates and notifications
+- [ ] Write comprehensive tests
+  - [ ] Test bot interview question generation
+  - [ ] Test AI analysis scoring algorithms
+  - [ ] Test selection/rejection workflow
+  - [ ] Test onboarding task management
+  - [ ] Test email notification system
+  - [ ] Integration tests for complete workflow

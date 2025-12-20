@@ -47,7 +47,14 @@ import {
   customReports, InsertCustomReport,
   reportSchedules, InsertReportSchedule,
   reportExecutions, InsertReportExecution,
-  guestApplications, InsertGuestApplication
+  guestApplications, InsertGuestApplication,
+  botInterviewSessions, InsertBotInterviewSession,
+  botInterviewQuestions, InsertBotInterviewQuestion,
+  botInterviewResponses, InsertBotInterviewResponse,
+  interviewAnalysis, InsertInterviewAnalysis,
+  candidateSelections, InsertCandidateSelection,
+  onboardingChecklists, InsertOnboardingChecklist,
+  onboardingChecklistItems, InsertOnboardingChecklistItem
 } from "../drizzle/schema";
 import { getPaginationLimitOffset, buildPaginatedResponse, type PaginatedResponse, type PaginationParams } from './paginationHelpers';
 
@@ -3244,4 +3251,292 @@ export async function getRecommendedJobsForCandidate(candidateId: number, limit:
   }
   
   return recommendedJobs;
+}
+
+// ===========================
+// Bot Interview Functions
+// ===========================
+
+// Create a new bot interview session
+export async function createBotInterviewSession(data: InsertBotInterviewSession) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [session] = await db.insert(botInterviewSessions).values(data).$returningId();
+  return session.id;
+}
+
+// Get bot interview session by ID
+export async function getBotInterviewSessionById(sessionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [session] = await db.select()
+    .from(botInterviewSessions)
+    .where(eq(botInterviewSessions.id, sessionId));
+  
+  return session || null;
+}
+
+// Get bot interview session by application ID
+export async function getBotInterviewSessionByApplicationId(applicationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [session] = await db.select()
+    .from(botInterviewSessions)
+    .where(eq(botInterviewSessions.applicationId, applicationId))
+    .orderBy(desc(botInterviewSessions.createdAt));
+  
+  return session || null;
+}
+
+// Update bot interview session
+export async function updateBotInterviewSession(sessionId: number, data: Partial<InsertBotInterviewSession>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(botInterviewSessions)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(botInterviewSessions.id, sessionId));
+}
+
+// Create bot interview questions
+export async function createBotInterviewQuestions(questions: InsertBotInterviewQuestion[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.insert(botInterviewQuestions).values(questions);
+}
+
+// Get bot interview questions by session ID
+export async function getBotInterviewQuestionsBySessionId(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const questions = await db.select()
+    .from(botInterviewQuestions)
+    .where(eq(botInterviewQuestions.sessionId, sessionId))
+    .orderBy(asc(botInterviewQuestions.orderIndex));
+  
+  return questions;
+}
+
+// Create bot interview response
+export async function createBotInterviewResponse(data: InsertBotInterviewResponse) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [response] = await db.insert(botInterviewResponses).values(data).$returningId();
+  return response.id;
+}
+
+// Get bot interview responses by session ID
+export async function getBotInterviewResponsesBySessionId(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const responses = await db.select()
+    .from(botInterviewResponses)
+    .leftJoin(botInterviewQuestions, eq(botInterviewResponses.questionId, botInterviewQuestions.id))
+    .where(eq(botInterviewResponses.sessionId, sessionId))
+    .orderBy(asc(botInterviewQuestions.orderIndex));
+  
+  return responses.map(row => ({
+    ...row.botInterviewResponses,
+    question: row.botInterviewQuestions
+  }));
+}
+
+// Update bot interview response
+export async function updateBotInterviewResponse(responseId: number, data: Partial<InsertBotInterviewResponse>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(botInterviewResponses)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(botInterviewResponses.id, responseId));
+}
+
+// Create interview analysis
+export async function createInterviewAnalysis(data: InsertInterviewAnalysis) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [analysis] = await db.insert(interviewAnalysis).values(data).$returningId();
+  return analysis.id;
+}
+
+// Get interview analysis by session ID
+export async function getInterviewAnalysisBySessionId(sessionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [analysis] = await db.select()
+    .from(interviewAnalysis)
+    .where(eq(interviewAnalysis.sessionId, sessionId));
+  
+  return analysis || null;
+}
+
+// Get interview analysis by application ID
+export async function getInterviewAnalysisByApplicationId(applicationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [analysis] = await db.select()
+    .from(interviewAnalysis)
+    .where(eq(interviewAnalysis.applicationId, applicationId))
+    .orderBy(desc(interviewAnalysis.analyzedAt));
+  
+  return analysis || null;
+}
+
+// ===========================
+// Selection & Onboarding Functions
+// ===========================
+
+// Create candidate selection
+export async function createCandidateSelection(data: InsertCandidateSelection) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [selection] = await db.insert(candidateSelections).values(data).$returningId();
+  return selection.id;
+}
+
+// Get candidate selection by application ID
+export async function getCandidateSelectionByApplicationId(applicationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [selection] = await db.select()
+    .from(candidateSelections)
+    .where(eq(candidateSelections.applicationId, applicationId))
+    .orderBy(desc(candidateSelections.decidedAt));
+  
+  return selection || null;
+}
+
+// Get all selections for a job
+export async function getCandidateSelectionsByJobId(jobId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const selections = await db.select()
+    .from(candidateSelections)
+    .leftJoin(candidates, eq(candidateSelections.candidateId, candidates.id))
+    .leftJoin(applications, eq(candidateSelections.applicationId, applications.id))
+    .where(eq(candidateSelections.jobId, jobId))
+    .orderBy(desc(candidateSelections.decidedAt));
+  
+  return selections.map(row => ({
+    ...row.candidateSelections,
+    candidate: row.candidates,
+    application: row.applications
+  }));
+}
+
+// Update candidate selection
+export async function updateCandidateSelection(selectionId: number, data: Partial<InsertCandidateSelection>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(candidateSelections)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(candidateSelections.id, selectionId));
+}
+
+// Create onboarding checklist
+export async function createOnboardingChecklist(data: InsertOnboardingChecklist) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  const [checklist] = await db.insert(onboardingChecklists).values(data).$returningId();
+  return checklist.id;
+}
+
+// Get onboarding checklist by selection ID
+export async function getOnboardingChecklistBySelectionId(selectionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [checklist] = await db.select()
+    .from(onboardingChecklists)
+    .where(eq(onboardingChecklists.selectionId, selectionId));
+  
+  return checklist || null;
+}
+
+// Get onboarding checklist by candidate ID
+export async function getOnboardingChecklistByCandidateId(candidateId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [checklist] = await db.select()
+    .from(onboardingChecklists)
+    .where(eq(onboardingChecklists.candidateId, candidateId))
+    .orderBy(desc(onboardingChecklists.createdAt));
+  
+  return checklist || null;
+}
+
+// Update onboarding checklist
+export async function updateOnboardingChecklist(checklistId: number, data: Partial<InsertOnboardingChecklist>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(onboardingChecklists)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(onboardingChecklists.id, checklistId));
+}
+
+// Create onboarding checklist items
+export async function createOnboardingChecklistItems(items: InsertOnboardingChecklistItem[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.insert(onboardingChecklistItems).values(items);
+}
+
+// Get onboarding checklist items by checklist ID
+export async function getOnboardingChecklistItemsByChecklistId(checklistId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const items = await db.select()
+    .from(onboardingChecklistItems)
+    .where(eq(onboardingChecklistItems.checklistId, checklistId))
+    .orderBy(asc(onboardingChecklistItems.orderIndex));
+  
+  return items;
+}
+
+// Update onboarding checklist item
+export async function updateOnboardingChecklistItem(itemId: number, data: Partial<InsertOnboardingChecklistItem>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not initialized");
+  
+  await db.update(onboardingChecklistItems)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(onboardingChecklistItems.id, itemId));
+}
+
+// Get all onboarding checklists for a recruiter
+export async function getOnboardingChecklistsByRecruiterId(recruiterId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const checklists = await db.select()
+    .from(onboardingChecklists)
+    .leftJoin(candidates, eq(onboardingChecklists.candidateId, candidates.id))
+    .leftJoin(jobs, eq(onboardingChecklists.jobId, jobs.id))
+    .where(eq(onboardingChecklists.recruiterId, recruiterId))
+    .orderBy(desc(onboardingChecklists.createdAt));
+  
+  return checklists.map(row => ({
+    ...row.onboardingChecklists,
+    candidate: row.candidates,
+    job: row.jobs
+  }));
 }
