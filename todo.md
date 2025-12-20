@@ -157,6 +157,10 @@
 ## Known Issues
 - [x] Fix Select component empty string value error in company admin dashboard
 - [x] Fix database query error for jobs listing
+- [x] Fix Schedule Interview button disabled issue - button remains disabled even when all required fields are filled (Fixed: added resetScheduleForm() call before opening dialog)
+- [x] Fix InterviewManagement page error - Cannot read properties of undefined (reading 'status') (Fixed: added optional chaining to status access)
+- [x] Fix db.getApplicationsByJob is not a function error (Fixed: added alias function in db.ts)
+- [x] Fix interview list display issue - interviews show in stats but not in list (Fixed: usePagination hook was being called with positional arguments instead of object syntax)
 
 ## Future Enhancements
 - AI-powered candidate sourcing from social media
@@ -4370,3 +4374,6 @@
 - [ ] **TESTING REQUIRED**: Test in fresh incognito browser session (browser caching issue prevents testing in current session)
 
 **Note**: Implementation is complete and correct in the codebase. Browser caching issue prevents verification in current session. Requires manual testing in incognito/private browsing mode.
+
+- [x] Fix interview display issue - interviews are created but not showing in the list (Fixed: added JOINs to include candidate, job, and application data in getInterviewsByRecruiterId query)
+- [ ] Add firstName and lastName fields to candidates table schema and update all related queries and forms

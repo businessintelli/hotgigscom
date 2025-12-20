@@ -47,15 +47,20 @@ export default function InterviewManagement() {
 
   // Filter interviews (must be done before pagination hook)
   const filteredInterviews = interviews.filter((item: any) => {
-    const interview = item.interview;
-    const candidate = item.candidate;
-    const job = item.job;
+    const interview = item?.interview || item; // Support both nested and flat structure
+    const candidate = item?.candidate;
+    const job = item?.job;
+    
+    // If no interview data at all, skip
+    if (!interview || !interview.id) {
+      return false;
+    }
     
     const matchesSearch = !searchQuery ||
       candidate?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job?.title?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || interview.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || interview?.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -64,9 +69,9 @@ export default function InterviewManagement() {
   const {
     currentPage,
     totalPages,
-    paginatedItems: paginatedInterviews,
-    goToPage,
-  } = usePagination(filteredInterviews, ITEMS_PER_PAGE);
+    paginatedData: paginatedInterviews,
+    setCurrentPage: goToPage,
+  } = usePagination({ data: filteredInterviews, pageSize: ITEMS_PER_PAGE });
 
   // Create interview mutation
   const createMutation = trpc.interview.create.useMutation({
@@ -151,9 +156,9 @@ export default function InterviewManagement() {
   // Statistics
   const stats = {
     total: interviews.length,
-    scheduled: interviews.filter((i: any) => i.interview.status === "scheduled").length,
-    completed: interviews.filter((i: any) => i.interview.status === "completed").length,
-    cancelled: interviews.filter((i: any) => i.interview.status === "cancelled").length,
+    scheduled: interviews.filter((i: any) => i.interview?.status === "scheduled").length,
+    completed: interviews.filter((i: any) => i.interview?.status === "completed").length,
+    cancelled: interviews.filter((i: any) => i.interview?.status === "cancelled").length,
   };
 
   const getStatusColor = (status: string) => {
@@ -296,6 +301,9 @@ export default function InterviewManagement() {
                 <p className="text-gray-600 mb-4">
                   {searchQuery || statusFilter !== "all" ? "No interviews found" : "No interviews scheduled yet"}
                 </p>
+                <p className="text-xs text-red-600 mt-2">
+                  Debug: Total interviews: {interviews.length}, Filtered: {filteredInterviews.length}, Status filter: {statusFilter}
+                </p>
                 {!searchQuery && statusFilter === "all" && (
                   <Button onClick={() => setLocation("/recruiter/applications")}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -306,7 +314,7 @@ export default function InterviewManagement() {
             ) : (
               <>
                 <div className="space-y-4">
-                {paginatedInterviews.map((item: any) => {
+                {paginatedInterviews?.map((item: any) => {
                   const interview = item.interview;
                   const candidate = item.candidate;
                   const job = item.job;

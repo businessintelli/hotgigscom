@@ -505,6 +505,11 @@ export async function getApplicationsByJobId(jobId: number) {
   return db.select().from(applications).where(eq(applications.jobId, jobId));
 }
 
+// Alias for backward compatibility
+export async function getApplicationsByJob(jobId: number) {
+  return getApplicationsByJobId(jobId);
+}
+
 export async function getApplicationsByCandidateId(candidateId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -1718,10 +1723,27 @@ export async function getInterviewsByRecruiterId(recruiterId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not initialized");
   
-  return await db.select()
+  const results = await db.select({
+    interview: interviews,
+    candidate: candidates,
+    job: jobs,
+    application: applications
+  })
     .from(interviews)
+    .leftJoin(applications, eq(interviews.applicationId, applications.id))
+    .leftJoin(candidates, eq(interviews.candidateId, candidates.id))
+    .leftJoin(jobs, eq(interviews.jobId, jobs.id))
     .where(eq(interviews.recruiterId, recruiterId))
     .orderBy(desc(interviews.scheduledAt));
+  
+  // Add fullName to candidate object for frontend compatibility
+  return results.map(result => ({
+    ...result,
+    candidate: result.candidate ? {
+      ...result.candidate,
+      fullName: `${result.candidate.firstName || ''} ${result.candidate.lastName || ''}`.trim() || 'Unknown'
+    } : null
+  }));
 }
 
 /**
@@ -3122,4 +3144,104 @@ export async function updateGuestApplicationInvitation(guestAppId: number) {
       invitationCount: currentCount + 1
     })
     .where(eq(guestApplications.id, guestAppId));
+}
+
+// Check if a job is saved by a candidate
+export async function isJobSaved(candidateId: number, jobId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.select()
+    .from(savedJobs)
+    .where(and(
+      eq(savedJobs.candidateId, candidateId),
+      eq(savedJobs.jobId, jobId)
+    ))
+    .limit(1);
+  
+  return result.length > 0;
+}
+
+// Get applications by candidate (alias for getApplicationsByCandidateId)
+export async function getApplicationsByCandidate(candidateId: number) {
+  return getApplicationsByCandidateId(candidateId);
+}
+
+// Get interviews by candidate ID
+export async function getInterviewsByCandidateId(candidateId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all applications for this candidate
+  const candidateApplications = await db.select()
+    .from(applications)
+    .where(eq(applications.candidateId, candidateId));
+  
+  if (candidateApplications.length === 0) return [];
+  
+  // Get all interviews for these applications
+  const applicationIds = candidateApplications.map(app => app.id);
+  
+  const result = await db.select()
+    .from(interviews)
+    .leftJoin(applications, eq(interviews.applicationId, applications.id))
+    .leftJoin(jobs, eq(applications.jobId, jobs.id))
+    .where(inArray(interviews.applicationId, applicationIds))
+    .orderBy(desc(interviews.scheduledAt));
+  
+  return result.map((row: any) => ({
+    ...row.interviews,
+    application: row.applications,
+    job: row.jobs,
+  }));
+}
+
+// Get recommended jobs for a candidate based on their profile and preferences
+export async function getRecommendedJobsForCandidate(candidateId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get candidate profile
+  const candidate = await getCandidateById(candidateId);
+  if (!candidate) return [];
+  
+  // Get candidate's skills from their profile
+  const skillNames = candidate.skills ? JSON.parse(candidate.skills) : [];
+  
+  // Get jobs that match candidate's skills and preferences
+  // For now, we'll get active jobs and filter by location/salary if available
+  let query = db.select()
+    .from(jobs)
+    .where(and(
+      eq(jobs.status, 'active'),
+      eq(jobs.isPublished, true)
+    ))
+    .orderBy(desc(jobs.postedAt))
+    .limit(limit);
+  
+  const recommendedJobs = await query;
+  
+  // If candidate has skills, prioritize jobs that require those skills
+  if (skillNames.length > 0) {
+    const jobsWithSkills = await db.select()
+      .from(jobSkillRequirements)
+      .leftJoin(jobs, eq(jobSkillRequirements.jobId, jobs.id))
+      .where(and(
+        inArray(jobSkillRequirements.skillName, skillNames),
+        eq(jobs.status, 'active'),
+        eq(jobs.isPublished, true)
+      ))
+      .orderBy(desc(jobs.postedAt))
+      .limit(limit);
+    
+    const skillMatchedJobs = jobsWithSkills.map((row: any) => row.jobs).filter(Boolean);
+    
+    // Combine and deduplicate
+    const allJobs = [...skillMatchedJobs, ...recommendedJobs];
+    const uniqueJobs = Array.from(new Map(allJobs.map(job => [job.id, job])).values());
+    
+    return uniqueJobs.slice(0, limit);
+  }
+  
+  return recommendedJobs;
 }

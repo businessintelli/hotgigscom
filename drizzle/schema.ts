@@ -68,6 +68,8 @@ export const candidates = mysqlTable("candidates", {
   userId: int("userId").notNull().references(() => users.id),
   addedBy: int("addedBy").references(() => recruiters.id), // Recruiter who added this candidate
   source: varchar("source", { length: 50 }), // 'self-registered', 'recruiter-manual', 'recruiter-resume', 'bulk-upload', 'guest-application'
+  firstName: varchar("firstName", { length: 100 }),
+  lastName: varchar("lastName", { length: 100 }),
   title: varchar("title", { length: 255 }),
   phoneNumber: varchar("phoneNumber", { length: 50 }).notNull(),
   location: varchar("location", { length: 255 }).notNull(),

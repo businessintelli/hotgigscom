@@ -247,6 +247,7 @@ export default function ApplicationManagement() {
   const handleStatusUpdate = (applicationId: number, status: "submitted" | "reviewing" | "shortlisted" | "interviewing" | "offered" | "rejected" | "withdrawn", application?: any) => {
     if (status === "interviewing" && application) {
       // Open schedule interview dialog
+      resetScheduleForm(); // Reset form before opening
       setSelectedApplication(application);
       setScheduleDialogOpen(true);
     } else {
@@ -1040,7 +1041,10 @@ export default function ApplicationManagement() {
                   id="interview-date"
                   type="date"
                   value={interviewDate}
-                  onChange={(e) => setInterviewDate(e.target.value)}
+                  onChange={(e) => {
+                    console.log('Date changed:', e.target.value);
+                    setInterviewDate(e.target.value);
+                  }}
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>
@@ -1050,7 +1054,10 @@ export default function ApplicationManagement() {
                   id="interview-time"
                   type="time"
                   value={interviewTime}
-                  onChange={(e) => setInterviewTime(e.target.value)}
+                  onChange={(e) => {
+                    console.log('Time changed:', e.target.value);
+                    setInterviewTime(e.target.value);
+                  }}
                 />
               </div>
             </div>
@@ -1126,6 +1133,12 @@ export default function ApplicationManagement() {
               <Send className="h-4 w-4 mr-2" />
               Schedule Interview
             </Button>
+            {/* Debug info */}
+            {(!interviewDate || !interviewTime) && (
+              <p className="text-xs text-gray-500 mt-2">
+                Missing: {!interviewDate && "Date"} {!interviewTime && "Time"}
+              </p>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -3763,7 +3763,8 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
     listByRecruiter: protectedProcedure.query(async ({ ctx }) => {
       const recruiter = await db.getRecruiterByUserId(ctx.user.id);
       if (!recruiter) return [];
-      return await db.getInterviewsByRecruiterId(recruiter.id);
+      const interviews = await db.getInterviewsByRecruiterId(recruiter.id);
+      return interviews;
     }),
     
     // Get interviews for recruiter (alias for dashboard calendar)
