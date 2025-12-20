@@ -3540,3 +3540,30 @@ export async function getOnboardingChecklistsByRecruiterId(recruiterId: number) 
     job: row.jobs
   }));
 }
+
+
+// Get bot interview sessions by date range
+export async function getBotInterviewSessionsByDateRange(
+  startDate: string,
+  endDate: string,
+  jobId?: number
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select()
+    .from(botInterviewSessions)
+    .where(
+      and(
+        gte(botInterviewSessions.createdAt, new Date(startDate)),
+        lte(botInterviewSessions.createdAt, new Date(endDate))
+      )
+    );
+
+  if (jobId) {
+    query = query.where(eq(botInterviewSessions.jobId, jobId)) as any;
+  }
+
+  return await query;
+}

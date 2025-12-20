@@ -13,11 +13,18 @@ export const botInterviewRouter = router({
   startSession: protectedProcedure
     .input(z.object({
       applicationId: z.number(),
-      candidateId: z.number(),
-      jobId: z.number(),
+      scheduledAt: z.string().optional(),
+      duration: z.number().optional(),
+      notes: z.string().optional(),
       totalQuestions: z.number().default(5),
     }))
     .mutation(async ({ input }) => {
+      // Get application details
+      const application = await db.getApplicationById(input.applicationId);
+      if (!application) {
+        throw new Error("Application not found");
+      }
+
       // Check if session already exists
       const existingSession = await db.getBotInterviewSessionByApplicationId(input.applicationId);
       if (existingSession) {
@@ -116,11 +123,54 @@ Return ONLY a JSON array of questions in this exact format:
 
       await db.createBotInterviewQuestions(questionData);
 
-      // Update session to in-progress
+      // Update session to not-started (will be in-progress when candidate starts)
       await db.updateBotInterviewSession(sessionId, {
-        sessionStatus: 'in-progress',
-        startedAt: new Date(),
+        sessionStatus: 'not-started',
       });
+
+      // Send email notification to candidate
+      const candidate = await db.getCandidateById(application.candidateId);
+      
+      if (candidate?.email && job) {
+        const interviewLink = `${process.env.VITE_APP_URL || 'http://localhost:3000'}/candidate/bot-interview/${input.applicationId}`;
+        
+        await db.sendEmail({
+          to: candidate.email,
+          subject: `Bot Interview Scheduled - ${job.title}`,
+          html: `
+            <h2>Your AI Interview is Ready!</h2>
+            <p>Hi ${candidate.firstName || 'there'},</p>
+            <p>Great news! You've been invited to complete an AI-powered interview for the <strong>${job.title}</strong> position.</p>
+            
+            <h3>Interview Details:</h3>
+            <ul>
+              <li><strong>Position:</strong> ${job.title}</li>
+              <li><strong>Company:</strong> ${job.company || 'Not specified'}</li>
+              <li><strong>Estimated Duration:</strong> ${input.duration || 30} minutes</li>
+              <li><strong>Questions:</strong> ${input.totalQuestions} questions</li>
+            </ul>
+            
+            ${input.notes ? `<p><strong>Additional Notes:</strong> ${input.notes}</p>` : ''}
+            
+            <h3>What to Expect:</h3>
+            <ul>
+              <li>AI-generated questions tailored to the job requirements</li>
+              <li>You can respond via text, audio, or video</li>
+              <li>Your responses will be automatically evaluated</li>
+              <li>Take your time - you can pause between questions</li>
+            </ul>
+            
+            <p><strong>Ready to start?</strong></p>
+            <p><a href="${interviewLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Start Interview</a></p>
+            
+            <p>Good luck!</p>
+            <p>Best regards,<br>The HotGigs Team</p>
+          `,
+        });
+      }
+
+      // Update application status
+      await db.updateApplicationStatus(input.applicationId, 'interviewing');
 
       return { sessionId, existing: false };
     }),

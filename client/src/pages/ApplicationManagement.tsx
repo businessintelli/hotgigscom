@@ -120,6 +120,19 @@ export default function ApplicationManagement() {
     },
   });
 
+  // Start bot interview mutation
+  const startBotInterviewMutation = trpc.botInterview.startSession.useMutation({
+    onSuccess: (data) => {
+      utils.application.list.invalidate();
+      setScheduleDialogOpen(false);
+      resetScheduleForm();
+      toast.success("Bot interview scheduled successfully! Candidate will receive an email with the interview link.");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to schedule bot interview: ${error.message}`);
+    },
+  });
+
   // Invite guest applicant mutation
   const inviteGuestMutation = trpc.guestApplication.sendInvitation.useMutation({
     onSuccess: () => {
@@ -277,15 +290,26 @@ export default function ApplicationManagement() {
     // Add panel emails to notes if provided
     const notesWithPanel = interviewNotes + (panelEmails ? `\n\nInterview Panel: ${panelEmails}` : '');
     
-    scheduleInterviewMutation.mutate({
-      applicationId: selectedApplication.id,
-      candidateId: selectedApplication.candidateId,
-      jobId: selectedApplication.jobId,
-      type: interviewType,
-      scheduledAt: scheduledDateTime.toISOString(),
-      duration: parseInt(interviewDuration),
-      notes: notesWithPanel || undefined,
-    });
+    // If AI interview, create bot interview session
+    if (interviewType === "ai-interview") {
+      startBotInterviewMutation.mutate({
+        applicationId: selectedApplication.id,
+        scheduledAt: scheduledDateTime.toISOString(),
+        duration: parseInt(interviewDuration),
+        notes: interviewNotes || undefined,
+      });
+    } else {
+      // For other interview types, use the regular interview scheduling
+      scheduleInterviewMutation.mutate({
+        applicationId: selectedApplication.id,
+        candidateId: selectedApplication.candidateId,
+        jobId: selectedApplication.jobId,
+        type: interviewType,
+        scheduledAt: scheduledDateTime.toISOString(),
+        duration: parseInt(interviewDuration),
+        notes: notesWithPanel || undefined,
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {

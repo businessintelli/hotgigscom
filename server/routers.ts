@@ -49,6 +49,7 @@ import { budgetManagementRouter } from './routers/budgetManagement';
 import { integrationSettingsRouter } from './routers/integrationSettings';
 import { backupRouter } from './routers/backup';
 import { botInterviewRouter } from './botInterviewRouter';
+import { botInterviewAnalyticsRouter } from './botInterviewAnalytics';
 import { selectionOnboardingRouter } from './selectionOnboardingRouter';
 import { generateRescheduleRequestEmail } from './emails/rescheduleRequestEmail';
 import { generateRescheduleApprovedEmail, generateRescheduleRejectedEmail, generateAlternativeProposedEmail } from './emails/rescheduleResponseEmail';
@@ -98,6 +99,7 @@ export const appRouter = router({
   integrationSettings: integrationSettingsRouter,
   backup: backupRouter,
   botInterview: botInterviewRouter,
+  botInterviewAnalytics: botInterviewAnalyticsRouter,
   selectionOnboarding: selectionOnboardingRouter,
   
   // AI Chat router for career coach and recruiting assistant

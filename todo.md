@@ -4428,3 +4428,42 @@
   - [ ] Test onboarding task management
   - [ ] Test email notification system
   - [ ] Integration tests for complete workflow
+
+
+## Bot Interview Integration & Enhancements (Current Focus)
+- [x] Integrate bot interview with application workflow
+  - [x] Add "Schedule Bot Interview" button to application management
+  - [x] Create bot interview scheduling dialog
+  - [x] Automatically create bot interview session when scheduled
+  - [x] Send email notification to candidate with interview link
+  - [x] Update application status to "bot-interview-scheduled"
+  - [ ] Add bot interview status indicator in application list
+- [x] Build interview analytics dashboard
+  - [x] Create analytics page for interview metrics
+  - [x] Display interview completion rates by job type
+  - [x] Show average scores across all interviews
+  - [x] Add score distribution charts (technical, behavioral, communication)
+  - [x] Track time-to-complete metrics for interviews
+  - [x] Display hiring recommendation distribution
+  - [x] Add filters by date range, job, and candidate
+  - [x] Export analytics data to CSV
+- [ ] Implement automated reminder system
+  - [ ] Create background job to check pending onboarding tasks
+  - [ ] Send email reminders for tasks due within 3 days
+  - [ ] Send urgent reminders for overdue tasks
+  - [ ] Add reminder preferences to candidate settings
+  - [ ] Track reminder sent status in database
+  - [ ] Create reminder email templates
+  - [ ] Add manual "Send Reminder" button for recruiters
+- [ ] Enhance bot interview UI
+  - [ ] Add interview preview/practice mode
+  - [ ] Add ability to pause and resume interviews
+  - [ ] Show estimated time remaining
+  - [ ] Add keyboard shortcuts for navigation
+  - [ ] Improve recording quality indicators
+- [ ] Add selection workflow enhancements
+  - [ ] Bulk selection actions for multiple candidates
+  - [ ] Comparison view for multiple candidates
+  - [ ] Add custom rejection reason templates
+  - [ ] Track selection decision history
+  - [ ] Add undo/revise decision functionality

@@ -101,6 +101,7 @@ import CompanyLLMAlerts from "./pages/CompanyLLMAlerts";
 import BotInterview from "./pages/BotInterview";
 import OnboardingChecklist from "./pages/OnboardingChecklist";
 import SelectionReview from "./pages/SelectionReview";
+import BotInterviewAnalytics from "./pages/BotInterviewAnalytics";
 import AdminDatabase from "./pages/AdminDatabase";
 import AdminLinkedInSettings from "./pages/AdminLinkedInSettings";
 import AdminInMailTemplates from "./pages/AdminInMailTemplates";
@@ -191,6 +192,7 @@ function Router() {
       <Route path="/recruiter/onboarding-tasks" component={OnboardingTasks} />
       <Route path="/recruiter/notification-preferences" component={RecruiterNotificationPreferences} />
       <Route path="/recruiter/selection-review/:jobId" component={SelectionReview} />
+      <Route path="/recruiter/bot-interview-analytics" component={BotInterviewAnalytics} />
       <Route path="/recruiter/candidate-resume/:id" component={CandidateResumeView} />
       <Route path="/recruiter/guest-candidate/:id" component={GuestCandidateProfile} />
       <Route path="/select-role" component={SelectRole} />
