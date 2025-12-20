@@ -4507,3 +4507,6 @@
 - [x] Add offer expiration date tracking
 - [ ] Create email notifications for offer status changes
 - [ ] Test complete offer workflow from creation to acceptance
+
+## Email Template Styling Issues
+- [x] Fix email template styling - interview invitation emails missing CSS styles

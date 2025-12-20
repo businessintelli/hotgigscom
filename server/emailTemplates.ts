@@ -110,33 +110,32 @@ export function generateInterviewInvitationEmail(params: InterviewInvitationPara
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interview Invitation</title>
-  <style>${EMAIL_STYLES}</style>
 </head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <h1>🎉 Interview Invitation</h1>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">🎉 Interview Invitation</h1>
     </div>
-    <div class="content">
+    <div style="padding: 40px 30px; color: #374151; line-height: 1.6;">
       <p>Dear ${candidateName},</p>
       
       <p>Congratulations! We're excited to invite you to interview for the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong>.</p>
       
-      <div class="info-box">
-        <div class="info-box-item">
-          <span class="info-box-label">Interview Type:</span> ${interviewType}
+      <div style="background-color: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">Interview Type:</span> ${interviewType}
         </div>
-        <div class="info-box-item">
-          <span class="info-box-label">Date:</span> ${formattedDate}
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">Date:</span> ${formattedDate}
         </div>
-        <div class="info-box-item">
-          <span class="info-box-label">Time:</span> ${formattedTime}
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">Time:</span> ${formattedTime}
         </div>
-        <div class="info-box-item">
-          <span class="info-box-label">Duration:</span> ${duration} minutes
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">Duration:</span> ${duration} minutes
         </div>
-        ${interviewLink ? `<div class="info-box-item"><span class="info-box-label">Meeting Link:</span> <a href="${interviewLink}">${interviewLink}</a></div>` : ''}
-        ${interviewLocation ? `<div class="info-box-item"><span class="info-box-label">Location:</span> ${interviewLocation}</div>` : ''}
+        ${interviewLink ? `<div style="margin: 8px 0;"><span style="font-weight: 600; color: #1f2937;">Meeting Link:</span> <a href="${interviewLink}" style="color: #667eea; text-decoration: none;">${interviewLink}</a></div>` : ''}
+        ${interviewLocation ? `<div style="margin: 8px 0;"><span style="font-weight: 600; color: #1f2937;">Location:</span> ${interviewLocation}</div>` : ''}
       </div>
       
       ${notes ? `<p><strong>Additional Notes:</strong><br>${notes}</p>` : ''}
@@ -144,7 +143,7 @@ export function generateInterviewInvitationEmail(params: InterviewInvitationPara
       <p>Please log in to your HotGigs account to confirm your attendance and view full interview details.</p>
       
       <center>
-        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/candidate-dashboard" class="button">
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/candidate-dashboard" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
           View Interview Details
         </a>
       </center>
@@ -154,11 +153,11 @@ export function generateInterviewInvitationEmail(params: InterviewInvitationPara
       <p>Best regards,<br>
       <strong>The HotGigs Team</strong></p>
     </div>
-    <div class="footer">
+    <div style="background-color: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px;">
       <p>© 2025 HotGigs. All rights reserved.</p>
       <p>
-        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}">Visit HotGigs</a> | 
-        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/settings">Email Preferences</a>
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}" style="color: #667eea; text-decoration: none;">Visit HotGigs</a> | 
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/settings" style="color: #667eea; text-decoration: none;">Email Preferences</a>
       </p>
     </div>
   </div>
@@ -197,24 +196,23 @@ export function generateStatusUpdateEmail(params: StatusUpdateParams): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Application Status Update</title>
-  <style>${EMAIL_STYLES}</style>
 </head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <h1>${emoji} Application Update</h1>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">${emoji} Application Update</h1>
     </div>
-    <div class="content">
+    <div style="padding: 40px 30px; color: #374151; line-height: 1.6;">
       <p>Dear ${candidateName},</p>
       
       <p>Your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> has been updated.</p>
       
-      <div class="info-box">
-        <div class="info-box-item">
-          <span class="info-box-label">Previous Status:</span> ${oldStatus}
+      <div style="background-color: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">Previous Status:</span> ${oldStatus}
         </div>
-        <div class="info-box-item">
-          <span class="info-box-label">New Status:</span> <strong>${newStatus}</strong>
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">New Status:</span> <strong>${newStatus}</strong>
         </div>
       </div>
       
@@ -223,7 +221,7 @@ export function generateStatusUpdateEmail(params: StatusUpdateParams): string {
       <p>Log in to your HotGigs account to view full details and take any necessary next steps.</p>
       
       <center>
-        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/candidate-dashboard" class="button">
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/candidate-dashboard" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
           View Application
         </a>
       </center>
@@ -233,11 +231,11 @@ export function generateStatusUpdateEmail(params: StatusUpdateParams): string {
       <p>Best regards,<br>
       <strong>The HotGigs Team</strong></p>
     </div>
-    <div class="footer">
+    <div style="background-color: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px;">
       <p>© 2025 HotGigs. All rights reserved.</p>
       <p>
-        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}">Visit HotGigs</a> | 
-        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/settings">Email Preferences</a>
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}" style="color: #667eea; text-decoration: none;">Visit HotGigs</a> | 
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/settings" style="color: #667eea; text-decoration: none;">Email Preferences</a>
       </p>
     </div>
   </div>
@@ -291,37 +289,36 @@ export function generateInterviewReminderEmail(params: InterviewReminderParams):
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interview Reminder</title>
-  <style>${EMAIL_STYLES}</style>
 </head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <h1>⏰ Interview Reminder</h1>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">⏰ Interview Reminder</h1>
     </div>
-    <div class="content">
+    <div style="padding: 40px 30px; color: #374151; line-height: 1.6;">
       <p>Dear ${candidateName},</p>
       
       <p><strong>${reminderText}</strong></p>
       
       <p>This is a friendly reminder about your upcoming interview for <strong>${jobTitle}</strong> at <strong>${companyName}</strong>.</p>
       
-      <div class="info-box">
-        <div class="info-box-item">
-          <span class="info-box-label">Interview Type:</span> ${interviewType}
+      <div style="background-color: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">Interview Type:</span> ${interviewType}
         </div>
-        <div class="info-box-item">
-          <span class="info-box-label">Date:</span> ${formattedDate}
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">Date:</span> ${formattedDate}
         </div>
-        <div class="info-box-item">
-          <span class="info-box-label">Time:</span> ${formattedTime}
+        <div style="margin: 8px 0;">
+          <span style="font-weight: 600; color: #1f2937;">Time:</span> ${formattedTime}
         </div>
-        ${interviewLink ? `<div class="info-box-item"><span class="info-box-label">Meeting Link:</span> <a href="${interviewLink}">${interviewLink}</a></div>` : ''}
-        ${interviewLocation ? `<div class="info-box-item"><span class="info-box-label">Location:</span> ${interviewLocation}</div>` : ''}
+        ${interviewLink ? `<div style="margin: 8px 0;"><span style="font-weight: 600; color: #1f2937;">Meeting Link:</span> <a href="${interviewLink}" style="color: #667eea; text-decoration: none;">${interviewLink}</a></div>` : ''}
+        ${interviewLocation ? `<div style="margin: 8px 0;"><span style="font-weight: 600; color: #1f2937;">Location:</span> ${interviewLocation}</div>` : ''}
       </div>
       
       ${hoursUntil === 24 ? `
       <p><strong>Preparation Tips:</strong></p>
-      <ul>
+      <ul style="color: #374151; line-height: 1.8;">
         <li>Review the job description and your application</li>
         <li>Research the company and prepare questions</li>
         <li>Test your technology (camera, microphone) if it's a video interview</li>
@@ -330,7 +327,7 @@ export function generateInterviewReminderEmail(params: InterviewReminderParams):
       </ul>
       ` : `
       <p><strong>Final Checklist:</strong></p>
-      <ul>
+      <ul style="color: #374151; line-height: 1.8;">
         <li>Have a copy of your resume ready</li>
         <li>Ensure your device is charged and connected</li>
         <li>Find a quiet, well-lit space</li>
@@ -339,7 +336,7 @@ export function generateInterviewReminderEmail(params: InterviewReminderParams):
       `}
       
       <center>
-        <a href="${interviewLink || process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/candidate-dashboard" class="button">
+        <a href="${interviewLink || process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/candidate-dashboard" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
           ${interviewLink ? 'Join Interview' : 'View Details'}
         </a>
       </center>
@@ -349,11 +346,11 @@ export function generateInterviewReminderEmail(params: InterviewReminderParams):
       <p>Best regards,<br>
       <strong>The HotGigs Team</strong></p>
     </div>
-    <div class="footer">
+    <div style="background-color: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px;">
       <p>© 2025 HotGigs. All rights reserved.</p>
       <p>
-        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}">Visit HotGigs</a> | 
-        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/settings">Email Preferences</a>
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}" style="color: #667eea; text-decoration: none;">Visit HotGigs</a> | 
+        <a href="${process.env.VITE_APP_URL || 'https://hotgigs.manus.space'}/settings" style="color: #667eea; text-decoration: none;">Email Preferences</a>
       </p>
     </div>
   </div>
