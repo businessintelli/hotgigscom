@@ -414,6 +414,65 @@ export const selectionOnboardingRouter = router({
         actualCompletionDate: allCompleted ? new Date() : null,
       });
 
+      // If onboarding is completed, automatically create associate record
+      if (allCompleted) {
+        const checklist = await db.getOnboardingChecklistById(input.checklistId);
+        if (checklist) {
+          // Check if associate record already exists
+          const existingAssociate = await db.getAssociateByCandidateId(checklist.candidateId);
+          
+          if (!existingAssociate) {
+            // Get job details for job title
+            const job = await db.getJobById(checklist.jobId);
+            
+            // Create associate record
+            await db.createAssociate({
+              candidateId: checklist.candidateId,
+              employeeId: `EMP-${Date.now()}-${checklist.candidateId}`, // Generate unique employee ID
+              jobTitle: job?.title || 'Not specified',
+              department: job?.department || null,
+              startDate: new Date(),
+              status: 'active',
+              onboardedBy: checklist.recruiterId,
+            });
+
+            // Update application status to hired
+            const selection = await db.getCandidateSelectionById(checklist.selectionId);
+            if (selection) {
+              await db.updateApplication(selection.applicationId, {
+                status: 'hired',
+              });
+            }
+
+            // Send congratulations email
+            const candidate = await db.getCandidateById(checklist.candidateId);
+            const user = candidate ? await db.getUserById(candidate.userId) : null;
+            
+            if (user && user.email && job) {
+              await sendEmail({
+                to: user.email,
+                subject: `Welcome to the Team! - ${job.title}`,
+                html: `
+                  <h2>Congratulations!</h2>
+                  <p>Dear ${candidate?.firstName || 'Team Member'},</p>
+                  <p>You have successfully completed your onboarding process!</p>
+                  <p>You are now officially part of our team as <strong>${job.title}</strong>.</p>
+                  <p>Your employee ID is: <strong>EMP-${Date.now()}-${checklist.candidateId}</strong></p>
+                  <p>We're excited to have you on board and look forward to working with you!</p>
+                  <p>Best regards,<br>The Team</p>
+                `,
+              });
+            }
+
+            // Notify owner
+            await notifyOwner({
+              title: "New Associate Onboarded",
+              content: `${candidate?.firstName} ${candidate?.lastName} has completed onboarding and is now an active associate for position: ${job?.title}`,
+            });
+          }
+        }
+      }
+
       return { 
         completedTasks: completedItems.length, 
         totalTasks: items.length,
@@ -511,5 +570,230 @@ export const selectionOnboardingRouter = router({
           estimatedDuration: 45,
         },
       ];
+    }),
+
+  // ===========================
+  // Offer Response Workflow
+  // ===========================
+
+  // Accept offer
+  acceptOffer: protectedProcedure
+    .input(z.object({
+      applicationId: z.number(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Get application
+      const application = await db.getApplicationById(input.applicationId);
+      if (!application) {
+        throw new Error("Application not found");
+      }
+
+      // Verify candidate owns this application
+      const candidate = await db.getCandidateByUserId(ctx.user.id);
+      if (!candidate || candidate.id !== application.candidateId) {
+        throw new Error("Unauthorized");
+      }
+
+      // Get selection
+      const selection = await db.getCandidateSelectionByApplicationId(input.applicationId);
+      if (!selection || selection.decision !== 'selected') {
+        throw new Error("No valid offer found for this application");
+      }
+
+      // Update application status
+      await db.updateApplication(input.applicationId, {
+        status: 'offer-accepted',
+      });
+
+      // Create onboarding checklist automatically
+      const recruiter = await db.getRecruiterById(application.recruiterId);
+      if (recruiter) {
+        const defaultTasks = [
+          {
+            title: "Complete Personal Information Form",
+            description: "Fill out your personal details, emergency contacts, and banking information",
+            category: "documentation",
+            taskType: "form-completion" as const,
+            priority: "high" as const,
+            orderIndex: 0,
+            estimatedDuration: 15,
+          },
+          {
+            title: "Upload Required Documents",
+            description: "Upload ID proof, address proof, and educational certificates",
+            category: "documentation",
+            taskType: "document-upload" as const,
+            priority: "high" as const,
+            orderIndex: 1,
+            estimatedDuration: 20,
+          },
+          {
+            title: "Review and Sign Offer Letter",
+            description: "Review the offer letter and sign electronically",
+            category: "documentation",
+            taskType: "form-completion" as const,
+            priority: "critical" as const,
+            orderIndex: 2,
+            estimatedDuration: 10,
+          },
+          {
+            title: "Complete Background Check Authorization",
+            description: "Authorize background verification process",
+            category: "documentation",
+            taskType: "form-completion" as const,
+            priority: "high" as const,
+            orderIndex: 3,
+            estimatedDuration: 5,
+          },
+          {
+            title: "Set Up IT Accounts",
+            description: "Create email account and access company systems",
+            category: "system-access",
+            taskType: "system-setup" as const,
+            priority: "medium" as const,
+            orderIndex: 4,
+            estimatedDuration: 30,
+          },
+        ];
+
+        const checklistId = await db.createOnboardingChecklist({
+          candidateId: candidate.id,
+          jobId: application.jobId,
+          selectionId: selection.id,
+          recruiterId: recruiter.id,
+          status: 'not-started',
+          startDate: new Date(),
+          targetCompletionDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+          totalTasks: defaultTasks.length,
+          completedTasks: 0,
+          progressPercentage: 0,
+        });
+
+        const items = defaultTasks.map(task => ({
+          checklistId,
+          ...task,
+          status: 'pending' as const,
+        }));
+
+        await db.createOnboardingChecklistItems(items);
+      }
+
+      // Send confirmation email
+      const job = await db.getJobById(application.jobId);
+      const user = await db.getUserById(ctx.user.id);
+
+      if (user && user.email && job) {
+        await sendEmail({
+          to: user.email,
+          subject: `Offer Accepted - ${job.title}`,
+          html: `
+            <h2>Welcome to the Team!</h2>
+            <p>Dear ${candidate.firstName || 'there'},</p>
+            <p>Thank you for accepting our offer for the position of <strong>${job.title}</strong>!</p>
+            <p>We're excited to have you join our team. Your onboarding checklist has been created and is ready for you to complete.</p>
+            <p>Please log in to your account to view your onboarding tasks and get started.</p>
+            <p>If you have any questions, please don't hesitate to reach out.</p>
+            <p>Welcome aboard!</p>
+            <p>Best regards,<br>The Recruitment Team</p>
+          `,
+        });
+      }
+
+      // Notify recruiter
+      if (recruiter) {
+        const recruiterUser = await db.getUserById(recruiter.userId);
+        if (recruiterUser && recruiterUser.email) {
+          await sendEmail({
+            to: recruiterUser.email,
+            subject: `Offer Accepted - ${candidate.firstName} ${candidate.lastName}`,
+            html: `
+              <h2>Great News!</h2>
+              <p>Dear ${recruiter.companyName || 'Recruiter'},</p>
+              <p><strong>${candidate.firstName} ${candidate.lastName}</strong> has accepted the offer for the position of <strong>${job?.title}</strong>!</p>
+              <p>The onboarding process has been automatically initiated.</p>
+              <p>Best regards,<br>The HotGigs Team</p>
+            `,
+          });
+        }
+      }
+
+      return { success: true };
+    }),
+
+  // Decline offer
+  declineOffer: protectedProcedure
+    .input(z.object({
+      applicationId: z.number(),
+      declineReason: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Get application
+      const application = await db.getApplicationById(input.applicationId);
+      if (!application) {
+        throw new Error("Application not found");
+      }
+
+      // Verify candidate owns this application
+      const candidate = await db.getCandidateByUserId(ctx.user.id);
+      if (!candidate || candidate.id !== application.candidateId) {
+        throw new Error("Unauthorized");
+      }
+
+      // Get selection
+      const selection = await db.getCandidateSelectionByApplicationId(input.applicationId);
+      if (!selection || selection.decision !== 'selected') {
+        throw new Error("No valid offer found for this application");
+      }
+
+      // Update application status
+      await db.updateApplication(input.applicationId, {
+        status: 'offer-declined',
+      });
+
+      // Update selection with decline reason
+      await db.updateCandidateSelection(selection.id, {
+        internalNotes: `Candidate declined offer. Reason: ${input.declineReason}`,
+      });
+
+      // Send confirmation email to candidate
+      const job = await db.getJobById(application.jobId);
+      const user = await db.getUserById(ctx.user.id);
+
+      if (user && user.email && job) {
+        await sendEmail({
+          to: user.email,
+          subject: `Offer Declined - ${job.title}`,
+          html: `
+            <h2>Offer Declined</h2>
+            <p>Dear ${candidate.firstName || 'there'},</p>
+            <p>We've received your decision to decline the offer for the position of <strong>${job.title}</strong>.</p>
+            <p>We appreciate you taking the time to consider our offer and wish you the best in your career journey.</p>
+            <p>We hope to have the opportunity to work with you in the future.</p>
+            <p>Best regards,<br>The Recruitment Team</p>
+          `,
+        });
+      }
+
+      // Notify recruiter
+      const recruiter = await db.getRecruiterById(application.recruiterId);
+      if (recruiter) {
+        const recruiterUser = await db.getUserById(recruiter.userId);
+        if (recruiterUser && recruiterUser.email) {
+          await sendEmail({
+            to: recruiterUser.email,
+            subject: `Offer Declined - ${candidate.firstName} ${candidate.lastName}`,
+            html: `
+              <h2>Offer Declined</h2>
+              <p>Dear ${recruiter.companyName || 'Recruiter'},</p>
+              <p><strong>${candidate.firstName} ${candidate.lastName}</strong> has declined the offer for the position of <strong>${job?.title}</strong>.</p>
+              <p><strong>Reason:</strong> ${input.declineReason}</p>
+              <p>You may want to consider other candidates for this position.</p>
+              <p>Best regards,<br>The HotGigs Team</p>
+            `,
+          });
+        }
+      }
+
+      return { success: true };
     }),
 });

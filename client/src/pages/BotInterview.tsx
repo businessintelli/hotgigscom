@@ -15,6 +15,12 @@ export default function BotInterview() {
   const { toast } = useToast();
   const applicationId = params.applicationId ? parseInt(params.applicationId) : null;
 
+  // Fetch application details to get candidateId and jobId
+  const { data: applicationData } = trpc.applications.getApplicationById.useQuery(
+    { id: applicationId! },
+    { enabled: !!applicationId }
+  );
+
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [textResponse, setTextResponse] = useState("");
@@ -74,26 +80,21 @@ export default function BotInterview() {
     : 0;
 
   const handleStartInterview = () => {
-    if (!applicationId) return;
+    if (!applicationId || !applicationData) return;
 
-    // Get application details to extract candidateId and jobId
-    // For now, we'll need to pass these from the parent component or fetch them
-    // This is a simplified version
     startSessionMutation.mutate({
       applicationId,
-      candidateId: 1, // TODO: Get from context or props
-      jobId: 1, // TODO: Get from application data
       totalQuestions: 5,
     });
   };
 
   const handleSubmitTextResponse = () => {
-    if (!sessionId || !currentQuestion || !textResponse.trim()) return;
+    if (!sessionId || !currentQuestion || !textResponse.trim() || !applicationData) return;
 
     submitResponseMutation.mutate({
       sessionId,
       questionId: currentQuestion.id,
-      candidateId: 1, // TODO: Get from context
+      candidateId: applicationData.candidateId,
       responseType: 'text',
       textResponse: textResponse.trim(),
     });
@@ -119,11 +120,11 @@ export default function BotInterview() {
     
     // Simulate upload and submission
     setTimeout(() => {
-      if (sessionId && currentQuestion) {
+      if (sessionId && currentQuestion && applicationData) {
         submitResponseMutation.mutate({
           sessionId,
           questionId: currentQuestion.id,
-          candidateId: 1, // TODO: Get from context
+          candidateId: applicationData.candidateId,
           responseType: recordingType || 'audio',
           audioUrl: recordingType === 'audio' ? 'https://example.com/audio.mp3' : undefined,
           videoUrl: recordingType === 'video' ? 'https://example.com/video.mp4' : undefined,

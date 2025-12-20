@@ -893,6 +893,13 @@ export async function updateAssociate(id: number, updates: Partial<InsertAssocia
   await db.update(associates).set(updates).where(eq(associates.id, id));
 }
 
+export async function getAssociateByCandidateId(candidateId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(associates).where(eq(associates.candidateId, candidateId)).limit(1);
+  return result[0] || null;
+}
+
 // Onboarding Process operations
 export async function createOnboardingProcess(process: InsertOnboardingProcess) {
   const db = await getDb();
@@ -3436,6 +3443,18 @@ export async function getCandidateSelectionByApplicationId(applicationId: number
   return selection || null;
 }
 
+// Get candidate selection by ID
+export async function getCandidateSelectionById(selectionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [selection] = await db.select()
+    .from(candidateSelections)
+    .where(eq(candidateSelections.id, selectionId));
+  
+  return selection || null;
+}
+
 // Get all selections for a job
 export async function getCandidateSelectionsByJobId(jobId: number) {
   const db = await getDb();
@@ -3495,6 +3514,18 @@ export async function getOnboardingChecklistByCandidateId(candidateId: number) {
     .from(onboardingChecklists)
     .where(eq(onboardingChecklists.candidateId, candidateId))
     .orderBy(desc(onboardingChecklists.createdAt));
+  
+  return checklist || null;
+}
+
+// Get onboarding checklist by ID
+export async function getOnboardingChecklistById(checklistId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [checklist] = await db.select()
+    .from(onboardingChecklists)
+    .where(eq(onboardingChecklists.id, checklistId));
   
   return checklist || null;
 }

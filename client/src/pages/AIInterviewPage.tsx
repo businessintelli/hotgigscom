@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +19,8 @@ import FraudDetectionMonitorV2 from "@/components/FraudDetectionMonitorV2";
  */
 export default function AIInterviewPage() {
   const [, setLocation] = useLocation();
-  const search = useSearch();
-  const interviewId = parseInt(new URLSearchParams(search).get("id") || "0");
+  const params = useParams<{ id: string }>();
+  const interviewId = parseInt(params.id || "0");
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);

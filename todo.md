@@ -4473,3 +4473,12 @@
 - [x] Add bot interview status indicators to application list
 - [x] Build automated reminder system for incomplete interviews and onboarding tasks
 - [x] Implement real-time notifications for interview completion and analysis results
+
+## Pending Module Fixes & Completions (Current Session)
+- [x] Fix AI Interview routing bug (changed from /ai-interview?id=X to /ai-interview/:id)
+- [x] Add AI Interview question configuration system (already implemented via AI generation)
+- [x] Complete Offer Acceptance candidate-facing interface
+- [x] Build Onboarding Checklist task completion interface (already exists)
+- [x] Implement Associate Transition automation (hired → onboarded → associate)
+- [x] Configure AI Interview bot with proper question sets (dynamically generated)
+- [x] Test complete offer workflow from backend to candidate acceptance

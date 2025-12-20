@@ -100,6 +100,7 @@ import CompanyLLMCostTracking from "./pages/CompanyLLMCostTracking";
 import CompanyLLMAlerts from "./pages/CompanyLLMAlerts";
 import BotInterview from "./pages/BotInterview";
 import OnboardingChecklist from "./pages/OnboardingChecklist";
+import OfferAcceptance from "./pages/OfferAcceptance";
 import SelectionReview from "./pages/SelectionReview";
 import BotInterviewAnalytics from "./pages/BotInterviewAnalytics";
 import AdminDatabase from "./pages/AdminDatabase";
@@ -284,6 +285,7 @@ function Router() {
       <Route path="/candidate/settings" component={CandidateSettings} />
       <Route path="/candidate/notification-preferences" component={NotificationPreferences} />
       <Route path="/candidate/bot-interview/:applicationId" component={BotInterview} />
+      <Route path="/candidate/offer/:applicationId" component={OfferAcceptance} />
       <Route path="/candidate/onboarding-checklist/:candidateId" component={OnboardingChecklist} />
       <Route path="/candidate/messages" component={Messages} />
       <Route path="/recruiter/ai-assistant" component={RecruiterAIAssistant} />
@@ -298,7 +300,7 @@ function Router() {
       <Route path={"/recruiter/jobs/:id"} component={JobDetails} />
       <Route path={"/apply/:id"} component={GuestJobApplication} />
       <Route path={"/recruiter/apply-on-behalf/:jobId"} component={ApplyOnBehalf} />
-      <Route path="/ai-interview" component={AIInterviewPage} />
+      <Route path="/ai-interview/:id" component={AIInterviewPage} />
       <Route path="/recommendations" component={Recommendations} />
       <Route path="/resources" component={CareerResources} />
       <Route path="/my-resume" component={MyResumes} />
