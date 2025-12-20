@@ -334,6 +334,27 @@ export default function ApplicationManagement() {
     );
   };
 
+  const getBotInterviewStatusBadge = (session: any) => {
+    if (!session) return null;
+
+    const statusConfig: Record<string, { variant: any; icon: any; label: string; color: string }> = {
+      "not-started": { variant: "outline", icon: Clock, label: "Not Started", color: "text-gray-600" },
+      "in-progress": { variant: "default", icon: Bot, label: "In Progress", color: "text-blue-600 bg-blue-50" },
+      "completed": { variant: "default", icon: CheckCircle2, label: "Completed", color: "text-green-600 bg-green-50" },
+      "abandoned": { variant: "destructive", icon: XCircle, label: "Abandoned", color: "text-red-600 bg-red-50" },
+    };
+
+    const config = statusConfig[session.sessionStatus] || statusConfig["not-started"];
+    const Icon = config.icon;
+
+    return (
+      <Badge variant="outline" className={`flex items-center gap-1 ${config.color}`}>
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
   // Calculate statistics
   const stats = {
     total: applications.length,
@@ -717,6 +738,7 @@ export default function ApplicationManagement() {
                           <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end gap-2">
                             {getStatusBadge(application.isGuest ? "submitted" : application.status)}
                             {!application.isGuest && <SuccessScoreBadge applicationId={application.id} />}
+                            {!application.isGuest && application.botInterviewSession && getBotInterviewStatusBadge(application.botInterviewSession)}
                             <p className="text-xs text-gray-500">
                               {new Date(application.isGuest ? application.submittedAt : application.appliedAt).toLocaleDateString()}
                             </p>

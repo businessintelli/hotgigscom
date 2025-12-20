@@ -35,6 +35,7 @@ import {
   jobSkillRequirements, InsertJobSkillRequirement,
   candidateSkillRatings, InsertCandidateSkillRating,
   interviewPanelists, panelistFeedback, notifications,
+  botInterviewSessions, botInterviewQuestions, botInterviewResponses, interviewAnalysis,
   candidateProfileShares, InsertCandidateProfileShare,
   environmentVariables, InsertEnvironmentVariable,
   applicationLogs, InsertApplicationLog,
@@ -591,7 +592,9 @@ export async function getAllApplications() {
     .leftJoin(users, eq(candidates.userId, users.id))
     .leftJoin(jobs, eq(applications.jobId, jobs.id))
     .leftJoin(resumeProfiles, eq(applications.resumeProfileId, resumeProfiles.id))
-    .leftJoin(videoIntroductions, eq(applications.videoIntroductionId, videoIntroductions.id));
+    .leftJoin(videoIntroductions, eq(applications.videoIntroductionId, videoIntroductions.id))
+    .leftJoin(botInterviewSessions, eq(applications.id, botInterviewSessions.applicationId))
+    .leftJoin(interviewAnalysis, eq(botInterviewSessions.id, interviewAnalysis.sessionId));
   
   // Transform the result to match the expected structure
   return result.map((row: any) => ({
@@ -617,6 +620,21 @@ export async function getAllApplications() {
     job: row.jobs,
     resumeProfile: row.resume_profiles,
     videoIntroduction: row.video_introductions,
+    botInterviewSession: row.botInterviewSessions ? {
+      id: row.botInterviewSessions.id,
+      sessionStatus: row.botInterviewSessions.sessionStatus,
+      currentQuestionIndex: row.botInterviewSessions.currentQuestionIndex,
+      totalQuestions: row.botInterviewSessions.totalQuestions,
+      startedAt: row.botInterviewSessions.startedAt,
+      completedAt: row.botInterviewSessions.completedAt,
+      lastActivityAt: row.botInterviewSessions.lastActivityAt,
+    } : null,
+    interviewAnalysis: row.interviewAnalysis ? {
+      id: row.interviewAnalysis.id,
+      overallScore: row.interviewAnalysis.overallScore,
+      hiringRecommendation: row.interviewAnalysis.hiringRecommendation,
+      confidenceLevel: row.interviewAnalysis.confidenceLevel,
+    } : null,
   }));
 }
 

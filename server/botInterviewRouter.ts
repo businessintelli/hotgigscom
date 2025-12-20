@@ -256,6 +256,34 @@ Return ONLY a JSON array of questions in this exact format:
           lastActivityAt: new Date(),
         });
 
+        // Send notification when interview is completed
+        if (isComplete) {
+          try {
+            const { createNotification } = await import('./notificationHelpers');
+            const application = await db.getApplicationById(session.applicationId);
+            const job = await db.getJobById(session.jobId);
+            const candidate = await db.getCandidateById(session.candidateId);
+            
+            if (application && job && candidate) {
+              // Notify recruiter
+              const recruiter = await db.getRecruiterById(job.recruiterId);
+              if (recruiter) {
+                await createNotification({
+                  userId: recruiter.userId,
+                  type: 'interview_completed',
+                  title: 'Bot Interview Completed',
+                  message: `${candidate.fullName} has completed the AI interview for ${job.title}`,
+                  relatedEntityType: 'bot_interview',
+                  relatedEntityId: session.id,
+                  actionUrl: `/recruiter/bot-interview-playback?sessionId=${session.id}`,
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Failed to send interview completion notification:', error);
+          }
+        }
+
         // If audio/video response, transcribe it
         if (input.audioUrl) {
           try {
@@ -473,6 +501,36 @@ Return ONLY JSON in this format:
         confidenceLevel,
         riskFactors: JSON.stringify([]),
       });
+
+      // Send notification when analysis is ready
+      try {
+        const { createNotification } = await import('./notificationHelpers');
+        const job = await db.getJobById(session.jobId);
+        const candidate = await db.getCandidateById(session.candidateId);
+        
+        if (job && candidate) {
+          // Notify recruiter
+          const recruiter = await db.getRecruiterById(job.recruiterId);
+          if (recruiter) {
+            const recommendationText = hiringRecommendation === 'strong-yes' ? 'Highly Recommended' : 
+                                      hiringRecommendation === 'yes' ? 'Recommended' :
+                                      hiringRecommendation === 'maybe' ? 'Consider' :
+                                      hiringRecommendation === 'no' ? 'Not Recommended' : 'Strongly Not Recommended';
+            
+            await createNotification({
+              userId: recruiter.userId,
+              type: 'analysis_ready',
+              title: 'Interview Analysis Ready',
+              message: `AI analysis for ${candidate.fullName}'s interview is complete. Score: ${overallScore}/100 (${recommendationText})`,
+              relatedEntityType: 'interview_analysis',
+              relatedEntityId: analysisId,
+              actionUrl: `/recruiter/bot-interview-playback?sessionId=${session.id}`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to send analysis ready notification:', error);
+      }
 
       return { analysisId, overallScore, hiringRecommendation };
     }),

@@ -6562,6 +6562,31 @@ Be helpful, encouraging, and provide specific advice. Use tools to get real-time
       }),
   }),
 
+  // Automated Reminder System Router
+  reminders: router({    // Process all pending reminders (called by cron job or manually)
+    processAll: protectedProcedure
+      .mutation(async () => {
+        const { processReminders } = await import('./services/reminderService');
+        return await processReminders();
+      }),
+
+    // Send manual reminder for a specific bot interview
+    sendBotInterviewReminder: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { sendManualBotInterviewReminder } = await import('./services/reminderService');
+        return await sendManualBotInterviewReminder(input.sessionId);
+      }),
+
+    // Send manual reminder for a specific onboarding task
+    sendOnboardingTaskReminder: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { sendManualOnboardingTaskReminder } = await import('./services/reminderService');
+        return await sendManualOnboardingTaskReminder(input.taskId);
+      }),
+  }),
+
   // Feedback PDF Export Router
   feedbackExport: router({
     // Generate PDF report for interview feedback
